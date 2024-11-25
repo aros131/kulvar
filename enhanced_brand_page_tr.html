@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marka Sayfası</title>
+    <!-- Google Fonts for Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(to right, #004aad, #0078d7);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 28px;
+            margin: 0;
+        }
+        .brand-info {
+            background: white;
+            padding: 30px;
+            margin: 20px auto;
+            width: 85%;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .brand-info img {
+            max-width: 120px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+        .brand-info h2 {
+            font-size: 24px;
+            color: #004aad;
+            margin-bottom: 10px;
+        }
+        .brand-info p {
+            font-size: 16px;
+            color: #555;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            background-color: #f0f0f0;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .tabs button {
+            flex: 1;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .tabs button:hover {
+            background-color: #e7e7e7;
+        }
+        .tabs button.active {
+            border-bottom: 3px solid #004aad;
+            font-weight: bold;
+        }
+        .feed-section {
+            width: 85%;
+            margin: 20px auto;
+        }
+        .feed-section h2 {
+            font-size: 22px;
+            color: #004aad;
+            margin-bottom: 20px;
+        }
+        .review-card, .update-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .review-card:hover, .update-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        .review-card h3, .update-card h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .review-card p, .update-card p {
+            font-size: 14px;
+            color: #555;
+        }
+        .review-card .response {
+            background: #f0f0f0;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .review-card .response strong {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Marka Sayfası</h1>
+    </header>
+    <div class="brand-info">
+        <img src="https://via.placeholder.com/150" alt="Marka Logosu">
+        <h2>Marka Adı</h2>
+        <p>Marka açıklaması burada yer alacak. Markanın uzmanlık alanları, değerleri veya en çok bilinen ürünleri hakkında bilgi verin.</p>
+    </div>
+    <div class="tabs">
+        <button class="active">Kullanıcı Yorumları</button>
+        <button>Marka Güncellemeleri</button>
+    </div>
+    <div class="feed-section">
+        <h2>Kullanıcı Yorumları</h2>
+        <div class="review-card">
+            <h3>John Doe</h3>
+            <p>★★★★★</p>
+            <p>Harika kalite ve mükemmel müşteri hizmetleri!</p>
+            <div class="response">
+                <strong>Marka Yanıtı:</strong>
+                <p>Teşekkürler, John! Ürünümüzü beğenmenize çok sevindik!</p>
+            </div>
+        </div>
+        <div class="review-card">
+            <h3>Jane Smith</h3>
+            <p>★★★☆☆</p>
+            <p>Ürün fena değildi ama teslimat gecikti.</p>
+            <div class="response">
+                <strong>Marka Yanıtı:</strong>
+                <p>Gecikme için özür dileriz, Jane. Teslimat hizmetimizi iyileştirmek için çalışıyoruz.</p>
+            </div>
+        </div>
+    </div>
+    <div class="feed-section">
+        <h2>Marka Güncellemeleri</h2>
+        <div class="update-card">
+            <h3>Yeni Ürün Lansmanı</h3>
+            <p>Yeni ürün serimizin artık mevcut olduğunu duyurmaktan mutluluk duyuyoruz!</p>
+        </div>
+        <div class="update-card">
+            <h3>Bayram İndirimi</h3>
+            <p>Bayram indirimi boyunca %50'ye varan indirimlerin tadını çıkarın! Kaçırmayın!</p>
+        </div>
+    </div>
+</body>
+</html>
