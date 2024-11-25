@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marka Dizini</title>
+    <!-- Google Fonts for Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        /* Navigation Bar */
+        .navbar {
+            background-color: #49678D; /* Blue Bird */
+            color: white;
+            padding: 10px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar a:hover {
+            color: #F4A688; /* Ochraceous Salmon */
+        }
+        .directory-header {
+            background: #49678D; /* Blue Bird */
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+        }
+        .directory-header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .directory-header p {
+            font-size: 16px;
+            margin: 0;
+        }
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            width: 85%;
+            margin: 30px auto;
+        }
+        .categories, .brand-list {
+            flex: 1;
+            margin: 20px;
+        }
+        .categories {
+            max-width: 200px;
+        }
+        .categories h2, .brand-list h2 {
+            font-size: 24px;
+            color: #9E4624; /* Hay's Russet */
+            margin-bottom: 15px;
+        }
+        .categories ul {
+            list-style: none;
+            padding: 0;
+        }
+        .categories li {
+            margin-bottom: 10px;
+        }
+        .categories a {
+            color: #49678D; /* Blue Bird */
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .categories a:hover {
+            color: #F4A688; /* Ochraceous Salmon */
+        }
+        .brand-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .brand-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        .brand-card img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        .brand-card h3 {
+            font-size: 18px;
+            margin: 0;
+        }
+        .brand-card p {
+            font-size: 14px;
+            color: #555;
+        }
+        .search-bar {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-bar input {
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        .search-bar button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #9E4624; /* Hay's Russet */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .search-bar button:hover {
+            background-color: #F4A688; /* Ochraceous Salmon */
+        }
+        footer {
+            background-color: #49678D; /* Blue Bird */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        footer a {
+            color: #F4A688; /* Ochraceous Salmon */
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <div class="logo">
+            <a href="index.html">Ürün İnceleme Platformu</a>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Anasayfa</a>
+            <a href="review.html">İnceleme Gönder</a>
+            <a href="login.html">Giriş Yap/Kaydol</a>
+        </div>
+    </div>
+    <!-- Directory Header -->
+    <div class="directory-header">
+        <h1>Marka Dizini</h1>
+        <p>Kategorilere göz atın ve sevdiğiniz markaları keşfedin</p>
+    </div>
+    <!-- Content -->
+    <div class="search-bar">
+        <input type="text" placeholder="Marka Ara...">
+        <button>Arama Yap</button>
+    </div>
+    <div class="content">
+        <!-- Categories Section -->
+        <div class="categories">
+            <h2>Kategoriler</h2>
+            <ul>
+                <li><a href="#electronics">Elektronik</a></li>
+                <li><a href="#fashion">Moda</a></li>
+                <li><a href="#home">Ev ve Yaşam</a></li>
+            </ul>
+        </div>
+        <!-- Brand List Section -->
+        <div class="brand-list">
+            <h2>Tüm Markalar</h2>
+            <div class="brand-card">
+                <img src="https://via.placeholder.com/50" alt="Marka Logo">
+                <div>
+                    <h3><a href="brand.html?brand=Nike">Nike</a></h3>
+                    <p>Üst düzey spor giyim ve ayakkabılar.</p>
+                </div>
+            </div>
+            <div class="brand-card">
+                <img src="https://via.placeholder.com/50" alt="Marka Logo">
+                <div>
+                    <h3><a href="brand.html?brand=Samsung">Samsung</a></h3>
+                    <p>Elektronik ürünlerde lider bir marka.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
+        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
+    </footer>
+</body>
+</html>
