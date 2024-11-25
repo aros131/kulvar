@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anasayfa</title>
+    <!-- Google Fonts for Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        /* Navigation Bar Styling */
+        .navbar {
+            background-color: #49678D; /* Blue Bird */
+            color: white;
+            padding: 10px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar a:hover {
+            color: #F4A688; /* Ochraceous Salmon */
+        }
+        .hero-section {
+            background-color: #49678D; /* Blue Bird */
+            color: white;
+            text-align: center;
+            padding: 50px 20px;
+            margin-bottom: 30px;
+        }
+        .hero-section h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        .hero-section p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        .hero-section .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .hero-section button {
+            padding: 15px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .hero-section .explore-btn {
+            background-color: #9E4624; /* Hay's Russet */
+            color: white;
+        }
+        .hero-section .explore-btn:hover {
+            background-color: #F4A688; /* Ochraceous Salmon */
+        }
+        .hero-section .login-btn {
+            background-color: white;
+            color: #9E4624; /* Hay's Russet */
+            border: 2px solid #9E4624;
+        }
+        .hero-section .login-btn:hover {
+            background-color: #9E4624;
+            color: white;
+        }
+        .trending-section, .categories-section {
+            width: 85%;
+            margin: 30px auto;
+            text-align: center;
+        }
+        .trending-section h2, .categories-section h2 {
+            font-size: 28px;
+            color: #9E4624; /* Hay's Russet */
+            margin-bottom: 20px;
+        }
+        .trending-cards, .categories-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        .card img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        .card h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .engagement-section {
+            background: #F4A688; /* Ochraceous Salmon */
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+        .engagement-section h2 {
+            font-size: 28px;
+            color: #9E4624; /* Hay's Russet */
+            margin-bottom: 15px;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            flex-wrap: wrap;
+        }
+        .stat {
+            font-size: 20px;
+            color: #333;
+        }
+        footer {
+            background-color: #49678D; /* Blue Bird */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        footer a {
+            color: #F4A688; /* Ochraceous Salmon */
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <div class="logo">
+            <a href="index.html">Ürün İnceleme Platformu</a>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Anasayfa</a>
+            <a href="review.html">İnceleme Gönder</a>
+            <a href="brand.html">Markaları Keşfet</a>
+            <a href="login.html">Giriş Yap/Kaydol</a>
+        </div>
+    </div>
+    <div class="hero-section">
+        <h2>Türkiye’nin En Güvenilir İnceleme Platformu</h2>
+        <p>Hemen başlayın ve popüler markaları, ürünleri keşfedin!</p>
+        <div class="buttons">
+            <button class="explore-btn">Hemen İncele</button>
+            <button class="login-btn">Giriş Yap/Kaydol</button>
+        </div>
+    </div>
+    <div class="trending-section">
+        <h2>Trend Olanlar</h2>
+        <div class="trending-cards">
+            <div class="card">
+                <img src="https://via.placeholder.com/80" alt="Trend">
+                <h3>Marka A</h3>
+                <p>En çok yorumlanan marka bu hafta burada!</p>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/80" alt="Trend">
+                <h3>Ürün B</h3>
+                <p>Bu kategoride en yüksek puan alan ürün.</p>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/80" alt="Trend">
+                <h3>Marka C</h3>
+                <p>Müşteri memnuniyetiyle bilinen lider marka.</p>
+            </div>
+        </div>
+    </div>
+    <div class="categories-section">
+        <h2>Kategorilere Göz Atın</h2>
+        <div class="categories-cards">
+            <div class="card">
+                <img src="https://via.placeholder.com/80" alt="Kategori">
+                <h3>Elektronik</h3>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/80" alt="Kategori">
+                <h3>Moda</h3>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/80" alt="Kategori">
+                <h3>Ev ve Yaşam</h3>
+            </div>
+        </div>
+    </div>
+    <div class="engagement-section">
+        <h2>Bize Katılın</h2>
+        <div class="stats">
+            <div class="stat">Toplam İncelemeler: <strong>12,845</strong></div>
+            <div class="stat">Aktif Kullanıcılar: <strong>4,233</strong></div>
+        </div>
+    </div>
+    <footer>
+        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
+        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
+    </footer>
+</body>
+</html>
