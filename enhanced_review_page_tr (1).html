@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İnceleme Gönder</title>
+    <!-- Google Fonts for Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        /* Navigation Bar */
+        .navbar {
+            background-color: #49678D; /* Blue Bird */
+            color: white;
+            padding: 10px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar a:hover {
+            color: #F4A688; /* Ochraceous Salmon */
+        }
+        .hero-section {
+            background: linear-gradient(to bottom, #49678D, #9E4624);
+            color: white;
+            text-align: center;
+            padding: 50px 20px;
+            margin-bottom: 30px;
+        }
+        .hero-section h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+        .hero-section p {
+            font-size: 18px;
+            margin: 0;
+        }
+        .content {
+            width: 85%;
+            margin: 30px auto;
+        }
+        form {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        form label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        form input, form textarea, form select, form button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        form textarea {
+            resize: vertical;
+        }
+        form button {
+            background-color: #9E4624; /* Hay's Russet */
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        form button:hover {
+            background-color: #F4A688; /* Ochraceous Salmon */
+        }
+        .star-rating {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .star-rating span {
+            font-size: 20px;
+            color: #F4A688; /* Ochraceous Salmon */
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .star-rating span:hover,
+        .star-rating span.active {
+            color: #9E4624; /* Hay's Russet */
+        }
+        .image-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .image-preview img {
+            max-width: 100px;
+            border-radius: 8px;
+        }
+        .preview-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+        footer {
+            background-color: #49678D; /* Blue Bird */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        footer a {
+            color: #F4A688; /* Ochraceous Salmon */
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <div class="logo">
+            <a href="index.html">Ürün İnceleme Platformu</a>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Anasayfa</a>
+            <a href="brand-directory.html">Markaları Keşfet</a>
+            <a href="login.html">Giriş Yap/Kaydol</a>
+        </div>
+    </div>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1>Deneyiminizi Paylaşın</h1>
+        <p>Kullanıcıların en çok faydalı bulduğu incelemeler burada başlıyor.</p>
+    </div>
+    <div class="content">
+        <form>
+            <label for="user-name">Adınız:</label>
+            <input type="text" id="user-name" placeholder="Adınızı girin..." required>
+
+            <label for="product-name">Ürün/Marka Adı:</label>
+            <input type="text" id="product-name" placeholder="Ürün veya marka adını girin..." required>
+
+            <label for="rating">Puan:</label>
+            <div class="star-rating" id="rating">
+                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+            </div>
+
+            <label for="review-text">İnceleme:</label>
+            <textarea id="review-text" rows="5" placeholder="İncelemenizi buraya yazın..." required></textarea>
+
+            <label for="image-upload">Görsel Yükle:</label>
+            <input type="file" id="image-upload" accept="image/*">
+            <div class="image-preview" id="image-preview"></div>
+
+            <button type="button" id="preview-btn">İncelemeyi Önizle</button>
+            <button type="submit">İncelemeyi Gönder</button>
+        </form>
+        <div class="preview-section" id="review-preview">
+            <h2>İnceleme Önizlemesi</h2>
+            <p>Burada incelemenizin önizlemesini görebileceksiniz.</p>
+        </div>
+    </div>
+    <footer>
+        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
+        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
+    </footer>
+</body>
+<script>
+    // Dynamic Star Rating
+    const stars = document.querySelectorAll('.star-rating span');
+    stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+            stars.forEach((s, i) => {
+                s.classList.toggle('active', i <= index);
+            });
+        });
+    });
+
+    // Image Upload Preview
+    const imageUpload = document.getElementById('image-upload');
+    const imagePreview = document.getElementById('image-preview');
+    imageUpload.addEventListener('change', () => {
+        imagePreview.innerHTML = '';
+        const file = imageUpload.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = document.createElement('img');
+                img.src = reader.result;
+                imagePreview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Review Preview
+    const previewBtn = document.getElementById('preview-btn');
+    const reviewText = document.getElementById('review-text');
+    const reviewPreview = document.getElementById('review-preview');
+    previewBtn.addEventListener('click', () => {
+        const text = reviewText.value;
+        if (text.trim()) {
+            reviewPreview.innerHTML = `<h2>İnceleme Önizlemesi</h2><p>${text}</p>`;
+        } else {
+            reviewPreview.innerHTML = `<h2>İnceleme Önizlemesi</h2><p>İnceleme metni ekleyin.</p>`;
+        }
+    });
+</script>
+</html>
