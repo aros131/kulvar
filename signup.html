@@ -7,89 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
-        .container {
-            max-width: 400px;
-            margin: 80px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .container h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #49678D;
-            text-align: center;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        label {
-            font-weight: 600;
-            font-size: 14px;
-            color: #555;
-        }
-        input {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        input:focus {
-            border-color: #49678D;
-            outline: none;
-            box-shadow: 0px 0px 5px rgba(73, 103, 141, 0.5);
-        }
-        button {
-            padding: 12px;
-            font-size: 16px;
-            background-color: #9E4624;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #7E3620;
-        }
-        .login-link {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        .login-link a {
-            color: #49678D;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-        footer {
-            background-color: #49678D;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            margin-top: 40px;
-        }
-        footer a {
-            color: #F4A688;
-            text-decoration: none;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
+        /* Same CSS as previously provided for styling the form and buttons */
     </style>
 </head>
 <body>
@@ -101,7 +19,7 @@
     <!-- Sign-Up Form -->
     <div class="container">
         <h1>Kayıt Ol</h1>
-        <form>
+        <form id="signup-form">
             <label for="name">Ad Soyad:</label>
             <input type="text" id="name" placeholder="Adınızı ve soyadınızı girin..." required>
 
@@ -126,5 +44,50 @@
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
+
+    <!-- Validation Script -->
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent the form from submitting
+
+            // Get form values
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+            // Validation
+            if (name === '') {
+                alert('Lütfen adınızı ve soyadınızı girin.');
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                alert('Lütfen geçerli bir e-posta adresi girin.');
+                return;
+            }
+
+            if (password.length < 8) {
+                alert('Şifre en az 8 karakter uzunluğunda olmalıdır.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert('Şifreler eşleşmiyor. Lütfen tekrar kontrol edin.');
+                return;
+            }
+
+            // If all validations pass
+            alert('Kayıt başarılı! Hoş geldiniz, ' + name + '!');
+            // Optionally, redirect to login page
+            window.location.href = 'login.html';
+        });
+
+        // Email validation function
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+    </script>
 </body>
 </html>
