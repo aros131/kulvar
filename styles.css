@@ -83,4 +83,36 @@
         font-size: 14px; /* Smaller description text */
     }
 }
+/* Form Mobile Optimization */
+@media (max-width: 768px) {
+    form {
+        width: 100%; /* Full width form */
+        padding: 15px; /* Add some padding */
+        box-sizing: border-box;
+    }
+
+    form input, form textarea, form select, form button {
+        width: 100%; /* Full width inputs */
+        font-size: 16px; /* Increase font size for readability */
+        padding: 12px; /* Add padding for tappable area */
+        margin-bottom: 15px; /* Space between form elements */
+    }
+
+    form textarea {
+        resize: vertical; /* Allow resizing only vertically */
+    }
+
+    form button {
+        background-color: #9E4624; /* Consistent with theme */
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+        background-color: #7E3620; /* Slightly darker on hover */
+    }
+}
 
