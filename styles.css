@@ -30,3 +30,30 @@
         display: block;
     }
 }
+/* Hero Section Mobile Optimization */
+@media (max-width: 768px) {
+    .hero {
+        padding: 80px 10px; /* Reduce top and side paddings */
+    }
+
+    .hero h1 {
+        font-size: 32px; /* Reduce headline size */
+        line-height: 1.4; /* Adjust spacing for readability */
+    }
+
+    .hero p {
+        font-size: 16px; /* Smaller font for paragraph */
+        line-height: 1.6; /* Better readability */
+    }
+
+    .hero .buttons {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 15px; /* Space between buttons */
+    }
+
+    .hero button {
+        width: 100%; /* Make buttons full-width */
+        font-size: 16px; /* Slightly smaller font */
+        padding: 12px; /* Adjust padding */
+    }
+}
