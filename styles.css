@@ -1,0 +1,32 @@
+/* Default Hamburger Menu - Hidden on Desktop */
+.hamburger {
+    display: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Responsive Navbar - Small Screens */
+@media (max-width: 768px) {
+    .nav-links {
+        display: none; /* Hidden by default */
+        flex-direction: column; /* Stack links vertically */
+        gap: 15px;
+        background-color: #49678D; /* Same as navbar background */
+        padding: 15px;
+        position: absolute;
+        top: 50px; /* Positioned below the navbar */
+        right: 0;
+        width: 100%;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    }
+
+    /* When Active, Display Links */
+    .nav-links.active {
+        display: flex;
+    }
+
+    /* Show Hamburger Menu Icon */
+    .hamburger {
+        display: block;
+    }
+}
