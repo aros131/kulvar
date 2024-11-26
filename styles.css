@@ -33,6 +33,11 @@ body {
     color: #FFD300; /* Sulphur Yellow */
 }
 
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
 .nav-links a {
     color: #FFD300; /* Sulphur Yellow */
     text-decoration: none;
@@ -52,183 +57,26 @@ body {
     cursor: pointer;
 }
 
-/* Hero Section */
-.hero {
-    background: linear-gradient(to bottom, #556B2F, #404B33); /* Olive to Deep Slate Olive */
-    color: #FFD300; /* Sulphur Yellow */
-    text-align: center;
-    padding: 140px 20px;
-}
+/* Responsive Navbar for Small Screens */
+@media (max-width: 768px) {
+    .hamburger {
+        display: block; /* Show hamburger icon */
+    }
 
-.hero h1 {
-    font-size: 56px;
-    margin-bottom: 20px;
-    font-weight: bold;
-}
+    .nav-links {
+        display: none; /* Hide navigation links by default */
+        flex-direction: column;
+        gap: 15px;
+        background-color: #556B2F; /* Olive */
+        padding: 15px;
+        position: absolute;
+        top: 50px;
+        right: 0;
+        width: 100%;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Shadow for dropdown */
+    }
 
-.hero p {
-    font-size: 20px;
-    margin-bottom: 40px;
-    line-height: 1.6;
-}
-
-.hero .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
-}
-
-.hero button {
-    padding: 15px 40px;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-}
-
-.hero .explore-btn {
-    background-color: #D2A17E; /* Pinkish Cinnamon */
-    color: #FFFDD0; /* Cream Yellow */
-}
-
-.hero .explore-btn:hover {
-    background-color: #FFFDD0; /* Cream Yellow */
-    color: #556B2F; /* Olive */
-}
-
-.hero .learn-btn {
-    background-color: transparent;
-    color: #FFD300; /* Sulphur Yellow */
-    border: 2px solid #FFD300; /* Sulphur Yellow */
-}
-
-.hero .learn-btn:hover {
-    background-color: #FFD300; /* Sulphur Yellow */
-    color: #404B33; /* Deep Slate Olive */
-}
-
-/* Product Carousel */
-.product-carousel {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    max-width: 1200px;
-    margin: 20px auto;
-}
-
-.carousel-track {
-    display: flex;
-    transition: transform 0.5s ease;
-}
-
-.product-card {
-    min-width: 200px;
-    margin: 0 10px;
-    background-color: #D2A17E; /* Pinkish Cinnamon */
-    border-radius: 10px;
-    text-align: center;
-    padding: 15px;
-    color: #404B33; /* Deep Slate Olive */
-}
-
-.product-card img {
-    width: 100%;
-    height: auto;
-    border-radius: 10px;
-}
-
-.product-card h3 {
-    font-size: 18px;
-    margin: 10px 0;
-}
-
-.product-card p {
-    font-size: 14px;
-    color: #404B33; /* Deep Slate Olive */
-}
-
-.review-link {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 10px 20px;
-    background-color: #FFD300; /* Sulphur Yellow */
-    color: #404B33; /* Deep Slate Olive */
-    text-decoration: none;
-    border-radius: 5px;
-}
-
-.review-link:hover {
-    background-color: #FFFDD0; /* Cream Yellow */
-    color: #556B2F; /* Olive */
-}
-
-/* Navigation Arrows */
-.carousel-prev,
-.carousel-next {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: rgba(0, 0, 0, 0.5);
-    color: #FFFDD0; /* Cream Yellow */
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 50%;
-}
-
-.carousel-prev {
-    left: 10px;
-}
-
-.carousel-next {
-    right: 10px;
-}
-
-/* Trending Section */
-.trending {
-    padding: 50px 20px;
-    background-color: #556B2F; /* Olive */
-    color: #FFD300; /* Sulphur Yellow */
-}
-
-.trending h2 {
-    text-align: center;
-    font-size: 32px;
-    margin-bottom: 30px;
-    color: #FFD300; /* Sulphur Yellow */
-}
-
-.brand-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.brand-card {
-    background-color: #D2A17E; /* Pinkish Cinnamon */
-    color: #404B33; /* Deep Slate Olive */
-    padding: 20px;
-    text-align: center;
-    border-radius: 10px;
-}
-
-/* Footer */
-footer {
-    background-color: #556B2F; /* Olive */
-    color: #FFD300; /* Sulphur Yellow */
-    padding: 30px 20px;
-    text-align: center;
-}
-
-footer a {
-    color: #FFFDD0; /* Cream Yellow */
-    text-decoration: none;
-    font-weight: bold;
-}
-
-footer a:hover {
-    text-decoration: underline;
+    .nav-links.active {
+        display: flex; /* Show links when active */
+    }
 }
