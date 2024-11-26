@@ -261,4 +261,21 @@ footer a {
 footer a:hover {
     text-decoration: underline;
 }
+.profile-btn {
+    display: inline-block;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #D2A17E; /* Pinkish Cinnamon */
+    color: #FFFDD0; /* Cream Yellow */
+    text-decoration: none;
+    border-radius: 8px;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.profile-btn:hover {
+    background-color: #FFFDD0;
+    color: #404B33; /* Deep Slate Olive */
+}
 
