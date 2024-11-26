@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -6,282 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ürün İnceleme Platformu</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Google Fonts for Typography -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            color: #333;
-        }
-        /* Navigation Bar */
-        .navbar {
-            background-color: #49678D; /* Blue Bird */
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .navbar .logo {
-            font-size: 22px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        .navbar .nav-links {
-            display: flex;
-            gap: 25px;
-        }
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-        .navbar a:hover {
-            color: #F4A688; /* Ochraceous Salmon */
-        }
-        .navbar .cta {
-            background-color: #9E4624; /* Hay's Russet */
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: bold;
-            color: white;
-            text-transform: uppercase;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-        .navbar .cta:hover {
-            background-color: #7E3620;
-            transform: translateY(-2px);
-        }
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(to bottom, #49678D, #9E4624);
-            color: white;
-            text-align: center;
-            padding: 140px 20px;
-        }
-        .hero h1 {
-            font-size: 56px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        .hero p {
-            font-size: 20px;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-        .hero .buttons {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-        .hero button {
-            padding: 15px 40px;
-            font-size: 18px;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-        .hero .explore-btn {
-            background-color: #9E4624; /* Hay's Russet */
-            color: white;
-        }
-        .hero .explore-btn:hover {
-            background-color: #7E3620;
-            transform: translateY(-2px);
-        }
-        .hero .learn-btn {
-            background-color: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-        .hero .learn-btn:hover {
-            background-color: white;
-            color: #49678D;
-            transform: translateY(-2px);
-        }
-        /* Trending Brands Section */
-        .trending {
-            padding: 50px 20px;
-            background-color: #F4A688; /* Ochraceous Salmon */
-        }
-        .trending h2 {
-            text-align: center;
-            font-size: 32px;
-            margin-bottom: 30px;
-            color: white;
-        }
-        .trending .brand-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-        .brand-card {
-            background-color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 10px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease;
-        }
-        .brand-card:hover {
-            transform: translateY(-5px);
-        }
-        .brand-card img {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 15px;
-        }
-        .brand-card h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        /* Footer */
-        footer {
-            background-color: #49678D; /* Blue Bird */
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-            margin-top: 60px;
-        }
-        footer a {
-            color: #F4A688; /* Ochraceous Salmon */
-            text-decoration: none;
-            font-weight: bold;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
- <nav class="navbar">
-    <div class="logo">Ürün İnceleme</div>
-    <div class="hamburger">☰</div>
-    <div class="nav-links">
-        <a href="index.html">Anasayfa</a>
-        <a href="hemen_incele.html">Hemen İncele</a>
-        <a href="brand.html">Markalar</a>
-        <a href="review.html">İnceleme Gönder</a>
-        <a href="login.html">Giriş Yap</a>
-    </div>
-</nav>
+    <nav class="navbar">
+        <div class="logo">Ürün İnceleme</div>
+        <div class="hamburger">☰</div>
+        <div class="nav-links">
+            <a href="#hero-section">Anasayfa</a>
+            <a href="#trending-section">Trend Olan Markalar</a>
+            <a href="#footer-section">İletişim</a>
+        </div>
+    </nav>
 
     <!-- Hero Section -->
-   <div class="hero">
-    <h1>En Güvenilir İncelemeleri Keşfedin</h1>
-    <p>Popüler markalar ve ürünlere yönelik tarafsız kullanıcı yorumlarını görün.</p>
-    <div class="buttons">
-        <button class="explore-btn">Markaları Keşfet</button>
-        <button class="learn-btn">Daha Fazla Bilgi</button>
+    <div id="hero-section" class="hero">
+        <h1>En Güvenilir İncelemeleri Keşfedin</h1>
+        <p>Popüler markalar ve ürünlere yönelik tarafsız kullanıcı yorumlarını görün.</p>
+        <div class="buttons">
+            <button class="explore-btn">Markaları Keşfet</button>
+            <button class="learn-btn">Daha Fazla Bilgi</button>
+        </div>
     </div>
-    
 
     <!-- Product Carousel -->
     <div class="product-carousel">
-    <div class="carousel-track">
-        <!-- Product Card 1 -->
-        <div class="product-card">
-            <img src="https://via.placeholder.com/200x150" alt="Apple iPhone 13">
-            <h3>Apple iPhone 13</h3>
-            <p>En yeni özellikleriyle şık tasarıma sahip iPhone modeli.</p>
-            <a href="review_iphone13.html" class="review-link">İncelemeyi Oku</a>
+        <div class="carousel-track">
+            <!-- Product Card 1 -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/200x150" alt="Apple iPhone 13">
+                <h3>Apple iPhone 13</h3>
+                <p>En yeni özellikleriyle şık tasarıma sahip iPhone modeli.</p>
+                <a href="review_iphone13.html" class="review-link">İncelemeyi Oku</a>
+            </div>
+            <!-- Product Card 2 -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/200x150" alt="Samsung Galaxy S22">
+                <h3>Samsung Galaxy S22</h3>
+                <p>Android'in en iyisi: Üst düzey kamera ve performans.</p>
+                <a href="review_galaxyS22.html" class="review-link">İncelemeyi Oku</a>
+            </div>
+            <!-- Product Card 3 -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/200x150" alt="Sony WH-1000XM4">
+                <h3>Sony WH-1000XM4</h3>
+                <p>En iyi gürültü engelleme özellikli kablosuz kulaklık.</p>
+                <a href="review_sony.html" class="review-link">İncelemeyi Oku</a>
+            </div>
+            <!-- Product Card 4 -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/200x150" alt="Dell XPS 13">
+                <h3>Dell XPS 13</h3>
+                <p>Ultra taşınabilir, üstün performansa sahip bir laptop.</p>
+                <a href="review_dellxps13.html" class="review-link">İncelemeyi Oku</a>
+            </div>
         </div>
-        <!-- Product Card 2 -->
-        <div class="product-card">
-            <img src="https://via.placeholder.com/200x150" alt="Samsung Galaxy S22">
-            <h3>Samsung Galaxy S22</h3>
-            <p>Android'in en iyisi: Üst düzey kamera ve performans.</p>
-            <a href="review_galaxyS22.html" class="review-link">İncelemeyi Oku</a>
-        </div>
-        <!-- Product Card 3 -->
-        <div class="product-card">
-            <img src="https://via.placeholder.com/200x150" alt="Sony WH-1000XM4">
-            <h3>Sony WH-1000XM4</h3>
-            <p>En iyi gürültü engelleme özellikli kablosuz kulaklık.</p>
-            <a href="review_sony.html" class="review-link">İncelemeyi Oku</a>
-        </div>
-        <!-- Product Card 4 -->
-        <div class="product-card">
-            <img src="https://via.placeholder.com/200x150" alt="Dell XPS 13">
-            <h3>Dell XPS 13</h3>
-            <p>Ultra taşınabilir, üstün performansa sahip bir laptop.</p>
-            <a href="review_dellxps13.html" class="review-link">İncelemeyi Oku</a>
-        </div>
+        <!-- Navigation Arrows -->
+        <button class="carousel-prev">&#10094;</button>
+        <button class="carousel-next">&#10095;</button>
     </div>
-    <!-- Navigation Arrows -->
-    <button class="carousel-prev">&#10094;</button>
-    <button class="carousel-next">&#10095;</button>
-</div>
-    <!-- End of Product Carousel -->
-</div>
 
     <!-- Trending Brands Section -->
-    <div class="trending">
+    <div id="trending-section" class="trending">
         <h2>Trend Olan Markalar</h2>
         <div class="brand-grid">
             <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Brand Logo">
+                <img src="https://via.placeholder.com/80" alt="Nike">
                 <h3>Nike</h3>
                 <p>Kaliteli spor giyim ürünleri.</p>
             </div>
             <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Brand Logo">
+                <img src="https://via.placeholder.com/80" alt="Samsung">
                 <h3>Samsung</h3>
                 <p>Son teknoloji elektronik cihazlar.</p>
             </div>
             <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Brand Logo">
+                <img src="https://via.placeholder.com/80" alt="Arçelik">
                 <h3>Arçelik</h3>
                 <p>Ev aletlerinde lider marka.</p>
             </div>
             <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Brand Logo">
+                <img src="https://via.placeholder.com/80" alt="Adidas">
                 <h3>Adidas</h3>
                 <p>Spor ayakkabı ve aksesuarlar.</p>
             </div>
         </div>
     </div>
-    <footer>
+
+    <!-- Footer -->
+    <footer id="footer-section">
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
-document.addEventListener('DOMContentLoaded', function () {
-    const track = document.querySelector('.carousel-track');
-    const prevButton = document.querySelector('.carousel-prev');
-    const nextButton = document.querySelector('.carousel-next');
-    const productCards = document.querySelectorAll('.product-card');
-    const cardWidth = productCards[0].offsetWidth + 20; // Card width + margin
-    let currentIndex = 0;
 
-    prevButton.addEventListener('click', () => {
-        if (currentIndex > 0) {
-            currentIndex--;
-            track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-        }
-    });
+    <!-- JavaScript -->
+    <script>
+        // Hamburger Menu Toggle
+        document.addEventListener('DOMContentLoaded', function () {
+            const hamburger = document.querySelector('.hamburger');
+            const navLinks = document.querySelector('.nav-links');
 
-    nextButton.addEventListener('click', () => {
-        if (currentIndex < productCards.length - 3) { // Adjust based on visible cards
-            currentIndex++;
-            track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-        }
-    });
-});
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        });
+
+        // Product Carousel Navigation
+        document.addEventListener('DOMContentLoaded', function () {
+            const track = document.querySelector('.carousel-track');
+            const prevButton = document.querySelector('.carousel-prev');
+            const nextButton = document.querySelector('.carousel-next');
+            const productCards = document.querySelectorAll('.product-card');
+            const cardWidth = productCards[0].offsetWidth + 20; // Card width + margin
+            let currentIndex = 0;
+
+            prevButton.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+                }
+            });
+
+            nextButton.addEventListener('click', () => {
+                if (currentIndex < productCards.length - 3) {
+                    currentIndex++;
+                    track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+                }
+            });
+        });
+
+        // Smooth Scrolling for Navigation Links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
 </body>
-    <script src="navbar.js"></script>
 </html>
