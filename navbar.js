@@ -1,9 +1,3 @@
-const hamburger = document.querySelector('.hamburger');
-const navLinks = document.querySelector('.nav-links');
-
-hamburger.addEventListener('click', () => {
-    navLinks.classList.toggle('active');
-});
 document.addEventListener('DOMContentLoaded', function () {
     const track = document.querySelector('.carousel-track');
     const prevButton = document.querySelector('.carousel-prev');
