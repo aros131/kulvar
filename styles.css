@@ -57,3 +57,30 @@
         padding: 12px; /* Adjust padding */
     }
 }
+/* Card Grid Layout Mobile Optimization */
+@media (max-width: 768px) {
+    .brand-grid {
+        grid-template-columns: 1fr; /* Single-column layout */
+        gap: 20px; /* Space between cards */
+    }
+
+    .brand-card {
+        padding: 15px; /* Adjust padding */
+    }
+
+    .brand-card img {
+        width: 60px; /* Smaller image size */
+        height: 60px;
+        margin-bottom: 10px;
+    }
+
+    .brand-card h3 {
+        font-size: 16px; /* Reduce heading size */
+        margin-bottom: 5px;
+    }
+
+    .brand-card p {
+        font-size: 14px; /* Smaller description text */
+    }
+}
+
