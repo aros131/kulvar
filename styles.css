@@ -3,8 +3,8 @@ body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f8f9fa;
-    color: #333;
+    background-color: #404B33; /* Deep Slate Olive */
+    color: #FFD300; /* Sulphur Yellow */
 }
 
 * {
@@ -14,8 +14,8 @@ body {
 
 /* Navigation Bar */
 .navbar {
-    background-color: #49678D; /* Blue Bird */
-    color: white;
+    background-color: #556B2F; /* Olive */
+    color: #FFD300; /* Sulphur Yellow */
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
@@ -30,65 +30,32 @@ body {
     font-size: 22px;
     font-weight: bold;
     text-transform: uppercase;
-}
-
-.nav-links {
-    display: flex;
-    gap: 25px;
-    list-style: none;
+    color: #FFD300; /* Sulphur Yellow */
 }
 
 .nav-links a {
-    color: white;
+    color: #FFD300; /* Sulphur Yellow */
     text-decoration: none;
     font-size: 16px;
     font-weight: 500;
 }
 
 .nav-links a:hover {
-    color: #F4A688; /* Ochraceous Salmon */
+    color: #FFFDD0; /* Cream Yellow */
 }
 
-/* Default Hamburger Menu - Hidden on Desktop */
+/* Hamburger Menu */
 .hamburger {
     display: none;
     font-size: 24px;
+    color: #FFD300; /* Sulphur Yellow */
     cursor: pointer;
-}
-
-/* Responsive Navbar for Small Screens */
-@media (max-width: 768px) {
-    .nav-links {
-        display: none; /* Hidden by default */
-        flex-direction: column;
-        gap: 15px;
-        background-color: #49678D;
-        padding: 15px;
-        position: absolute;
-        top: 50px;
-        right: 0;
-        width: 100%;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        transform: translateY(-100%);
-        opacity: 0;
-        transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-
-    .nav-links.active {
-        display: flex;
-        transform: translateY(0);
-        opacity: 1;
-    }
-
-    .hamburger {
-        display: block;
-    }
 }
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(to bottom, #49678D, #9E4624);
-    color: white;
+    background: linear-gradient(to bottom, #556B2F, #404B33); /* Olive to Deep Slate Olive */
+    color: #FFD300; /* Sulphur Yellow */
     text-align: center;
     padding: 140px 20px;
 }
@@ -123,51 +90,24 @@ body {
 }
 
 .hero .explore-btn {
-    background-color: #9E4624; /* Hay's Russet */
-    color: white;
+    background-color: #D2A17E; /* Pinkish Cinnamon */
+    color: #FFFDD0; /* Cream Yellow */
 }
 
 .hero .explore-btn:hover {
-    background-color: #7E3620;
+    background-color: #FFFDD0; /* Cream Yellow */
+    color: #556B2F; /* Olive */
 }
 
 .hero .learn-btn {
     background-color: transparent;
-    color: white;
-    border: 2px solid white;
+    color: #FFD300; /* Sulphur Yellow */
+    border: 2px solid #FFD300; /* Sulphur Yellow */
 }
 
 .hero .learn-btn:hover {
-    background-color: white;
-    color: #49678D;
-}
-
-/* Hero Section Mobile Optimization */
-@media (max-width: 768px) {
-    .hero {
-        padding: 80px 10px;
-    }
-
-    .hero h1 {
-        font-size: 32px;
-        line-height: 1.4;
-    }
-
-    .hero p {
-        font-size: 16px;
-        line-height: 1.6;
-    }
-
-    .hero .buttons {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .hero button {
-        width: 100%;
-        font-size: 16px;
-        padding: 12px;
-    }
+    background-color: #FFD300; /* Sulphur Yellow */
+    color: #404B33; /* Deep Slate Olive */
 }
 
 /* Product Carousel */
@@ -187,11 +127,11 @@ body {
 .product-card {
     min-width: 200px;
     margin: 0 10px;
-    background-color: #fff;
+    background-color: #D2A17E; /* Pinkish Cinnamon */
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
     padding: 15px;
+    color: #404B33; /* Deep Slate Olive */
 }
 
 .product-card img {
@@ -207,21 +147,22 @@ body {
 
 .product-card p {
     font-size: 14px;
-    color: #666;
+    color: #404B33; /* Deep Slate Olive */
 }
 
 .review-link {
     display: inline-block;
     margin-top: 10px;
     padding: 10px 20px;
-    background-color: #9E4624;
-    color: #fff;
+    background-color: #FFD300; /* Sulphur Yellow */
+    color: #404B33; /* Deep Slate Olive */
     text-decoration: none;
     border-radius: 5px;
 }
 
 .review-link:hover {
-    background-color: #7E3620;
+    background-color: #FFFDD0; /* Cream Yellow */
+    color: #556B2F; /* Olive */
 }
 
 /* Navigation Arrows */
@@ -231,7 +172,7 @@ body {
     top: 50%;
     transform: translateY(-50%);
     background-color: rgba(0, 0, 0, 0.5);
-    color: #fff;
+    color: #FFFDD0; /* Cream Yellow */
     border: none;
     padding: 10px;
     cursor: pointer;
@@ -246,17 +187,18 @@ body {
     right: 10px;
 }
 
-/* Trending Brands */
+/* Trending Section */
 .trending {
     padding: 50px 20px;
-    background-color: #F4A688; /* Ochraceous Salmon */
+    background-color: #556B2F; /* Olive */
+    color: #FFD300; /* Sulphur Yellow */
 }
 
 .trending h2 {
     text-align: center;
     font-size: 32px;
     margin-bottom: 30px;
-    color: white;
+    color: #FFD300; /* Sulphur Yellow */
 }
 
 .brand-grid {
@@ -266,56 +208,27 @@ body {
 }
 
 .brand-card {
-    background-color: white;
+    background-color: #D2A17E; /* Pinkish Cinnamon */
+    color: #404B33; /* Deep Slate Olive */
     padding: 20px;
     text-align: center;
     border-radius: 10px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.brand-card img {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 15px;
-}
-
-.brand-card h3 {
-    font-size: 18px;
-    margin-bottom: 10px;
 }
 
 /* Footer */
 footer {
-    background-color: #49678D;
-    color: white;
+    background-color: #556B2F; /* Olive */
+    color: #FFD300; /* Sulphur Yellow */
     padding: 30px 20px;
     text-align: center;
-    margin-top: 60px;
 }
 
 footer a {
-    color: #F4A688;
+    color: #FFFDD0; /* Cream Yellow */
     text-decoration: none;
     font-weight: bold;
 }
 
 footer a:hover {
     text-decoration: underline;
-}
-
-@media (max-width: 768px) {
-    footer {
-        text-align: center;
-        padding: 20px;
-    }
-
-    footer a {
-        display: block;
-        margin: 10px 0;
-        font-size: 14px;
-    }
-
-    footer br {
-        display: none;
-    }
 }
