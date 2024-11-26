@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Profili</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background-color: #49678D;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .profile-header img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .profile-header .info {
+            flex-grow: 1;
+        }
+        .profile-header .info h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .profile-header .info p {
+            margin: 5px 0;
+        }
+        .profile-header button {
+            background-color: #F4A688;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .profile-header button:hover {
+            background-color: #D3745B;
+        }
+        .section {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .section h2 {
+            margin-bottom: 15px;
+            font-size: 20px;
+            color: #49678D;
+        }
+        .reviews, .followed-items {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .review-card, .brand-card {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .review-card .actions button,
+        .brand-card button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #F4A688;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .review-card .actions button:hover,
+        .brand-card button:hover {
+            background-color: #D3745B;
+        }
+        .settings button {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #9E4624;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .settings button:hover {
+            background-color: #7E3620;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <img src="https://via.placeholder.com/100" alt="Profile Picture">
+            <div class="info">
+                <h1>Kullanıcı Adı</h1>
+                <p>Email: user@example.com</p>
+            </div>
+            <button>Profili Düzenle</button>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="section reviews">
+            <h2>Yorumlarınız</h2>
+            <div class="review-card">
+                <p><strong>Ürün 1:</strong> Mükemmel bir ürün!</p>
+                <div class="actions">
+                    <button>Düzenle</button>
+                    <button>Sil</button>
+                </div>
+            </div>
+            <div class="review-card">
+                <p><strong>Ürün 2:</strong> Beklediğim gibi çıktı.</p>
+                <div class="actions">
+                    <button>Düzenle</button>
+                    <button>Sil</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Followed Items Section -->
+        <div class="section followed-items">
+            <h2>Takip Edilen Markalar/Ürünler</h2>
+            <div class="brand-card">
+                <p><strong>Marka:</strong> Nike</p>
+                <button>Takibi Bırak</button>
+            </div>
+            <div class="brand-card">
+                <p><strong>Marka:</strong> Samsung</p>
+                <button>Takibi Bırak</button>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="section settings">
+            <h2>Ayarlar</h2>
+            <button>Şifreyi Değiştir</button>
+            <button>Hesabı Sil</button>
+        </div>
+    </div>
+</body>
+</html>
