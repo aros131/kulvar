@@ -3,8 +3,8 @@ body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #404B33; /* Deep Slate Olive */
-    color: #FFD300; /* Sulphur Yellow */
+    background-color: #f8f9fa; /* Light Gray Background */
+    color: #333; /* Standard Text Color */
 }
 
 * {
@@ -14,8 +14,8 @@ body {
 
 /* Navigation Bar */
 .navbar {
-    background-color: #556B2F; /* Olive */
-    color: #FFD300; /* Sulphur Yellow */
+    background-color: #49678D; /* Blue Bird */
+    color: white;
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
@@ -30,7 +30,7 @@ body {
     font-size: 22px;
     font-weight: bold;
     text-transform: uppercase;
-    color: #FFD300; /* Sulphur Yellow */
+    color: white;
 }
 
 .nav-links {
@@ -39,21 +39,21 @@ body {
 }
 
 .nav-links a {
-    color: #FFD300; /* Sulphur Yellow */
+    color: white;
     text-decoration: none;
     font-size: 16px;
     font-weight: 500;
 }
 
 .nav-links a:hover {
-    color: #FFFDD0; /* Cream Yellow */
+    color: #F4A688; /* Ochraceous Salmon */
 }
 
 /* Hamburger Menu */
 .hamburger {
     display: none;
     font-size: 24px;
-    color: #FFD300; /* Sulphur Yellow */
+    color: white;
     cursor: pointer;
 }
 
@@ -67,7 +67,7 @@ body {
         display: none; /* Hide navigation links by default */
         flex-direction: column;
         gap: 15px;
-        background-color: #556B2F; /* Olive */
+        background-color: #49678D; /* Blue Bird */
         padding: 15px;
         position: absolute;
         top: 50px;
@@ -80,3 +80,185 @@ body {
         display: flex; /* Show links when active */
     }
 }
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(to bottom, #49678D, #9E4624); /* Blue Bird to Hay's Russet */
+    color: white;
+    text-align: center;
+    padding: 140px 20px;
+}
+
+.hero h1 {
+    font-size: 56px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.hero p {
+    font-size: 20px;
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+
+.hero .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.hero button {
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.hero .explore-btn {
+    background-color: #9E4624; /* Hay's Russet */
+    color: white;
+}
+
+.hero .explore-btn:hover {
+    background-color: #7E3620;
+}
+
+.hero .learn-btn {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.hero .learn-btn:hover {
+    background-color: white;
+    color: #49678D;
+}
+
+/* Product Carousel */
+.product-carousel {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.product-card {
+    min-width: 200px;
+    margin: 0 10px;
+    background-color: white; /* Card Background */
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
+    text-align: center;
+    padding: 15px;
+    color: #333;
+}
+
+.product-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.product-card h3 {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.product-card p {
+    font-size: 14px;
+    color: #666;
+}
+
+.review-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #9E4624; /* Hay's Russet */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.review-link:hover {
+    background-color: #7E3620;
+}
+
+/* Navigation Arrows */
+.carousel-prev,
+.carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.carousel-prev {
+    left: 10px;
+}
+
+.carousel-next {
+    right: 10px;
+}
+
+/* Trending Section */
+.trending {
+    padding: 50px 20px;
+    background-color: #F4A688; /* Ochraceous Salmon */
+    color: white;
+}
+
+.trending h2 {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 30px;
+    color: white;
+}
+
+.brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.brand-card {
+    background-color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
+    color: #333;
+}
+
+/* Footer */
+footer {
+    background-color: #49678D; /* Blue Bird */
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+footer a {
+    color: #F4A688; /* Ochraceous Salmon */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
