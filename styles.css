@@ -132,4 +132,68 @@
         display: none; /* Remove unnecessary line breaks on mobile */
     }
 }
+/* General Animation Settings */
+* {
+    transition: all 0.3s ease-in-out; /* Apply smooth transitions to most elements */
+}
+
+/* Navbar Links Slide-in */
+.nav-links {
+    transform: translateY(-100%); /* Start hidden above view */
+    opacity: 0; /* Fully transparent */
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.nav-links.active {
+    transform: translateY(0); /* Slide down into view */
+    opacity: 1; /* Fully visible */
+}
+
+/* Cards Hover Effect */
+.brand-card, .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.brand-card:hover, .card:hover {
+    transform: translateY(-5px); /* Lift slightly */
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.2); /* Add a shadow effect */
+}
+
+/* Buttons Hover Effect */
+button {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-2px); /* Lift slightly */
+    background-color: #7E3620; /* Slightly darker color */
+}
+
+/* Hero Section Fade-in Effect */
+.hero h1, .hero p, .hero .buttons {
+    opacity: 0; /* Start hidden */
+    transform: translateY(20px); /* Move down slightly */
+    animation: fadeIn 1s ease forwards; /* Fade in */
+}
+
+.hero h1 {
+    animation-delay: 0.2s; /* Delay for staggered effect */
+}
+
+.hero p {
+    animation-delay: 0.4s;
+}
+
+.hero .buttons {
+    animation-delay: 0.6s;
+}
+
+/* Fade-in Animation Keyframes */
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
