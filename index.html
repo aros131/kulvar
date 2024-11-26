@@ -14,14 +14,16 @@
         <div class="logo">Ürün İnceleme</div>
         <div class="hamburger">☰</div>
         <div class="nav-links">
-            <a href="#hero-section">Anasayfa</a>
-            <a href="#trending-section">Trend Olan Markalar</a>
-            <a href="#footer-section">İletişim</a>
+            <a href="index.html">Anasayfa</a>
+            <a href="hemen_incele.html">Hemen İncele</a>
+            <a href="brand.html">Markalar</a>
+            <a href="review.html">İnceleme Gönder</a>
+            <a href="login.html">Giriş Yap</a>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <div id="hero-section" class="hero">
+    <div class="hero">
         <h1>En Güvenilir İncelemeleri Keşfedin</h1>
         <p>Popüler markalar ve ürünlere yönelik tarafsız kullanıcı yorumlarını görün.</p>
         <div class="buttons">
@@ -33,28 +35,25 @@
     <!-- Product Carousel -->
     <div class="product-carousel">
         <div class="carousel-track">
-            <!-- Product Card 1 -->
+            <!-- Product Cards -->
             <div class="product-card">
                 <img src="https://via.placeholder.com/200x150" alt="Apple iPhone 13">
                 <h3>Apple iPhone 13</h3>
                 <p>En yeni özellikleriyle şık tasarıma sahip iPhone modeli.</p>
                 <a href="review_iphone13.html" class="review-link">İncelemeyi Oku</a>
             </div>
-            <!-- Product Card 2 -->
             <div class="product-card">
                 <img src="https://via.placeholder.com/200x150" alt="Samsung Galaxy S22">
                 <h3>Samsung Galaxy S22</h3>
                 <p>Android'in en iyisi: Üst düzey kamera ve performans.</p>
                 <a href="review_galaxyS22.html" class="review-link">İncelemeyi Oku</a>
             </div>
-            <!-- Product Card 3 -->
             <div class="product-card">
                 <img src="https://via.placeholder.com/200x150" alt="Sony WH-1000XM4">
                 <h3>Sony WH-1000XM4</h3>
                 <p>En iyi gürültü engelleme özellikli kablosuz kulaklık.</p>
                 <a href="review_sony.html" class="review-link">İncelemeyi Oku</a>
             </div>
-            <!-- Product Card 4 -->
             <div class="product-card">
                 <img src="https://via.placeholder.com/200x150" alt="Dell XPS 13">
                 <h3>Dell XPS 13</h3>
@@ -68,7 +67,7 @@
     </div>
 
     <!-- Trending Brands Section -->
-    <div id="trending-section" class="trending">
+    <div class="trending">
         <h2>Trend Olan Markalar</h2>
         <div class="brand-grid">
             <div class="brand-card">
@@ -95,24 +94,14 @@
     </div>
 
     <!-- Footer -->
-    <footer id="footer-section">
+    <footer>
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
 
     <!-- JavaScript -->
     <script>
-        // Hamburger Menu Toggle
-        document.addEventListener('DOMContentLoaded', function () {
-            const hamburger = document.querySelector('.hamburger');
-            const navLinks = document.querySelector('.nav-links');
-
-            hamburger.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-            });
-        });
-
-        // Product Carousel Navigation
+        // Carousel Functionality
         document.addEventListener('DOMContentLoaded', function () {
             const track = document.querySelector('.carousel-track');
             const prevButton = document.querySelector('.carousel-prev');
@@ -135,17 +124,7 @@
                 }
             });
         });
-
-        // Smooth Scrolling for Navigation Links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                target.scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
     </script>
 </body>
 </html>
+
