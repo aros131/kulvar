@@ -1,3 +1,54 @@
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+* {
+    box-sizing: border-box;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Navigation Bar */
+.navbar {
+    background-color: #49678D; /* Blue Bird */
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .logo {
+    font-size: 22px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.nav-links {
+    display: flex;
+    gap: 25px;
+    list-style: none;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.nav-links a:hover {
+    color: #F4A688; /* Ochraceous Salmon */
+}
+
 /* Default Hamburger Menu - Hidden on Desktop */
 .hamburger {
     display: none;
@@ -5,214 +56,134 @@
     cursor: pointer;
 }
 
-/* Responsive Navbar - Small Screens */
+/* Responsive Navbar for Small Screens */
 @media (max-width: 768px) {
     .nav-links {
         display: none; /* Hidden by default */
-        flex-direction: column; /* Stack links vertically */
+        flex-direction: column;
         gap: 15px;
-        background-color: #49678D; /* Same as navbar background */
+        background-color: #49678D;
         padding: 15px;
         position: absolute;
-        top: 50px; /* Positioned below the navbar */
+        top: 50px;
         right: 0;
         width: 100%;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        transform: translateY(-100%);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
     }
 
-    /* When Active, Display Links */
     .nav-links.active {
         display: flex;
+        transform: translateY(0);
+        opacity: 1;
     }
 
-    /* Show Hamburger Menu Icon */
     .hamburger {
         display: block;
     }
 }
-/* Hero Section Mobile Optimization */
-@media (max-width: 768px) {
-    .hero {
-        padding: 80px 10px; /* Reduce top and side paddings */
-    }
 
-    .hero h1 {
-        font-size: 32px; /* Reduce headline size */
-        line-height: 1.4; /* Adjust spacing for readability */
-    }
-
-    .hero p {
-        font-size: 16px; /* Smaller font for paragraph */
-        line-height: 1.6; /* Better readability */
-    }
-
-    .hero .buttons {
-        flex-direction: column; /* Stack buttons vertically */
-        gap: 15px; /* Space between buttons */
-    }
-
-    .hero button {
-        width: 100%; /* Make buttons full-width */
-        font-size: 16px; /* Slightly smaller font */
-        padding: 12px; /* Adjust padding */
-    }
-}
-/* Card Grid Layout Mobile Optimization */
-@media (max-width: 768px) {
-    .brand-grid {
-        grid-template-columns: 1fr; /* Single-column layout */
-        gap: 20px; /* Space between cards */
-    }
-
-    .brand-card {
-        padding: 15px; /* Adjust padding */
-    }
-
-    .brand-card img {
-        width: 60px; /* Smaller image size */
-        height: 60px;
-        margin-bottom: 10px;
-    }
-
-    .brand-card h3 {
-        font-size: 16px; /* Reduce heading size */
-        margin-bottom: 5px;
-    }
-
-    .brand-card p {
-        font-size: 14px; /* Smaller description text */
-    }
-}
-/* Form Mobile Optimization */
-@media (max-width: 768px) {
-    form {
-        width: 100%; /* Full width form */
-        padding: 15px; /* Add some padding */
-        box-sizing: border-box;
-    }
-
-    form input, form textarea, form select, form button {
-        width: 100%; /* Full width inputs */
-        font-size: 16px; /* Increase font size for readability */
-        padding: 12px; /* Add padding for tappable area */
-        margin-bottom: 15px; /* Space between form elements */
-    }
-
-    form textarea {
-        resize: vertical; /* Allow resizing only vertically */
-    }
-
-    form button {
-        background-color: #9E4624; /* Consistent with theme */
-        color: white;
-        font-weight: bold;
-        border: none;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-    form button:hover {
-        background-color: #7E3620; /* Slightly darker on hover */
-    }
-}
-/* Footer Mobile Optimization */
-@media (max-width: 768px) {
-    footer {
-        text-align: center; /* Center-align all content */
-        padding: 20px; /* Adjust padding */
-    }
-
-    footer a {
-        display: block; /* Stack links vertically */
-        margin: 10px 0; /* Add space between links */
-        font-size: 14px; /* Smaller font size for mobile */
-    }
-
-    footer br {
-        display: none; /* Remove unnecessary line breaks on mobile */
-    }
-}
-/* General Animation Settings */
-* {
-    transition: all 0.3s ease-in-out; /* Apply smooth transitions to most elements */
-}
-
-/* Navbar Links Slide-in */
-.nav-links {
-    transform: translateY(-100%); /* Start hidden above view */
-    opacity: 0; /* Fully transparent */
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.nav-links.active {
-    transform: translateY(0); /* Slide down into view */
-    opacity: 1; /* Fully visible */
-}
-
-/* Cards Hover Effect */
-.brand-card, .card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.brand-card:hover, .card:hover {
-    transform: translateY(-5px); /* Lift slightly */
-    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.2); /* Add a shadow effect */
-}
-
-/* Buttons Hover Effect */
-button {
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-button:hover {
-    transform: translateY(-2px); /* Lift slightly */
-    background-color: #7E3620; /* Slightly darker color */
-}
-
-/* Hero Section Fade-in Effect */
-.hero h1, .hero p, .hero .buttons {
-    opacity: 0; /* Start hidden */
-    transform: translateY(20px); /* Move down slightly */
-    animation: fadeIn 1s ease forwards; /* Fade in */
+/* Hero Section */
+.hero {
+    background: linear-gradient(to bottom, #49678D, #9E4624);
+    color: white;
+    text-align: center;
+    padding: 140px 20px;
 }
 
 .hero h1 {
-    animation-delay: 0.2s; /* Delay for staggered effect */
+    font-size: 56px;
+    margin-bottom: 20px;
+    font-weight: bold;
 }
 
 .hero p {
-    animation-delay: 0.4s;
+    font-size: 20px;
+    margin-bottom: 40px;
+    line-height: 1.6;
 }
 
 .hero .buttons {
-    animation-delay: 0.6s;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
 }
 
-/* Fade-in Animation Keyframes */
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
+.hero button {
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.hero .explore-btn {
+    background-color: #9E4624; /* Hay's Russet */
+    color: white;
+}
+
+.hero .explore-btn:hover {
+    background-color: #7E3620;
+}
+
+.hero .learn-btn {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.hero .learn-btn:hover {
+    background-color: white;
+    color: #49678D;
+}
+
+/* Hero Section Mobile Optimization */
+@media (max-width: 768px) {
+    .hero {
+        padding: 80px 10px;
+    }
+
+    .hero h1 {
+        font-size: 32px;
+        line-height: 1.4;
+    }
+
+    .hero p {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .hero .buttons {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .hero button {
+        width: 100%;
+        font-size: 16px;
+        padding: 12px;
     }
 }
 
-/* Product Carousel Container */
+/* Product Carousel */
 .product-carousel {
     position: relative;
     overflow: hidden;
     width: 100%;
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px 0;
+    margin: 20px auto;
 }
 
-/* Carousel Track */
 .carousel-track {
     display: flex;
     transition: transform 0.5s ease;
 }
 
-/* Product Card */
 .product-card {
     min-width: 200px;
     margin: 0 10px;
@@ -247,7 +218,6 @@ button:hover {
     color: #fff;
     text-decoration: none;
     border-radius: 5px;
-    transition: background-color 0.3s ease;
 }
 
 .review-link:hover {
@@ -276,9 +246,76 @@ button:hover {
     right: 10px;
 }
 
-/* Responsive Adjustments */
+/* Trending Brands */
+.trending {
+    padding: 50px 20px;
+    background-color: #F4A688; /* Ochraceous Salmon */
+}
+
+.trending h2 {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 30px;
+    color: white;
+}
+
+.brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.brand-card {
+    background-color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.brand-card img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 15px;
+}
+
+.brand-card h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+/* Footer */
+footer {
+    background-color: #49678D;
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+    margin-top: 60px;
+}
+
+footer a {
+    color: #F4A688;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
 @media (max-width: 768px) {
-    .product-card {
-        min-width: 150px;
+    footer {
+        text-align: center;
+        padding: 20px;
+    }
+
+    footer a {
+        display: block;
+        margin: 10px 0;
+        font-size: 14px;
+    }
+
+    footer br {
+        display: none;
     }
 }
