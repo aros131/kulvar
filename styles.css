@@ -12,14 +12,14 @@ body {
     transition: all 0.3s ease-in-out;
 }
 
-/* Navigation Bar */
+-/* Navigation Bar */
 .navbar {
-    background-color: #49678D; /* Blue Bird */
-    color: white;
-    padding: 15px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: #49678D; /* Blue Bird */
+    padding: 15px 20px;
+    color: white;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -30,7 +30,6 @@ body {
     font-size: 22px;
     font-weight: bold;
     text-transform: uppercase;
-    color: white;
 }
 
 .nav-links {
@@ -39,8 +38,8 @@ body {
 }
 
 .nav-links a {
-    color: white;
     text-decoration: none;
+    color: white;
     font-size: 16px;
     font-weight: 500;
 }
@@ -49,12 +48,52 @@ body {
     color: #F4A688; /* Ochraceous Salmon */
 }
 
-/* Hamburger Menu */
+/* Hamburger Menu Icon */
 .hamburger {
     display: none;
-    font-size: 24px;
-    color: white;
     cursor: pointer;
+    font-size: 24px;
+    transition: transform 0.3s ease;
+}
+
+.hamburger.open {
+    transform: rotate(90deg); /* Example animation for open state */
+}
+
+/* Mobile Navigation (Small Screens) */
+@media (max-width: 768px) {
+    .hamburger {
+        display: block; /* Show hamburger icon on small screens */
+    }
+
+    .nav-links {
+        display: none; /* Hide links by default */
+        flex-direction: column;
+        position: absolute;
+        top: 60px; /* Below the navbar */
+        right: 0;
+        width: 100%;
+        background-color: #49678D;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-100%);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .nav-links.active {
+        display: flex; /* Show links */
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .nav-links a {
+        padding: 10px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
 }
 
 /* Responsive Navbar for Small Screens */
