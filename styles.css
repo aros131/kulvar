@@ -47,6 +47,11 @@ body {
 .nav-links a:hover {
     color: #F4A688; /* Ochraceous Salmon */
 }
+.nav-links a.active {
+    color: #F4A688; /* Ochraceous Salmon */
+    font-weight: bold;
+}
+
 
 /* Hamburger Menu Icon */
 .hamburger {
