@@ -19,7 +19,6 @@
             <a href="brand.html">Markalar</a>
             <a href="review.html">İnceleme Gönder</a>
             <a href="login.html">Giriş Yap</a>
-            <a href="profile.html">Profil</a> <!-- New Profile Page Link -->
         </div>
     </nav>
 
@@ -67,33 +66,6 @@
         <button class="carousel-next">&#10095;</button>
     </div>
 
-    <!-- Trending Brands Section -->
-    <div class="trending">
-        <h2>Trend Olan Markalar</h2>
-        <div class="brand-grid">
-            <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Nike">
-                <h3>Nike</h3>
-                <p>Kaliteli spor giyim ürünleri.</p>
-            </div>
-            <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Samsung">
-                <h3>Samsung</h3>
-                <p>Son teknoloji elektronik cihazlar.</p>
-            </div>
-            <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Arçelik">
-                <h3>Arçelik</h3>
-                <p>Ev aletlerinde lider marka.</p>
-            </div>
-            <div class="brand-card">
-                <img src="https://via.placeholder.com/80" alt="Adidas">
-                <h3>Adidas</h3>
-                <p>Spor ayakkabı ve aksesuarlar.</p>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer -->
     <footer>
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
@@ -111,30 +83,10 @@
                 navLinks.classList.toggle('active');
             });
         });
-
-        // Carousel Functionality
-        document.addEventListener('DOMContentLoaded', function () {
-            const track = document.querySelector('.carousel-track');
-            const prevButton = document.querySelector('.carousel-prev');
-            const nextButton = document.querySelector('.carousel-next');
-            const productCards = document.querySelectorAll('.product-card');
-            const cardWidth = productCards[0].offsetWidth + 20; // Card width + margin
-            let currentIndex = 0;
-
-            prevButton.addEventListener('click', () => {
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-                }
-            });
-
-            nextButton.addEventListener('click', () => {
-                if (currentIndex < productCards.length - 3) {
-                    currentIndex++;
-                    track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-                }
-            });
-        });
     </script>
+
+    <!-- Link to Carousel Script -->
+    <script src="carousel.js"></script>
+
 </body>
 </html>
