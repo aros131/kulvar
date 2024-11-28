@@ -51,6 +51,15 @@ body {
     color: #F4A688; /* Ochraceous Salmon */
     font-weight: bold;
 }
+.logo img {
+    height: 50px; /* Adjust height for navbar */
+    max-width: 100%;
+}
+
+.hero img {
+    height: 100px; /* Adjust height for hero section */
+    max-width: 100%;
+}
 
 
 /* Hamburger Menu Icon */
