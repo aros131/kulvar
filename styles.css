@@ -168,6 +168,31 @@ body {
     background-color: white;
     color: #49678D;
 }
+.hero {
+    background: linear-gradient(to bottom, #49678D, #9E4624); /* Existing gradient */
+    color: white;
+    text-align: center;
+    padding: 140px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1; /* Ensures content appears above the image */
+}
+
+.hero-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 100%;
+    height: auto;
+    opacity: 0.2; /* Adjust for a subtle background effect */
+    z-index: 0;
+}
+
 
 /* Product Carousel */
 .product-carousel {
