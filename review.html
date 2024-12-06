@@ -191,6 +191,50 @@
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
+     <script>
+        // Predefined list of products (this can be fetched from your database or Firebase)
+        const productsList = [
+            "Apple iPhone 13",
+            "Samsung Galaxy S22",
+            "Sony WH-1000XM4",
+            "Dell XPS 13",
+            "Apple MacBook Air",
+            "Samsung Galaxy Buds Pro"
+        ];
+
+        // Product Name Search Bar
+        const productNameInput = document.getElementById('product-name');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        // Handle user input for product search
+        productNameInput.addEventListener('input', function() {
+            const query = productNameInput.value.toLowerCase();
+            suggestionsBox.innerHTML = ''; // Clear previous suggestions
+
+            if (query.length > 0) {
+                // Filter products based on user input
+                const filteredProducts = productsList.filter(product => product.toLowerCase().includes(query));
+
+                if (filteredProducts.length > 0) {
+                    suggestionsBox.style.display = 'block'; // Show suggestions
+                    filteredProducts.forEach(product => {
+                        const suggestionItem = document.createElement('div');
+                        suggestionItem.textContent = product;
+                        suggestionItem.style.padding = '8px';
+                        suggestionItem.style.cursor = 'pointer';
+                        suggestionItem.addEventListener('click', () => {
+                            productNameInput.value = product;
+                            suggestionsBox.style.display = 'none'; // Hide suggestions after selection
+                        });
+                        suggestionsBox.appendChild(suggestionItem);
+                    });
+                } else {
+                    suggestionsBox.style.display = 'none'; // Hide suggestions if no match
+                }
+            } else {
+                suggestionsBox.style.display = 'none'; // Hide suggestions if input is empty
+            }
+        });
 
     <script src="navbar.js"></script>
 
