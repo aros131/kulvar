@@ -127,7 +127,7 @@
     </nav>
 
     <!-- Login Form -->
-    <div class="container">
+    <div class="container" id="login-container">
         <h1>Giriş Yap</h1>
         <form id="login-form">
             <label for="email">E-posta:</label>
@@ -168,12 +168,11 @@
         // Check if the user is already logged in
         auth.onAuthStateChanged(user => {
             if (user) {
+                // Prevent redirecting back to login page
                 if (user.email === 'admin@kulvar.com') {
-                    // If the admin is already logged in, redirect to admin dashboard
-                    window.location.href = 'admin-dashboard.html';
+                    window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
                 } else {
-                    // If a regular user is logged in, redirect to their profile
-                    window.location.href = 'profile.html';
+                    window.location.href = 'profile.html';  // Redirect to user profile page
                 }
             }
         });
@@ -189,14 +188,11 @@
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
-                    console.log("User logged in:", user.email);
 
                     // Admin check
                     if (user.email === 'admin@kulvar.com') {
-                        console.log("Redirecting to Admin Dashboard");
                         window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
                     } else {
-                        console.log("Redirecting to Profile Page");
                         window.location.href = 'profile.html';  // Redirect to profile page
                     }
                 })
