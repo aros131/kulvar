@@ -108,6 +108,20 @@
     </style>
 </head>
 <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Kulvar</div>
+        <div class="nav-links">
+            <a href="index.html">Anasayfa</a>
+            <a href="hemen_incele.html">Hemen İncele</a>
+            <a href="brand.html">Markalar</a>
+            <a href="review.html">İnceleme Gönder</a>
+            <a href="login.html">Giriş Yap</a>
+            <a href="profile.html" class="active">Profilim</a>
+        </div>
+    </nav>
+
+    <!-- Profile Section -->
     <div class="profile-container">
         <!-- Profile Header -->
         <div class="profile-header">
@@ -175,29 +189,23 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // Wait for Firebase auth state to change
         auth.onAuthStateChanged(function(user) {
             if (user) {
-                // User is signed in, display user info
                 document.getElementById('username').textContent = user.displayName || "Kullanıcı Adı";
                 document.getElementById('email').textContent = "Email: " + user.email;
             } else {
-                // No user is signed in, redirect to login page
                 alert('Lütfen giriş yapın');
-                window.location.href = 'login.html'; // Redirect to login page if not logged in
+                window.location.href = 'login.html';
             }
         });
 
-        // Log out functionality
         document.getElementById('logout-btn').addEventListener('click', () => {
-            auth.signOut()
-                .then(() => {
-                    alert('Çıkış yapıldı');
-                    window.location.href = 'login.html'; // Redirect to login page after logout
-                })
-                .catch((error) => {
-                    alert('Hata: ' + error.message);
-                });
+            auth.signOut().then(() => {
+                alert('Çıkış yapıldı');
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                alert('Hata: ' + error.message);
+            });
         });
     </script>
 </body>
