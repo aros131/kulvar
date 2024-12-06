@@ -9,6 +9,26 @@
     <style>
         /* Same CSS as previously provided for styling the form and buttons */
     </style>
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+<script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjS0s5u9e6112GtEdF0oUDfOmceVAfU04",
+        authDomain: "kulvar-73ee3.firebaseapp.com",
+        projectId: "kulvar-73ee3",
+        storageBucket: "kulvar-73ee3.firebasestorage.app",
+        messagingSenderId: "388627303480",
+        appId: "1:388627303480:web:8c06f475abab4727072acd",
+        measurementId: "G-NKQVVDKED2"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+</script>
+
 </head>
 <body>
     <!-- Navigation Bar -->
