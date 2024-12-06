@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -161,7 +160,7 @@
         <p>Kullanıcıların en çok faydalı bulduğu incelemeler burada başlıyor.</p>
     </div>
     <div class="content">
-        <form>
+        <form id="review-form">
             <label for="user-name">Adınız:</label>
             <input type="text" id="user-name" placeholder="Adınızı girin..." required>
 
@@ -192,7 +191,7 @@
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
-</body>
+
     <script src="navbar.js"></script>
 
 <script>
@@ -229,11 +228,31 @@
     const reviewPreview = document.getElementById('review-preview');
     previewBtn.addEventListener('click', () => {
         const text = reviewText.value;
+        const rating = document.querySelectorAll('.star-rating span.active').length;
+        const images = imagePreview.querySelectorAll('img');
         if (text.trim()) {
-            reviewPreview.innerHTML = `<h2>İnceleme Önizlemesi</h2><p>${text}</p>`;
+            let previewHtml = `<h2>İnceleme Önizlemesi</h2><p>${text}</p><p><strong>Puan:</strong> ${rating} Yıldız</p>`;
+            if (images.length) {
+                previewHtml += `<div><strong>Görsel Önizlemesi:</strong><br>`;
+                images.forEach(img => previewHtml += `<img src="${img.src}" style="max-width: 100px; margin-right: 10px;">`);
+                previewHtml += `</div>`;
+            }
+            reviewPreview.innerHTML = previewHtml;
         } else {
             reviewPreview.innerHTML = `<h2>İnceleme Önizlemesi</h2><p>İnceleme metni ekleyin.</p>`;
         }
     });
+
+    // Handle form submission
+    const reviewForm = document.getElementById('review-form');
+    reviewForm.addEventListener('submit', (e) => {
+        e.preventDefault(); // Prevent form from submitting normally
+        alert("İncelemeniz gönderildi!");
+        // Here, you can integrate with a backend or Firebase to store the review data.
+        reviewForm.reset();
+        imagePreview.innerHTML = ''; // Reset image preview
+    });
 </script>
+
+</body>
 </html>
