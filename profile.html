@@ -159,7 +159,6 @@
         </div>
     </div>
 
-    <!-- Firebase Script -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script>
@@ -173,18 +172,17 @@
             measurementId: "G-NKQVVDKED2"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
         // Wait for Firebase auth state to change
         auth.onAuthStateChanged(function(user) {
             if (user) {
-                // User is signed in
+                // User is signed in, display user info
                 document.getElementById('username').textContent = user.displayName || "Kullanıcı Adı";
                 document.getElementById('email').textContent = "Email: " + user.email;
             } else {
-                // No user is signed in
+                // No user is signed in, redirect to login page
                 alert('Lütfen giriş yapın');
                 window.location.href = 'login.html'; // Redirect to login page if not logged in
             }
