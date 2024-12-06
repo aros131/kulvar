@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Select necessary DOM elements
     const track = document.querySelector('.carousel-track');
     const prevButton = document.querySelector('.carousel-prev');
     const nextButton = document.querySelector('.carousel-next');
@@ -31,4 +32,3 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
-
