@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .navbar {
+            background-color: #49678D;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 16px;
+        }
+        .navbar .nav-links a:hover {
+            color: #F4A688;
+        }
+        .container {
+            width: 85%;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .product-list {
+            margin-top: 20px;
+        }
+        .product-card {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .product-card button {
+            background-color: #9E4624;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+        .product-card button:hover {
+            background-color: #7E3620;
+        }
+        footer {
+            background-color: #49678D;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        footer a {
+            color: #F4A688;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Kulvar</div>
+        <div class="nav-links">
+            <a href="index.html">Anasayfa</a>
+            <a href="hemen_incele.html">Hemen İncele</a>
+            <a href="brand.html">Markalar</a>
+            <a href="review.html">İnceleme Gönder</a>
+            <a href="login.html">Giriş Yap</a>
+            <a href="profile.html">Profilim</a>
+        </div>
+    </nav>
+
+    <!-- Admin Dashboard Content -->
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <h2>Ürün Yönetimi</h2>
+
+        <!-- Add Product Form -->
+        <h3>Yeni Ürün Ekle</h3>
+        <form id="add-product-form">
+            <label for="product-name">Ürün Adı:</label>
+            <input type="text" id="product-name" placeholder="Ürün adını girin..." required>
+
+            <label for="product-description">Ürün Açıklaması:</label>
+            <textarea id="product-description" rows="4" placeholder="Ürün açıklamasını girin..." required></textarea>
+
+            <button type="submit">Ürün Ekle</button>
+        </form>
+
+        <!-- Product List -->
+        <h3>Mevcut Ürünler</h3>
+        <div class="product-list" id="product-list"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
+        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
+    </footer>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Check if the user is logged in and is the admin
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                if (user.email !== 'admin@kulvar.com') {
+                    window.location.href = 'login.html'; // Redirect to login if not admin
+                } else {
+                    loadProducts(); // Load products if admin
+                }
+            } else {
+                window.location.href = 'login.html'; // Redirect to login if not logged in
+            }
+        });
+
+        // Add Product
+        const addProductForm = document.getElementById('add-product-form');
+        addProductForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const productName = document.getElementById('product-name').value;
+            const productDescription = document.getElementById('product-description').value;
+
+            db.collection('products').add({
+                name: productName,
+                description: productDescription
+            })
+            .then(() => {
+                alert('Ürün eklendi!');
+                loadProducts(); // Reload products after adding
+                addProductForm.reset(); // Reset the form
+            })
+            .catch((error) => {
+                alert('Hata: ' + error.message);
+            });
+        });
+
+        // Load Products
+        function loadProducts() {
+            const productListDiv = document.getElementById('product-list');
+            productListDiv.innerHTML = ''; // Clear the product list first
+
+            db.collection('products').get().then(querySnapshot => {
+                querySnapshot.forEach(doc => {
+                    const product = doc.data();
+                    const productDiv = document.createElement('div');
+                    productDiv.classList.add('product-card');
+                    productDiv.innerHTML = `
+                        <h4>${product.name}</h4>
+                        <p>${product.description}</p>
+                        <button onclick="deleteProduct('${doc.id}')">Sil</button>
+                    `;
+                    productListDiv.appendChild(productDiv);
+                });
+            });
+        }
+
+        // Delete Product
+        function deleteProduct(productId) {
+            db.collection('products').doc(productId).delete()
+            .then(() => {
+                alert('Ürün silindi!');
+                loadProducts(); // Reload products after deleting
+            })
+            .catch((error) => {
+                alert('Hata: ' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>
