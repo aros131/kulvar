@@ -163,7 +163,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script>
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBjS0s5u9e6112GtEdF0oUDfOmceVAfU04",
             authDomain: "kulvar-73ee3.firebaseapp.com",
@@ -178,15 +177,17 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // Display logged-in user's info
-        const user = auth.currentUser;
-        if (user) {
-            document.getElementById('username').textContent = user.displayName || "Kullanıcı Adı";
-            document.getElementById('email').textContent = "Email: " + user.email;
-        } else {
-            alert('Lütfen giriş yapın');
-            window.location.href = 'login.html'; // Redirect to login page if no user is logged in
-        }
+        // Wait for Firebase auth state to change before accessing user info
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                // Display user info if logged in
+                document.getElementById('username').textContent = user.displayName || "Kullanıcı Adı";
+                document.getElementById('email').textContent = "Email: " + user.email;
+            } else {
+                alert('Lütfen giriş yapın');
+                window.location.href = 'login.html'; // Redirect to login page if not logged in
+            }
+        });
 
         // Log out functionality
         document.getElementById('logout-btn').addEventListener('click', () => {
