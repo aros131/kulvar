@@ -10,70 +10,72 @@
 </head>
 <body>
     <!-- Navigation Bar -->
-  <nav class="navbar">
-    <div class="logo">
-        <a href="index.html">
-            <img src="images/kulvar-logo.webp" alt="Kulvar Logo" style="height: 100px;">
-        </a>
-    </div>
-    <div class="hamburger">☰</div>
-    <div class="nav-links">
-        <a href="index.html" class="active">Anasayfa</a>
-        <a href="hemen_incele.html">Hemen İncele</a>
-        <a href="brand.html">Markalar</a>
-        <a href="review.html">İnceleme Gönder</a>
-        <a href="login.html">Giriş Yap</a>
-    </div>
-</nav>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/kulvar-logo.webp" alt="Kulvar Logo" style="height: 100px;">
+            </a>
+        </div>
+        <div class="hamburger">☰</div>
+        <div class="nav-links">
+            <a href="index.html" class="active">Anasayfa</a>
+            <a href="hemen_incele.html">Hemen İncele</a>
+            <a href="brand.html">Markalar</a>
+            <a href="review.html">İnceleme Gönder</a>
+            <a href="login.html">Giriş Yap</a>
+        </div>
+    </nav>
 
     <!-- Hero Section -->
-   <div class="hero">
-    <div class="hero-content">
-        <img src="images/hero-image.webp" alt="Kulvar Hero Illustration" class="hero-image">
-        <h1>Kulvar</h1>
-        <p>Kulvarında En İyisini Seç.</p>
-        <div class="buttons">
-            <button class="explore-btn" onclick="window.location.href='brand.html';">Markaları Keşfet</button>
-            <button class="learn-btn" onclick="document.getElementById('more-info').scrollIntoView({ behavior: 'smooth' });">
-                Daha Fazla Bilgi
-            </button>
+    <div class="hero">
+        <div class="hero-content">
+            <img src="images/hero-image.webp" alt="Kulvar Hero Illustration" class="hero-image">
+            <h1>Kulvar</h1>
+            <p>Kulvarında En İyisini Seç.</p>
+            <div class="buttons">
+                <button class="explore-btn" onclick="window.location.href='brand.html';">Markaları Keşfet</button>
+                <button class="learn-btn" onclick="document.getElementById('more-info').scrollIntoView({ behavior: 'smooth' });">
+                    Daha Fazla Bilgi
+                </button>
+            </div>
         </div>
     </div>
-</div>
-
 
     <!-- Product Carousel -->
     <div class="product-carousel">
-        <div class="carousel-track">
-            <!-- Product Cards -->
-            <div class="product-card">
-                <img src="https://via.placeholder.com/200x150" alt="Apple iPhone 13">
-                <h3>Apple iPhone 13</h3>
-                <p>En yeni özellikleriyle şık tasarıma sahip iPhone modeli.</p>
-                <a href="review_iphone13.html" class="review-link">İncelemeyi Oku</a>
+        <h2>Öne Çıkan Ürünler</h2>
+        <div class="carousel-container">
+            <div class="carousel-track">
+                <!-- Product Cards -->
+                <div class="product-card">
+                    <img src="https://via.placeholder.com/200x150" alt="Apple iPhone 13">
+                    <h3>Apple iPhone 13</h3>
+                    <p>En yeni özellikleriyle şık tasarıma sahip iPhone modeli.</p>
+                    <a href="review_iphone13.html" class="review-link">İncelemeyi Oku</a>
+                </div>
+                <div class="product-card">
+                    <img src="https://via.placeholder.com/200x150" alt="Samsung Galaxy S22">
+                    <h3>Samsung Galaxy S22</h3>
+                    <p>Android'in en iyisi: Üst düzey kamera ve performans.</p>
+                    <a href="review_galaxyS22.html" class="review-link">İncelemeyi Oku</a>
+                </div>
+                <div class="product-card">
+                    <img src="https://via.placeholder.com/200x150" alt="Sony WH-1000XM4">
+                    <h3>Sony WH-1000XM4</h3>
+                    <p>En iyi gürültü engelleme özellikli kablosuz kulaklık.</p>
+                    <a href="review_sony.html" class="review-link">İncelemeyi Oku</a>
+                </div>
+                <div class="product-card">
+                    <img src="https://via.placeholder.com/200x150" alt="Dell XPS 13">
+                    <h3>Dell XPS 13</h3>
+                    <p>Ultra taşınabilir, üstün performansa sahip bir laptop.</p>
+                    <a href="review_dellxps13.html" class="review-link">İncelemeyi Oku</a>
+                </div>
             </div>
-            <div class="product-card">
-                <img src="https://via.placeholder.com/200x150" alt="Samsung Galaxy S22">
-                <h3>Samsung Galaxy S22</h3>
-                <p>Android'in en iyisi: Üst düzey kamera ve performans.</p>
-                <a href="review_galaxyS22.html" class="review-link">İncelemeyi Oku</a>
-            </div>
-            <div class="product-card">
-                <img src="https://via.placeholder.com/200x150" alt="Sony WH-1000XM4">
-                <h3>Sony WH-1000XM4</h3>
-                <p>En iyi gürültü engelleme özellikli kablosuz kulaklık.</p>
-                <a href="review_sony.html" class="review-link">İncelemeyi Oku</a>
-            </div>
-            <div class="product-card">
-                <img src="https://via.placeholder.com/200x150" alt="Dell XPS 13">
-                <h3>Dell XPS 13</h3>
-                <p>Ultra taşınabilir, üstün performansa sahip bir laptop.</p>
-                <a href="review_dellxps13.html" class="review-link">İncelemeyi Oku</a>
-            </div>
+            <!-- Navigation Arrows -->
+            <button class="carousel-prev">&#10094;</button>
+            <button class="carousel-next">&#10095;</button>
         </div>
-        <!-- Navigation Arrows -->
-        <button class="carousel-prev">&#10094;</button>
-        <button class="carousel-next">&#10095;</button>
     </div>
 
     <!-- Footer -->
@@ -93,10 +95,35 @@
                 navLinks.classList.toggle('active');
             });
         });
+
+        // Product Carousel Navigation
+        const prevButton = document.querySelector('.carousel-prev');
+        const nextButton = document.querySelector('.carousel-next');
+        const carouselTrack = document.querySelector('.carousel-track');
+        const productCards = document.querySelectorAll('.product-card');
+
+        // Set the number of items to move per click
+        const cardWidth = productCards[0].offsetWidth + 30; // Width of a product card + margin
+
+        // Function to move carousel left
+        prevButton.addEventListener('click', () => {
+            const currentTransform = getComputedStyle(carouselTrack).transform;
+            const translateX = currentTransform === 'none' ? 0 : parseFloat(currentTransform.split(',')[4]);
+            
+            if (translateX < 0) {
+                carouselTrack.style.transform = `translateX(${translateX + cardWidth}px)`;
+            }
+        });
+
+        // Function to move carousel right
+        nextButton.addEventListener('click', () => {
+            const currentTransform = getComputedStyle(carouselTrack).transform;
+            const translateX = currentTransform === 'none' ? 0 : parseFloat(currentTransform.split(',')[4]);
+
+            if (translateX > -(cardWidth * (productCards.length - 1))) {
+                carouselTrack.style.transform = `translateX(${translateX - cardWidth}px)`;
+            }
+        });
     </script>
-
-    <!-- Link to Carousel Script -->
-    <script src="carousel.js"></script>
-
 </body>
 </html>
