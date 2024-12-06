@@ -13,6 +13,27 @@
             background-color: #f8f9fa;
             color: #333;
         }
+        .navbar {
+            background-color: #49678D;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 16px;
+        }
+        .navbar .nav-links a:hover {
+            color: #F4A688;
+        }
         .container {
             max-width: 400px;
             margin: 80px auto;
@@ -92,6 +113,20 @@
     </style>
 </head>
 <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Kulvar</div>
+        <div class="nav-links">
+            <a href="index.html">Anasayfa</a>
+            <a href="hemen_incele.html">Hemen İncele</a>
+            <a href="brand.html">Markalar</a>
+            <a href="review.html">İnceleme Gönder</a>
+            <a href="login.html" class="active">Giriş Yap</a>
+            <a href="profile.html">Profilim</a>
+        </div>
+    </nav>
+
+    <!-- Login Form -->
     <div class="container">
         <h1>Giriş Yap</h1>
         <form id="login-form">
@@ -108,6 +143,7 @@
         </div>
     </div>
 
+    <!-- Footer -->
     <footer>
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
