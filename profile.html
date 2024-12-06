@@ -177,13 +177,14 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // Wait for Firebase auth state to change before accessing user info
+        // Wait for Firebase auth state to change
         auth.onAuthStateChanged(function(user) {
             if (user) {
-                // Display user info if logged in
+                // User is signed in
                 document.getElementById('username').textContent = user.displayName || "Kullanıcı Adı";
                 document.getElementById('email').textContent = "Email: " + user.email;
             } else {
+                // No user is signed in
                 alert('Lütfen giriş yapın');
                 window.location.href = 'login.html'; // Redirect to login page if not logged in
             }
