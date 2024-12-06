@@ -175,8 +175,14 @@
             // Firebase login method
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
-                    alert('Hoş geldiniz, ' + userCredential.user.email);
-                    window.location.href = 'profile.html'; // Redirect to profile page
+                    const user = userCredential.user;
+                    
+                    // Admin check
+                    if (user.email === 'admin@kulvar.com') {  // Check if the user is admin
+                        window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
+                    } else {
+                        window.location.href = 'profile.html';  // Redirect to user profile
+                    }
                 })
                 .catch((error) => {
                     alert('Hata: ' + error.message); // Show error message
