@@ -5,37 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giriş Yap</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
             margin: 0;
             padding: 0;
+            background-color: #f8f9fa;
             color: #333;
-        }
-        /* Navigation Bar */
-        .navbar {
-            background-color: #49678D;
-            color: white;
-            padding: 10px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            margin: 0 15px;
-            font-size: 16px;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-        .navbar a:hover {
-            color: #F4A688;
         }
         .container {
             max-width: 400px;
@@ -99,7 +75,6 @@
         .signup-link a:hover {
             text-decoration: underline;
         }
-        /* Footer */
         footer {
             background-color: #49678D;
             color: white;
@@ -117,21 +92,6 @@
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-    <div class="logo">Kulvar</div>
-    <div class="hamburger">☰</div>
-    <div class="nav-links">
-        <a href="index.html">Anasayfa</a>
-        <a href="hemen_incele.html">Hemen İncele</a>
-        <a href="brand.html">Markalar</a>
-        <a href="review.html">İnceleme Gönder</a>
-        <a href="login.html" class="active">Giriş Yap</a>
-        <a href="profile.html">Profilim</a>
-    </div>
-</nav>
-
-    <!-- Login Form -->
     <div class="container">
         <h1>Giriş Yap</h1>
         <form id="login-form">
@@ -148,13 +108,11 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
 
-    <!-- Firebase Script -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script>
@@ -170,11 +128,10 @@
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        
-        // Login Functionality
+
         const loginForm = document.getElementById('login-form');
         loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Prevent page reload
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -183,10 +140,10 @@
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     alert('Hoş geldiniz, ' + userCredential.user.email);
-                    window.location.href = 'profile.html'; // Redirect to profile page after login
+                    window.location.href = 'profile.html'; // Redirect to profile page
                 })
                 .catch((error) => {
-                    alert('Hata: ' + error.message);
+                    alert('Hata: ' + error.message); // Show error message
                 });
         });
     </script>
