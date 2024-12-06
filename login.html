@@ -165,13 +165,18 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // Check if user is already logged in and redirect to the appropriate page
+        // Check if the user is already logged in, but do not redirect immediately
         auth.onAuthStateChanged(user => {
             if (user) {
+                // Check if user is admin or a regular user, but do not redirect automatically
                 if (user.email === 'admin@kulvar.com') {
+                    // Admin login detected, redirect after the form is submitted
+                    document.getElementById('login-form').style.display = 'none'; // Hide form after auto login
                     window.location.href = 'admin-dashboard.html';  // Redirect to Admin Dashboard
                 } else {
-                    window.location.href = 'profile.html';  // Redirect to User Profile
+                    // Regular user login detected
+                    document.getElementById('login-form').style.display = 'none'; // Hide form after auto login
+                    window.location.href = 'profile.html';  // Redirect to Profile
                 }
             }
         });
@@ -179,19 +184,19 @@
         // Handle login form submission
         const loginForm = document.getElementById('login-form');
         loginForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Prevent the page from reloading
+            e.preventDefault(); // Prevent page reload
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // Firebase authentication sign-in
+            // Firebase login method
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
                     if (user.email === 'admin@kulvar.com') {
                         window.location.href = 'admin-dashboard.html';  // Redirect to Admin Dashboard
                     } else {
-                        window.location.href = 'profile.html';  // Redirect to User Profile
+                        window.location.href = 'profile.html';  // Redirect to Profile
                     }
                 })
                 .catch((error) => {
