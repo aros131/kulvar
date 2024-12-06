@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kayıt Ol</title>
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+
     <script>
         // Your Firebase configuration
         const firebaseConfig = {
@@ -23,6 +26,8 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
     </script>
+</head>
+
     <style>
         /* General Styles */
         body {
