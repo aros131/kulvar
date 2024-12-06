@@ -165,18 +165,23 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // Check if the user is already logged in
+        // If the user is already logged in, redirect to the appropriate page
         auth.onAuthStateChanged(user => {
             if (user) {
-                // Prevent redirecting back to login page
                 if (user.email === 'admin@kulvar.com') {
                     window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
                 } else {
-                    window.location.href = 'profile.html';  // Redirect to user profile page
+                    window.location.href = 'profile.html';  // Redirect to profile page
                 }
             }
         });
 
+        // Manually sign out user if already logged in
+        auth.signOut().then(() => {
+            console.log('User logged out successfully');
+        });
+
+        // Handle form submission for login
         const loginForm = document.getElementById('login-form');
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault(); // Prevent page reload
@@ -188,8 +193,6 @@
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
-
-                    // Admin check
                     if (user.email === 'admin@kulvar.com') {
                         window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
                     } else {
