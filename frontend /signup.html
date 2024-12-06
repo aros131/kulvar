@@ -31,6 +31,24 @@
 
 </head>
 <body>
+    <script>
+    const signupForm = document.getElementById('signup-form');
+    signupForm.addEventListener('submit', (e) => {
+        e.preventDefault(); // Prevents the page from reloading
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        // Create a new user with Firebase
+        auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                alert('Kayıt başarılı! Hoş geldiniz, ' + userCredential.user.email);
+            })
+            .catch((error) => {
+                alert('Hata: ' + error.message);
+            });
+    });
+</script>
+
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="logo">Ürün İnceleme</div>
