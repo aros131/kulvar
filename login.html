@@ -176,16 +176,21 @@
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
-                    
+
+                    console.log("User logged in:", user.email);  // Debugging line to check user details
+
                     // Admin check
-                    if (user.email === 'admin@kulvar.com') {  // Check if the user is admin
+                    if (user.email === 'admin@kulvar.com') {
+                        console.log("Redirecting to Admin Dashboard");  // Debugging line
                         window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
                     } else {
+                        console.log("Redirecting to Profile Page");  // Debugging line
                         window.location.href = 'profile.html';  // Redirect to user profile
                     }
                 })
                 .catch((error) => {
                     alert('Hata: ' + error.message); // Show error message
+                    console.error(error.message);  // Debugging line
                 });
         });
     </script>
