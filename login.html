@@ -165,38 +165,33 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // If the user is already logged in, redirect to the appropriate page
+        // Check if user is already logged in and redirect to the appropriate page
         auth.onAuthStateChanged(user => {
             if (user) {
                 if (user.email === 'admin@kulvar.com') {
-                    window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
+                    window.location.href = 'admin-dashboard.html';  // Redirect to Admin Dashboard
                 } else {
-                    window.location.href = 'profile.html';  // Redirect to profile page
+                    window.location.href = 'profile.html';  // Redirect to User Profile
                 }
             }
         });
 
-        // Manually sign out user if already logged in
-        auth.signOut().then(() => {
-            console.log('User logged out successfully');
-        });
-
-        // Handle form submission for login
+        // Handle login form submission
         const loginForm = document.getElementById('login-form');
         loginForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Prevent page reload
+            e.preventDefault(); // Prevent the page from reloading
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // Firebase login method
+            // Firebase authentication sign-in
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
                     if (user.email === 'admin@kulvar.com') {
-                        window.location.href = 'admin-dashboard.html';  // Redirect to admin dashboard
+                        window.location.href = 'admin-dashboard.html';  // Redirect to Admin Dashboard
                     } else {
-                        window.location.href = 'profile.html';  // Redirect to profile page
+                        window.location.href = 'profile.html';  // Redirect to User Profile
                     }
                 })
                 .catch((error) => {
