@@ -150,7 +150,6 @@
         <a href="review.html" class="active">İnceleme Gönder</a>
         <a href="login.html">Giriş Yap</a>
         <a href="profile.html">Profilim</a>
-
     </div>
 </nav>
 
@@ -159,6 +158,7 @@
         <h1>Deneyiminizi Paylaşın</h1>
         <p>Kullanıcıların en çok faydalı bulduğu incelemeler burada başlıyor.</p>
     </div>
+
     <div class="content">
         <form id="review-form">
             <label for="user-name">Adınız:</label>
@@ -166,6 +166,8 @@
 
             <label for="product-name">Ürün/Marka Adı:</label>
             <input type="text" id="product-name" placeholder="Ürün veya marka adını girin..." required>
+
+            <div id="suggestions" style="display: none; background: #f1f1f1; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; position: absolute; width: 100%;"></div> <!-- Suggestions Box -->
 
             <label for="rating">Puan:</label>
             <div class="star-rating" id="rating">
@@ -182,17 +184,20 @@
             <button type="button" id="preview-btn">İncelemeyi Önizle</button>
             <button type="submit">İncelemeyi Gönder</button>
         </form>
+
         <div class="preview-section" id="review-preview">
             <h2>İnceleme Önizlemesi</h2>
             <p>Burada incelemenizin önizlemesini görebileceksiniz.</p>
         </div>
     </div>
+
     <footer>
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
-     <script>
-        // Predefined list of products (this can be fetched from your database or Firebase)
+
+    <script>
+        // Predefined list of products
         const productsList = [
             "Apple iPhone 13",
             "Samsung Galaxy S22",
@@ -236,67 +241,69 @@
             }
         });
 
-    <script src="navbar.js"></script>
-
-<script>
-    // Dynamic Star Rating
-    const stars = document.querySelectorAll('.star-rating span');
-    stars.forEach((star, index) => {
-        star.addEventListener('click', () => {
-            stars.forEach((s, i) => {
-                s.classList.toggle('active', i <= index);
+        // Dynamic Star Rating
+        const stars = document.querySelectorAll('.star-rating span');
+        stars.forEach((star, index) => {
+            star.addEventListener('click', () => {
+                stars.forEach((s, i) => {
+                    s.classList.toggle('active', i <= index);
+                });
             });
         });
-    });
 
-    // Image Upload Preview
-    const imageUpload = document.getElementById('image-upload');
-    const imagePreview = document.getElementById('image-preview');
-    imageUpload.addEventListener('change', () => {
-        imagePreview.innerHTML = '';
-        const file = imageUpload.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const img = document.createElement('img');
-                img.src = reader.result;
-                imagePreview.appendChild(img);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Review Preview
-    const previewBtn = document.getElementById('preview-btn');
-    const reviewText = document.getElementById('review-text');
-    const reviewPreview = document.getElementById('review-preview');
-    previewBtn.addEventListener('click', () => {
-        const text = reviewText.value;
-        const rating = document.querySelectorAll('.star-rating span.active').length;
-        const images = imagePreview.querySelectorAll('img');
-        if (text.trim()) {
-            let previewHtml = `<h2>İnceleme Önizlemesi</h2><p>${text}</p><p><strong>Puan:</strong> ${rating} Yıldız</p>`;
-            if (images.length) {
-                previewHtml += `<div><strong>Görsel Önizlemesi:</strong><br>`;
-                images.forEach(img => previewHtml += `<img src="${img.src}" style="max-width: 100px; margin-right: 10px;">`);
-                previewHtml += `</div>`;
+        // Image Upload Preview
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreview = document.getElementById('image-preview');
+        imageUpload.addEventListener('change', () => {
+            imagePreview.innerHTML = '';
+            const file = imageUpload.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const img = document.createElement('img');
+                    img.src = reader.result;
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
             }
-            reviewPreview.innerHTML = previewHtml;
-        } else {
-            reviewPreview.innerHTML = `<h2>İnceleme Önizlemesi</h2><p>İnceleme metni ekleyin.</p>`;
-        }
-    });
+        });
 
-    // Handle form submission
-    const reviewForm = document.getElementById('review-form');
-    reviewForm.addEventListener('submit', (e) => {
-        e.preventDefault(); // Prevent form from submitting normally
-        alert("İncelemeniz gönderildi!");
-        // Here, you can integrate with a backend or Firebase to store the review data.
-        reviewForm.reset();
-        imagePreview.innerHTML = ''; // Reset image preview
-    });
-</script>
+        // Review Preview
+        const previewBtn = document.getElementById('preview-btn');
+        const reviewText = document.getElementById('review-text');
+        const reviewPreview = document.getElementById('review-preview');
+        previewBtn.addEventListener('click', () => {
+            const text = reviewText.value;
+            const rating = document.querySelectorAll('.star-rating span.active').length;
+            const images = imagePreview.querySelectorAll('img');
+            if (text.trim()) {
+                let previewHtml = `<h2>İnceleme Önizlemesi</h2><p>${text}</p><p><strong>Puan:</strong> ${rating} Yıldız</p>`;
+                if (images.length) {
+                    previewHtml += `<div><strong>Görsel Önizlemesi:</strong><br>`;
+                    images.forEach(img => previewHtml += `<img src="${img.src}" style="max-width: 100px; margin-right: 10px;">`);
+                    previewHtml += `</div>`;
+                }
+                reviewPreview.innerHTML = previewHtml;
+            } else {
+                reviewPreview.innerHTML = `<h2>İnceleme Önizlemesi</h2><p>İnceleme metni ekleyin.</p>`;
+            }
+        });
+
+        // Handle form submission
+        const reviewForm = document.getElementById('review-form');
+        reviewForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent form from submitting normally
+            const productName = productNameInput.value;
+            if (!productsList.includes(productName)) {
+                alert("Lütfen geçerli bir ürün adı girin.");
+                return;
+            }
+            alert("İncelemeniz gönderildi!");
+            // Here, you can integrate with a backend or Firebase to store the review data.
+            reviewForm.reset();
+            imagePreview.innerHTML = ''; // Reset image preview
+        });
+    </script>
 
 </body>
 </html>
