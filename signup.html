@@ -5,62 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kayıt Ol</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        /* Same CSS as previously provided for styling the form and buttons */
-    </style>
-    <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
-<script>
-    // Your Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyBjS0s5u9e6112GtEdF0oUDfOmceVAfU04",
-        authDomain: "kulvar-73ee3.firebaseapp.com",
-        projectId: "kulvar-73ee3",
-        storageBucket: "kulvar-73ee3.firebasestorage.app",
-        messagingSenderId: "388627303480",
-        appId: "1:388627303480:web:8c06f475abab4727072acd",
-        measurementId: "G-NKQVVDKED2"
-    };
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+    <script>
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjS0s5u9e6112GtEdF0oUDfOmceVAfU04",
+            authDomain: "kulvar-73ee3.firebaseapp.com",
+            projectId: "kulvar-73ee3",
+            storageBucket: "kulvar-73ee3.firebasestorage.app",
+            messagingSenderId: "388627303480",
+            appId: "1:388627303480:web:8c06f475abab4727072acd",
+            measurementId: "G-NKQVVDKED2"
+        };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-</script>
-
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+    </script>
 </head>
 <body>
-    <script>
-    const signupForm = document.getElementById('signup-form');
-    signupForm.addEventListener('submit', (e) => {
-        e.preventDefault(); // Prevents the page from reloading
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        // Create a new user with Firebase
-        auth.createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                alert('Kayıt başarılı! Hoş geldiniz, ' + userCredential.user.email);
-            })
-            .catch((error) => {
-                alert('Hata: ' + error.message);
-            });
-    });
-</script>
-
     <!-- Navigation Bar -->
     <nav class="navbar">
-        <div class="logo">Ürün İnceleme</div>
+        <div class="logo">Kulvar</div>
     </nav>
 
     <!-- Sign-Up Form -->
     <div class="container">
         <h1>Kayıt Ol</h1>
         <form id="signup-form">
-            <label for="name">Ad Soyad:</label>
-            <input type="text" id="name" placeholder="Adınızı ve soyadınızı girin..." required>
-
             <label for="email">E-posta:</label>
             <input type="email" id="email" placeholder="E-posta adresinizi girin..." required>
 
@@ -83,49 +56,33 @@
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
 
-    <!-- Validation Script -->
+    <!-- Firebase Sign-Up Script -->
     <script>
-        document.getElementById('signup-form').addEventListener('submit', function (e) {
-            e.preventDefault(); // Prevent the form from submitting
+        const signupForm = document.getElementById('signup-form');
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevents page from reloading
 
-            // Get form values
-            const name = document.getElementById('name').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const confirmPassword = document.getElementById('confirm-password').value.trim();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
 
-            // Validation
-            if (name === '') {
-                alert('Lütfen adınızı ve soyadınızı girin.');
-                return;
-            }
-
-            if (!validateEmail(email)) {
-                alert('Lütfen geçerli bir e-posta adresi girin.');
-                return;
-            }
-
-            if (password.length < 8) {
-                alert('Şifre en az 8 karakter uzunluğunda olmalıdır.');
-                return;
-            }
-
+            // Check if passwords match
             if (password !== confirmPassword) {
-                alert('Şifreler eşleşmiyor. Lütfen tekrar kontrol edin.');
+                alert("Şifreler eşleşmiyor. Lütfen tekrar kontrol edin.");
                 return;
             }
 
-            // If all validations pass
-            alert('Kayıt başarılı! Hoş geldiniz, ' + name + '!');
-            // Optionally, redirect to login page
-            window.location.href = 'login.html';
+            // Create a new user with Firebase Authentication
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Sign-up successful
+                    alert('Kayıt başarılı! Hoş geldiniz, ' + userCredential.user.email);
+                    window.location.href = 'login.html'; // Redirect to login page
+                })
+                .catch((error) => {
+                    alert('Hata: ' + error.message); // Show error message
+                });
         });
-
-        // Email validation function
-        function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
     </script>
 </body>
 </html>
