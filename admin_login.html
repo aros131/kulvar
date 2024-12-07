@@ -16,14 +16,12 @@
             color: #333;
         }
 
-        /* General Styles */
         .container {
             max-width: 600px;
             margin: 0 auto;
             padding: 50px 20px;
         }
 
-        /* Login Form */
         .login-form {
             background: #ffffff;
             padding: 30px;
@@ -63,6 +61,12 @@
             background-color: #7E3620;
         }
 
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
+
         footer {
             background-color: #49678D;
             color: white;
@@ -90,59 +94,42 @@
                 <input type="password" id="admin-password" placeholder="Şifrenizi girin..." required>
                 <button type="submit">Giriş Yap</button>
             </form>
+            <div id="error-message" class="error-message"></div>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
 
-    <!-- Firebase JS SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjS0s5u9e6112GtEdF0oUDfOmceVAfU04",
-            authDomain: "kulvar-73ee3.firebaseapp.com",
-            projectId: "kulvar-73ee3",
-            storageBucket: "kulvar-73ee3.firebasestorage.app",
-            messagingSenderId: "388627303480",
-            appId: "1:388627303480:web:8c06f475abab4727072acd",
-            measurementId: "G-NKQVVDKED2"
-        };
+        // Hardcoded admin credentials
+        const adminEmail = "admin@kulvar.com";
+        const adminPassword = "admin123";  // Replace this with your own password
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        const adminLoginForm = document.getElementById('admin-login-form');
+        const errorMessageDiv = document.getElementById('error-message');
 
         // Handle login form submission
-        const adminLoginForm = document.getElementById('admin-login-form');
         adminLoginForm.addEventListener('submit', (e) => {
             e.preventDefault(); // Prevent page reload
 
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
 
-            // Firebase login method
-            auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    // Check if user is admin
-                    if (user.email === 'admin@kulvar.com') {
-                        // Redirect to Admin Dashboard
-                        window.location.href = 'admin_dashboard.html'; // Ensure this path is correct
-                    } else {
-                        alert('Admin olmayan bir kullanıcı girdi.');
-                    }
-                })
-                .catch((error) => {
-                    alert('Hata: ' + error.message); // Show error message
-                    console.error(error.message);  // Debugging line
-                });
+            // Check if the entered credentials match the hardcoded admin credentials
+            if (email === adminEmail && password === adminPassword) {
+                // Redirect to Admin Dashboard
+                window.location.href = 'admin_dashboard.html'; // Ensure this path is correct
+            } else {
+                showError("Geçersiz e-posta veya şifre.");
+            }
         });
+
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+        }
     </script>
 </body>
 </html>
