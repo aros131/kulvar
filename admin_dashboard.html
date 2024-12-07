@@ -82,36 +82,15 @@
                 <thead>
                     <tr>
                         <th>Product Name</th>
+                        <th>Brand</th>
                         <th>Price</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="product-list">
-                    <tr>
-                        <td>Apple iPhone 13</td>
-                        <td>$799</td>
-                        <td>
-                            <button class="manage-btn">Edit</button>
-                            <button class="manage-btn">Delete</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Samsung Galaxy S22</td>
-                        <td>$999</td>
-                        <td>
-                            <button class="manage-btn">Edit</button>
-                            <button class="manage-btn">Delete</button>
-                        </td>
-                    </tr>
-                    <!-- More product rows here -->
+                    <!-- Dynamic product rows will be inserted here -->
                 </tbody>
             </table>
-        </div>
-
-        <!-- User Management Section (example) -->
-        <div class="section">
-            <h2>User Management</h2>
-            <button class="button" onclick="window.location.href='manage_users.html'">Manage Users</button>
         </div>
     </div>
 
@@ -119,5 +98,32 @@
         &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
         <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
     </footer>
+
+    <script>
+        // Assuming you have a list of products stored as an array of objects
+        const products = [
+            { name: "Apple iPhone 13", brand: "Apple", price: "$799" },
+            { name: "Samsung Galaxy S22", brand: "Samsung", price: "$999" },
+            { name: "Sony WH-1000XM4", brand: "Sony", price: "$349" },
+            { name: "Dell XPS 13", brand: "Dell", price: "$1200" }
+        ];
+
+        const productList = document.getElementById('product-list');
+
+        // Dynamically display products by brand
+        products.forEach(product => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${product.name}</td>
+                <td>${product.brand}</td>
+                <td>${product.price}</td>
+                <td>
+                    <button class="manage-btn">Edit</button>
+                    <button class="manage-btn">Delete</button>
+                </td>
+            `;
+            productList.appendChild(row);
+        });
+    </script>
 </body>
 </html>
