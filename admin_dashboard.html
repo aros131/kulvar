@@ -5,6 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-dashboard {
+            padding: 20px;
+        }
+        .section {
+            margin-top: 20px;
+        }
+        .section h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #9E4624;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #7E3620;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        .manage-btn {
+            background-color: #49678D;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .manage-btn:hover {
+            background-color: #7E3620;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -27,9 +74,45 @@
         <h1>Admin Dashboard</h1>
         <p>Welcome to the admin panel. Here you can manage the platform.</p>
 
-        <!-- Add your admin features here -->
-        <button onclick="window.location.href='manage-products.html'">Manage Products</button>
-        <button onclick="window.location.href='manage-users.html'">Manage Users</button>
+        <!-- Product Management Section -->
+        <div class="section">
+            <h2>Product Management</h2>
+            <button class="button" onclick="window.location.href='add_product.html'">Add New Product</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list">
+                    <tr>
+                        <td>Apple iPhone 13</td>
+                        <td>$799</td>
+                        <td>
+                            <button class="manage-btn">Edit</button>
+                            <button class="manage-btn">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Samsung Galaxy S22</td>
+                        <td>$999</td>
+                        <td>
+                            <button class="manage-btn">Edit</button>
+                            <button class="manage-btn">Delete</button>
+                        </td>
+                    </tr>
+                    <!-- More product rows here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- User Management Section (example) -->
+        <div class="section">
+            <h2>User Management</h2>
+            <button class="button" onclick="window.location.href='manage_users.html'">Manage Users</button>
+        </div>
     </div>
 
     <footer>
