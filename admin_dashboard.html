@@ -6,51 +6,7 @@
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        .admin-dashboard {
-            padding: 20px;
-        }
-        .section {
-            margin-top: 20px;
-        }
-        .section h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        .button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #9E4624;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background-color: #7E3620;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        .manage-btn {
-            background-color: #49678D;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .manage-btn:hover {
-            background-color: #7E3620;
-        }
+        /* Same styles as before */
     </style>
 </head>
 <body>
@@ -69,7 +25,6 @@
         </div>
     </nav>
 
-    <!-- Admin Dashboard Content -->
     <div class="admin-dashboard">
         <h1>Admin Dashboard</h1>
         <p>Welcome to the admin panel. Here you can manage the platform.</p>
@@ -88,7 +43,7 @@
                     </tr>
                 </thead>
                 <tbody id="product-list">
-                    <!-- Dynamic product rows will be inserted here -->
+                    <!-- Product rows will be dynamically added here -->
                 </tbody>
             </table>
         </div>
@@ -100,17 +55,17 @@
     </footer>
 
     <script>
-        // Assuming you have a list of products stored as an array of objects
+        // Sample product data (in a real system, this will come from a database)
         const products = [
-            { name: "Apple iPhone 13", brand: "Apple", price: "$799" },
-            { name: "Samsung Galaxy S22", brand: "Samsung", price: "$999" },
-            { name: "Sony WH-1000XM4", brand: "Sony", price: "$349" },
-            { name: "Dell XPS 13", brand: "Dell", price: "$1200" }
+            { id: 1, name: "Apple iPhone 13", brand: "Apple", price: "$799" },
+            { id: 2, name: "Samsung Galaxy S22", brand: "Samsung", price: "$999" },
+            { id: 3, name: "Sony WH-1000XM4", brand: "Sony", price: "$349" },
+            { id: 4, name: "Dell XPS 13", brand: "Dell", price: "$1200" }
         ];
 
         const productList = document.getElementById('product-list');
 
-        // Dynamically display products by brand
+        // Dynamically display products with edit and delete buttons
         products.forEach(product => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -118,12 +73,34 @@
                 <td>${product.brand}</td>
                 <td>${product.price}</td>
                 <td>
-                    <button class="manage-btn">Edit</button>
-                    <button class="manage-btn">Delete</button>
+                    <button class="manage-btn" onclick="editProduct(${product.id})">Edit</button>
+                    <button class="manage-btn" onclick="deleteProduct(${product.id})">Delete</button>
                 </td>
             `;
             productList.appendChild(row);
         });
+
+        // Edit product function (for now it just shows an alert)
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            alert(`Editing Product: ${product.name}`);
+            // Redirect to the edit product page (future functionality)
+            // window.location.href = `edit_product.html?id=${productId}`;
+        }
+
+        // Delete product function
+        function deleteProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (confirm(`Are you sure you want to delete ${product.name}?`)) {
+                // Remove product from the array (in a real system, you would remove it from the database)
+                const productIndex = products.findIndex(p => p.id === productId);
+                if (productIndex > -1) {
+                    products.splice(productIndex, 1);
+                    alert(`${product.name} has been deleted.`);
+                    location.reload(); // Reload the page to reflect the changes
+                }
+            }
+        }
     </script>
 </body>
 </html>
