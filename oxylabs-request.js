@@ -1,53 +1,84 @@
 const https = require("https");
+const fs = require("fs");
 
-// Your Oxylabs credentials
-const username = "arenkaaaaaa_d3nlv"; // Replace with your username
-const password = "Azxazx23_456"; // Replace with your password
+// Your Oxylabs credentials (insert them here)
+const username = "arenkaaaaaa_d3nlv";  // Your Oxylabs username
+const password = "Azxazx23_456";      // Your Oxylabs password
 
-// The body of the request (query data)
-const body = {
-  source: "amazon_product",  // Data source (Amazon product)
-  query: "B07FZ8S74R",       // The Amazon product ID
-  geo_location: "90210",     // Optional: Location for localized results
-  parse: true,               // Request to parse the data
-};
+// Function to extract the ASIN from an Amazon URL
+function extractASIN(url) {
+  const regex = /(?:dp|gp\/product)\/([A-Z0-9]{10})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
 
-// Request options
-const options = {
-  hostname: "realtime.oxylabs.io",  // Oxylabs API hostname
-  path: "/v1/queries",              // API endpoint
-  method: "POST",                   // HTTP method
-  headers: {
-    "Content-Type": "application/json",  // JSON content type
-    Authorization: "Basic " + Buffer.from(`${username}:${password}`).toString("base64"), // Basic Auth
-  },
-};
+// Function to fetch product data from Oxylabs API
+const fetchProductData = (asin) => {
+  const body = {
+    source: "amazon_product",
+    query: asin,
+    geo_location: "90210",  // Example geo-location (you can use your own)
+    parse: true,
+  };
 
-// Make the HTTPS request
-const request = https.request(options, (response) => {
-  let data = "";
+  const options = {
+    hostname: "realtime.oxylabs.io",
+    path: "/v1/queries",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + Buffer.from(`${username}:${password}`).toString("base64"),
+    },
+  };
 
-  // Collect data from the response
-  response.on("data", (chunk) => {
-    data += chunk;
+  const request = https.request(options, (response) => {
+    let data = "";
+    response.on("data", (chunk) => {
+      data += chunk;
+    });
+
+    response.on("end", () => {
+      const responseData = JSON.parse(data);
+      console.log(`Data for ASIN: ${asin}`);
+      
+      // Store the data in a JSON file
+      fs.appendFile("products.json", JSON.stringify(responseData, null, 2), (err) => {
+        if (err) {
+          console.error("Error writing data to file:", err);
+        } else {
+          console.log(`Data for ASIN ${asin} saved to products.json`);
+        }
+      });
+    });
   });
 
-  // When the response ends, parse and log the result
-  response.on("end", () => {
-    try {
-      const responseData = JSON.parse(data);
-      console.log(JSON.stringify(responseData, null, 2)); // Pretty-print the JSON response
-    } catch (error) {
-      console.error("Error parsing JSON response:", error);
+  request.on("error", (error) => {
+    console.error("Error:", error);
+  });
+
+  request.write(JSON.stringify(body));
+  request.end();
+};
+
+// Main function to process the Amazon URL(s) from command-line arguments
+const processAmazonURLs = (urls) => {
+  if (urls.length === 0) {
+    console.error("No Amazon URLs provided.");
+    return;
+  }
+
+  urls.forEach((url) => {
+    const asin = extractASIN(url);
+    if (asin) {
+      console.log(`Extracted ASIN: ${asin}`);
+      fetchProductData(asin);
+    } else {
+      console.error(`Invalid Amazon URL or ASIN not found: ${url}`);
     }
   });
-});
+};
 
-// Handle request errors
-request.on("error", (error) => {
-  console.error("Error:", error);
-});
+// Get Amazon URLs from command-line arguments (skipping the first argument which is the script name)
+const amazonURLs = process.argv.slice(2);
 
-// Write the request body and send the request
-request.write(JSON.stringify(body));
-request.end();
+processAmazonURLs(amazonURLs);
