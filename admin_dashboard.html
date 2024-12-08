@@ -15,9 +15,9 @@
             <tr>
                 <th>Ürün Adı</th>
                 <th>Marka</th>
-                <th>Fiyat</th>
                 <th>Kategori</th>
                 <th>Puan</th>
+                <th>Resim</th>
                 <th>Aksiyonlar</th>
             </tr>
         </thead>
@@ -42,9 +42,9 @@
                 row.innerHTML = `
                     <td>${product.name}</td>
                     <td>${product.brand}</td>
-                    <td>${product.price}</td>
                     <td>${product.category}</td>
                     <td>${product.rating}</td>
+                    <td><img src="${product.image_url}" alt="${product.name}" style="max-width: 100px; max-height: 100px;"></td>
                     <td>
                         <button onclick="editProduct('${product._id}')">Düzenle</button>
                         <button onclick="deleteProduct('${product._id}')">Sil</button>
