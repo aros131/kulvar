@@ -3,56 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New Product</title>
+    <title>Ürün Ekle</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Add New Product</h1>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="admin_dashboard.html">
+                <img src="images/kulvar-logo.webp" alt="Kulvar Logo" style="height: 100px;">
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="admin_dashboard.html" class="active">Admin Dashboard</a>
+            <a href="edit_product.html">Edit Product</a>
+            <a href="logout.html">Log Out</a>
+        </div>
+    </nav>
 
-    <form id="add-product-form">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" placeholder="Product Name" required>
+    <div class="container">
+        <h2>Yeni Ürün Ekle</h2>
+        <form id="product-form">
+            <label for="name">Ürün Adı:</label>
+            <input type="text" id="name" name="name" required>
 
-        <label for="description">Description</label>
-        <input type="text" id="description" name="description" placeholder="Product Description" required>
+            <label for="rating">Puan:</label>
+            <input type="number" id="rating" name="rating" min="1" max="5" required>
 
-        <label for="price">Price</label>
-        <input type="number" id="price" name="price" placeholder="Product Price" required>
+            <label for="image">Ürün Resmi (URL):</label>
+            <input type="text" id="image" name="image" required>
 
-        <label for="brand">Brand</label>
-        <input type="text" id="brand" name="brand" placeholder="Product Brand" required>
+            <label for="category">Kategori:</label>
+            <input type="text" id="category" name="category" required>
 
-        <label for="image_url">Image URL</label>
-        <input type="text" id="image_url" name="image_url" placeholder="Product Image URL" required>
+            <label for="brand">Marka:</label>
+            <input type="text" id="brand" name="brand" required>
 
-        <button type="submit">Add Product</button>
-    </form>
+            <button type="submit">Ürünü Ekle</button>
+        </form>
+    </div>
+
+    <footer>
+        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır.
+    </footer>
 
     <script>
-        document.getElementById('add-product-form').addEventListener('submit', async function (e) {
-            e.preventDefault();
+        const form = document.getElementById('product-form');
 
-            const product = {
-                name: document.getElementById('name').value,
-                description: document.getElementById('description').value,
-                price: document.getElementById('price').value,
-                brand: document.getElementById('brand').value,
-                image_url: document.getElementById('image_url').value,
-            };
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-            const response = await fetch('http://localhost:5000/api/products', {
-                method: 'POST',
-                body: JSON.stringify(product),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+            const name = document.getElementById('name').value;
+            const rating = document.getElementById('rating').value;
+            const image = document.getElementById('image').value;
+            const category = document.getElementById('category').value;
+            const brand = document.getElementById('brand').value;
 
-            if (response.ok) {
-                alert('Product added successfully');
-                window.location.href = 'admin_dashboard.html'; // Redirect to dashboard
-            } else {
-                alert('Failed to add product');
+            const newProduct = { name, rating, image_url: image, category, brand };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(newProduct),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Ürün başarıyla eklendi!');
+                    form.reset();
+                } else {
+                    alert('Ürün eklenirken hata oluştu: ' + result.message);
+                }
+            } catch (error) {
+                alert('Bir hata oluştu: ' + error.message);
             }
         });
     </script>
