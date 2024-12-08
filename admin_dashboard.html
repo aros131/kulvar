@@ -13,11 +13,12 @@
     <table id="products-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Price</th>
-                <th>Brand</th>
-                <th>Actions</th>
+                <th>Ürün Adı</th>
+                <th>Marka</th>
+                <th>Fiyat</th>
+                <th>Kategori</th>
+                <th>Puan</th>
+                <th>Aksiyonlar</th>
             </tr>
         </thead>
         <tbody>
@@ -25,7 +26,7 @@
         </tbody>
     </table>
 
-    <button onclick="window.location.href = 'add_product.html'">Add New Product</button>
+    <button onclick="window.location.href = 'add_product.html'">Yeni Ürün Ekle</button>
 
     <script>
         // Fetch products and display them in the table
@@ -40,12 +41,13 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${product.name}</td>
-                    <td>${product.description}</td>
-                    <td>${product.price}</td>
                     <td>${product.brand}</td>
+                    <td>${product.price}</td>
+                    <td>${product.category}</td>
+                    <td>${product.rating}</td>
                     <td>
-                        <button onclick="editProduct('${product._id}')">Edit</button>
-                        <button onclick="deleteProduct('${product._id}')">Delete</button>
+                        <button onclick="editProduct('${product._id}')">Düzenle</button>
+                        <button onclick="deleteProduct('${product._id}')">Sil</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -59,10 +61,10 @@
             });
 
             if (response.ok) {
-                alert('Product deleted successfully');
+                alert('Ürün başarıyla silindi');
                 fetchProducts(); // Refresh the product list
             } else {
-                alert('Failed to delete product');
+                alert('Ürün silinirken hata oluştu');
             }
         }
 
