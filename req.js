@@ -43,13 +43,15 @@ const fetchProductData = (asin) => {
         if (responseData.data) {
           const product = responseData.data;
           const productDetails = {
-            name: product.title,
-            brand: product.brand,
-            category: product.category,
-            rating: product.rating,
-            image: product.image_url
+            name: product.title,               // Keeping English field name
+            brand: translateToTurkish(product.brand),     // Translated value
+            category: translateToTurkish(product.category), // Translated value
+            rating: translateToTurkish(product.rating),    // Translated value
+            image: product.image_url           // Keeping English field name
           };
-          console.log(`Data for ASIN ${asin}:`, JSON.stringify(productDetails, null, 2));
+
+          // Append product data to products.json
+          saveProductDataToFile(productDetails);
         } else {
           console.log(`No data found for ASIN ${asin}`);
         }
@@ -66,6 +68,30 @@ const fetchProductData = (asin) => {
   request.write(JSON.stringify(body));
   request.end();
 };
+
+// Function to translate values to Turkish
+function translateToTurkish(value) {
+  const translations = {
+    "Apple": "Apple",                 // Leave product names like "Apple" in English
+    "Samsung": "Samsung",             // Leave product names like "Samsung" in English
+    "Smartphones": "Akıllı Telefonlar", // Example translation
+    "4.5": "4.5",                    // Rating remains the same
+    // Add more translations for different categories, brands, etc. as needed
+  };
+
+  return translations[value] || value; // Default to the original value if no translation exists
+}
+
+// Function to save product data to products.json
+function saveProductDataToFile(productDetails) {
+  const filePath = "products.json";
+  // Read the existing data from the file, or create an empty array if the file doesn't exist
+  const fileData = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath)) : [];
+  fileData.push(productDetails);
+  // Write the updated data back to the file
+  fs.writeFileSync(filePath, JSON.stringify(fileData, null, 2));
+  console.log(`Ürün verisi kaydedildi: ${productDetails.name}`);
+}
 
 // Main function to process the Amazon URL(s) from command-line arguments
 const processAmazonURLs = (urls) => {
