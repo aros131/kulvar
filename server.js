@@ -11,7 +11,7 @@ app.use(cors());
 app.use(bodyParser.json()); // Parse incoming request bodies as JSON
 
 // MongoDB connection
-mongoose.connect('mongodb+srv://arenkaraseki:azxazx23@productreviewcluster.hfgko.mongodb.net/?retryWrites=true&w=majority', 
+mongoose.connect('mongodb+srv://arenkaraseki:azxazx3@productreviewcluster.hfgko.mongodb.net/?retryWrites=true&w=majority', 
     { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch((err) => console.log('MongoDB connection error:', err));
