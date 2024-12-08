@@ -5,72 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Same styles as before */
-    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="form-container">
-            <h2>Edit Product</h2>
-            <form id="edit-product-form">
-                <label for="product-name">Product Name:</label>
-                <input type="text" id="product-name" value="" required>
+    <h1>Edit Product</h1>
 
-                <label for="product-description">Product Description:</label>
-                <textarea id="product-description" rows="5" required></textarea>
+    <form id="edit-product-form">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
 
-                <label for="product-price">Product Price:</label>
-                <input type="number" id="product-price" value="" required>
+        <label for="description">Description</label>
+        <input type="text" id="description" name="description" required>
 
-                <label for="product-brand">Select Brand:</label>
-                <select id="product-brand" required>
-                    <option value="Apple">Apple</option>
-                    <option value="Samsung">Samsung</option>
-                    <option value="Sony">Sony</option>
-                    <option value="Dell">Dell</option>
-                </select>
+        <label for="price">Price</label>
+        <input type="number" id="price" name="price" required>
 
-                <button type="submit">Update Product</button>
-            </form>
-        </div>
-    </div>
+        <label for="brand">Brand</label>
+        <input type="text" id="brand" name="brand" required>
 
-    <footer>
-        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
-        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
-    </footer>
+        <label for="image_url">Image URL</label>
+        <input type="text" id="image_url" name="image_url" required>
+
+        <button type="submit">Save Changes</button>
+    </form>
 
     <script>
-        const productId = new URLSearchParams(window.location.search).get('id');  // Get product ID from URL
-        const product = products.find(p => p.id === parseInt(productId));  // Get product from array
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
 
-        if (product) {
-            document.getElementById('product-name').value = product.name;
-            document.getElementById('product-description').value = product.description;
-            document.getElementById('product-price').value = product.price;
-            document.getElementById('product-brand').value = product.brand;
+        // Fetch product details for editing
+        async function fetchProduct() {
+            const response = await fetch(`http://localhost:5000/api/products/${productId}`);
+            const product = await response.json();
+
+            // Pre-fill the form with the existing product details
+            document.getElementById('name').value = product.name;
+            document.getElementById('description').value = product.description;
+            document.getElementById('price').value = product.price;
+            document.getElementById('brand').value = product.brand;
+            document.getElementById('image_url').value = product.image_url;
         }
 
-        const editProductForm = document.getElementById('edit-product-form');
-
-        editProductForm.addEventListener('submit', function (e) {
+        // Update product
+        document.getElementById('edit-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const updatedName = document.getElementById('product-name').value;
-            const updatedDescription = document.getElementById('product-description').value;
-            const updatedPrice = document.getElementById('product-price').value;
-            const updatedBrand = document.getElementById('product-brand').value;
+            const updatedProduct = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value,
+                price: document.getElementById('price').value,
+                brand: document.getElementById('brand').value,
+                image_url: document.getElementById('image_url').value
+            };
 
-            // Update product in the array (in a real system, this would update the database)
-            product.name = updatedName;
-            product.description = updatedDescription;
-            product.price = updatedPrice;
-            product.brand = updatedBrand;
+            const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updatedProduct),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
 
-            alert(`Product ${updatedName} has been updated!`);
-            window.location.href = 'admin_dashboard.html';  // Redirect back to the dashboard
+            if (response.ok) {
+                alert('Product updated successfully');
+                window.location.href = 'admin_dashboard.html'; // Redirect back to the dashboard
+            } else {
+                alert('Failed to update the product');
+            }
         });
+
+        // Fetch product on page load
+        window.onload = fetchProduct;
     </script>
 </body>
 </html>
