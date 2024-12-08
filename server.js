@@ -12,7 +12,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // MongoDB connection (replace this string with your actual MongoDB connection string)
-mongoose.connect('mongodb+srv://arenkaraseki:<azxazx23>@productreviewcluster.hfgko.mongodb.net/?retryWrites=true&w=majority&appName=productreviewcluster', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect('mongodb+srv://arenkaraseki:azxazx23@productreviewcluster.hfgko.mongodb.net/?retryWrites=true&w=majority&appName=productreviewcluster', { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch((err) => console.log('MongoDB connection error:', err));
 
