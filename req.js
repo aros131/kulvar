@@ -1,9 +1,9 @@
 const https = require("https");
 const fs = require("fs");
 
-// Your Oxylabs credentials (insert them here)
-const username = "arenkaaaaaa_d3nlv";  // Your Oxylabs username
-const password = "Azxazx23_456";      // Your Oxylabs password
+// Your Oxylabs credentials
+const username = "arenkaaaaaa_d3nlv";  // Replace with your Oxylabs username
+const password = "Azxazx23_456";      // Replace with your Oxylabs password
 
 // Function to extract the ASIN from an Amazon URL
 function extractASIN(url) {
@@ -17,7 +17,7 @@ const fetchProductData = (asin) => {
   const body = {
     source: "amazon_product",
     query: asin,
-    geo_location: "90210",  // Example geo-location (you can use your own)
+    geo_location: "90210",  // Optional, use if you want to set a specific location
     parse: true,
   };
 
@@ -38,17 +38,24 @@ const fetchProductData = (asin) => {
     });
 
     response.on("end", () => {
-      const responseData = JSON.parse(data);
-      console.log(`Data for ASIN: ${asin}`);
-      
-      // Store the data in a JSON file
-      fs.appendFile("products.json", JSON.stringify(responseData, null, 2), (err) => {
-        if (err) {
-          console.error("Error writing data to file:", err);
+      try {
+        const responseData = JSON.parse(data);
+        if (responseData.data) {
+          const product = responseData.data;
+          const productDetails = {
+            name: product.title,
+            brand: product.brand,
+            category: product.category,
+            rating: product.rating,
+            image: product.image_url
+          };
+          console.log(`Data for ASIN ${asin}:`, JSON.stringify(productDetails, null, 2));
         } else {
-          console.log(`Data for ASIN ${asin} saved to products.json`);
+          console.log(`No data found for ASIN ${asin}`);
         }
-      });
+      } catch (error) {
+        console.error("Error parsing response:", error);
+      }
     });
   });
 
