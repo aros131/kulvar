@@ -37,7 +37,7 @@
             const response = await fetch(`http://localhost:5000/api/products/${productId}`);
             const product = await response.json();
 
-            // Pre-fill the form with the existing product details
+            // Pre-fill the form with existing product data
             document.getElementById('name').value = product.name;
             document.getElementById('description').value = product.description;
             document.getElementById('price').value = product.price;
@@ -45,7 +45,6 @@
             document.getElementById('image_url').value = product.image_url;
         }
 
-        // Update product
         document.getElementById('edit-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -54,7 +53,7 @@
                 description: document.getElementById('description').value,
                 price: document.getElementById('price').value,
                 brand: document.getElementById('brand').value,
-                image_url: document.getElementById('image_url').value
+                image_url: document.getElementById('image_url').value,
             };
 
             const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
@@ -67,13 +66,12 @@
 
             if (response.ok) {
                 alert('Product updated successfully');
-                window.location.href = 'admin_dashboard.html'; // Redirect back to the dashboard
+                window.location.href = 'admin_dashboard.html'; // Redirect back to dashboard
             } else {
                 alert('Failed to update the product');
             }
         });
 
-        // Fetch product on page load
         window.onload = fetchProduct;
     </script>
 </body>
