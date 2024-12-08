@@ -1,38 +1,39 @@
-require('dotenv').config(); // To load environment variables
+require('dotenv').config(); // This loads the environment variables from the .env file
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
-app.use(bodyParser.json()); // Parse incoming request bodies as JSON
+app.use(bodyParser.json());
 
 // MongoDB connection
-mongoose.connect('mongodb+srv://arenkaraseki:azxazx3@productreviewcluster.hfgko.mongodb.net/?retryWrites=true&w=majority', 
-    { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => console.log('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => console.log('MongoDB connection error:', err));
 
 // Product Schema
 const productSchema = new mongoose.Schema({
-  name: String,
-  description: String,
-  price: Number,
-  brand: String,
-  image_url: String
+  name: { type: String, required: true },
+  rating: { type: Number, required: true },  // Added rating field
+  image_url: { type: String, required: true },  // Added image URL field
+  category: { type: String, required: true },  // Added category field
+  brand: { type: String, required: true }  // Added brand field
 });
 
 const Product = mongoose.model('Product', productSchema);
 
 // Routes
-
 // GET all products
 app.get('/api/products', async (req, res) => {
   try {
-    const products = await Product.find(); // Get all products
+    const products = await Product.find();  // Fetch all products from MongoDB
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -41,45 +42,50 @@ app.get('/api/products', async (req, res) => {
 
 // POST a new product
 app.post('/api/products', async (req, res) => {
-  const { name, description, price, brand, image_url } = req.body;
+  const { name, rating, image_url, category, brand } = req.body;
 
-  const product = new Product({
+  const newProduct = new Product({
     name,
-    description,
-    price,
-    brand,
-    image_url
+    rating,
+    image_url,
+    category,
+    brand
   });
 
   try {
-    const newProduct = await product.save();
-    res.status(201).json(newProduct); // Return the newly added product
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// PUT (update) a product by id
-app.put('/api/products/:id', async (req, res) => {
-  try {
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updatedProduct);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// DELETE a product by id
-app.delete('/api/products/:id', async (req, res) => {
-  try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Product deleted' });
+    await newProduct.save();  // Save the product to the database
+    res.status(201).json(newProduct);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Start server
+// PUT (update) an existing product
+app.put('/api/products/:id', async (req, res) => {
+  const { name, rating, image_url, category, brand } = req.body;
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      { name, rating, image_url, category, brand },
+      { new: true }
+    );
+    res.json(updatedProduct);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// DELETE a product
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id); // Delete the product by ID
+    res.status(200).json({ message: 'Product deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
