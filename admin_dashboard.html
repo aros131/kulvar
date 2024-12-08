@@ -5,102 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Same styles as before */
-    </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <a href="index.html">
-                <img src="images/kulvar-logo.webp" alt="Kulvar Logo" style="height: 100px;">
-            </a>
-        </div>
-        <div class="nav-links">
-            <a href="index.html">Anasayfa</a>
-            <a href="hemen_incele.html">Hemen İncele</a>
-            <a href="brand.html">Markalar</a>
-            <a href="review.html">İnceleme Gönder</a>
-            <a href="login.html">Giriş Yap</a>
-        </div>
-    </nav>
+    <h1>Admin Dashboard - Manage Products</h1>
 
-    <div class="admin-dashboard">
-        <h1>Admin Dashboard</h1>
-        <p>Welcome to the admin panel. Here you can manage the platform.</p>
+    <!-- Display products in a table -->
+    <table id="products-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Brand</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be inserted here via JavaScript -->
+        </tbody>
+    </table>
 
-        <!-- Product Management Section -->
-        <div class="section">
-            <h2>Product Management</h2>
-            <button class="button" onclick="window.location.href='add_product.html'">Add New Product</button>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Product Name</th>
-                        <th>Brand</th>
-                        <th>Price</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="product-list">
-                    <!-- Product rows will be dynamically added here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <footer>
-        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
-        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
-    </footer>
+    <button onclick="window.location.href = 'add_product.html'">Add New Product</button>
 
     <script>
-        // Sample product data (in a real system, this will come from a database)
-        const products = [
-            { id: 1, name: "Apple iPhone 13", brand: "Apple", price: "$799" },
-            { id: 2, name: "Samsung Galaxy S22", brand: "Samsung", price: "$999" },
-            { id: 3, name: "Sony WH-1000XM4", brand: "Sony", price: "$349" },
-            { id: 4, name: "Dell XPS 13", brand: "Dell", price: "$1200" }
-        ];
+        // Fetch products and display them in the table
+        async function fetchProducts() {
+            const response = await fetch('http://localhost:5000/api/products');
+            const products = await response.json();
 
-        const productList = document.getElementById('product-list');
+            const tableBody = document.querySelector('#products-table tbody');
+            tableBody.innerHTML = ''; // Clear existing table rows
 
-        // Dynamically display products with edit and delete buttons
-        products.forEach(product => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${product.name}</td>
-                <td>${product.brand}</td>
-                <td>${product.price}</td>
-                <td>
-                    <button class="manage-btn" onclick="editProduct(${product.id})">Edit</button>
-                    <button class="manage-btn" onclick="deleteProduct(${product.id})">Delete</button>
-                </td>
-            `;
-            productList.appendChild(row);
-        });
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>${product.description}</td>
+                    <td>${product.price}</td>
+                    <td>${product.brand}</td>
+                    <td>
+                        <button onclick="editProduct('${product._id}')">Edit</button>
+                        <button onclick="deleteProduct('${product._id}')">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
 
-        // Edit product function (for now it just shows an alert)
+        // Edit product function
         function editProduct(productId) {
-            const product = products.find(p => p.id === productId);
-            alert(`Editing Product: ${product.name}`);
-            // Redirect to the edit product page (future functionality)
-            // window.location.href = `edit_product.html?id=${productId}`;
+            window.location.href = `edit_product.html?id=${productId}`;
         }
 
         // Delete product function
-        function deleteProduct(productId) {
-            const product = products.find(p => p.id === productId);
-            if (confirm(`Are you sure you want to delete ${product.name}?`)) {
-                // Remove product from the array (in a real system, you would remove it from the database)
-                const productIndex = products.findIndex(p => p.id === productId);
-                if (productIndex > -1) {
-                    products.splice(productIndex, 1);
-                    alert(`${product.name} has been deleted.`);
-                    location.reload(); // Reload the page to reflect the changes
-                }
+        async function deleteProduct(productId) {
+            const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                alert('Product deleted successfully');
+                fetchProducts(); // Refresh the product list
+            } else {
+                alert('Failed to delete the product');
             }
         }
+
+        // Call fetchProducts on page load
+        window.onload = fetchProducts;
     </script>
 </body>
 </html>
