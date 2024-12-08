@@ -7,72 +7,72 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Edit Product</h1>
+    <h2>Edit Product</h2>
 
     <form id="edit-product-form">
-        <label for="name">Name</label>
+        <label for="name">Product Name:</label>
         <input type="text" id="name" name="name" required>
 
-        <label for="description">Description</label>
-        <input type="text" id="description" name="description" required>
+        <label for="category">Category:</label>
+        <input type="text" id="category" name="category" required>
 
-        <label for="price">Price</label>
+        <label for="price">Price:</label>
         <input type="number" id="price" name="price" required>
 
-        <label for="brand">Brand</label>
-        <input type="text" id="brand" name="brand" required>
+        <label for="rating">Rating:</label>
+        <input type="number" id="rating" name="rating" required>
 
-        <label for="image_url">Image URL</label>
+        <label for="image_url">Image URL:</label>
         <input type="text" id="image_url" name="image_url" required>
 
-        <button type="submit">Save Changes</button>
+        <button type="submit">Update Product</button>
     </form>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('id');
+        // Fetch the product ID from URL params (e.g., /edit_product?id=1)
+        const productId = new URLSearchParams(window.location.search).get('id');
+        
+        // Fetch product details from the API
+        fetch(`/api/products/${productId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('name').value = data.name;
+                document.getElementById('category').value = data.category;
+                document.getElementById('price').value = data.price;
+                document.getElementById('rating').value = data.rating;
+                document.getElementById('image_url').value = data.image_url;
+            });
 
-        // Fetch product details for editing
-        async function fetchProduct() {
-            const response = await fetch(`http://localhost:5000/api/products/${productId}`);
-            const product = await response.json();
-
-            // Pre-fill the form with existing product data
-            document.getElementById('name').value = product.name;
-            document.getElementById('description').value = product.description;
-            document.getElementById('price').value = product.price;
-            document.getElementById('brand').value = product.brand;
-            document.getElementById('image_url').value = product.image_url;
-        }
-
-        document.getElementById('edit-product-form').addEventListener('submit', async (e) => {
+        // Handle form submission
+        document.getElementById('edit-product-form').addEventListener('submit', (e) => {
             e.preventDefault();
 
             const updatedProduct = {
                 name: document.getElementById('name').value,
-                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
                 price: document.getElementById('price').value,
-                brand: document.getElementById('brand').value,
-                image_url: document.getElementById('image_url').value,
+                rating: document.getElementById('rating').value,
+                image_url: document.getElementById('image_url').value
             };
 
-            const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
+            // Send PUT request to update product
+            fetch(`/api/products/${productId}`, {
                 method: 'PUT',
-                body: JSON.stringify(updatedProduct),
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                body: JSON.stringify(updatedProduct),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Product updated successfully!');
+                window.location.href = '/admin_dashboard.html';  // Redirect back to admin dashboard
+            })
+            .catch((error) => {
+                alert('Error updating product');
+                console.error('Error:', error);
             });
-
-            if (response.ok) {
-                alert('Product updated successfully');
-                window.location.href = 'admin_dashboard.html'; // Redirect back to dashboard
-            } else {
-                alert('Failed to update the product');
-            }
         });
-
-        window.onload = fetchProduct;
     </script>
 </body>
 </html>
