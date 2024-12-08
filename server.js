@@ -74,6 +74,19 @@ app.put('/api/products/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// PUT (update) a product
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { new: true } // returns the updated product
+        );
+        res.status(200).json(updatedProduct);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 // DELETE a product
 app.delete('/api/products/:id', async (req, res) => {
