@@ -112,11 +112,7 @@ html {
     background: linear-gradient(45deg, #7DC383, #699C78);
     color: white;
     transition: background 0.3s ease, transform 0.3s ease;
-}
 
-.hero button:hover {
-    background: linear-gradient(45deg, #699C78, #FFF1BC);
-    transform: scale(1.05); /* Slight enlarge on hover */
 }
 .hero {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/hero-bg.png');
