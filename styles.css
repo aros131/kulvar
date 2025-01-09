@@ -12,6 +12,11 @@ body {
     transition: all 0.3s ease-in-out;
 }
 
+/* Smooth Scroll */
+html {
+    scroll-behavior: smooth;
+}
+
 /* Navigation Bar */
 .navbar {
     display: flex;
@@ -26,160 +31,60 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
 .nav-links a {
     text-decoration: none;
     color: white;
     font-size: 16px;
     font-weight: 500;
+    position: relative;
+}
+
+.nav-links a.active {
+    border-bottom: 2px solid #FFF1BC; /* Highlight active link */
 }
 
 .nav-links a:hover {
     color: #699C78; /* Darker Green */
 }
 
-/* Hero Section */
-.hero {
-    background: linear-gradient(to bottom, #7DC383, #699C78); /* Updated Gradient */
-    color: white;
-    text-align: center;
-    padding: 140px 20px;
-}
-
-.hero .explore-btn {
-    background-color: #699C78; /* Darker Green */
-    color: #699C78;
-}
-
-.hero .explore-btn:hover {
+.nav-links a:hover::before {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
     background-color: #FFF1BC; /* Light Yellow */
-    color: #699C78;
-}
-
-/* Product Carousel */
-.product-carousel {
-    padding: 50px 20px;
-    text-align: center;
-    background-color: #FFF1BC; /* Light Yellow Background */
-}
-
-.product-card .review-link {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 10px 20px;
-    background-color: #7DC383; /* Greenish Background */
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-}
-
-.product-card .review-link:hover {
-    background-color: #699C78; /* Darker Green */
-}
-
-/* Trending Section */
-.trending {
-    padding: 50px 20px;
-    background-color: #7DC383; /* Greenish Background */
-    color: white;
-}
-
-.trending h2 {
-    color: #FFF1BC; /* Light Yellow */
-}
-
-/* Footer */
-footer {
-    background-color: #699C78; /* Darker Green */
-    color: white;
-    padding: 30px 20px;
-    text-align: center;
-}
-
-footer a {
-    color: #FFF1BC; /* Light Yellow */
-    text-decoration: none;
-    font-weight: bold;
-}
-
-footer a:hover {
-    text-decoration: underline;
-}
-
-/* Hamburger Menu Icon */
-.hamburger {
-    display: none;
-    cursor: pointer;
-    font-size: 24px;
-    transition: transform 0.3s ease;
-}
-
-.hamburger.open {
-    transform: rotate(90deg); /* Example animation for open state */
-}
-
-/* Responsive Navbar for Small Screens */
-@media (max-width: 768px) {
-    .hamburger {
-        display: block; /* Show hamburger icon on small screens */
-    }
-
-    .nav-links {
-        display: none; /* Hide links by default */
-        flex-direction: column;
-        gap: 15px;
-        background-color: #49678D; /* Blue Bird */
-        padding: 15px;
-        position: absolute;
-        top: 60px; /* Below the navbar */
-        right: 0;
-        width: 100%;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        transform: translateY(-100%);
-        opacity: 0;
-        transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-
-    .nav-links.active {
-        display: flex; /* Show links */
-        transform: translateY(0);
-        opacity: 1;
-    }
-
-    .nav-links a {
-        padding: 10px 15px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .nav-links a:last-child {
-        border-bottom: none;
-    }
 }
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(to bottom, #699C78, #7DC383); 
+    background: linear-gradient(to bottom, rgba(125, 195, 131, 0.7), rgba(105, 156, 120, 0.7)), url('your-hero-image.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed; /* Parallax Effect */
     color: white;
     text-align: center;
     padding: 140px 20px;
+    position: relative;
 }
 
 .hero h1 {
     font-size: 56px;
     margin-bottom: 20px;
     font-weight: bold;
+    letter-spacing: 1px;
 }
 
 .hero p {
     font-size: 20px;
     margin-bottom: 40px;
     line-height: 1.6;
-}
-
-.hero .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
 }
 
 .hero button {
@@ -190,76 +95,51 @@ footer a:hover {
     border-radius: 8px;
     cursor: pointer;
     text-transform: uppercase;
-}
-
-.hero .explore-btn {
-    background-color: #FFF1BC; 
+    background: linear-gradient(45deg, #7DC383, #699C78);
     color: white;
+    transition: background 0.3s ease, transform 0.3s ease;
 }
 
-.hero .explore-btn:hover {
-    background-color: #7E3620;
+.hero button:hover {
+    background: linear-gradient(45deg, #699C78, #FFF1BC);
+    transform: scale(1.05); /* Slight enlarge on hover */
 }
 
-.hero .learn-btn {
-    background-color: transparent;
-    color: white;
-    border: 2px solid white;
+/* Section Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.hero .learn-btn:hover {
-    background-color: white;
-    color: #49678D;
+section {
+    animation: fadeIn 1s ease-in-out;
 }
-.hero {
-    background: linear-gradient(to bottom, #49678D, #9E4624); /* Existing gradient */
-    color: white;
-    text-align: center;
-    padding: 140px 20px;
-    position: relative;
-    overflow: hidden;
-}
-
-.hero-content {
-    position: relative;
-    z-index: 1; /* Ensures content appears above the image */
-}
-
-.hero-image {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    max-width: 100%;
-    height: auto;
-    opacity: 0.2; /* Adjust for a subtle background effect */
-    z-index: 0;
-}
-
 
 /* Product Carousel */
 .product-carousel {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    max-width: 1200px;
-    margin: 20px auto;
-}
-
-.carousel-track {
-    display: flex;
-    transition: transform 0.5s ease;
+    padding: 50px 20px;
+    text-align: center;
+    background-color: #FFF1BC; /* Light Yellow Background */
 }
 
 .product-card {
-    min-width: 200px;
-    margin: 0 10px;
     background-color: white; /* Card Background */
     border-radius: 10px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
     text-align: center;
     padding: 15px;
-    color: #333;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .product-card img {
@@ -268,56 +148,10 @@ footer a:hover {
     border-radius: 10px;
 }
 
-.product-card h3 {
-    font-size: 18px;
-    margin: 10px 0;
-}
-
-.product-card p {
-    font-size: 14px;
-    color: #666;
-}
-
-.review-link {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 10px 20px;
-    background-color: #9E4624; /* Hay's Russet */
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-}
-
-.review-link:hover {
-    background-color: #7E3620;
-}
-
-/* Navigation Arrows */
-.carousel-prev,
-.carousel-next {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 50%;
-}
-
-.carousel-prev {
-    left: 10px;
-}
-
-.carousel-next {
-    right: 10px;
-}
-
 /* Trending Section */
 .trending {
     padding: 50px 20px;
-    background-color: #F4A688; /* Ochraceous Salmon */
+    background-color: #7DC383; /* Greenish Background */
     color: white;
 }
 
@@ -325,34 +159,19 @@ footer a:hover {
     text-align: center;
     font-size: 32px;
     margin-bottom: 30px;
-    color: white;
-}
-
-.brand-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.brand-card {
-    background-color: white;
-    padding: 20px;
-    text-align: center;
-    border-radius: 10px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
-    color: #333;
+    color: #FFF1BC; /* Light Yellow */
 }
 
 /* Footer */
 footer {
-    background-color: #699C78; 
+    background-color: #699C78; /* Darker Green */
     color: white;
     padding: 30px 20px;
     text-align: center;
 }
 
 footer a {
-    color: #7DC383; 
+    color: #FFF1BC; /* Light Yellow */
     text-decoration: none;
     font-weight: bold;
 }
@@ -361,21 +180,12 @@ footer a:hover {
     text-decoration: underline;
 }
 
-/* Profile Button */
-.profile-btn {
-    display: inline-block;
-    padding: 15px 40px;
-    font-size: 18px;
-    font-weight: bold;
-    background-color: #D2A17E; /* Pinkish Cinnamon */
-    color: #FFFDD0; /* Cream Yellow */
-    text-decoration: none;
-    border-radius: 8px;
-    text-transform: uppercase;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+/* Button Hover Effect */
+button {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.profile-btn:hover {
-    background-color: #FFFDD0;
-    color: #404B33; /* Deep Slate Olive */
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
