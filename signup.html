@@ -4,194 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kayıt Ol</title>
-    <link rel="stylesheet" href="styles.css">
-
-    <!-- Firebase SDK Version 8.x (Non-modular version) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
-    <script>
-        // Your Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjS0s5u9e6112GtEdF0oUDfOmceVAfU04",
-            authDomain: "kulvar-73ee3.firebaseapp.com",
-            projectId: "kulvar-73ee3",
-            storageBucket: "kulvar-73ee3.firebasestorage.app",
-            messagingSenderId: "388627303480",
-            appId: "1:388627303480:web:8c06f475abab4727072acd",
-            measurementId: "G-NKQVVDKED2"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-    </script>
-</head>
-
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         /* General Styles */
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f8f9fa;
+            background-color: #FFF1BC;
             color: #333;
         }
 
-        /* Navigation Bar */
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            text-align: center;
+            margin: 5px 0;
+            color: #555;
+        }
+
+        /* Navbar */
         .navbar {
-            background-color: #49678D;
-            color: white;
-            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        .navbar .logo {
-            font-size: 22px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        /* Sign-Up Container */
-        .container {
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 30px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-color: #7DC383;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        .container h1 {
-            font-size: 28px;
-            color: #49678D;
-            text-align: center;
-            margin-bottom: 20px;
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+            margin: 0;
         }
 
-        .container label {
+        .nav-links a {
+            text-decoration: none;
+            color: white;
             font-size: 16px;
-            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .nav-links a.active {
+            border-bottom: 2px solid #FFF1BC;
+        }
+
+        .hamburger {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: white;
+        }
+
+        /* Sign-Up Form Section */
+        .signup-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            padding: 20px;
+        }
+
+        .signup-form {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .signup-form h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
             color: #333;
         }
 
-        .container input {
+        .signup-form input {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0 20px 0;
-            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
-            font-size: 16px;
+            border-radius: 5px;
         }
 
-        .container button {
+        .signup-form button {
             width: 100%;
-            padding: 12px;
-            background-color: #9E4624; /* Brand color */
-            color: white;
+            padding: 10px;
             font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .container button:hover {
-            background-color: #7E3620;
-        }
-
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .login-link a {
-            color: #49678D;
             font-weight: bold;
-            text-decoration: none;
-        }
-
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-
-        /* Footer Styles */
-        footer {
-            background-color: #49678D;
             color: white;
-            text-align: center;
-            padding: 20px;
-            margin-top: 30px;
+            background-color: #7DC383;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        footer a {
-            color: #F4A688;
+
+        .signup-form button:hover {
+            background-color: #699C78;
+        }
+
+        .signup-form p {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .signup-form p a {
+            color: #7DC383;
             text-decoration: none;
         }
-        footer a:hover {
+
+        .signup-form p a:hover {
             text-decoration: underline;
         }
     </style>
-
+</head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Navbar -->
     <nav class="navbar">
-        <div class="logo">Kulvar</div>
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="Logo" style="height: 50px;">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Anasayfa</a></li>
+            <li><a href="koc.html">Koçlarımız</a></li>
+            <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
+            <li><a href="ulas.html">Bize Ulaşın</a></li>
+            <li><a href="login.html">Giriş Yap</a></li>
+        </ul>
     </nav>
 
-    <!-- Sign-Up Form -->
-    <div class="container">
-        <h1>Kayıt Ol</h1>
-        <form id="signup-form">
-            <label for="email">E-posta:</label>
-            <input type="email" id="email" placeholder="E-posta adresinizi girin..." required>
-
-            <label for="password">Şifre:</label>
-            <input type="password" id="password" placeholder="Şifrenizi girin..." required>
-
-            <label for="confirm-password">Şifre Tekrar:</label>
-            <input type="password" id="confirm-password" placeholder="Şifrenizi tekrar girin..." required>
-
+    <!-- Sign-Up Form Section -->
+    <section class="signup-section">
+        <form class="signup-form" action="#" method="post">
+            <h2>Kayıt Ol</h2>
+            <input type="text" name="name" placeholder="Adınız ve Soyadınız" required>
+            <input type="email" name="email" placeholder="E-posta Adresiniz" required>
+            <input type="password" name="password" placeholder="Şifreniz" required>
+            <input type="password" name="confirm-password" placeholder="Şifrenizi Onaylayın" required>
             <button type="submit">Kayıt Ol</button>
+            <p>Hesabınız var mı? <a href="login.html">Giriş Yap</a></p>
         </form>
-        <div class="login-link">
-            Zaten bir hesabınız var mı? <a href="login.html">Giriş Yap</a>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
-        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
-    </footer>
-
-    <!-- Firebase Sign-Up Script -->
-    <script>
-        const signupForm = document.getElementById('signup-form');
-        signupForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Prevents page from reloading
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-
-            // Check if passwords match
-            if (password !== confirmPassword) {
-                alert("Şifreler eşleşmiyor. Lütfen tekrar kontrol edin.");
-                return;
-            }
-
-            // Create a new user with Firebase Authentication
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Sign-up successful
-                    alert('Kayıt başarılı! Hoş geldiniz, ' + userCredential.user.email);
-                    window.location.href = 'login.html'; // Redirect to login page
-                })
-                .catch((error) => {
-                    alert('Hata: ' + error.message); // Show error message
-                });
-        });
-    </script>
+    </section>
 </body>
 </html>
