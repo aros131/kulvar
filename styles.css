@@ -213,42 +213,33 @@ section {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background-color: rgba(125, 195, 131, 0.8); /* Semi-transparent Green */
-    color: white;
-    border: none;
-    padding: 15px;
+    background-color: transparent; /* No background */
+    border: none; /* Remove default button styling */
     cursor: pointer;
-    border-radius: 50%;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
-    transition: transform 0.3s ease, background-color 0.3s ease;
+    padding: 0;
+    width: 40px; /* Icon container size */
+    height: 40px;
 }
 
-.carousel-prev:hover,
-.carousel-next:hover {
-    transform: scale(1.1); /* Slight enlarge on hover */
-    background-color: #699C78; /* Darker Green */
+.carousel-prev img,
+.carousel-next img {
+    width: 100%; /* Icon fills the container */
+    height: auto;
 }
 
 .carousel-prev {
-    left: 20px; /* Move left arrow inward */
+    left: 20px; /* Position on the left */
 }
 
 .carousel-next {
-    right: 20px; /* Move right arrow inward */
+    right: 20px; /* Position on the right */
 }
 
-.carousel-prev::before,
-.carousel-next::before {
-    content: '';
-    display: inline-block;
-    border: solid white;
-    border-width: 0 3px 3px 0;
-    padding: 5px;
-    transform: rotate(-45deg); /* Default left arrow */
-}
-
-.carousel-next::before {
-    transform: rotate(45deg); /* Default right arrow */
+/* Hover Effects */
+.carousel-prev:hover img,
+.carousel-next:hover img {
+    transform: scale(1.1); /* Slight zoom */
+    transition: transform 0.3s ease;
 }
 
 /* Footer */
