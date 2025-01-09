@@ -70,46 +70,7 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .coach-section {
-    text-align: center;
-    padding: 20px;
-    background-color: #FFF1BC;
-}
-
-.search-filter {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.search-filter input,
-.search-filter select {
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.coach-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-.coach-card {
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    text-align: center;
-    transition: transform 0.3s ease;
-}
-
-.coach-card:hover {
-    transform: scale(1.05);
-}
+    
 
 .coach-card img {
     width: 100%;
@@ -239,6 +200,10 @@
     <h1>Koçlarımız</h1>
     <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
 
+    <section class="coach-section">
+    <h1>Koçlarımız</h1>
+    <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
+
     <!-- Search and Filter Bar -->
     <div class="search-filter">
         <input type="text" id="searchBar" placeholder="Koçlar ara..." onkeyup="filterCoaches()">
@@ -274,38 +239,6 @@
     </div>
 </section>
 
-    <!-- Coaches Section -->
-    <section class="coaches-grid">
-        <div class="coach-card" data-specialization="fitness">
-            <img src="images/coach1.jpg" alt="Ayşe Yılmaz">
-            <h2>Ayşe Yılmaz</h2>
-            <p>Yoga Uzmanı</p>
-            <p>Esnekliğinizi ve zihinsel dinginliğinizi artırın.</p>
-            <button class="view-profile">Profil Gör</button>
-        </div>
-        <div class="coach-card" data-specialization="nutrition">
-            <img src="images/coach2.jpg" alt="Mehmet Aksoy">
-            <h2>Mehmet Aksoy</h2>
-            <p>Beslenme Uzmanı</p>
-            <p>Sağlıklı ve sürdürülebilir bir beslenme için rehberiniz.</p>
-            <button class="view-profile">Profil Gör</button>
-        </div>
-        <div class="coach-card" data-specialization="fitness">
-            <img src="images/coach3.jpg" alt="Canan Kurt">
-            <h2>Canan Kurt</h2>
-            <p>Fitness Koçu</p>
-            <p>Güçlenmek ve formda kalmak için uzman desteği.</p>
-            <button class="view-profile">Profil Gör</button>
-        </div>
-        <div class="coach-card" data-specialization="pilates">
-            <img src="images/coach4.jpg" alt="Ali Demir">
-            <h2>Ali Demir</h2>
-            <p>Pilates Eğitmeni</p>
-            <p>Merkez bölgenizi güçlendiren pilates programları.</p>
-            <button class="view-profile">Profil Gör</button>
-        </div>
-    </section>
-  
 
 </body>
 </html>
