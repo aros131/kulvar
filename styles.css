@@ -253,19 +253,45 @@ section {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(125, 195, 131, 0.8); /* Semi-transparent Green */
     color: white;
     border: none;
-    padding: 10px;
+    padding: 15px;
     cursor: pointer;
     border-radius: 50%;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+    transition: transform 0.3s ease, background-color 0.3s ease;
 }
+
+.carousel-prev:hover,
+.carousel-next:hover {
+    transform: scale(1.1); /* Slight enlarge on hover */
+    background-color: #699C78; /* Darker Green */
+}
+
 .carousel-prev {
-    left: 10px;
+    left: 20px; /* Move left arrow inward */
 }
+
 .carousel-next {
-    right: 10px;
+    right: 20px; /* Move right arrow inward */
 }
+
+/* Arrow Icons */
+.carousel-prev::before,
+.carousel-next::before {
+    content: '';
+    display: inline-block;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    padding: 5px;
+    transform: rotate(-45deg); /* Default left arrow */
+}
+
+.carousel-next::before {
+    transform: rotate(45deg); /* Default right arrow */
+}
+
 /* Trending Section */
 .trending {
     padding: 50px 20px;
@@ -294,84 +320,103 @@ section {
     color: #333;
     color: #FFF1BC; /* Light Yellow */
 }
+<footer>
+    <div class="footer-container">
+        <div class="footer-section">
+            <h3>About Us</h3>
+            <p>&copy; 2024 Kas yap Platformu. All Rights Reserved.</p>
+        </div>
+        <div class="footer-section">
+            <h3>Quick Links</h3>
+            <ul class="footer-links">
+                <li><a href="privacy.html">Privacy Policy</a></li>
+                <li><a href="contact.html">Contact Us</a></li>
+                <li><a href="admin_login.html">Admin Login</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h3>Follow Us</h3>
+            <ul class="social-links">
+                <li><a href="#"><img src="images/facebook-icon.svg" alt="Facebook"></a></li>
+                <li><a href="#"><img src="images/twitter-icon.svg" alt="Twitter"></a></li>
+                <li><a href="#"><img src="images/instagram-icon.svg" alt="Instagram"></a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
 
-/* Footer */
+/* Footer Styling */
 footer {
-    background-color: #699C78; 
-    background-color: #699C78; /* Darker Green */
+    background-color: #699C78; /* Dark Green */
     color: white;
-    padding: 30px 20px;
+    padding: 40px 20px;
     text-align: center;
+    position: relative;
 }
 
-footer a {
-    color: #7DC383; 
-    color: #FFF1BC; /* Light Yellow */
-    text-decoration: none;
-    font-weight: bold;
-}
-@@ -361,21 +180,12 @@ footer a:hover {
-    text-decoration: underline;
-}
-/* Footer */
-footer {
-    background-color: #699C78; 
-    background-color: #699C78; /* Darker Green */
-    color: white;
-    padding: 30px 20px;
-    text-align: center;
+.footer-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-footer a {
-    color: #7DC383; 
-    color: #FFF1BC; /* Light Yellow */
-    text-decoration: none;
-    font-weight: bold;
-}
-@@ -361,21 +180,12 @@ footer a:hover {
-    text-decoration: underline;
+.footer-section {
+    flex: 1 1 30%;
+    text-align: left;
+    padding: 10px;
 }
 
-/* Profile Button */
-.profile-btn {
-    display: inline-block;
-    padding: 15px 40px;
+.footer-section h3 {
     font-size: 18px;
-    font-weight: bold;
-    background-color: #D2A17E; /* Pinkish Cinnamon */
-    color: #FFFDD0; /* Cream Yellow */
-    text-decoration: none;
-    border-radius: 8px;
-    text-transform: uppercase;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-/* Button Hover Effect */
-button {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #FFF1BC; /* Light Yellow */
+    margin-bottom: 10px;
 }
 
-.profile-btn:hover {
-    background-color: #FFFDD0;
-    color: #404B33; /* Deep Slate Olive */
-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-/* Footer */
-footer {
-    background-color: #699C78; /* Darker Green */
-    color: white;
-    padding: 30px 20px;
-    text-align: center;
-}
-
-footer a {
+.footer-section p,
+.footer-section a {
+    font-size: 14px;
     color: #FFF1BC; /* Light Yellow */
     text-decoration: none;
-    font-weight: bold;
+    transition: color 0.3s ease;
 }
 
-footer a:hover {
-    text-decoration: underline;
+.footer-section a:hover {
+    color: #FFFDD0; /* Brighter Cream */
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin: 5px 0;
+}
+
+.footer-links a {
+    display: inline-block;
+    padding: 5px 0;
+}
+
+.social-links {
+    display: flex;
+    justify-content: start;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.social-links img {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.3s ease;
+}
+
+.social-links img:hover {
+    transform: scale(1.1);
 }
 
 /* Button Hover Effect */
