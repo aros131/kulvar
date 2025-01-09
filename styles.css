@@ -61,21 +61,6 @@ html {
     height: 2px;
     background-color: #FFF1BC; /* Light Yellow */
 }
-@media (max-width: 768px) {
-    .nav-links {
-        flex-direction: column;
-    }
-    .hero h1 {
-        font-size: 36px;
-    }
-    .product-card {
-        min-width: 90%;
-    }
-}
-.nav-links a.active::before {
-    height: 3px;
-    background-color: #FFF1BC;
-}
 
 /* Hero Section */
 .hero {
@@ -137,73 +122,20 @@ section {
 }
 
 /* Product Carousel */
-.carousel-prev:hover,
-.carousel-next:hover {
-    background-color: rgba(0, 0, 0, 0.7);
-}
-
-.product-carousel {
-    padding: 50px 20px;
-    text-align: center;
-    background-color: #FFF1BC; /* Light Yellow Background */
-}
-.product-card .review-link {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 10px 20px;
-    background-color: #7DC383; /* Greenish Background */
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-}
-.product-card .review-link:hover {
-    background-color: #699C78; /* Darker Green */
-}
-.product-card h3 {
-    font-size: 20px;
-    font-weight: bold;
-}
-.product-card p {
-    font-size: 16px;
-}
-
-/* Trending Section */
-.trending {
-    padding: 50px 20px;
-    background-color: #7DC383; /* Greenish Background */
-    color: white;
-}
-.trending h2 {
-    color: #FFF1BC; /* Light Yellow */
-}
-
-/* Trending Section */
-.trending {
-    padding: 50px 20px;
-    background-color: #7DC383; /* Greenish Background */
-    color: white;
-}
-
-.trending h2 {
-    text-align: center;
-    font-size: 32px;
-    margin-bottom: 30px;
-    color: #FFF1BC; /* Light Yellow */
-}
-/* Product Carousel */
 .product-carousel {
     position: relative;
     overflow: hidden;
     width: 100%;
     max-width: 1200px;
     margin: 20px auto;
+    text-align: center;
+    padding: 50px 20px;
+    background-color: #FFF1BC; /* Light Yellow Background */
 }
+
 .carousel-track {
     display: flex;
     transition: transform 0.5s ease;
-    padding: 50px 20px;
-    text-align: center;
-    background-color: #FFF1BC; /* Light Yellow Background */
 }
 
 .product-card {
@@ -222,31 +154,35 @@ section {
     box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
 }
 
+.product-card h3 {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.product-card p {
+    font-size: 16px;
+    color: #666;
+}
+
 .product-card img {
-@@ -268,91 +148,30 @@ footer a:hover {
     border-radius: 10px;
 }
 
-.product-card h3 {
-    font-size: 18px;
-    margin: 10px 0;
-}
-.product-card p {
-    font-size: 14px;
-    color: #666;
-}
-.review-link {
+/* Review Link */
+.product-card .review-link {
     display: inline-block;
     margin-top: 10px;
     padding: 10px 20px;
-    background-color: #9E4624; /* Hay's Russet */
+    background-color: #7DC383; /* Greenish Background */
     color: white;
     text-decoration: none;
     border-radius: 5px;
 }
-.review-link:hover {
-    background-color: #7E3620;
+.product-card .review-link:hover {
+    background-color: #699C78; /* Darker Green */
 }
+
 /* Navigation Arrows */
 .carousel-prev,
 .carousel-next {
@@ -277,7 +213,6 @@ section {
     right: 20px; /* Move right arrow inward */
 }
 
-/* Arrow Icons */
 .carousel-prev::before,
 .carousel-next::before {
     content: '';
@@ -292,62 +227,9 @@ section {
     transform: rotate(45deg); /* Default right arrow */
 }
 
-/* Trending Section */
-.trending {
-    padding: 50px 20px;
-    background-color: #F4A688; /* Ochraceous Salmon */
-    background-color: #7DC383; /* Greenish Background */
-    color: white;
-}
-
-.trending h2 {
-    text-align: center;
-    font-size: 32px;
-    margin-bottom: 30px;
-    color: white;
-}
-.brand-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-.brand-card {
-    background-color: white;
-    padding: 20px;
-    text-align: center;
-    border-radius: 10px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
-    color: #333;
-    color: #FFF1BC; /* Light Yellow */
-}
-<footer>
-    <div class="footer-container">
-        <div class="footer-section">
-            <h3>About Us</h3>
-            <p>&copy; 2024 Kas yap Platformu. All Rights Reserved.</p>
-        </div>
-        <div class="footer-section">
-            <h3>Quick Links</h3>
-            <ul class="footer-links">
-                <li><a href="privacy.html">Privacy Policy</a></li>
-                <li><a href="contact.html">Contact Us</a></li>
-                <li><a href="admin_login.html">Admin Login</a></li>
-            </ul>
-        </div>
-        <div class="footer-section">
-            <h3>Follow Us</h3>
-            <ul class="social-links">
-                <li><a href="#"><img src="images/facebook-icon.svg" alt="Facebook"></a></li>
-                <li><a href="#"><img src="images/twitter-icon.svg" alt="Twitter"></a></li>
-                <li><a href="#"><img src="images/instagram-icon.svg" alt="Instagram"></a></li>
-            </ul>
-        </div>
-    </div>
-</footer>
-
-/* Footer Styling */
+/* Footer */
 footer {
-    background-color: #699C78; /* Dark Green */
+    background-color: #699C78; /* Darker Green */
     color: white;
     padding: 40px 20px;
     text-align: center;
@@ -419,12 +301,19 @@ footer {
     transform: scale(1.1);
 }
 
-/* Button Hover Effect */
-button {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-links {
+        flex-direction: column;
+    }
+    .hero h1 {
+        font-size: 36px;
+    }
+    .product-card {
+        min-width: 90%;
+    }
+    .footer-container {
+        flex-direction: column;
+        text-align: center;
+    }
 }
