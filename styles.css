@@ -157,7 +157,7 @@ footer a:hover {
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(to bottom, #49678D, #9E4624); /* Blue Bird to Hay's Russet */
+    background: linear-gradient(to bottom, #699C78, #7DC383); 
     color: white;
     text-align: center;
     padding: 140px 20px;
@@ -193,7 +193,7 @@ footer a:hover {
 }
 
 .hero .explore-btn {
-    background-color: #9E4624; /* Hay's Russet */
+    background-color: #FFF1BC; 
     color: white;
 }
 
@@ -345,14 +345,14 @@ footer a:hover {
 
 /* Footer */
 footer {
-    background-color: #49678D; /* Blue Bird */
+    background-color: #699C78; 
     color: white;
     padding: 30px 20px;
     text-align: center;
 }
 
 footer a {
-    color: #F4A688; /* Ochraceous Salmon */
+    color: #7DC383; 
     text-decoration: none;
     font-weight: bold;
 }
