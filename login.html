@@ -4,110 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giriş Yap</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        /* General Styles */
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f8f9fa;
+            background-color: #FFF1BC;
             color: #333;
         }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            text-align: center;
+            margin: 5px 0;
+            color: #555;
+        }
+
+        /* Navbar */
         .navbar {
-            background-color: #49678D;
-            color: white;
-            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background-color: #7DC383;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .navbar .logo {
-            font-size: 22px;
-            font-weight: bold;
-        }
-        .navbar .nav-links a {
-            color: white;
-            text-decoration: none;
-            margin: 0 15px;
-            font-size: 16px;
-        }
-        .navbar .nav-links a:hover {
-            color: #F4A688;
-        }
-        .container {
-            max-width: 400px;
-            margin: 80px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .container h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #49678D;
-            text-align: center;
-        }
-        form {
+
+        .nav-links {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            list-style: none;
+            gap: 20px;
+            margin: 0;
         }
-        label {
-            font-weight: 600;
-            font-size: 14px;
-            color: #555;
+
+        .nav-links a {
+            text-decoration: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
         }
-        input {
+
+        .nav-links a.active {
+            border-bottom: 2px solid #FFF1BC;
+        }
+
+        .hamburger {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: white;
+        }
+
+        /* Login Form Section */
+        .login-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            padding: 20px;
+        }
+
+        .login-form {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-form h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .login-form input {
+            width: 100%;
             padding: 10px;
             font-size: 16px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            border-radius: 5px;
         }
-        input:focus {
-            border-color: #49678D;
-            outline: none;
-            box-shadow: 0px 0px 5px rgba(73, 103, 141, 0.5);
-        }
-        button {
-            padding: 12px;
+
+        .login-form button {
+            width: 100%;
+            padding: 10px;
             font-size: 16px;
-            background-color: #9E4624;
+            font-weight: bold;
             color: white;
+            background-color: #7DC383;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        button:hover {
-            background-color: #7E3620;
+
+        .login-form button:hover {
+            background-color: #699C78;
         }
-        .signup-link {
+
+        .login-form p {
             text-align: center;
             margin-top: 15px;
             font-size: 14px;
         }
-        .signup-link a {
-            color: #49678D;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .signup-link a:hover {
-            text-decoration: underline;
-        }
-        footer {
-            background-color: #49678D;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            margin-top: 40px;
-        }
-        footer a {
-            color: #F4A688;
+
+        .login-form p a {
+            color: #7DC383;
             text-decoration: none;
         }
-        footer a:hover {
+
+        .login-form p a:hover {
             text-decoration: underline;
         }
     </style>
@@ -115,95 +134,29 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar">
-        <div class="logo">Kulvar</div>
-        <div class="nav-links">
-            <a href="index.html">Anasayfa</a>
-            <a href="hemen_incele.html">Hemen İncele</a>
-            <a href="brand.html">Markalar</a>
-            <a href="review.html">İnceleme Gönder</a>
-            <a href="login.html" class="active">Giriş Yap</a>
-            <a href="profile.html">Profilim</a>
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="Logo" style="height: 50px;">
+            </a>
         </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Anasayfa</a></li>
+            <li><a href="koclarimiz.html">Koçlarımız</a></li>
+            <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
+            <li><a href="contact.html">Bize Ulaşın</a></li>
+            <li><a href="login.html" class="active">Giriş Yap</a></li>
+        </ul>
     </nav>
 
-    <!-- Login Form -->
-    <div class="container" id="login-container">
-        <h1>Giriş Yap</h1>
-        <form id="login-form">
-            <label for="email">E-posta:</label>
-            <input type="email" id="email" placeholder="E-posta adresinizi girin..." required>
-
-            <label for="password">Şifre:</label>
-            <input type="password" id="password" placeholder="Şifrenizi girin..." required>
-
+    <!-- Login Form Section -->
+    <section class="login-section">
+        <form class="login-form" action="#" method="post">
+            <h2>Giriş Yap</h2>
+            <input type="email" name="email" placeholder="E-posta Adresiniz" required>
+            <input type="password" name="password" placeholder="Şifreniz" required>
             <button type="submit">Giriş Yap</button>
+            <p>Hesabınız yok mu? <a href="signup.html">Kayıt Ol</a></p>
         </form>
-        <div class="signup-link">
-            Henüz bir hesabınız yok mu? <a href="signup.html">Kayıt Olun</a>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        &copy; 2024 Ürün İnceleme Platformu. Tüm Hakları Saklıdır. <br>
-        <a href="privacy.html">Gizlilik Politikası</a> | <a href="contact.html">İletişim</a>
-    </footer>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjS0s5u9e6112GtEdF0oUDfOmceVAfU04",
-            authDomain: "kulvar-73ee3.firebaseapp.com",
-            projectId: "kulvar-73ee3",
-            storageBucket: "kulvar-73ee3.firebasestorage.app",
-            messagingSenderId: "388627303480",
-            appId: "1:388627303480:web:8c06f475abab4727072acd",
-            measurementId: "G-NKQVVDKED2"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-
-        // Check if the user is already logged in, but do not redirect immediately
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                // Check if user is admin or a regular user, but do not redirect automatically
-                if (user.email === 'admin@kulvar.com') {
-                    // Admin login detected, redirect after the form is submitted
-                    document.getElementById('login-form').style.display = 'none'; // Hide form after auto login
-                    window.location.href = 'admin-dashboard.html';  // Redirect to Admin Dashboard
-                } else {
-                    // Regular user login detected
-                    document.getElementById('login-form').style.display = 'none'; // Hide form after auto login
-                    window.location.href = 'profile.html';  // Redirect to Profile
-                }
-            }
-        });
-
-        // Handle login form submission
-        const loginForm = document.getElementById('login-form');
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Prevent page reload
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            // Firebase login method
-            auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    if (user.email === 'admin@kulvar.com') {
-                        window.location.href = 'admin-dashboard.html';  // Redirect to Admin Dashboard
-                    } else {
-                        window.location.href = 'profile.html';  // Redirect to Profile
-                    }
-                })
-                .catch((error) => {
-                    alert('Hata: ' + error.message); // Show error message
-                    console.error(error.message);  // Debugging line
-                });
-        });
-    </script>
+    </section>
 </body>
 </html>
