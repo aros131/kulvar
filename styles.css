@@ -101,6 +101,11 @@ html {
     line-height: 1.6;
 }
 
+.hero button:hover {
+    
+    transform: scale(1.05); /* Slight enlarge on hover */
+}
+    
 .hero button {
     padding: 15px 40px;
     font-size: 18px;
