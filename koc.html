@@ -1,12 +1,121 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Koçlarımız</title>
-    <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFF1BC;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            text-align: center;
+            margin: 5px 0;
+            color: #555;
+        }
+
+        /* Hero Section */
+        .hero-coaches {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #7DC383;
+            color: white;
+        }
+
+        /* Filter/Search Section */
+        .filter-coaches {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        #search-bar {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 250px;
+        }
+
+        #specialization-filter {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Coaches Grid */
+        .coaches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .coach-card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .coach-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .coach-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+
+        .coach-card h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .coach-card p {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .view-profile {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background-color: #7DC383;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .view-profile:hover {
+            background-color: #699C78;
+        }
+    </style>
 </head>
 <body>
     <!-- Hero Section -->
@@ -58,32 +167,5 @@
             <button class="view-profile">Profil Gör</button>
         </div>
     </section>
-
-    <!-- JavaScript for Search and Filter -->
-    <script>
-        const searchBar = document.getElementById('search-bar');
-        const specializationFilter = document.getElementById('specialization-filter');
-        const coachCards = document.querySelectorAll('.coach-card');
-
-        searchBar.addEventListener('input', filterCoaches);
-        specializationFilter.addEventListener('change', filterCoaches);
-
-        function filterCoaches() {
-            const searchText = searchBar.value.toLowerCase();
-            const selectedSpecialization = specializationFilter.value;
-
-            coachCards.forEach(card => {
-                const name = card.querySelector('h2').textContent.toLowerCase();
-                const specialization = card.getAttribute('data-specialization');
-
-                if ((name.includes(searchText) || searchText === '') &&
-                    (specialization === selectedSpecialization || selectedSpecialization === 'all')) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-    </script>
 </body>
 </html>
