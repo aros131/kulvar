@@ -63,16 +63,6 @@ html {
 }
 
 /* Hero Section */
-.hero {
-    background: linear-gradient(to bottom, rgba(125, 195, 131, 0.7), rgba(105, 156, 120, 0.7)), url('images/hero-image.webp');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed; /* Parallax Effect */
-    color: white;
-    text-align: center;
-    padding: 140px 20px;
-    position: relative;
-}
 
 .hero h1 {
     font-size: 56px;
@@ -105,7 +95,7 @@ html {
     transform: scale(1.05); /* Slight enlarge on hover */
 }
 .hero {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('images/hero-bg.png');
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/hero-bg.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed; /* For a parallax effect */
