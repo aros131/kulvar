@@ -7,52 +7,103 @@ body {
     color: #333; /* Standard Text Color */
 }
 
+* {
+    box-sizing: border-box;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Navigation Bar */
 .navbar {
-    background-color: #699C78; /* Darker Green */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #7DC383; /* Greenish Background */
+    padding: 15px 20px;
     color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 .nav-links a:hover {
-    color: #7DC383; /* Greenish Background */
+    color: #699C78; /* Darker Green */
 }
 
+/* Hero Section */
 .hero {
-    background: linear-gradient(to bottom, #699C78, #9E4624); /* Updated Gradient */
+    background: linear-gradient(to bottom, #7DC383, #699C78); /* Updated Gradient */
     color: white;
+    text-align: center;
+    padding: 140px 20px;
 }
 
 .hero .explore-btn {
-    background-color: #9E4624; /* Hay's Russet */
+    background-color: #699C78; /* Darker Green */
     color: white;
 }
 
 .hero .explore-btn:hover {
-    background-color: #7E3620;
+    background-color: #FFF1BC; /* Light Yellow */
+    color: #333;
 }
 
-.review-link {
-    background-color: #9E4624; /* Hay's Russet */
+/* Product Carousel */
+.product-carousel {
+    padding: 50px 20px;
+    text-align: center;
+    background-color: #FFF1BC; /* Light Yellow Background */
+}
+
+.product-card .review-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #7DC383; /* Greenish Background */
     color: white;
+    text-decoration: none;
+    border-radius: 5px;
 }
 
-.review-link:hover {
-    background-color: #7E3620;
+.product-card .review-link:hover {
+    background-color: #699C78; /* Darker Green */
 }
 
+/* Trending Section */
 .trending {
+    padding: 50px 20px;
     background-color: #7DC383; /* Greenish Background */
     color: white;
 }
 
+.trending h2 {
+    color: #FFF1BC; /* Light Yellow */
+}
+
+/* Footer */
 footer {
     background-color: #699C78; /* Darker Green */
     color: white;
+    padding: 30px 20px;
+    text-align: center;
 }
 
 footer a {
     color: #FFF1BC; /* Light Yellow */
+    text-decoration: none;
+    font-weight: bold;
 }
 
+footer a:hover {
+    text-decoration: underline;
+}
 
 /* Hamburger Menu Icon */
 .hamburger {
