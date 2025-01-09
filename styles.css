@@ -3,7 +3,7 @@ body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #FFF1BC; /* Light Yellow Background */
+    background-color: #f8f9fa; /* Light Gray Background */
     color: #333; /* Standard Text Color */
 }
 
@@ -17,7 +17,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #7DC383; /* Greenish Background */
+    background-color: #49678D; /* Blue Bird */
     padding: 15px 20px;
     color: white;
     position: sticky;
@@ -32,6 +32,11 @@ body {
     text-transform: uppercase;
 }
 
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
 .nav-links a {
     text-decoration: none;
     color: white;
@@ -40,14 +45,131 @@ body {
 }
 
 .nav-links a:hover {
-    color: #699C78; /* Darker Green */
+    color: #F4A688; /* Ochraceous Salmon */
+}
+.nav-links a.active {
+    color: #F4A688; /* Ochraceous Salmon */
+    font-weight: bold;
+}
+.logo img {
+    height: 50px; /* Adjust height for navbar */
+    max-width: 100%;
+}
+
+.hero img {
+    height: 100px; /* Adjust height for hero section */
+    max-width: 100%;
+}
+
+
+/* Hamburger Menu Icon */
+.hamburger {
+    display: none;
+    cursor: pointer;
+    font-size: 24px;
+    transition: transform 0.3s ease;
+}
+
+.hamburger.open {
+    transform: rotate(90deg); /* Example animation for open state */
+}
+
+/* Responsive Navbar for Small Screens */
+@media (max-width: 768px) {
+    .hamburger {
+        display: block; /* Show hamburger icon on small screens */
+    }
+
+    .nav-links {
+        display: none; /* Hide links by default */
+        flex-direction: column;
+        gap: 15px;
+        background-color: #49678D; /* Blue Bird */
+        padding: 15px;
+        position: absolute;
+        top: 60px; /* Below the navbar */
+        right: 0;
+        width: 100%;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-100%);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .nav-links.active {
+        display: flex; /* Show links */
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .nav-links a {
+        padding: 10px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
 }
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(to bottom, rgba(125, 195, 131, 0.8), rgba(105, 156, 120, 0.8)), url('images/hero-image.webp');
-    background-size: cover;
-    background-position: center;
+    background: linear-gradient(to bottom, #49678D, #9E4624); /* Blue Bird to Hay's Russet */
+    color: white;
+    text-align: center;
+    padding: 140px 20px;
+}
+
+.hero h1 {
+    font-size: 56px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.hero p {
+    font-size: 20px;
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+
+.hero .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.hero button {
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.hero .explore-btn {
+    background-color: #9E4624; /* Hay's Russet */
+    color: white;
+}
+
+.hero .explore-btn:hover {
+    background-color: #7E3620;
+}
+
+.hero .learn-btn {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.hero .learn-btn:hover {
+    background-color: white;
+    color: #49678D;
+}
+.hero {
+    background: linear-gradient(to bottom, #49678D, #9E4624); /* Existing gradient */
     color: white;
     text-align: center;
     padding: 140px 20px;
@@ -55,48 +177,162 @@ body {
     overflow: hidden;
 }
 
-.hero .explore-btn {
-    background-color: #699C78; /* Darker Green */
-    color: white;
+.hero-content {
+    position: relative;
+    z-index: 1; /* Ensures content appears above the image */
 }
 
-.hero .explore-btn:hover {
-    background-color: #FFF1BC; /* Light Yellow */
-    color: #333;
-    transform: scale(1.05);
+.hero-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 100%;
+    height: auto;
+    opacity: 0.2; /* Adjust for a subtle background effect */
+    z-index: 0;
 }
+
 
 /* Product Carousel */
 .product-carousel {
-    padding: 50px 20px;
-    text-align: center;
-    background-color: #FFF1BC; /* Light Yellow Background */
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
 }
 
-.product-card .review-link {
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.product-card {
+    min-width: 200px;
+    margin: 0 10px;
+    background-color: white; /* Card Background */
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
+    text-align: center;
+    padding: 15px;
+    color: #333;
+}
+
+.product-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.product-card h3 {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.product-card p {
+    font-size: 14px;
+    color: #666;
+}
+
+.review-link {
     display: inline-block;
     margin-top: 10px;
     padding: 10px 20px;
-    background-color: #7DC383; /* Greenish Background */
+    background-color: #9E4624; /* Hay's Russet */
     color: white;
     text-decoration: none;
     border-radius: 5px;
 }
 
-.product-card .review-link:hover {
-    background-color: #699C78; /* Darker Green */
+.review-link:hover {
+    background-color: #7E3620;
+}
+
+/* Navigation Arrows */
+.carousel-prev,
+.carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.carousel-prev {
+    left: 10px;
+}
+
+.carousel-next {
+    right: 10px;
+}
+
+/* Trending Section */
+.trending {
+    padding: 50px 20px;
+    background-color: #F4A688; /* Ochraceous Salmon */
+    color: white;
+}
+
+.trending h2 {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 30px;
+    color: white;
+}
+
+.brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.brand-card {
+    background-color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
+    color: #333;
 }
 
 /* Footer */
 footer {
-    background-color: #7DC383; /* Greenish Background */
+    background-color: #49678D; /* Blue Bird */
     color: white;
     padding: 30px 20px;
     text-align: center;
 }
 
 footer a {
-    color: #FFF1BC; /* Light Yellow */
+    color: #F4A688; /* Ochraceous Salmon */
     text-decoration: none;
     font-weight: bold;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Profile Button */
+.profile-btn {
+    display: inline-block;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #D2A17E; /* Pinkish Cinnamon */
+    color: #FFFDD0; /* Cream Yellow */
+    text-decoration: none;
+    border-radius: 8px;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.profile-btn:hover {
+    background-color: #FFFDD0;
+    color: #404B33; /* Deep Slate Olive */
 }
