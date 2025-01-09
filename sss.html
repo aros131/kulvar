@@ -88,41 +88,6 @@
         .faq.open .faq-answer {
             display: block;
         }
-         <!-- Navigation Bar -->
-   <nav class="navbar">
-    <div class="logo">
-        <a href="index.html">
-            <img src="images/logo.png" alt="Logo" style="height: 50px;">
-        </a>
-    </div>
-    <div class="hamburger">
-        ☰
-    </div>
-    <ul class="nav-links">
-        <li><a href="index.html">Anasayfa</a></li>
-        
-        <li><a href="koc.html" class="active">Koçlarımız</a></li>
-        <li><a href="sss.html">Sıkça Sorulan Sorular</a></li>
-        <li><a href="ulas.html">Bize Ulaşın</a></li>
-        <li><a href="login.html">Giriş Yap</a></li>
-    </ul>
-</nav>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const hamburger = document.querySelector('.hamburger');
-        const navLinks = document.querySelector('.nav-links');
-
-        hamburger.addEventListener('click', () => {
-            navLinks.classList.toggle('show');
-        });
-
-        // Close menu when a link is clicked (optional)
-        navLinks.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('show');
-            });
-        });
-    });
 
         /* Call to Action */
         .faq-cta {
@@ -150,6 +115,21 @@
         <h1>Sıkça Sorulan Sorular</h1>
         <p>Kafanıza takılan sorular mı var? İşte sıkça sorulan sorular ve yanıtlarımız!</p>
     </section>
+<nav class="navbar">
+    <div class="logo">
+        <a href="index.html">
+            <img src="images/logo.png" alt="Logo" style="height: 50px;">
+        </a>
+    </div>
+    <div class="hamburger">☰</div>
+    <ul class="nav-links">
+        <li><a href="index.html">Anasayfa</a></li>
+        <li><a href="koclarimiz.html">Koçlarımız</a></li>
+        <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
+        <li><a href="contact.html" class="active">Bize Ulaşın</a></li>
+        <li><a href="login.html">Giriş Yap</a></li>
+    </ul>
+</nav>
 
     <!-- FAQ Section -->
     <section class="faq-section">
