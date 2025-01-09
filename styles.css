@@ -14,6 +14,17 @@
 .profile-link img:hover {
     transform: scale(1.1);
 }
+.program-list a {
+    text-decoration: none; /* Remove underline */
+    color: #2F6D48; /* Dark green color */
+    font-weight: bold; /* Optional: Make the link text bold */
+    transition: color 0.3s ease; /* Smooth color transition on hover */
+}
+
+.program-list a:hover {
+    color: #1D4830; /* Slightly darker green on hover */
+}
+
 /* General Styles */
 body {
     font-family: 'Poppins', sans-serif;
