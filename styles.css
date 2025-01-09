@@ -47,12 +47,12 @@ body {
 
 .hero .explore-btn {
     background-color: #699C78; /* Darker Green */
-    color: white;
+    color: #699C78;
 }
 
 .hero .explore-btn:hover {
     background-color: #FFF1BC; /* Light Yellow */
-    color: #333;
+    color: #699C78;
 }
 
 /* Product Carousel */
