@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koçlarımız</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-coaches">
+        <h1>Koçlarımız</h1>
+        <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
+    </section>
+
+    <!-- Filter/Search Section -->
+    <section class="filter-coaches">
+        <input type="text" id="search-bar" placeholder="Koçları ara...">
+        <select id="specialization-filter">
+            <option value="all">Tümü</option>
+            <option value="fitness">Fitness</option>
+            <option value="yoga">Yoga</option>
+            <option value="pilates">Pilates</option>
+            <option value="nutrition">Beslenme</option>
+        </select>
+    </section>
+
+    <!-- Coaches Section -->
+    <section class="coaches-grid">
+        <div class="coach-card" data-specialization="fitness">
+            <img src="images/coach1.jpg" alt="Ayşe Yılmaz">
+            <h2>Ayşe Yılmaz</h2>
+            <p>Yoga Uzmanı</p>
+            <p>Esnekliğinizi ve zihinsel dinginliğinizi artırın.</p>
+            <button class="view-profile">Profil Gör</button>
+        </div>
+        <div class="coach-card" data-specialization="nutrition">
+            <img src="images/coach2.jpg" alt="Mehmet Aksoy">
+            <h2>Mehmet Aksoy</h2>
+            <p>Beslenme Uzmanı</p>
+            <p>Sağlıklı ve sürdürülebilir bir beslenme için rehberiniz.</p>
+            <button class="view-profile">Profil Gör</button>
+        </div>
+        <div class="coach-card" data-specialization="fitness">
+            <img src="images/coach3.jpg" alt="Canan Kurt">
+            <h2>Canan Kurt</h2>
+            <p>Fitness Koçu</p>
+            <p>Güçlenmek ve formda kalmak için uzman desteği.</p>
+            <button class="view-profile">Profil Gör</button>
+        </div>
+        <div class="coach-card" data-specialization="pilates">
+            <img src="images/coach4.jpg" alt="Ali Demir">
+            <h2>Ali Demir</h2>
+            <p>Pilates Eğitmeni</p>
+            <p>Merkez bölgenizi güçlendiren pilates programları.</p>
+            <button class="view-profile">Profil Gör</button>
+        </div>
+    </section>
+
+    <!-- JavaScript for Search and Filter -->
+    <script>
+        const searchBar = document.getElementById('search-bar');
+        const specializationFilter = document.getElementById('specialization-filter');
+        const coachCards = document.querySelectorAll('.coach-card');
+
+        searchBar.addEventListener('input', filterCoaches);
+        specializationFilter.addEventListener('change', filterCoaches);
+
+        function filterCoaches() {
+            const searchText = searchBar.value.toLowerCase();
+            const selectedSpecialization = specializationFilter.value;
+
+            coachCards.forEach(card => {
+                const name = card.querySelector('h2').textContent.toLowerCase();
+                const specialization = card.getAttribute('data-specialization');
+
+                if ((name.includes(searchText) || searchText === '') &&
+                    (specialization === selectedSpecialization || selectedSpecialization === 'all')) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
