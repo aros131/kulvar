@@ -163,17 +163,44 @@
         <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
     </section>
 
-    <!-- Filter/Search Section -->
-    <section class="filter-coaches">
-        <input type="text" id="search-bar" placeholder="Koçları ara...">
-        <select id="specialization-filter">
+   <section class="coach-section">
+    <h1>Koçlarımız</h1>
+    <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter">
+        <input type="text" id="searchBar" placeholder="Koçlar ara..." onkeyup="filterCoaches()">
+        <select id="filterCategory" onchange="filterCoaches()">
             <option value="all">Tümü</option>
             <option value="fitness">Fitness</option>
             <option value="yoga">Yoga</option>
-            <option value="pilates">Pilates</option>
             <option value="nutrition">Beslenme</option>
         </select>
-    </section>
+    </div>
+
+    <!-- Coach List -->
+    <div class="coach-list">
+        <!-- Example Coach Card -->
+        <div class="coach-card" data-category="yoga">
+            <img src="images/coach1.jpg" alt="Ayşe Yılmaz">
+            <h3>Ayşe Yılmaz</h3>
+            <p>Yoga Uzmanı</p>
+            <a href="coach-profile.html">Detayları Gör</a>
+        </div>
+        <div class="coach-card" data-category="nutrition">
+            <img src="images/coach2.jpg" alt="Mehmet Aksoy">
+            <h3>Mehmet Aksoy</h3>
+            <p>Beslenme Uzmanı</p>
+            <a href="coach-profile.html">Detayları Gör</a>
+        </div>
+        <div class="coach-card" data-category="fitness">
+            <img src="images/coach3.jpg" alt="Canan Kurt">
+            <h3>Canan Kurt</h3>
+            <p>Fitness Koçu</p>
+            <a href="coach-profile.html">Detayları Gör</a>
+        </div>
+    </div>
+</section>
 
     <!-- Coaches Section -->
     <section class="coaches-grid">
