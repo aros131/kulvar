@@ -127,25 +127,26 @@ section {
     text-align: center;
     background-color: #FFF1BC; /* Light Yellow Background */
 }
-
-.product-card {
-    background-color: white; /* Card Background */
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
-    text-align: center;
-    padding: 15px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+.product-card .review-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #7DC383; /* Greenish Background */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
 }
-
-.product-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+.product-card .review-link:hover {
+    background-color: #699C78; /* Darker Green */
 }
-
-.product-card img {
-    width: 100%;
-    height: auto;
-    border-radius: 10px;
+/* Trending Section */
+.trending {
+    padding: 50px 20px;
+    background-color: #7DC383; /* Greenish Background */
+    color: white;
+}
+.trending h2 {
+    color: #FFF1BC; /* Light Yellow */
 }
 
 /* Trending Section */
