@@ -121,30 +121,28 @@
     <!-- Navigation Bar -->
    <nav class="navbar">
     <div class="logo">
-        <a href="koc.html">
+        <a href="index.html">
             <img src="images/logo.png" alt="Logo" style="height: 50px;">
         </a>
     </div>
-    <div class="hamburger">
-        ☰
-    </div>
+    <div class="hamburger">☰</div>
     <ul class="nav-links">
-        <li><a href="koc.html">Anasayfa</a></li>
-        
+        <li><a href="index.html">Anasayfa</a></li>
         <li><a href="koc.html" class="active">Koçlarımız</a></li>
-        <li><a href="sss.html">Sıkça Sorulan Sorular</a></li>
+        <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
         <li><a href="ulas.html">Bize Ulaşın</a></li>
         <li><a href="login.html">Giriş Yap</a></li>
     </ul>
 </nav>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const hamburger = document.querySelector('.hamburger');
-        const navLinks = document.querySelector('.nav-links');
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.querySelector('.nav-links');
 
-        hamburger.addEventListener('click', () => {
-            navLinks.classList.toggle('show');
-        });
+    hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('show');
+    });
+</script>
+
 
         // Close menu when a link is clicked (optional)
         navLinks.querySelectorAll('a').forEach(link => {
