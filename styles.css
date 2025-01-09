@@ -229,11 +229,12 @@ section {
 
 /* Footer */
 footer {
-    background-color: #699C78; /* Darker Green */
-    color: white;
+    background-color: #FFF1BC; /* Light Yellow to match the page's background */
+    color: #333; /* Standard Text Color for contrast */
     padding: 40px 20px;
     text-align: center;
-    position: relative;
+    border-top: 3px solid #7DC383; /* Green border for separation */
+    font-size: 14px;
 }
 
 .footer-container {
@@ -252,21 +253,22 @@ footer {
 }
 
 .footer-section h3 {
-    font-size: 18px;
-    color: #FFF1BC; /* Light Yellow */
+    font-size: 16px;
+    color: #7DC383; /* Greenish tone for section headings */
     margin-bottom: 10px;
+    text-transform: uppercase;
 }
 
 .footer-section p,
 .footer-section a {
     font-size: 14px;
-    color: #FFF1BC; /* Light Yellow */
+    color: #333; /* Standard Text Color for contrast */
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
 .footer-section a:hover {
-    color: #FFFDD0; /* Brighter Cream */
+    color: #7DC383; /* Green highlight on hover */
 }
 
 .footer-links {
@@ -298,7 +300,17 @@ footer {
 }
 
 .social-links img:hover {
-    transform: scale(1.1);
+    transform: scale(1.2); /* Slight zoom on hover */
+}
+
+@media (max-width: 768px) {
+    .footer-container {
+        flex-direction: column;
+        text-align: center;
+    }
+    .footer-section {
+        text-align: center;
+    }
 }
 
 /* Responsive Design */
