@@ -116,6 +116,42 @@
             background-color: #699C78;
         }
     </style>
+    <!-- Navigation Bar -->
+   <nav class="navbar">
+    <div class="logo">
+        <a href="index.html">
+            <img src="images/logo.png" alt="Logo" style="height: 50px;">
+        </a>
+    </div>
+    <div class="hamburger">
+        ☰
+    </div>
+    <ul class="nav-links">
+        <li><a href="index.html" class="active">Anasayfa</a></li>
+        
+        <li><a href="koc.html">Koçlarımız</a></li>
+        <li><a href="sss.html">Sıkça Sorulan Sorular</a></li>
+        <li><a href="koc.html">Bize Ulaşın</a></li>
+        <li><a href="login.html">Giriş Yap</a></li>
+    </ul>
+</nav>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('show');
+        });
+
+        // Close menu when a link is clicked (optional)
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('show');
+            });
+        });
+    });
+</script>
 </head>
 <body>
     <!-- Hero Section -->
