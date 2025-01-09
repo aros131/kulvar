@@ -285,7 +285,49 @@ footer a {
 @@ -361,21 +180,12 @@ footer a:hover {
     text-decoration: underline;
 }
+/* Footer */
+footer {
+    background-color: #699C78; 
+    background-color: #699C78; /* Darker Green */
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+}
 
+footer a {
+    color: #7DC383; 
+    color: #FFF1BC; /* Light Yellow */
+    text-decoration: none;
+    font-weight: bold;
+}
+@@ -361,21 +180,12 @@ footer a:hover {
+    text-decoration: underline;
+}
+
+/* Profile Button */
+.profile-btn {
+    display: inline-block;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #D2A17E; /* Pinkish Cinnamon */
+    color: #FFFDD0; /* Cream Yellow */
+    text-decoration: none;
+    border-radius: 8px;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+/* Button Hover Effect */
+button {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-btn:hover {
+    background-color: #FFFDD0;
+    color: #404B33; /* Deep Slate Olive */
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
 /* Footer */
 footer {
     background-color: #699C78; /* Darker Green */
