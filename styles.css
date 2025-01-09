@@ -229,32 +229,32 @@ section {
 
 /* Footer */
 footer {
-    background-color: #FFF1BC; /* Light Yellow to match the page's background */
-    color: #333; /* Standard Text Color for contrast */
+    background-color: #7DC383; /* Greenish Background to match the navbar */
+    color: white; /* Text color for contrast */
     padding: 40px 20px;
     text-align: center;
-    border-top: 3px solid #7DC383; /* Green border for separation */
+    border-top: 4px solid #FFF1BC; /* Light Yellow border for separation */
     font-size: 14px;
 }
 
 .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
 }
 
 .footer-section {
-    flex: 1 1 30%;
+    flex: 1 1 200px;
     text-align: left;
-    padding: 10px;
 }
 
 .footer-section h3 {
-    font-size: 16px;
-    color: #7DC383; /* Greenish tone for section headings */
+    font-size: 18px;
+    color: #FFF1BC; /* Light Yellow for headings */
     margin-bottom: 10px;
     text-transform: uppercase;
 }
@@ -262,47 +262,46 @@ footer {
 .footer-section p,
 .footer-section a {
     font-size: 14px;
-    color: #333; /* Standard Text Color for contrast */
+    color: white; /* Consistent text color */
     text-decoration: none;
-    transition: color 0.3s ease;
+    margin-bottom: 5px;
+    display: block;
 }
 
 .footer-section a:hover {
-    color: #7DC383; /* Green highlight on hover */
-}
-
-.footer-links {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.footer-links li {
-    margin: 5px 0;
-}
-
-.footer-links a {
-    display: inline-block;
-    padding: 5px 0;
+    color: #FFF1BC; /* Light Yellow on hover for interactivity */
 }
 
 .social-links {
     display: flex;
-    justify-content: start;
     gap: 15px;
     margin-top: 10px;
 }
 
+.social-links a {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    background-color: white; /* White circular icons */
+    color: #7DC383; /* Green icon color */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.social-links a:hover {
+    background-color: #FFF1BC; /* Light Yellow on hover */
+    transform: scale(1.1);
+}
+
 .social-links img {
-    width: 24px;
-    height: 24px;
-    transition: transform 0.3s ease;
+    width: 16px;
+    height: 16px;
 }
 
-.social-links img:hover {
-    transform: scale(1.2); /* Slight zoom on hover */
-}
-
+/* Responsive Design */
 @media (max-width: 768px) {
     .footer-container {
         flex-direction: column;
