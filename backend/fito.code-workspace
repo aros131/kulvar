@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "kulvar",
+			"path": "../kulvar"
+		},
+		{
+			"name": "backend",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
