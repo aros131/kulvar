@@ -10,6 +10,17 @@
     <style>
         /* General Styles */
         body {
+    background-image: url('images/bg.jpeg'); /* Path to the uploaded file */
+    background-size: cover; /* Ensures the image covers the entire page */
+    background-repeat: no-repeat; /* Prevents tiling */
+    background-attachment: fixed; /* Keeps the background in place during scrolling */
+    background-position: center; /* Centers the image */
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+        body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
@@ -59,6 +70,39 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+    
+
+.coach-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.coach-card h3 {
+    margin: 10px 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.coach-card p {
+    font-size: 16px;
+    color: #555;
+}
+
+.coach-card a {
+    text-decoration: none;
+    color: #2F6D48;
+    font-weight: bold;
+    margin-top: 10px;
+    display: inline-block;
+    transition: color 0.3s ease;
+}
+
+.coach-card a:hover {
+    color: #1D4830;
+}
+
 
         /* Coaches Grid */
         .coaches-grid {
@@ -152,48 +196,64 @@
         <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
     </section>
 
-    <!-- Filter/Search Section -->
-    <section class="filter-coaches">
-        <input type="text" id="search-bar" placeholder="Koçları ara...">
-        <select id="specialization-filter">
+  
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter">
+        <input type="text" id="searchBar" placeholder="Koçlar ara..." onkeyup="filterCoaches()">
+        <select id="filterCategory" onchange="filterCoaches()">
             <option value="all">Tümü</option>
             <option value="fitness">Fitness</option>
             <option value="yoga">Yoga</option>
-            <option value="pilates">Pilates</option>
             <option value="nutrition">Beslenme</option>
         </select>
-    </section>
+    </div>
 
-    <!-- Coaches Section -->
-    <section class="coaches-grid">
-        <div class="coach-card" data-specialization="fitness">
+    <!-- Coach List -->
+    <div class="coach-list">
+        <!-- Example Coach Card -->
+        <div class="coach-card" data-category="yoga">
             <img src="images/coach1.jpg" alt="Ayşe Yılmaz">
-            <h2>Ayşe Yılmaz</h2>
+            <h3>Ayşe Yılmaz</h3>
             <p>Yoga Uzmanı</p>
-            <p>Esnekliğinizi ve zihinsel dinginliğinizi artırın.</p>
-            <button class="view-profile">Profil Gör</button>
+            <a href="coach-profile.html">Detayları Gör</a>
         </div>
-        <div class="coach-card" data-specialization="nutrition">
+        <div class="coach-card" data-category="nutrition">
             <img src="images/coach2.jpg" alt="Mehmet Aksoy">
-            <h2>Mehmet Aksoy</h2>
+            <h3>Mehmet Aksoy</h3>
             <p>Beslenme Uzmanı</p>
-            <p>Sağlıklı ve sürdürülebilir bir beslenme için rehberiniz.</p>
-            <button class="view-profile">Profil Gör</button>
+            <a href="coach-profile.html">Detayları Gör</a>
         </div>
-        <div class="coach-card" data-specialization="fitness">
+        <div class="coach-card" data-category="fitness">
             <img src="images/coach3.jpg" alt="Canan Kurt">
-            <h2>Canan Kurt</h2>
+            <h3>Canan Kurt</h3>
             <p>Fitness Koçu</p>
-            <p>Güçlenmek ve formda kalmak için uzman desteği.</p>
-            <button class="view-profile">Profil Gör</button>
+            <a href="coach-profile.html">Detayları Gör</a>
         </div>
-        <div class="coach-card" data-specialization="pilates">
-            <img src="images/coach4.jpg" alt="Ali Demir">
-            <h2>Ali Demir</h2>
-            <p>Pilates Eğitmeni</p>
-            <p>Merkez bölgenizi güçlendiren pilates programları.</p>
-            <button class="view-profile">Profil Gör</button>
-        </div>
-    </section>
+    </div>
+</section>
+
+
 </body>
 </html>
+<script>
+    function filterCoaches() {
+        const searchInput = document.getElementById('searchBar').value.toLowerCase();
+        const filterCategory = document.getElementById('filterCategory').value;
+        const coachCards = document.querySelectorAll('.coach-card');
+
+        coachCards.forEach(card => {
+            const coachName = card.querySelector('h3').textContent.toLowerCase();
+            const coachCategory = card.getAttribute('data-category');
+
+            const matchesSearch = coachName.includes(searchInput);
+            const matchesCategory = filterCategory === 'all' || filterCategory === coachCategory;
+
+            if (matchesSearch && matchesCategory) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
