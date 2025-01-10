@@ -180,3 +180,43 @@
     </div>
 </body>
 </html>
+<script>
+    // Mock data for programs
+    const programs = [
+        { id: 1, name: "Fitness Başlangıç", duration: "4 Hafta", enrolled: 25 },
+        { id: 2, name: "Yoga Uzmanlık", duration: "6 Hafta", enrolled: 18 },
+        { id: 3, name: "Beslenme Temelleri", duration: "3 Hafta", enrolled: 30 }
+    ];
+
+    // Function to render programs
+    function renderPrograms() {
+        const programList = document.querySelector('.program-list');
+        programList.innerHTML = ''; // Clear existing content
+
+        programs.forEach(program => {
+            const programCard = document.createElement('div');
+            programCard.classList.add('program-card');
+            programCard.innerHTML = `
+                <h3>${program.name}</h3>
+                <p>Süre: ${program.duration}</p>
+                <p>Kayıtlı Kullanıcı: ${program.enrolled}</p>
+                <a href="edit-program.html?id=${program.id}">Düzenle</a>
+                <a href="#" onclick="deleteProgram(${program.id})" style="color: red;">Sil</a>
+            `;
+            programList.appendChild(programCard);
+        });
+    }
+
+    // Function to delete a program
+    function deleteProgram(id) {
+        const index = programs.findIndex(program => program.id === id);
+        if (index !== -1) {
+            programs.splice(index, 1);
+            renderPrograms(); // Re-render after deletion
+            alert("Program silindi!");
+        }
+    }
+
+    // Render programs on page load
+    document.addEventListener('DOMContentLoaded', renderPrograms);
+</script>
