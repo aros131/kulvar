@@ -19,3 +19,6 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 app.use(cors()); // Enable CORS
+app.get("/", (req, res) => {
+  res.send("Server is running!");
+});
