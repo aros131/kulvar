@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koç Ekle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFF1BC;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        form input, form select, form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        form textarea {
+            resize: vertical;
+        }
+
+        .submit-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #7DC383;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-button:hover {
+            background-color: #699C78;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            text-decoration: none;
+            color: #7DC383;
+            font-weight: bold;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Koç Ekle</h1>
+        <form action="#" method="post" enctype="multipart/form-data">
+            <!-- Name -->
+            <label for="name">Koç Adı</label>
+            <input type="text" id="name" name="name" placeholder="Koç Adını Girin" required>
+
+            <!-- Category -->
+            <label for="category">Kategori</label>
+            <select id="category" name="category" required>
+                <option value="fitness">Fitness</option>
+                <option value="yoga">Yoga</option>
+                <option value="nutrition">Beslenme</option>
+            </select>
+
+            <!-- Bio -->
+            <label for="bio">Koç Hakkında</label>
+            <textarea id="bio" name="bio" placeholder="Koç Hakkında Bilgi Girin" rows="5" required></textarea>
+
+            <!-- Photo -->
+            <label for="photo">Fotoğraf Yükle</label>
+            <input type="file" id="photo" name="photo" accept="image/*" required>
+
+            <!-- Submit Button -->
+            <button type="submit" class="submit-button">Koç Ekle</button>
+        </form>
+
+        <!-- Back Link -->
+        <a href="admin_dashboard.html" class="back-link">Admin Paneline Dön</a>
+    </div>
+</body>
+</html>

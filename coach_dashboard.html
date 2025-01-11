@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koç Paneli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFF1BC;
+            color: #333;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #7DC383;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            color: white;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            display: block;
+            transition: background-color 0.3s ease;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #699C78;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 270px;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 32px;
+            color: #333;
+        }
+
+        /* Sections */
+        .section {
+            margin-top: 40px;
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Program Management */
+        .program-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .program-card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .program-card h3 {
+            margin: 10px 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .program-card p {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .program-card a {
+            text-decoration: none;
+            color: #2F6D48;
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .add-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #7DC383;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-button:hover {
+            background-color: #699C78;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <h2>Koç Paneli</h2>
+        <ul>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#programs">Programlarım</a></li>
+            <li><a href="#profile">Profilim</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h1>Hoşgeldiniz, [Koç Adı]</h1>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <section id="dashboard" class="section">
+            <h2>Hızlı Bakış</h2>
+            <p>Toplam Program: 5</p>
+        </section>
+
+        <!-- Program Management -->
+        <section id="programs" class="section">
+            <h2>Programlarım</h2>
+            <a href="add-program.html" class="add-button">Yeni Program Ekle</a>
+            <div class="program-list">
+                <div class="program-card">
+                    <h3>Fitness Başlangıç</h3>
+                    <p>Süre: 4 Hafta</p>
+                    <a href="edit-program.html">Düzenle</a>
+                    <a href="#" style="color: red;">Sil</a>
+                </div>
+                <!-- Repeat program cards as needed -->
+            </div>
+        </section>
+
+        <!-- Profile Management -->
+        <section id="profile" class="section">
+            <h2>Profilim</h2>
+            <p>Profil yönetim alanı burada olacak.</p>
+        </section>
+    </div>
+</body>
+</html>
+<script>
+    // Mock data for programs
+    const programs = [
+        { id: 1, name: "Fitness Başlangıç", duration: "4 Hafta", enrolled: 25 },
+        { id: 2, name: "Yoga Uzmanlık", duration: "6 Hafta", enrolled: 18 },
+        { id: 3, name: "Beslenme Temelleri", duration: "3 Hafta", enrolled: 30 }
+    ];
+
+    // Function to render programs
+    function renderPrograms() {
+        const programList = document.querySelector('.program-list');
+        programList.innerHTML = ''; // Clear existing content
+
+        programs.forEach(program => {
+            const programCard = document.createElement('div');
+            programCard.classList.add('program-card');
+            programCard.innerHTML = `
+                <h3>${program.name}</h3>
+                <p>Süre: ${program.duration}</p>
+                <p>Kayıtlı Kullanıcı: ${program.enrolled}</p>
+                <a href="edit-program.html?id=${program.id}">Düzenle</a>
+                <a href="#" onclick="deleteProgram(${program.id})" style="color: red;">Sil</a>
+            `;
+            programList.appendChild(programCard);
+        });
+    }
+
+    // Function to delete a program
+    function deleteProgram(id) {
+        const index = programs.findIndex(program => program.id === id);
+        if (index !== -1) {
+            programs.splice(index, 1);
+            renderPrograms(); // Re-render after deletion
+            alert("Program silindi!");
+        }
+    }
+
+    // Render programs on page load
+    document.addEventListener('DOMContentLoaded', renderPrograms);
+</script>

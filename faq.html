@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sıkça Sorulan Sorular</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFF1BC;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            text-align: center;
+            margin: 5px 0;
+            color: #555;
+        }
+
+        /* Hero Section */
+        .hero-faqs {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #7DC383;
+            color: white;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #7DC383;
+            color: white;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        .faq-question:hover {
+            background-color: #699C78;
+        }
+
+        .faq-question::after {
+            content: "+";
+            font-size: 20px;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .faq.open .faq-question::after {
+            content: "-";
+        }
+
+        .faq-answer {
+            padding: 20px;
+            display: none;
+            background-color: #f9f9f9;
+            color: #555;
+        }
+
+        .faq.open .faq-answer {
+            display: block;
+        }
+
+        /* Call to Action */
+        .faq-cta {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .faq-cta a {
+            text-decoration: none;
+            color: white;
+            background-color: #7DC383;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .faq-cta a:hover {
+            background-color: #699C78;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+    <div class="logo">
+        <a href="index.html">
+            <img src="images/logo.png" alt="Logo" style="height: 50px;">
+        </a>
+    </div>
+    <div class="hamburger">☰</div>
+    <ul class="nav-links">
+        <li><a href="index.html">Anasayfa</a></li>
+        <li><a href="koc.html">Koçlarımız</a></li>
+        <li><a href="faq.html" class="active">Sıkça Sorulan Sorular</a></li>
+        <li><a href="ulas.html">Bize Ulaşın</a></li>
+        <li><a href="login.html">Giriş Yap</a></li>
+    </ul>
+</nav>
+<script>
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.querySelector('.nav-links');
+
+    hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('show');
+    });
+</script>
+
+
+    <!-- Hero Section -->
+    <section class="hero-faqs">
+        <h1>Sıkça Sorulan Sorular</h1>
+        <p>Kafanıza takılan sorular mı var? İşte sıkça sorulan sorular ve yanıtlarımız!</p>
+    </section>
+
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="faq">
+            <div class="faq-question">Platform nasıl çalışır?</div>
+            <div class="faq-answer">Platformumuz koçlar ve kullanıcıları bir araya getirerek fitness ve beslenme hedeflerinize ulaşmanızı sağlar.</div>
+        </div>
+        <div class="faq">
+            <div class="faq-question">Koçlarınızı nasıl seçiyorsunuz?</div>
+            <div class="faq-answer">Koçlarımız alanında uzman ve deneyimli kişilerden oluşmaktadır. Her biri referans kontrolü ile seçilmiştir.</div>
+        </div>
+        <div class="faq">
+            <div class="faq-question">Üyelik ücretleri nedir?</div>
+            <div class="faq-answer">Üyelik ücretlerimiz seçtiğiniz programa ve koçun hizmetlerine bağlıdır. Daha fazla bilgi için bize ulaşabilirsiniz.</div>
+        </div>
+        <div class="faq">
+            <div class="faq-question">Koçlar ile nasıl iletişime geçebilirim?</div>
+            <div class="faq-answer">Profil sayfasından ilgili koç ile iletişime geçebilir ya da mesaj gönderebilirsiniz.</div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <div class="faq-cta">
+        <p>Sorunuz yanıtlanmadı mı?</p>
+        <a href="contact.html">Bize Ulaşın</a>
+    </div>
+
+    <!-- JavaScript for FAQ Accordion -->
+    <script>
+        const faqs = document.querySelectorAll('.faq');
+
+        faqs.forEach(faq => {
+            const question = faq.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                faq.classList.toggle('open');
+            });
+        });
+    </script>
+</body>
+</html>

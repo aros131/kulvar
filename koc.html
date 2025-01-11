@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koçlarımız</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        /* General Styles */
+        body {
+    background-image: url('images/bg.jpeg'); /* Path to the uploaded file */
+    background-size: cover; /* Ensures the image covers the entire page */
+    background-repeat: no-repeat; /* Prevents tiling */
+    background-attachment: fixed; /* Keeps the background in place during scrolling */
+    background-position: center; /* Centers the image */
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFF1BC;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            text-align: center;
+            margin: 5px 0;
+            color: #555;
+        }
+
+        /* Hero Section */
+        .hero-coaches {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #699C78;
+            color: white;
+        }
+
+        /* Filter/Search Section */
+        .filter-coaches {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        #search-bar {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 250px;
+        }
+
+        #specialization-filter {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    
+
+.coach-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.coach-card h3 {
+    margin: 10px 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.coach-card p {
+    font-size: 16px;
+    color: #555;
+}
+
+.coach-card a {
+    text-decoration: none;
+    color: #2F6D48;
+    font-weight: bold;
+    margin-top: 10px;
+    display: inline-block;
+    transition: color 0.3s ease;
+}
+
+.coach-card a:hover {
+    color: #1D4830;
+}
+
+
+        /* Coaches Grid */
+        .coaches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .coach-card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .coach-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .coach-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+
+        .coach-card h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .coach-card p {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .view-profile {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background-color: #7DC383;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .view-profile:hover {
+            background-color: #699C78;
+        }
+    </style>
+    <!-- Navigation Bar -->
+   <nav class="navbar">
+    <div class="logo">
+        <a href="index.html">
+            <img src="images/logo.png" alt="Logo" style="height: 50px;">
+        </a>
+    </div>
+    <div class="hamburger">☰</div>
+    <ul class="nav-links">
+        <li><a href="index.html">Anasayfa</a></li>
+        <li><a href="koc.html" class="active">Koçlarımız</a></li>
+        <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
+        <li><a href="ulas.html">Bize Ulaşın</a></li>
+        <li><a href="login.html">Giriş Yap</a></li>
+    </ul>
+</nav>
+<script>
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.querySelector('.nav-links');
+
+    hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('show');
+    });
+    </script>
+      </script>
+
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-coaches">
+        <h1>Koçlarımız</h1>
+        <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
+    </section>
+
+  
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter">
+        <input type="text" id="searchBar" placeholder="Koçlar ara..." onkeyup="filterCoaches()">
+        <select id="filterCategory" onchange="filterCoaches()">
+            <option value="all">Tümü</option>
+            <option value="fitness">Fitness</option>
+            <option value="yoga">Yoga</option>
+            <option value="nutrition">Beslenme</option>
+        </select>
+    </div>
+
+    <!-- Coach List -->
+    <div class="coach-list">
+        <!-- Example Coach Card -->
+        <div class="coach-card" data-category="yoga">
+            <img src="images/coach1.jpg" alt="Ayşe Yılmaz">
+            <h3>Ayşe Yılmaz</h3>
+            <p>Yoga Uzmanı</p>
+            <a href="coach-profile.html">Detayları Gör</a>
+        </div>
+        <div class="coach-card" data-category="nutrition">
+            <img src="images/coach2.jpg" alt="Mehmet Aksoy">
+            <h3>Mehmet Aksoy</h3>
+            <p>Beslenme Uzmanı</p>
+            <a href="coach-profile.html">Detayları Gör</a>
+        </div>
+        <div class="coach-card" data-category="fitness">
+            <img src="images/coach3.jpg" alt="Canan Kurt">
+            <h3>Canan Kurt</h3>
+            <p>Fitness Koçu</p>
+            <a href="coach-profile.html">Detayları Gör</a>
+        </div>
+    </div>
+</section>
+
+
+</body>
+</html>
+<script>
+    function filterCoaches() {
+        const searchInput = document.getElementById('searchBar').value.toLowerCase();
+        const filterCategory = document.getElementById('filterCategory').value;
+        const coachCards = document.querySelectorAll('.coach-card');
+
+        coachCards.forEach(card => {
+            const coachName = card.querySelector('h3').textContent.toLowerCase();
+            const coachCategory = card.getAttribute('data-category');
+
+            const matchesSearch = coachName.includes(searchInput);
+            const matchesCategory = filterCategory === 'all' || filterCategory === coachCategory;
+
+            if (matchesSearch && matchesCategory) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
