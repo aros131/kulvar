@@ -611,3 +611,70 @@ footer a:hover {
     color: #6D9197;
     line-height: 1.5;
 }
+/* Contact Section */
+.contact {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.contact h1 {
+    font-size: 28px;
+    color: #2F575D;
+    margin-bottom: 20px;
+}
+
+.contact p {
+    font-size: 16px;
+    color: #6D9197;
+    margin-bottom: 30px;
+}
+
+.contact-form {
+    text-align: left;
+}
+
+.contact-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    color: #28363D;
+    margin-bottom: 5px;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #C4CDC1;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: #658B6F;
+    box-shadow: 0 0 4px rgba(101, 139, 111, 0.5);
+}
+
+.contact-form .btn {
+    background-color: #2F575D;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.contact-form .btn:hover {
+    background-color: #658B6F;
+    transform: scale(1.05);
+}
