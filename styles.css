@@ -268,34 +268,7 @@ svg {
     height: 24px;
 }
 
-/* Navigation Bar */
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #FFFFFF; /* White header */
-    padding: 15px 30px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
 
-.nav-links {
-    display: flex;
-    gap: 15px;
-    list-style: none;
-}
-
-.nav-links a {
-    text-decoration: none;
-    color: #2F575D; /* Teal text */
-    font-weight: bold;
-    font-size: 1rem;
-    padding: 5px 10px;
-    transition: color 0.3s ease;
-}
-
-.nav-links a:hover {
-    color: #658B6F; /* Hover green */
-}
 
 /* Hero Section */
 .hero {
