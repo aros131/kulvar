@@ -1,0 +1,58 @@
+
+/* Navigation Bar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white; /* White header */
+    padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #2F575D;
+    font-weight: bold;
+    padding: 5px 10px;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #658B6F;
+}
+
+.hero {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('images/hero.jpg');
+    background-size: cover;
+    background-position: center;
+    text-align: center;
+    padding: 100px 20px;
+    color: white;
+}
+
+.hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.hero p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+}
+
+footer {
+    background-color: #2F575D; /* Dark teal */
+    color: #DEE1DD; /* Light gray text */
+    text-align: center;
+    padding: 20px;
+}
+
+footer a {
+    color: #DEE1DD;
+    text-decoration: none;
+}
+
+footer a:hover {
+    color: #99AEAD; /* Subtle hover effect */
+}
