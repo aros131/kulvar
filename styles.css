@@ -28,37 +28,32 @@
 #backToTop:hover {
     background: #658B6F; /* Lighter teal on hover */
 }
+.testimonials {
+    position: relative; /* Ensures arrows are confined to this section */
+}
+
 .testimonial-prev,
 .testimonial-next {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    color: white;
-    border: none;
-    border-radius: 50%;
     width: 40px;
     height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    border: none;
+    border-radius: 50%;
     z-index: 10;
-    transition: background-color 0.3s ease;
-}
-
-.testimonial-prev:hover,
-.testimonial-next:hover {
-    background: rgba(0, 0, 0, 0.7); /* Darker on hover */
+    cursor: pointer;
 }
 
 .testimonial-prev {
-    left: 10px; /* Position to the left */
+    left: 10px; /* Place arrow at left */
 }
 
 .testimonial-next {
-    right: 10px; /* Position to the right */
+    right: 10px; /* Place arrow at right */
 }
+
 
 .testimonial-prev::before,
 .testimonial-next::before {
@@ -370,30 +365,23 @@ svg {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    border: none;
-    border-radius: 50%;
     width: 40px;
     height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
     cursor: pointer;
-    transition: background 0.3s ease;
     z-index: 10;
 }
 
-.carousel-prev:hover,
-.carousel-next:hover {
-    background: rgba(0, 0, 0, 0.7); /* Darker on hover */
+.carousel-prev {
+    left: 10px; /* Ensure it's on the left side */
 }
 
-.carousel-prev img,
-.carousel-next img {
-    width: 20px;
-    height: 20px;
-    filter: invert(1); /* White arrows */
+.carousel-next {
+    right: 10px; /* Ensure it's on the right side */
 }
+
 
 /* Chat Button */
 #chatButton {
