@@ -118,73 +118,78 @@ body {
 }
 
 /* Navbar */
+/* Navbar */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     position: sticky;
     top: 0;
-    background-color: #FFFFFF;
-    z-index: 1000;
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: #FFFFFF; /* White background */
+    z-index: 1000; /* Ensure it stays on top */
+    padding: 20px 30px; /* Adjust padding for spacing */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
 
 .nav-links {
     display: flex;
-    gap: 20px;
-    list-style: none;
+    gap: 20px; /* Space between links */
+    list-style: none; /* Remove bullets */
 }
 
 .nav-links a {
-    text-decoration: none;
+    text-decoration: none; /* Remove underline */
     color: #2F575D; /* Teal text */
     font-weight: bold;
     font-size: 1rem;
-    padding: 5px 10px;
+    padding: 5px 10px; /* Padding for clickable area */
     transition: color 0.3s ease;
 }
 
 .nav-links a:hover {
-    color: #658B6F; /* Lighter teal on hover */
+    color: #658B6F; /* Slightly lighter teal on hover */
 }
 
-/* Mobile Menu (Hamburger) */
+.nav-links a.active {
+    color: #658B6F; /* Different color for active link */
+    border-bottom: 2px solid #658B6F; /* Underline active link */
+}
+
 .hamburger {
-    display: none;
+    display: none; /* Hidden by default */
     cursor: pointer;
     font-size: 24px;
 }
 
-.nav-links.active {
-    flex-direction: column;
-    position: absolute;
-    top: 70px;
-    right: 0;
-    background: white;
-    width: 200px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-}
-
-.nav-links.active {
-    transform: translateX(0);
-}
-
+/* Responsive Navbar */
 @media (max-width: 768px) {
     .hamburger {
-        display: block;
+        display: block; /* Show hamburger menu on small screens */
     }
 
     .nav-links {
-        display: none;
+        display: none; /* Hide links initially */
+        flex-direction: column; /* Stack links vertically */
+        position: absolute;
+        top: 70px; /* Below the navbar */
+        right: 20px; /* Align to the right */
+        background: #FFFFFF; /* Match navbar background */
+        width: 200px;
+        padding: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+        border-radius: 5px; /* Rounded corners */
     }
 
     .nav-links.active {
-        display: flex;
+        display: flex; /* Show the menu */
+    }
+
+    .nav-links a {
+        text-align: left; /* Align links to the left */
+        padding: 10px; /* Add more padding for touch-friendly links */
     }
 }
+
 
 /* Hero Section */
 .hero {
