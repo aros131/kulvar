@@ -356,7 +356,36 @@ footer a:hover {
     </div>
 
     <!-- Back to Top Button -->
-    <button id="backToTop">⬆</button>
+    // Back to Top Button Logic
+const backToTop = document.getElementById('backToTop');
+
+// Show/Hide Button on Scroll
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+        backToTop.classList.add('show'); // Add 'show' class to make it visible
+    } else {
+        backToTop.classList.remove('show'); // Remove 'show' class to hide it
+    }
+});
+
+// Smooth Scroll to Top
+backToTop.addEventListener('click', () => {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+    });
+});
+
+// Accessibility: Add Keyboard Navigation
+backToTop.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
+    }
+});
+
 
     <!-- Chat Button -->
     <div id="chatButton" onclick="openChat()">💬 Chat with Us</div>
