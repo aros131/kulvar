@@ -1,3 +1,13 @@
+/* Specific SVG Adjustments for Footer */
+footer img {
+    width: 24px; /* Size for icons in the footer */
+    height: 24px;
+    transition: transform 0.3s ease;
+}
+
+footer img:hover {
+    transform: scale(1.1); /* Slight zoom on hover */
+}
 /* General Styles */
 body {
     font-family: 'Poppins', sans-serif;
