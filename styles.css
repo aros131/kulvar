@@ -1,4 +1,91 @@
-.search-filter {
+/* Login Form Section */
+.login-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    padding: 20px;
+}
+
+.login-form {
+    width: 100%;
+    max-width: 400px;
+    background-color: white;
+    border: 1px solid #C4CDC1; /* Border color */
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-form h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #28363D; /* Text color */
+}
+
+.login-form input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    border: 1px solid #658B6F; /* Input border */
+    border-radius: 5px;
+}
+
+.login-form button {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #2F575D; /* Button color */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-form button:hover {
+    background-color: #28363D; /* Hover effect */
+}
+
+.login-form p {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.login-form p a {
+    color: #6D9197; /* Link color */
+    text-decoration: none;
+}
+
+.login-form p a:hover {
+    text-decoration: underline;
+}
+
+.coach-login {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.coach-login button {
+    width: 50%;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    background-color: #658B6F; /* Coach login button color */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.coach-login button:hover {
+    background-color: #2F575D; /* Hover effect */
+}.search-filter {
     display: flex;
     justify-content: center;
     gap: 20px;
