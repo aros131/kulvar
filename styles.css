@@ -1,3 +1,7 @@
+.logo img {
+    height: 10px; /* Adjust the height to your preference */
+    width: auto;  /* Maintain aspect ratio */
+}
 .coach-section {
     text-align: center;
     padding: 20px;
