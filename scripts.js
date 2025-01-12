@@ -49,3 +49,21 @@ function openChat() {
     const chatPopup = document.getElementById('chatPopup');
     chatPopup.style.display = chatPopup.style.display === 'block' ? 'none' : 'block';
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('.nav-links a');
+
+    links.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1); // Remove '#' from href
+            const targetSection = document.getElementById(targetId);
+
+            if (targetSection) {
+                window.scrollTo({
+                    top: targetSection.offsetTop - 70, // Adjust for fixed navbar height
+                    behavior: 'smooth',
+                });
+            }
+        });
+    });
+});
