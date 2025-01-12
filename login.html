@@ -24,6 +24,7 @@
             <li><a href="login.html" class="active">Giriş Yap</a></li>
         </ul>
     </nav>
+
     <script>
         const hamburger = document.querySelector('.hamburger');
         const navLinks = document.querySelector('.nav-links');
@@ -35,22 +36,31 @@
 
     <!-- Login Form Section -->
     <section class="login-section">
-        <form class="login-form" action="#" method="post">
+        <div class="login-form">
             <h2>Giriş Yap</h2>
-            <input type="email" name="email" placeholder="E-posta Adresiniz" required>
-            <input type="password" name="password" placeholder="Şifreniz" required>
-            <button type="submit">Giriş Yap</button>
+            <input type="email" id="email" placeholder="E-posta Adresiniz" required>
+            <input type="password" id="password" placeholder="Şifreniz" required>
+            <button onclick="redirectToProfile()">Giriş Yap</button>
             <div class="coach-login">
                 <button onclick="window.location.href='coach_login.html';" type="button">Koç Girişi</button>
             </div>
             <p>Hesabınız yok mu? <a href="signup.html">Kayıt Ol</a></p>
-        </form>
+        </div>
     </section>
+
     <script>
         // Function to simulate login and redirect to profile.html
-        function redirectToProfile(event) {
-            event.preventDefault(); // Prevent the form from actually submitting
-            window.location.href = "profile.html"; // Redirect to profile.html
+        function redirectToProfile() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (email && password) {
+                // Simulate successful login
+                alert("Başarıyla giriş yaptınız!");
+                window.location.href = "profile.html"; // Redirect to profile.html
+            } else {
+                alert("Lütfen tüm alanları doldurun.");
+            }
         }
     </script>
 </body>
