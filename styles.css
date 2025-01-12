@@ -28,6 +28,17 @@
 #backToTop:hover {
     background: #658B6F; /* Lighter teal on hover */
 }
+
+@media (max-width: 768px) {
+    #backToTop {
+        width: 40px; /* Adjust size for smaller screens */
+        height: 40px;
+        bottom: 10px;
+        right: 10px;
+        font-size: 16px;
+    }
+}
+
 .testimonials {
     position: relative; /* Ensures arrows are confined to this section */
 }
