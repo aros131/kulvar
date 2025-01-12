@@ -1,24 +1,34 @@
 
-// Scroll to Top Button
-document.addEventListener('DOMContentLoaded', () => {
-    const backToTop = document.getElementById('backToTop');
+// Back to Top Button Logic
+const backToTop = document.getElementById('backToTop');
 
-    if (backToTop) {
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > window.innerHeight / 2) {
-                backToTop.classList.add('show');
-            } else {
-                backToTop.classList.remove('show');
-            }
-        });
+// Show/Hide Button on Scroll
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+        backToTop.classList.add('show'); // Add 'show' class to make it visible
+    } else {
+        backToTop.classList.remove('show'); // Remove 'show' class to hide it
+    }
+});
 
-        backToTop.addEventListener('click', () => {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth',
-            });
+// Smooth Scroll to Top
+backToTop.addEventListener('click', () => {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+    });
+});
+
+// Accessibility: Add Keyboard Navigation
+backToTop.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
         });
     }
+});
+
 
     // Hamburger Menu
     const hamburger = document.querySelector('.hamburger');
