@@ -47,34 +47,38 @@ backToTop.addEventListener('keydown', (event) => {
         });
     }
 
-    // Testimonials Slider
-    const testimonials = document.querySelectorAll('.testimonial');
-    const testimonialSlider = document.querySelector('.testimonial-slider');
-    const prevButton = document.querySelector('.testimonial-prev');
-    const nextButton = document.querySelector('.testimonial-next');
-    let currentIndex = 0;
+    // Testimonials Carousel Navigation
+const testimonialTrack = document.querySelector('.testimonials-carousel .carousel-track');
+const testimonialPrevButton = document.querySelector('.testimonials-carousel .carousel-prev');
+const testimonialNextButton = document.querySelector('.testimonials-carousel .carousel-next');
 
-    if (testimonialSlider && prevButton && nextButton && testimonials.length > 0) {
-        const updateSlider = () => {
-            const slideWidth = testimonials[0].offsetWidth;
-            const offset = -currentIndex * slideWidth;
-            testimonialSlider.style.transform = `translateX(${offset}px)`;
-        };
+let testimonialIndex = 0;
 
-        prevButton.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateSlider();
-            }
-        });
+// Function to update the testimonial carousel position
+function updateTestimonialCarousel() {
+    const cardWidth = document.querySelector('.testimonial-card').offsetWidth;
+    const gap = 15; // Space between cards
+    testimonialTrack.style.transform = `translateX(-${(cardWidth + gap) * testimonialIndex}px)`;
+}
 
-        nextButton.addEventListener('click', () => {
-            if (currentIndex < testimonials.length - 1) {
-                currentIndex++;
-                updateSlider();
-            }
-        });
+// Event listeners for navigation buttons
+testimonialPrevButton.addEventListener('click', () => {
+    if (testimonialIndex > 0) {
+        testimonialIndex--;
+        updateTestimonialCarousel();
     }
+});
+
+testimonialNextButton.addEventListener('click', () => {
+    const testimonialCount = document.querySelectorAll('.testimonial-card').length;
+    if (testimonialIndex < testimonialCount - 1) {
+        testimonialIndex++;
+        updateTestimonialCarousel();
+    }
+});
+
+// Adjust carousel on window resize
+window.addEventListener('resize', updateTestimonialCarousel);
 
     // Get references
 const carouselPrev = document.querySelector('.carousel-prev');
