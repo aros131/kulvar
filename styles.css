@@ -1,154 +1,11 @@
-/* Smaller Hero Section */
-.hero {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('images/hero.jpg');
-    background-size: cover;
-    background-position: center;
-    text-align: center;
-    padding: 50px 20px; /* Reduced padding */
-    height: 50vh; /* Reduced height */
-    color: white;
-}
-
-.hero h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 36px; /* Smaller font size for the headline */
-    margin-bottom: 10px;
-}
-
-.hero p {
+/* General Styles */
+body {
     font-family: 'Poppins', sans-serif;
-    font-size: 16px; /* Smaller font size for the subtext */
-    margin-bottom: 15px; /* Reduced margin */
-}
-
-.hero button {
-    background-color: #2F575D;
-    color: #DEE1DD;
-    border: none;
-    padding: 10px 20px; /* Reduced button size */
-    font-size: 0.9rem; /* Smaller button font */
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.hero button:hover {
-    background-color: #658B6F;
-    transform: scale(1.05);
-}
-
-/* Responsive Adjustments for Hero Section */
-@media (max-width: 768px) {
-    .hero {
-        height: 40vh; /* Even smaller for mobile */
-        padding: 30px 15px;
-    }
-
-    .hero h1 {
-        font-size: 28px; /* Smaller headline font for mobile */
-    }
-
-    .hero p {
-        font-size: 14px; /* Smaller subtext font for mobile */
-    }
-
-    .hero button {
-        padding: 8px 15px;
-        font-size: 0.8rem; /* Smaller button font for mobile */
-    }
-}
-/* General Image and SVG Styles */
-img {
-    max-width: 100%;
-    height: auto;
-}
-
-svg {
-    width: 50px; /* Default width for SVGs */
-    height: 50px; /* Default height for SVGs */
-}
-
-/* Specific SVG Adjustments for Navigation Bar */
-.nav-links img {
-    width: 24px; /* Size for icons in the navigation */
-    height: 24px;
-
-}
-
-footer img:hover {
-    transform: scale(1.1); /* Slight zoom on hover */
-}
-
-/* Hero Section SVG Adjustments */
-.hero img {
-    width: 100px; /* Adjust the hero section SVG size */
-    height: auto;
-}
-
-/* Carousel Arrow Adjustments */
-.carousel-prev img,
-.carousel-next img {
-    width: 40px; /* Set a reasonable size for the carousel arrows */
-    height: 40px;
-    cursor: pointer;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.carousel-prev img:hover,
-.carousel-next img:hover {
-    transform: scale(1.2); /* Slight zoom on hover */
-    opacity: 0.8; /* Subtle opacity change */
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    svg,
-    .carousel-prev img,
-    .carousel-next img {
-        width: 30px; /* Smaller size for SVGs and arrows on mobile */
-        height: 30px;
-    }
-}
-/* General Image and SVG Styles */
-img {
-    max-width: 100%;
-    height: auto;
-}
-
-svg {
-    width: 50px; /* Default width for SVGs */
-    height: 50px; /* Default height for SVGs */
-}
-
-/* Specific SVG Adjustments for Navigation Bar */
-.nav-links img {
-    width: 24px; /* Size for icons in the navigation */
-    height: 24px;
-}
-
-/* Specific SVG Adjustments for Footer */
-footer img {
-    width: 24px; /* Size for icons in the footer */
-    height: 24px;
-    transition: transform 0.3s ease;
-}
-
-footer img:hover {
-    transform: scale(1.1); /* Slight zoom on hover */
-}
-
-/* Hero Section SVG Adjustments */
-.hero img {
-    width: 100px; /* Adjust the hero section SVG size */
-    height: auto;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    svg {
-        width: 30px; /* Smaller SVG size for mobile */
-        height: 30px;
-    }
+    margin: 0;
+    padding: 0;
+    background-color: #DEE1DD; /* Lightest color for background */
+    color: #28363D; /* Darkest color for text */
+    line-height: 1.6;
 }
 
 /* Navigation Bar */
@@ -156,55 +13,233 @@ footer img:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: white; /* White header */
-    padding: 10px 20px;
+    background-color: #FFFFFF; /* White header */
+    padding: 15px 30px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links {
+    display: flex;
+    gap: 15px;
+    list-style: none;
 }
 
 .nav-links a {
     text-decoration: none;
-    color: #2F575D;
+    color: #2F575D; /* Teal text */
     font-weight: bold;
+    font-size: 1rem;
     padding: 5px 10px;
     transition: color 0.3s ease;
 }
 
 .nav-links a:hover {
-    color: #658B6F;
+    color: #658B6F; /* Hover green */
 }
 
+/* Hero Section */
 .hero {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('images/hero.jpg');
     background-size: cover;
     background-position: center;
     text-align: center;
-    padding: 100px 20px;
-    color: white;
+    padding: 50px 20px;
+    height: 50vh; /* Reduced height */
+    color: #DEE1DD; /* Lightest color for text */
 }
 
 .hero h1 {
     font-family: 'Playfair Display', serif;
-    font-size: 48px;
+    font-size: 36px; /* Smaller headline font */
     margin-bottom: 10px;
+    color: #F2F2F2; /* Contrast for header */
 }
 
 .hero p {
-    font-family: 'Poppins', sans-serif;
-    font-size: 20px;
+    font-size: 16px; /* Smaller subtext font */
+    margin-bottom: 15px;
+    color: #DEE1DD; /* Subtle text */
 }
 
-footer {
-    background-color: #2F575D; /* Dark teal */
-    color: #DEE1DD; /* Light gray text */
+.hero button {
+    background-color: #2F575D;
+    color: #DEE1DD;
+    border: none;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.hero button:hover {
+    background-color: #658B6F; /* Lighter hover effect */
+    transform: scale(1.05);
+}
+
+/* Features Section */
+.features {
     text-align: center;
+    padding: 50px 20px;
+    background-color: #C4CDC1; /* Neutral tone */
+}
+
+.features .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #28363D; /* Dark text */
+}
+
+.features-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.feature-item {
+    background: white;
     padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-item:hover {
+    transform: translateY(-10px);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.feature-item h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #28363D;
+}
+
+.feature-item p {
+    font-size: 14px;
+    color: #6D9197; /* Muted teal */
+}
+
+/* Carousel */
+.carousel-container {
+    position: relative;
+    padding: 20px;
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+.product-card {
+    flex: 0 0 100%;
+    background-color: #FFFFFF;
+    border: 1px solid #C4CDC1;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.product-card h3 {
+    color: #2F575D;
+}
+
+/* Carousel Arrows */
+.carousel-prev,
+.carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.carousel-prev:hover,
+.carousel-next:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.carousel-prev {
+    left: 10px;
+}
+
+.carousel-next {
+    right: 10px;
+}
+
+.carousel-prev img,
+.carousel-next img {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+}
+
+/* Footer */
+footer {
+    background-color: #2F575D;
+    color: #DEE1DD;
+    padding: 20px;
+    text-align: center;
 }
 
 footer a {
     color: #DEE1DD;
     text-decoration: none;
+    transition: color 0.3s ease;
 }
 
 footer a:hover {
-    color: #99AEAD; /* Subtle hover effect */
+    color: #99AEAD;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .hero {
+        height: 40vh;
+        padding: 30px 15px;
+    }
+
+    .hero h1 {
+        font-size: 28px;
+    }
+
+    .hero p {
+        font-size: 14px;
+    }
+
+    .hero button {
+        padding: 8px 15px;
+        font-size: 0.8rem;
+    }
+
+    .carousel-prev,
+    .carousel-next {
+        width: 30px;
+        height: 30px;
+    }
+
+    .carousel-prev img,
+    .carousel-next img {
+        width: 15px;
+        height: 15px;
+    }
 }
