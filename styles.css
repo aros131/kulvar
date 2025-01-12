@@ -320,39 +320,37 @@
     border-color: #658B6F;
     box-shadow: 0px 0px 4px rgba(101, 139, 111, 0.5);
 }
+/* Scroll-to-Top Button */
 #backToTop {
     position: fixed;
-    top: 50%; /* Center vertically */
-    right: 20px; /* Fixed distance from the right edge */
-    transform: translateY(-50%); /* Adjust for vertical centering */
-    background: #2F575D; /* Teal color */
-    color: #DEE1DD; /* Light text */
+    bottom: 20px; /* Position it 20px from the bottom */
+    left: 50%; /* Horizontally center it */
+    transform: translateX(-50%); /* Offset for perfect centering */
+    background-color: #2F575D; /* Button background color */
+    color: #FFFFFF; /* Button text color */
     border: none;
-    border-radius: 50%;
-    width: 60px; /* Larger button for visibility */
-    height: 60px;
-    display: flex;
+    border-radius: 50%; /* Make it circular */
+    width: 50px; /* Width of the button */
+    height: 50px; /* Height of the button */
+    font-size: 24px; /* Font size for the arrow or icon */
+    display: flex; /* Center the icon within the button */
     justify-content: center;
     align-items: center;
-    font-size: 24px; /* Slightly larger font */
     cursor: pointer;
-    opacity: 0.8; /* Make it more opaque initially */
+    opacity: 0; /* Initially hidden */
     visibility: hidden; /* Initially hidden */
-    z-index: 1000;
-    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    z-index: 1000; /* Ensure it's above other elements */
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 #backToTop.show {
-    opacity: 1; /* Fully visible when 'show' class is added */
+    opacity: 1; /* Make it visible */
     visibility: visible;
-    transform: translateY(-50%) scale(1.1); /* Slight scaling effect */
 }
 
 #backToTop:hover {
-    background: #658B6F; /* Lighter teal on hover */
-    transform: translateY(-50%) scale(1.2); /* More noticeable scaling on hover */
+    background-color: #658B6F; /* Lighter background color on hover */
 }
-
 
 @media (max-width: 768px) {
     #backToTop {
