@@ -12,13 +12,13 @@
             font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #FFF1BC;
+            background-color: #DEE1DD; /* Updated background color */
             color: #333;
         }
 
         h1, h2 {
             text-align: center;
-            color: #333;
+            color: #28363D; /* Updated heading color */
         }
 
         p {
@@ -32,7 +32,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #7DC383;
+            background-color: #2F575D; /* Updated navbar color */
             padding: 15px 20px;
             position: sticky;
             top: 0;
@@ -55,7 +55,7 @@
         }
 
         .nav-links a.active {
-            border-bottom: 2px solid #FFF1BC;
+            border-bottom: 2px solid #99AEAD; /* Updated active link color */
         }
 
         .hamburger {
@@ -78,7 +78,7 @@
             width: 100%;
             max-width: 400px;
             background-color: white;
-            border: 1px solid #ddd;
+            border: 1px solid #C4CDC1; /* Updated border color */
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -87,7 +87,7 @@
         .login-form h2 {
             margin-bottom: 20px;
             font-size: 24px;
-            color: #333;
+            color: #28363D; /* Updated text color */
         }
 
         .login-form input {
@@ -95,7 +95,7 @@
             padding: 10px;
             font-size: 16px;
             margin-bottom: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid #658B6F; /* Updated input border */
             border-radius: 5px;
         }
 
@@ -105,7 +105,7 @@
             font-size: 16px;
             font-weight: bold;
             color: white;
-            background-color: #7DC383;
+            background-color: #2F575D; /* Updated button color */
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -113,7 +113,7 @@
         }
 
         .login-form button:hover {
-            background-color: #699C78;
+            background-color: #28363D; /* Updated hover effect */
         }
 
         .login-form p {
@@ -123,41 +123,63 @@
         }
 
         .login-form p a {
-            color: #7DC383;
+            color: #6D9197; /* Updated link color */
             text-decoration: none;
         }
 
         .login-form p a:hover {
             text-decoration: underline;
         }
+
+        .coach-login {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .coach-login button {
+            width: 50%;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background-color: #658B6F; /* Updated coach login button color */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .coach-login button:hover {
+            background-color: #2F575D; /* Updated hover effect */
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
     <nav class="navbar">
-    <div class="logo">
-        <a href="index.html">
-            <img src="images/logo.png" alt="Logo" style="height: 50px;">
-        </a>
-    </div>
-    <div class="hamburger">☰</div>
-    <ul class="nav-links">
-        <li><a href="index.html">Anasayfa</a></li>
-        <li><a href="koc.html">Koçlarımız</a></li>
-        <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
-        <li><a href="ulas.html">Bize Ulaşın</a></li>
-        <li><a href="login.html" class="active">Giriş Yap</a></li>
-    </ul>
-</nav>
-<script>
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="Logo" style="height: 50px;">
+            </a>
+        </div>
+        <div class="hamburger">☰</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Anasayfa</a></li>
+            <li><a href="koc.html">Koçlarımız</a></li>
+            <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
+            <li><a href="ulas.html">Bize Ulaşın</a></li>
+            <li><a href="login.html" class="active">Giriş Yap</a></li>
+        </ul>
+    </nav>
+    <script>
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
 
-    hamburger.addEventListener('click', () => {
-        navLinks.classList.toggle('show');
-    });
-</script>
-
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('show');
+        });
+    </script>
 
     <!-- Login Form Section -->
     <section class="login-section">
@@ -166,6 +188,9 @@
             <input type="email" name="email" placeholder="E-posta Adresiniz" required>
             <input type="password" name="password" placeholder="Şifreniz" required>
             <button type="submit">Giriş Yap</button>
+            <div class="coach-login">
+                <button onclick="window.location.href='coach_login.html';" type="button">Koç Girişi</button>
+            </div>
             <p>Hesabınız yok mu? <a href="signup.html">Kayıt Ol</a></p>
         </form>
     </section>
