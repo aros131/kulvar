@@ -1,34 +1,36 @@
 #backToTop {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
+    top: 50%; /* Center vertically */
+    right: 20px; /* Fixed distance from the right edge */
+    transform: translateY(-50%); /* Adjust for vertical centering */
     background: #2F575D; /* Teal color */
     color: #DEE1DD; /* Light text */
     border: none;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 60px; /* Larger button for visibility */
+    height: 60px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 20px;
+    font-size: 24px; /* Slightly larger font */
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0.8; /* Make it more opaque initially */
+    visibility: hidden; /* Initially hidden */
+    z-index: 1000;
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
 }
 
 #backToTop.show {
-    opacity: 1;
+    opacity: 1; /* Fully visible when 'show' class is added */
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(-50%) scale(1.1); /* Slight scaling effect */
 }
 
 #backToTop:hover {
     background: #658B6F; /* Lighter teal on hover */
+    transform: translateY(-50%) scale(1.2); /* More noticeable scaling on hover */
 }
+
 
 @media (max-width: 768px) {
     #backToTop {
