@@ -55,3 +55,14 @@ router.get("/programs", authenticateToken, authorizeRole("coach"), async (req, r
 
 // Export the router
 module.exports = router;
+router.get("/dashboard", authenticateToken, authorizeRole("coach"), async (req, res) => {
+  try {
+    // Assuming a coach dashboard contains their programs or other info
+    const programs = await Program.findAll({ where: { coachId: req.user.id } });
+    res.status(200).json({ message: "Welcome to the Coach Dashboard", programs });
+  } catch (error) {
+    console.error("Error loading dashboard:", error);
+    res.status(500).json({ message: "Failed to load dashboard", error });
+  }
+});
+

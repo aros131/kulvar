@@ -5,9 +5,9 @@
     "database": "database_development",
     "host": "127.0.0.1",
     "dialect": "sqlite",
-    "storage": "./backend/database/database.sqlite",
+    "storage": "./database/database.sqlite",
     "migrationStorage": "sequelize",
-    "migrationStoragePath": "./backend/migrations"
+    "migrationStoragePath": "./migrations"
   },
   "test": {
     "dialect": "sqlite",
