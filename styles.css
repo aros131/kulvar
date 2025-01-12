@@ -13,13 +13,7 @@ svg {
 .nav-links img {
     width: 24px; /* Size for icons in the navigation */
     height: 24px;
-}
 
-/* Specific SVG Adjustments for Footer */
-footer img {
-    width: 24px; /* Size for icons in the footer */
-    height: 24px;
-    transition: transform 0.3s ease;
 }
 
 footer img:hover {
