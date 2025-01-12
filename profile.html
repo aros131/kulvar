@@ -3,127 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kullanıcı Profili</title>
+    <title>Profilim</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        /* General Styles */
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #FFF1BC;
-            color: #333;
-        }
-
-        h1, h2 {
-            text-align: center;
-            color: #333;
-        }
-
-        p {
-            text-align: center;
-            margin: 5px 0;
-            color: #555;
-        }
-
-        /* Navbar */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #7DC383;
-            padding: 15px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 20px;
-            margin: 0;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: white;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .nav-links a.active {
-            border-bottom: 2px solid #FFF1BC;
-        }
-
-        /* Profile Section */
-        .profile-header {
-            text-align: center;
-            padding: 20px;
-            background-color: #7DC383;
-            color: white;
-        }
-
-        .profile-header img {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            margin-bottom: 10px;
-        }
-
-        .profile-info {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-info h2 {
-            margin-bottom: 10px;
-        }
-
-        .profile-info p {
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .program-list {
-            margin: 20px;
-            padding: 0;
-            list-style: none;
-        }
-
-        .program-list li {
-            background-color: white;
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .logout-button {
-            display: block;
-            width: 200px;
-            margin: 20px auto;
-            padding: 10px;
-            text-align: center;
-            background-color: #7DC383;
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        .logout-button:hover {
-            background-color: #699C78;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Navbar -->
@@ -133,46 +15,73 @@
                 <img src="images/logo.png" alt="Logo" style="height: 50px;">
             </a>
         </div>
+        <div class="hamburger">☰</div>
         <ul class="nav-links">
             <li><a href="index.html">Anasayfa</a></li>
-            <li><a href="koc.html">Koçlarımız</a></li>
-            <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
-            <li><a href="ulas.html">Bize Ulaşın</a></li>
+            <li><a href="profile.html" class="active">Profilim</a></li>
+            <li><a href="courses.html">Kurslarım</a></li>
             <li><a href="login.html">Giriş Yap</a></li>
         </ul>
     </nav>
 
-    <!-- Profile Header -->
-    <section class="profile-header">
-        <img src="images/profile-placeholder.png" alt="Profil Resmi">
-        <h1>Hoşgeldiniz, [Kullanıcı Adı]</h1>
-    </section>
+    <!-- Main Content -->
+    <div class="profile-page">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>Hesabım</h2>
+            <ul>
+                <li><a href="#">Kurslar</a></li>
+                <li><a href="#">İlerlemeler</a></li>
+                <li><a href="#">Profil</a></li>
+                <li><a href="#">Koçlar</a></li>
+            </ul>
+        </aside>
 
-    <!-- Profile Info -->
-    <section class="profile-info">
-        <h2>Bilgileriniz</h2>
-        <p>Ad: [Kullanıcı Adı]</p>
-        <p>E-posta: [user@example.com]</p>
-    </section>
+        <!-- Main Section -->
+        <section class="main-section">
+            <div class="profile-header">
+                <img src="images/user-avatar.png" alt="Profil Avatarı" class="profile-avatar">
+                <div class="profile-info">
+                    <h1>arendk</h1>
+                    <button class="edit-profile-btn">Profili Düzenle</button>
+                </div>
+            </div>
+            <div class="profile-stats">
+                <p>Seviye 2 <span>(2/5 yetenek)</span></p>
+                <p>Haftalık Seri: <span>0 hafta</span></p>
+                <p>Toplam Puan: <span>33,432</span></p>
+            </div>
 
-    <!-- Program List -->
-    <section>
-        <h2 style="text-align: center;">Programlarınız</h2>
-        <ul class="program-list">
-            <li>
-                <strong>Fitness Programı</strong>
-                <p>Başlangıç Tarihi: 01/01/2025</p>
-                <a href="program-details.html">Detayları Görüntüle</a>
-            </li>
-            <li>
-                <strong>Yoga Programı</strong>
-                <p>Başlangıç Tarihi: 15/02/2025</p>
-                <a href="program-details.html">Detayları Görüntüle</a>
-            </li>
-        </ul>
-    </section>
+            <!-- Fitness Courses -->
+            <h2>Kurslarım</h2>
+            <div class="course-list">
+                <div class="course-card">
+                    <h3>Fitness: Temel Antrenman</h3>
+                    <p>Seviye: Başlangıç</p>
+                    <button class="btn">Devam Et</button>
+                </div>
+                <div class="course-card">
+                    <h3>Fitness: Kardiyo Teknikleri</h3>
+                    <p>Seviye: Orta</p>
+                    <button class="btn">Devam Et</button>
+                </div>
+                <div class="course-card">
+                    <h3>Fitness: Kas Geliştirme</h3>
+                    <p>Seviye: İleri</p>
+                    <button class="btn">Devam Et</button>
+                </div>
+            </div>
+            <button class="add-course-btn">+ Yeni Kurs Ekle</button>
+        </section>
+    </div>
 
-    <!-- Logout Button -->
-    <a href="login.html" class="logout-button">Çıkış Yap</a>
+    <script>
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('show');
+        });
+    </script>
 </body>
 </html>
