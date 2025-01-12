@@ -1,3 +1,62 @@
+/* Smaller Hero Section */
+.hero {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('images/hero.jpg');
+    background-size: cover;
+    background-position: center;
+    text-align: center;
+    padding: 50px 20px; /* Reduced padding */
+    height: 50vh; /* Reduced height */
+    color: white;
+}
+
+.hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; /* Smaller font size for the headline */
+    margin-bottom: 10px;
+}
+
+.hero p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px; /* Smaller font size for the subtext */
+    margin-bottom: 15px; /* Reduced margin */
+}
+
+.hero button {
+    background-color: #2F575D;
+    color: #DEE1DD;
+    border: none;
+    padding: 10px 20px; /* Reduced button size */
+    font-size: 0.9rem; /* Smaller button font */
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.hero button:hover {
+    background-color: #658B6F;
+    transform: scale(1.05);
+}
+
+/* Responsive Adjustments for Hero Section */
+@media (max-width: 768px) {
+    .hero {
+        height: 40vh; /* Even smaller for mobile */
+        padding: 30px 15px;
+    }
+
+    .hero h1 {
+        font-size: 28px; /* Smaller headline font for mobile */
+    }
+
+    .hero p {
+        font-size: 14px; /* Smaller subtext font for mobile */
+    }
+
+    .hero button {
+        padding: 8px 15px;
+        font-size: 0.8rem; /* Smaller button font for mobile */
+    }
+}
 /* General Image and SVG Styles */
 img {
     max-width: 100%;
