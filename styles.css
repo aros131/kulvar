@@ -744,6 +744,36 @@ svg {
     right: 10px; /* Ensure it's on the right side */
 }
 
+/* Carousel Container */
+.carousel-container {
+    display: flex;
+    overflow-x: auto; /* Allow horizontal scrolling */
+    scroll-behavior: smooth;
+    gap: 10px; /* Space between items */
+    padding: 20px;
+    width: 100%; /* Take full width of the screen */
+    box-sizing: border-box;
+}
+
+/* Carousel Items */
+.carousel-item {
+    flex: 0 0 auto; /* Prevent shrinking */
+    width: 80%; /* Adjust width dynamically for smaller screens */
+    max-width: 300px; /* Maximum width for larger screens */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+/* Adjust for smaller screens */
+@media (max-width: 768px) {
+    .carousel-item {
+        width: 90%; /* Increase width for smaller screens */
+        max-width: 250px; /* Reduce maximum width */
+    }
+}
 
 /* Chat Button */
 #chatButton {
