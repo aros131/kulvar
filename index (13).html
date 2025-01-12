@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fito</title>
+<link href="styles.css" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #DEE1DD; /* Lightest color for background */
+    color: #28363D; /* Darkest color for text */
+    line-height: 1.6;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #FFFFFF;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links {
+    display: flex;
+    gap: 15px;
+    list-style: none;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #28363D;
+    font-weight: 500;
+    font-size: 1rem;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #658B6F;
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #658B6F;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease;
+}
+
+.nav-links a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+/* Hero Section */
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 90vh;
+    background-color: #99AEAD;
+    text-align: center;
+    padding: 20px;
+}
+
+.hero h1 {
+    font-size: 4rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #28363D;
+}
+
+.hero p {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #658B6F;
+}
+
+.hero button {
+    background-color: #2F575D;
+    color: #DEE1DD;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.hero button:hover {
+    background-color: #658B6F;
+    transform: scale(1.05);
+}
+
+/* Product Cards */
+.product-card {
+    background-color: #FFFFFF;
+    border: 1px solid #C4CDC1;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Footer */
+footer {
+    background-color: #FFFFFF;
+    color: #28363D;
+    padding: 40px;
+    text-align: center;
+    font-size: 0.9rem;
+    border-top: 1px solid #C4CDC1;
+}
+
+footer a {
+    color: #2F575D;
+    text-decoration: none;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: #658B6F;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&amp;family=Poppins:wght@400;500;700&amp;display=swap" rel="stylesheet"/><style>
+/* Professional Styles */
+.site-name h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    color: #2F575D;
+    margin: 0;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.features {
+    text-align: center;
+    padding: 50px 20px;
+    background-color: #f7f9fa;
+}
+
+.features .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #28363D;
+    position: relative;
+}
+
+.features .section-title::after {
+    content: "";
+    display: block;
+    width: 50px;
+    height: 4px;
+    background: #2F575D;
+    margin: 10px auto;
+    border-radius: 2px;
+}
+
+.features-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.feature-item {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-item:hover {
+    transform: translateY(-10px);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.feature-item img {
+    max-width: 100px;
+    margin-bottom: 15px;
+}
+
+.feature-item h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #28363D;
+}
+
+.feature-item p {
+    font-size: 14px;
+    color: #6D9197;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.features, .features-list .feature-item {
+    animation: fadeInUp 1s ease-out;
+}
+
+/* Hero Section Enhancement */
+.hero {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/hero.jpg');
+    background-size: cover;
+    background-position: center;
+    text-align: center;
+    padding: 140px 20px;
+    color: white;
+    animation: fadeInUp 1.5s ease-in-out;
+}
+</style>
+</head>
+<body>
+<!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="site-name">
+            <h1>Purrseus</h1>
+        </div>
+        <div class="logo">
+            <a href="index.html">
+                <img alt="Logo" src="images/logo.svg" style="height: 100px;">
+            </a>
+        </div>
+        <div class="hamburger">☰</div>
+        <ul class="nav-links">
+            <li><a class="active" href="#hero">Anasayfa</a></li>
+            <li><a href="#features">Koçlarımız</a></li>
+            <li><a href="#testimonials">Referanslar</a></li>
+            <li><a href="#contact">İletişim</a></li>
+            <li><a href="login.html">Giriş Yap</a></li>
+        </ul>
+        <div class="profile-link">
+            <a href="profile.html">
+                <img alt="Profil" src="images/user.svg" style="height: 30px;">
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    
+    <section id="hero" class="hero">
+    <div class="hero-content">
+        <h1>Purrseus</h1>
+        <p>Perseverance in Motion</p>
+        <button class="learn-btn" onclick="window.location.href='#features';">Keşfet</button>
+    </div>
+</section>
+
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <h2 class="section-title">Neden Purrseus?</h2>
+        <div class="features-list">
+            <div class="feature-item">
+                <img alt="Topluluk" src="images/community.svg">
+                <h3>Topluluk</h3>
+                <p>Diğer sporcular ve koçlar ile iletişim kurun.</p>
+            </div>
+            <div class="feature-item">
+                <img alt="İlerleme Takibi" src="images/progress-tracking.svg">
+                <h3>İlerleme Takibi</h3>
+                <p>Performansınızı ve hedeflerinizi kolayca takip edin.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials">
+        <h2 class="section-title">Referanslar</h2>
+        <div class="testimonial-slider">
+            <div class="testimonial">
+                <p>"Purrseus platformu sayesinde hedeflerime ulaştım."</p>
+                <h3>- Ali Veli</h3>
+            </div>
+            <div class="testimonial">
+                <p>"Koçların rehberliği mükemmel."</p>
+                <h3>- Ayşe Yılmaz</h3>
+            </div>
+        </div>
+        <button class="testimonial-prev">❮</button>
+        <button class="testimonial-next">❯</button>
+    </section>
+
+    <!-- Product Carousel Section -->
+    <div class="product-carousel">
+        <h2> </h2>
+        <div class="carousel-container">
+            <div class="carousel-track">
+                <div class="product-card">
+                    <img alt="Fitness" src="https://via.placeholder.com/200x150">
+                    <h3>Fitness</h3>
+                    <p>Güçlü bir vücut için kişiselleştirilmiş planlar.</p>
+                    <a class="review-link" href="fitness_coaches.html">Koçları Gör</a>
+                </div>
+                <div class="product-card">
+                    <img alt="Yoga" src="https://via.placeholder.com/200x150">
+                    <h3>Yoga</h3>
+                    <p>Esneklik ve mindfulness için uzman rehberliği.</p>
+                    <a class="review-link" href="yoga_coaches.html">Koçları Gör</a>
+                </div>
+            </div>
+            <!-- Navigation Arrows -->
+            <button class="carousel-prev">
+                <img alt="Sol Ok" src="images/angle-left.svg">
+            </button>
+            <button class="carousel-next">
+                <img alt="Sağ Ok" src="images/angle-right.svg">
+            </button>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop">⬆</button>
+
+    <!-- Chat Button -->
+    <div id="chatButton" onclick="openChat()">💬 Chat with Us</div>
+    <div id="chatPopup">
+        <header>Live Chat</header>
+        <div class="chat-body">
+            <p>Merhaba! Size nasıl yardımcı olabiliriz?</p>
+        </div>
+        <textarea placeholder="Mesajınızı yazın..."></textarea>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Hakkında</h3>
+                <p>© 2024 Kas yap Platformu. Tüm hakları saklıdır.</p>
+            </div>
+            <div class="footer-section">
+                <a href="privacy.html">Gizlilik Politikası</a>
+                <a href="contact.html">Bize ulaşın</a>
+                <a href="admin_login.html">Admin Girişi</a>
+            </div>
+            <div class="footer-section">
+                <h3>Bizi Takip Et</h3>
+                <div class="social-links">
+                    <a href="https://facebook.com" target="_blank">
+                        <img alt="Facebook" src="images/facebook.svg"/>
+                    </a>
+                    <a href="https://twitter.com" target="_blank">
+                        <img alt="Twitter" src="images/twitter.svg"/>
+                    </a>
+                    <a href="https://instagram.com" target="_blank">
+                        <img alt="Instagram" src="images/instagram.svg"/>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+   <!-- Link the Scripts -->
+    <script src="scripts.js"></script>
+
+    <!-- JavaScript -->
+    <script>
+        // Chat Popup
+        function openChat() {
+            const chatPopup = document.getElementById("chatPopup");
+            chatPopup.style.display = chatPopup.style.display === "block" ? "none" : "block";
+        }
+
+        // Carousel Logic
+        const prevButton = document.querySelector('.carousel-prev');
+        const nextButton = document.querySelector('.carousel-next');
+        const carouselTrack = document.querySelector('.carousel-track');
+        const productCards = document.querySelectorAll('.product-card');
+        let currentIndex = 0;
+
+        const updateCarousel = () => {
+            const offset = -currentIndex * productCards[0].offsetWidth;
+            carouselTrack.style.transform = `translateX(${offset}px)`;
+        };
+
+        prevButton.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCarousel();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentIndex < productCards.length - 1) {
+                currentIndex++;
+                updateCarousel();
+            }
+        });
+    </script>
+</body>
+</html>
