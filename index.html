@@ -403,6 +403,24 @@ footer a:hover {
 
     <!-- JavaScript -->
     <script>
+        const backToTop = document.getElementById('backToTop');
+
+window.addEventListener('scroll', () => {
+    console.log("ScrollY:", window.scrollY); // Check the scroll position
+    if (window.scrollY > 300) {
+        backToTop.classList.add('show'); // Make the button visible
+    } else {
+        backToTop.classList.remove('show'); // Hide the button
+    }
+});
+
+backToTop.addEventListener('click', () => {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+    });
+});
+
         // Chat Popup
         function openChat() {
             const chatPopup = document.getElementById("chatPopup");
