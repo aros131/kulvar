@@ -132,7 +132,7 @@ html {
     justify-content: space-between;
     align-items: center;
     background-color: #2F575D; /* Greenish Background */
-    padding: 15px 20px;
+    padding: 8px 12px;
     position: sticky;
     top: 0;
     z-index: 1000;
