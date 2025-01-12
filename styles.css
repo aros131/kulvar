@@ -32,6 +32,64 @@ footer img:hover {
     height: auto;
 }
 
+/* Carousel Arrow Adjustments */
+.carousel-prev img,
+.carousel-next img {
+    width: 40px; /* Set a reasonable size for the carousel arrows */
+    height: 40px;
+    cursor: pointer;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.carousel-prev img:hover,
+.carousel-next img:hover {
+    transform: scale(1.2); /* Slight zoom on hover */
+    opacity: 0.8; /* Subtle opacity change */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    svg,
+    .carousel-prev img,
+    .carousel-next img {
+        width: 30px; /* Smaller size for SVGs and arrows on mobile */
+        height: 30px;
+    }
+}
+/* General Image and SVG Styles */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+svg {
+    width: 50px; /* Default width for SVGs */
+    height: 50px; /* Default height for SVGs */
+}
+
+/* Specific SVG Adjustments for Navigation Bar */
+.nav-links img {
+    width: 24px; /* Size for icons in the navigation */
+    height: 24px;
+}
+
+/* Specific SVG Adjustments for Footer */
+footer img {
+    width: 24px; /* Size for icons in the footer */
+    height: 24px;
+    transition: transform 0.3s ease;
+}
+
+footer img:hover {
+    transform: scale(1.1); /* Slight zoom on hover */
+}
+
+/* Hero Section SVG Adjustments */
+.hero img {
+    width: 100px; /* Adjust the hero section SVG size */
+    height: auto;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     svg {
