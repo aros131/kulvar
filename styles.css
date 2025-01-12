@@ -130,16 +130,30 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.hamburger {
-    display: none;
-    cursor: pointer;
-    font-size: 24px;
-}
-
 .nav-links {
     display: flex;
     gap: 20px;
     list-style: none;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #2F575D; /* Teal text */
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 5px 10px;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #658B6F; /* Lighter teal on hover */
+}
+
+/* Mobile Menu (Hamburger) */
+.hamburger {
+    display: none;
+    cursor: pointer;
+    font-size: 24px;
 }
 
 .nav-links.active {
@@ -156,6 +170,20 @@ body {
 
 .nav-links.active {
     transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: block;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
 }
 
 /* Hero Section */
