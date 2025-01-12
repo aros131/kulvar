@@ -67,6 +67,20 @@
     </div>
 
     <script>
+        // Function to apply filters based on query parameters
+function applyInitialFilter() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const category = urlParams.get('category'); // Get the category from the query parameter
+
+    if (category) {
+        document.getElementById('filterCategory').value = category; // Set the dropdown value
+        filterCoaches(); // Apply the filter
+    }
+}
+
+// Call the function when the page loads
+window.onload = applyInitialFilter;
+
         function filterCoaches() {
             const searchInput = document.getElementById('searchBar').value.toLowerCase();
             const filterCategory = document.getElementById('filterCategory').value;
