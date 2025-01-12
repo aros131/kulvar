@@ -118,77 +118,97 @@ body {
 }
 
 /* Navbar */
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #DEE1DD; /* Lightest color for background */
+    color: #28363D; /* Darkest color for text */
+    line-height: 1.6;
+}
+
 /* Navbar */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: sticky;
-    top: 0;
-    background-color: #FFFFFF; /* White background */
-    z-index: 1000; /* Ensure it stays on top */
-    padding: 20px 30px; /* Adjust padding for spacing */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    padding: 20px;
+    background-color: #FFFFFF;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nav-links {
     display: flex;
-    gap: 20px; /* Space between links */
-    list-style: none; /* Remove bullets */
+    gap: 15px;
+    list-style: none;
 }
 
 .nav-links a {
-    text-decoration: none; /* Remove underline */
-    color: #2F575D; /* Teal text */
-    font-weight: bold;
+    text-decoration: none;
+    color: #28363D;
+    font-weight: 500;
     font-size: 1rem;
-    padding: 5px 10px; /* Padding for clickable area */
+    position: relative;
     transition: color 0.3s ease;
 }
 
 .nav-links a:hover {
-    color: #658B6F; /* Slightly lighter teal on hover */
+    color: #658B6F;
 }
 
-.nav-links a.active {
-    color: #658B6F; /* Different color for active link */
-    border-bottom: 2px solid #658B6F; /* Underline active link */
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #658B6F;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease;
 }
 
+.nav-links a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+/* Responsive Navbar */
 .hamburger {
-    display: none; /* Hidden by default */
+    display: none;
     cursor: pointer;
     font-size: 24px;
 }
 
-/* Responsive Navbar */
 @media (max-width: 768px) {
     .hamburger {
-        display: block; /* Show hamburger menu on small screens */
+        display: block; /* Show hamburger menu on smaller screens */
     }
 
     .nav-links {
         display: none; /* Hide links initially */
         flex-direction: column; /* Stack links vertically */
         position: absolute;
-        top: 70px; /* Below the navbar */
+        top: 70px; /* Below navbar */
         right: 20px; /* Align to the right */
-        background: #FFFFFF; /* Match navbar background */
-        width: 200px;
+        background-color: #FFFFFF;
         padding: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
-        border-radius: 5px; /* Rounded corners */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
     }
 
     .nav-links.active {
-        display: flex; /* Show the menu */
+        display: flex; /* Show links when hamburger is clicked */
     }
 
     .nav-links a {
-        text-align: left; /* Align links to the left */
-        padding: 10px; /* Add more padding for touch-friendly links */
+        padding: 10px;
+        text-align: left;
     }
 }
+
 
 
 /* Hero Section */
