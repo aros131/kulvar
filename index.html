@@ -1,48 +1,103 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purrseus</title>
-    <link href="styles.css" rel="stylesheet" />
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;500;700&display=swap"
-        rel="stylesheet"
-    />
     <style>
+        /* General Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #28363D;
+        }
+
+        h1, h2 {
+            margin: 0;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Header */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            color: #28363D;
+            font-size: 16px;
+            font-weight: 500;
+            margin-left: 20px;
+        }
+
+        .navbar a:hover {
+            color: #2F575D;
+        }
+
+        .logo img {
+            height: 50px;
+        }
+
+        /* Hero Section */
         .hero {
-            background: linear-gradient(
-                    to bottom,
-                    rgba(0, 0, 0, 0.5),
-                    rgba(0, 0, 0, 0.5)
-                ),
-                url("images/hero.jpg");
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/hero.jpg');
             background-size: cover;
             background-position: center;
             text-align: center;
             padding: 80px 20px;
             color: white;
         }
+
         .hero h1 {
-            font-family: "Playfair Display", serif;
+            font-family: 'Playfair Display', serif;
             font-size: 48px;
-            color: #f2f2f2;
             margin-bottom: 10px;
         }
+
         .hero p {
-            font-family: "Poppins", sans-serif;
             font-size: 20px;
-            color: #dee1dd;
+            margin-bottom: 20px;
         }
-        .features .section-title::after {
-            content: "";
-            display: block;
-            width: 50px;
-            height: 4px;
-            background: #2f575d;
-            margin: 10px auto;
-            border-radius: 2px;
+
+        .hero button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #2F575D;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .hero button:hover {
+            background-color: #658B6F;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #2F575D;
+            color: #DEE1DD;
+            text-align: center;
+            padding: 20px 10px;
+        }
+
+        footer a {
+            color: #99AEAD;
+            font-size: 14px;
+        }
+
+        footer a:hover {
+            color: #F2F2F2;
         }
     </style>
 </head>
@@ -51,130 +106,33 @@
     <nav class="navbar">
         <div class="logo">
             <a href="index.html">
-                <img alt="Logo" src="images/logo.svg" />
+                <img src="images/logo.svg" alt="Logo">
             </a>
         </div>
-        <div class="hamburger">☰</div>
-        <ul class="nav-links">
-            <li><a class="active" href="index.html">Anasayfa</a></li>
-            <li><a href="koc.html">Koçlarımız</a></li>
-            <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
-            <li><a href="ulas.html">Bize Ulaşın</a></li>
-            <li><a href="login.html">Giriş Yap</a></li>
-        </ul>
-        <div class="profile-link">
-            <a href="profile.html">
-                <img alt="Profil" src="images/user.svg" />
-            </a>
+        <div>
+            <a href="index.html">Anasayfa</a>
+            <a href="koc.html">Koçlarımız</a>
+            <a href="faq.html">Sıkça Sorulan Sorular</a>
+            <a href="ulas.html">Bize Ulaşın</a>
+            <a href="login.html">Giriş Yap</a>
         </div>
     </nav>
 
     <!-- Hero Section -->
     <div class="hero">
-        <div class="hero-content">
-            <h1>Purrseus</h1>
-            <p>Perseverance in Motion</p>
-            <div class="buttons">
-                <button
-                    class="learn-btn"
-                    onclick="window.location.href='koc.html';"
-                >
-                    Koçlarımız
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Product Carousel Section -->
-    <div class="product-carousel">
-        <h2>Programlarımız</h2>
-        <div class="carousel-container">
-            <div class="carousel-track">
-                <div class="product-card">
-                    <img
-                        alt="Fitness"
-                        src="https://via.placeholder.com/200x150"
-                    />
-                    <h3>Fitness</h3>
-                    <p>Güçlü bir vücut için kişiselleştirilmiş planlar.</p>
-                    <a class="review-link" href="fitness_coaches.html"
-                        >Koçları Gör</a
-                    >
-                </div>
-                <div class="product-card">
-                    <img
-                        alt="Yoga"
-                        src="https://via.placeholder.com/200x150"
-                    />
-                    <h3>Yoga</h3>
-                    <p>Esneklik ve mindfulness için uzman rehberliği.</p>
-                    <a class="review-link" href="yoga_coaches.html"
-                        >Koçları Gör</a
-                    >
-                </div>
-                <div class="product-card">
-                    <img
-                        alt="Pilates"
-                        src="https://via.placeholder.com/200x150"
-                    />
-                    <h3>Pilates</h3>
-                    <p>
-                        Merkez bölgenizi güçlendirmek için eşsiz planlar.
-                    </p>
-                    <a class="review-link" href="pilates_coaches.html"
-                        >Koçları Gör</a
-                    >
-                </div>
-                <div class="product-card">
-                    <img
-                        alt="Beslenme"
-                        src="https://via.placeholder.com/200x150"
-                    />
-                    <h3>Beslenme</h3>
-                    <p>
-                        Hedeflerinize uygun özel yemek planları.
-                    </p>
-                    <a class="review-link" href="nutrition_coaches.html"
-                        >Koçları Gör</a
-                    >
-                </div>
-            </div>
-            <button class="carousel-prev">
-                <img alt="Sol Ok" src="images/angle-left.svg" />
-            </button>
-            <button class="carousel-next">
-                <img alt="Sağ Ok" src="images/angle-right.svg" />
-            </button>
-        </div>
+        <h1>Purrseus</h1>
+        <p>Perseverance in Motion</p>
+        <button onclick="window.location.href='koc.html';">Koçlarımız</button>
     </div>
 
     <!-- Footer -->
     <footer>
-        <div class="footer-container">
-            <div class="footer-section">
-                <h3>Hakkında</h3>
-                <p>© 2024 Kas yap Platformu. Tüm hakları saklıdır.</p>
-            </div>
-            <div class="footer-section">
-                <a href="privacy.html">Gizlilik Politikası</a>
-                <a href="contact.html">Bize ulaşın</a>
-                <a href="admin_login.html">Admin Girişi</a>
-            </div>
-            <div class="footer-section">
-                <h3>Bizi Takip Et</h3>
-                <div class="social-links">
-                    <a href="https://facebook.com" target="_blank">
-                        <img alt="Facebook" src="images/facebook.svg" />
-                    </a>
-                    <a href="https://twitter.com" target="_blank">
-                        <img alt="Twitter" src="images/twitter.svg" />
-                    </a>
-                    <a href="https://instagram.com" target="_blank">
-                        <img alt="Instagram" src="images/instagram.svg" />
-                    </a>
-                </div>
-            </div>
-        </div>
+        <p>© 2024 Purrseus Platformu. Tüm hakları saklıdır.</p>
+        <p>
+            <a href="privacy.html">Gizlilik Politikası</a> |
+            <a href="contact.html">Bize ulaşın</a> |
+            <a href="admin_login.html">Admin Girişi</a>
+        </p>
     </footer>
 </body>
 </html>
