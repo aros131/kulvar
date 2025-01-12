@@ -3,8 +3,8 @@ body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #DEE1DD;
-    color: #28363D;
+    background-color: #DEE1DD; /* Lightest background */
+    color: #28363D; /* Dark text color */
     line-height: 1.6;
 }
 
@@ -259,7 +259,40 @@ img, svg {
     width: 24px;
     height: 24px;
 }
-
+/* Testimonials Section */
+.testimonials {
+    text-align: center;
+    padding: 50px;
+}
+.testimonial-slider {
+    display: flex;
+    overflow: hidden;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.testimonial {
+    flex: 0 0 100%;
+    text-align: center;
+    padding: 20px;
+    background: white;
+    margin: 0 10px;
+}
+.testimonial-prev,
+.testimonial-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none; /* Transparent background */
+    border: none;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+.testimonial-prev img,
+.testimonial-next img {
+    width: 24px;
+    height: 24px;
+}
 /* Scroll-to-Top Button */
 #backToTop {
     position: fixed;
