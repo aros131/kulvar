@@ -85,17 +85,39 @@ const productCards = document.querySelectorAll('.product-card');
 // Initialize variables
 let currentIndex = 0;
 
-// Function to update carousel position
-function updateCarousel() {
-    const cardWidth = productCards[0].offsetWidth; // Get dynamic card width
-    const gap = 10; // Adjust for any gaps between cards
-    const offset = -currentIndex * (cardWidth + gap);
-    carouselTrack.style.transform = `translateX(${offset}px)`;
+// Carousel Navigation
+const track = document.querySelector('.carousel-track');
+const prevButton = document.querySelector('.carousel-prev');
+const nextButton = document.querySelector('.carousel-next');
 
-    // Show/Hide arrows based on position
-    carouselPrev.style.display = currentIndex === 0 ? 'none' : 'flex';
-    carouselNext.style.display = currentIndex === productCards.length - 1 ? 'none' : 'flex';
+let currentIndex = 0;
+
+// Function to update the carousel position
+function updateCarousel() {
+    const cardWidth = document.querySelector('.product-card').offsetWidth;
+    const gap = 15; // Space between cards
+    track.style.transform = `translateX(-${(cardWidth + gap) * currentIndex}px)`;
 }
+
+// Event listeners for navigation buttons
+prevButton.addEventListener('click', () => {
+    if (currentIndex > 0) {
+        currentIndex--;
+        updateCarousel();
+    }
+});
+
+nextButton.addEventListener('click', () => {
+    const cardCount = document.querySelectorAll('.product-card').length;
+    if (currentIndex < cardCount - 1) {
+        currentIndex++;
+        updateCarousel();
+    }
+});
+
+// Adjust carousel on window resize
+window.addEventListener('resize', updateCarousel);
+
 
 // Add event listeners to arrows
 carouselPrev.addEventListener('click', () => {
