@@ -264,81 +264,63 @@ footer a:hover {
         </div>
         <div class="logo">
             <a href="index.html">
-                <img alt="Logo" src="images/logo.svg" style="height: 100px;"/>
+                <img alt="Logo" src="images/logo.svg" style="height: 100px;">
             </a>
         </div>
         <div class="hamburger">☰</div>
         <ul class="nav-links">
-            <li><a class="active" href="index.html">Anasayfa</a></li>
-            <li><a href="koc.html">Koçlarımız</a></li>
-            <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
-            <li><a href="ulas.html">Bize Ulaşın</a></li>
-            <li><a href="login.html">Giriş Yap</a></li>
+            <li><a class="active" href="#hero">Anasayfa</a></li>
+            <li><a href="#features">Koçlarımız</a></li>
+            <li><a href="#testimonials">Referanslar</a></li>
+            <li><a href="#contact">İletişim</a></li>
         </ul>
-        <div class="profile-link">
-            <a href="profile.html">
-                <img alt="Profil" src="images/user.svg" style="height: 30px;"/>
-            </a>
-        </div>
     </nav>
 
     <!-- Hero Section -->
-    <div class="hero">
+    <section id="hero" class="hero section">
         <div class="hero-content">
             <h1>Purrseus</h1>
             <p>Perseverance in Motion</p>
-            <div class="buttons">
-                <button class="learn-btn" onclick="window.location.href='koc.html';">Koçlarımız</button>
-            </div>
+            <button class="learn-btn" onclick="window.location.href='#features';">Keşfet</button>
         </div>
-    </div>
+    </section>
 
     <!-- Features Section -->
-    <div class="features-section">
-        <section class="features">
-            <h2 class="section-title">Neden Purrseus?</h2>
-            <div class="features-list">
-                <div class="feature-item">
-                    <img alt="Topluluk" src="images/community.svg"/>
-                    <h3>Topluluk</h3>
-                    <p>Diğer sporcular ve koçlar ile iletişim kurun.</p>
-                </div>
-                <div class="feature-item">
-                    <img alt="İlerleme Takibi" src="images/progress-tracking.svg"/>
-                    <h3>İlerleme Takibi</h3>
-                    <p>Performansınızı ve hedeflerinizi kolayca takip edin.</p>
-                </div>
+    <section id="features" class="features section">
+        <h2 class="section-title">Neden Purrseus?</h2>
+        <div class="features-list">
+            <div class="feature-item">
+                <img alt="Topluluk" src="images/community.svg">
+                <h3>Topluluk</h3>
+                <p>Diğer sporcular ve koçlar ile iletişim kurun.</p>
             </div>
-        </section>
-    </div>
-
-    <!-- Product Carousel Section -->
-    <div class="product-carousel">
-        <h2></h2>
-        <div class="carousel-container">
-            <div class="carousel-track">
-                <div class="product-card">
-                    <img alt="Fitness" src="https://via.placeholder.com/200x150"/>
-                    <h3>Fitness</h3>
-                    <p>Güçlü bir vücut için kişiselleştirilmiş planlar.</p>
-                    <a class="review-link" href="fitness_coaches.html">Koçları Gör</a>
-                </div>
-                <div class="product-card">
-                    <img alt="Yoga" src="https://via.placeholder.com/200x150"/>
-                    <h3>Yoga</h3>
-                    <p>Esneklik ve mindfulness için uzman rehberliği.</p>
-                    <a class="review-link" href="yoga_coaches.html">Koçları Gör</a>
-                </div>
+            <div class="feature-item">
+                <img alt="İlerleme Takibi" src="images/progress-tracking.svg">
+                <h3>İlerleme Takibi</h3>
+                <p>Performansınızı ve hedeflerinizi kolayca takip edin.</p>
             </div>
-            <!-- Navigation Arrows -->
-            <button class="carousel-prev">
-                <img alt="Sol Ok" src="images/angle-left.svg"/>
-            </button>
-            <button class="carousel-next">
-                <img alt="Sağ Ok" src="images/angle-right.svg"/>
-            </button>
         </div>
-    </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials section">
+        <h2 class="section-title">Referanslar</h2>
+        <div class="testimonial-slider">
+            <div class="testimonial">
+                <p>"Purrseus platformu sayesinde hedeflerime ulaştım."</p>
+                <h3>- Ali Veli</h3>
+            </div>
+            <div class="testimonial">
+                <p>"Koçların rehberliği mükemmel."</p>
+                <h3>- Ayşe Yılmaz</h3>
+            </div>
+        </div>
+        <button class="testimonial-prev">❮</button>
+        <button class="testimonial-next">❯</button>
+    </section>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop">⬆</button>
 
     <!-- Chat Button -->
     <div id="chatButton" onclick="openChat()">💬 Chat with Us</div>
@@ -350,6 +332,14 @@ footer a:hover {
         <textarea placeholder="Mesajınızı yazın..."></textarea>
     </div>
 
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <p>© 2024 Purrseus Platformu. Tüm hakları saklıdır.</p>
+            <a href="privacy.html">Gizlilik Politikası</a>
+            <a href="contact.html">Bize Ulaşın</a>
+        </div>
+    </footer>
     <!-- Footer -->
     <footer>
         <div class="footer-container">
