@@ -1,3 +1,47 @@
+/* General SVG Styling */
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Carousel Arrows */
+.carousel-prev,
+.carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none; /* Transparent background */
+    border: none;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.carousel-prev img,
+.carousel-next img {
+    width: 24px; /* Restrict size */
+    height: 24px;
+}
+
+/* Testimonials Arrows */
+.testimonial-prev,
+.testimonial-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none; /* Transparent background */
+    border: none;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+.testimonial-prev img,
+.testimonial-next img {
+    width: 24px; /* Set consistent size */
+    height: 24px;
+}
 /* General Styles */
 body {
     font-family: 'Poppins', sans-serif;
