@@ -6,43 +6,32 @@
     <title>Koçlarımız</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-
-    
-    <!-- Navigation Bar -->
-   <nav class="navbar">
-    <div class="logo">
-        <a href="index.html">
-            <img src="images/logo.png" alt="Logo" style="height: 50px;">
-        </a>
-    </div>
-    <div class="hamburger">☰</div>
-    <ul class="nav-links">
-        <li><a href="index.html">Anasayfa</a></li>
-        <li><a href="koc.html" class="active">Koçlarımız</a></li>
-        <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
-        <li><a href="ulas.html">Bize Ulaşın</a></li>
-        <li><a href="login.html">Giriş Yap</a></li>
-    </ul>
-</nav>
-<script>
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
-
-    hamburger.addEventListener('click', () => {
-        navLinks.classList.toggle('show');
-    });
-    </script>
-      </script>
-
 </head>
 <body>
-    <!-- Hero Section -->
-    <section class="hero-coaches">
-        <h1>Koçlarımız</h1>
-        <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
-    </section>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="Logo" style="height: 50px;">
+            </a>
+        </div>
+        <div class="hamburger">☰</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Anasayfa</a></li>
+            <li><a href="koc.html" class="active">Koçlarımız</a></li>
+            <li><a href="faq.html">Sıkça Sorulan Sorular</a></li>
+            <li><a href="ulas.html">Bize Ulaşın</a></li>
+            <li><a href="login.html">Giriş Yap</a></li>
+        </ul>
+    </nav>
 
-  
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Koçlarımız</h1>
+            <p>Alanında uzman koçlarımızla tanışın ve hedeflerinize ulaşın!</p>
+        </div>
+    </section>
 
     <!-- Search and Filter Bar -->
     <div class="search-filter">
@@ -56,50 +45,47 @@
     </div>
 
     <!-- Coach List -->
-    <div class="coach-list">
-        <!-- Example Coach Card -->
-        <div class="coach-card" data-category="yoga">
+    <div class="features-list coach-list">
+        <div class="feature-item coach-card" data-category="yoga">
             <img src="images/coach1.jpg" alt="Ayşe Yılmaz">
             <h3>Ayşe Yılmaz</h3>
             <p>Yoga Uzmanı</p>
-            <a href="coach-profile.html">Detayları Gör</a>
+            <a class="review-link" href="coach-profile.html">Detayları Gör</a>
         </div>
-        <div class="coach-card" data-category="nutrition">
+        <div class="feature-item coach-card" data-category="nutrition">
             <img src="images/coach2.jpg" alt="Mehmet Aksoy">
             <h3>Mehmet Aksoy</h3>
             <p>Beslenme Uzmanı</p>
-            <a href="coach-profile.html">Detayları Gör</a>
+            <a class="review-link" href="coach-profile.html">Detayları Gör</a>
         </div>
-        <div class="coach-card" data-category="fitness">
+        <div class="feature-item coach-card" data-category="fitness">
             <img src="images/coach3.jpg" alt="Canan Kurt">
             <h3>Canan Kurt</h3>
             <p>Fitness Koçu</p>
-            <a href="coach-profile.html">Detayları Gör</a>
+            <a class="review-link" href="coach-profile.html">Detayları Gör</a>
         </div>
     </div>
-</section>
 
+    <script>
+        function filterCoaches() {
+            const searchInput = document.getElementById('searchBar').value.toLowerCase();
+            const filterCategory = document.getElementById('filterCategory').value;
+            const coachCards = document.querySelectorAll('.coach-card');
 
+            coachCards.forEach(card => {
+                const coachName = card.querySelector('h3').textContent.toLowerCase();
+                const coachCategory = card.getAttribute('data-category');
+
+                const matchesSearch = coachName.includes(searchInput);
+                const matchesCategory = filterCategory === 'all' || filterCategory === coachCategory;
+
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>
-<script>
-    function filterCoaches() {
-        const searchInput = document.getElementById('searchBar').value.toLowerCase();
-        const filterCategory = document.getElementById('filterCategory').value;
-        const coachCards = document.querySelectorAll('.coach-card');
-
-        coachCards.forEach(card => {
-            const coachName = card.querySelector('h3').textContent.toLowerCase();
-            const coachCategory = card.getAttribute('data-category');
-
-            const matchesSearch = coachName.includes(searchInput);
-            const matchesCategory = filterCategory === 'all' || filterCategory === coachCategory;
-
-            if (matchesSearch && matchesCategory) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-</script>
