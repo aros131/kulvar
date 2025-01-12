@@ -273,11 +273,17 @@ footer a:hover {
             <li><a href="#features">Koçlarımız</a></li>
             <li><a href="#testimonials">Referanslar</a></li>
             <li><a href="#contact">İletişim</a></li>
+            <li><a href="login.html">Giriş Yap</a></li>
         </ul>
+        <div class="profile-link">
+            <a href="profile.html">
+                <img alt="Profil" src="images/user.svg" style="height: 30px;">
+            </a>
+        </div>
     </nav>
 
     <!-- Hero Section -->
-    <section id="hero" class="hero section">
+    <section id="hero" class="hero">
         <div class="hero-content">
             <h1>Purrseus</h1>
             <p>Perseverance in Motion</p>
@@ -286,7 +292,7 @@ footer a:hover {
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="features section">
+    <section id="features" class="features">
         <h2 class="section-title">Neden Purrseus?</h2>
         <div class="features-list">
             <div class="feature-item">
@@ -303,7 +309,7 @@ footer a:hover {
     </section>
 
     <!-- Testimonials Section -->
-    <section id="testimonials" class="testimonials section">
+    <section id="testimonials" class="testimonials">
         <h2 class="section-title">Referanslar</h2>
         <div class="testimonial-slider">
             <div class="testimonial">
@@ -318,6 +324,34 @@ footer a:hover {
         <button class="testimonial-prev">❮</button>
         <button class="testimonial-next">❯</button>
     </section>
+
+    <!-- Product Carousel Section -->
+    <div class="product-carousel">
+        <h2> </h2>
+        <div class="carousel-container">
+            <div class="carousel-track">
+                <div class="product-card">
+                    <img alt="Fitness" src="https://via.placeholder.com/200x150">
+                    <h3>Fitness</h3>
+                    <p>Güçlü bir vücut için kişiselleştirilmiş planlar.</p>
+                    <a class="review-link" href="fitness_coaches.html">Koçları Gör</a>
+                </div>
+                <div class="product-card">
+                    <img alt="Yoga" src="https://via.placeholder.com/200x150">
+                    <h3>Yoga</h3>
+                    <p>Esneklik ve mindfulness için uzman rehberliği.</p>
+                    <a class="review-link" href="yoga_coaches.html">Koçları Gör</a>
+                </div>
+            </div>
+            <!-- Navigation Arrows -->
+            <button class="carousel-prev">
+                <img alt="Sol Ok" src="images/angle-left.svg">
+            </button>
+            <button class="carousel-next">
+                <img alt="Sağ Ok" src="images/angle-right.svg">
+            </button>
+        </div>
+    </div>
 
     <!-- Back to Top Button -->
     <button id="backToTop">⬆</button>
