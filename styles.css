@@ -1,3 +1,12 @@
+@media (max-width: 768px) {
+    .product-card {
+        flex: 0 0 90%; /* Ensure proper width on smaller screens */
+    }
+    .carousel-prev,
+    .carousel-next {
+        display: none; /* Hide arrows for touch devices */
+    }
+}
 <style>
 /* General Styles */
 body {
