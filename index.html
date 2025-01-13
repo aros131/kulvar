@@ -269,37 +269,44 @@ updateProductCarousel();
 window.addEventListener('resize', updateProductCarousel);
 
 
+
     // Update carousel on window resize
     window.addEventListener('resize', updateCarousel);
 
-    // Testimonials Carousel Logic (if applicable)
-    const testimonialTrack = document.querySelector('.testimonials-carousel .carousel-track');
-    const testimonialPrevButton = document.querySelector('.testimonials-carousel .carousel-prev');
-    const testimonialNextButton = document.querySelector('.testimonials-carousel .carousel-next');
-    let testimonialIndex = 0;
+    // Testimonials Carousel Logic
+const testimonialPrevButton = document.querySelector('.testimonials-carousel-prev');
+const testimonialNextButton = document.querySelector('.testimonials-carousel-next');
+const testimonialTrack = document.querySelector('.testimonials-carousel-track');
+const testimonialCards = document.querySelectorAll('.testimonial-card');
+let testimonialIndex = 0;
 
-    const updateTestimonialCarousel = () => {
-        if (testimonialTrack) {
-            const cardWidth = document.querySelector('.testimonial-card')?.offsetWidth || 0;
-            const gap = 15;
-            testimonialTrack.style.transform = `translateX(-${(cardWidth + gap) * testimonialIndex}px)`;
-        }
-    };
+const updateTestimonialCarousel = () => {
+    if (testimonialTrack && testimonialCards.length > 0) {
+        const cardWidth = testimonialCards[0].offsetWidth;
+        const gap = 15; // Space between cards
+        const offset = -(testimonialIndex * (cardWidth + gap));
+        testimonialTrack.style.transform = `translateX(${offset}px)`;
+    }
+};
 
-    testimonialPrevButton?.addEventListener('click', () => {
-        if (testimonialIndex > 0) {
-            testimonialIndex--;
-            updateTestimonialCarousel();
-        }
-    });
+testimonialPrevButton?.addEventListener('click', () => {
+    if (testimonialIndex > 0) {
+        testimonialIndex--;
+        updateTestimonialCarousel();
+    }
+});
 
-    testimonialNextButton?.addEventListener('click', () => {
-        const testimonialCount = document.querySelectorAll('.testimonial-card').length;
-        if (testimonialIndex < testimonialCount - 1) {
-            testimonialIndex++;
-            updateTestimonialCarousel();
-        }
-    });
+testimonialNextButton?.addEventListener('click', () => {
+    if (testimonialIndex < testimonialCards.length - 1) {
+        testimonialIndex++;
+        updateTestimonialCarousel();
+    }
+});
+
+// Initialize Testimonials Carousel
+updateTestimonialCarousel();
+window.addEventListener('resize', updateTestimonialCarousel);
+
 
     // Initial Setup for Testimonials Carousel
     updateTestimonialCarousel();
