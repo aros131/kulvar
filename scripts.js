@@ -182,3 +182,38 @@ updateCarousel(); // Set initial state
     const heroArrows = document.querySelectorAll('.hero button img');
     heroArrows.forEach((arrow) => arrow.remove());
 });
+// Select carousel elements
+const track = document.querySelector('.carousel-track');
+const prevButton = document.querySelector('.carousel-prev');
+const nextButton = document.querySelector('.carousel-next');
+
+let currentIndex = 0;
+
+// Function to update the carousel position
+function updateCarousel() {
+    const cardWidth = document.querySelector('.product-card').offsetWidth;
+    const gap = 15; // Space between cards
+    const totalScroll = (cardWidth + gap) * currentIndex;
+
+    // Move the track to show the correct card
+    track.style.transform = `translateX(-${totalScroll}px)`;
+}
+
+// Event listeners for navigation buttons
+prevButton.addEventListener('click', () => {
+    if (currentIndex > 0) {
+        currentIndex--; // Move to the previous card
+        updateCarousel();
+    }
+});
+
+nextButton.addEventListener('click', () => {
+    const cardCount = document.querySelectorAll('.product-card').length;
+    if (currentIndex < cardCount - 1) {
+        currentIndex++; // Move to the next card
+        updateCarousel();
+    }
+});
+
+// Update carousel on window resize
+window.addEventListener('resize', updateCarousel);
