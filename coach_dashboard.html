@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koç Paneli</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Left Navigation Pane -->
+    <nav class="dashboard-nav">
+      <h2>Panelim</h2>
+      <ul>
+        <li><a href="#programs" class="active">Programlarım</a></li>
+        <li><a href="#clients">Müşterilerim</a></li>
+        <li><a href="#analytics">Analizler</a></li>
+        <li><a href="login.html">Çıkış Yap</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-content">
+      <!-- Programs Section -->
+      <section id="programs">
+        <h2>Programlarım</h2>
+        <button>Program Ekle</button>
+        <button>Program Düzenle</button>
+        <button>Program Sil</button>
+      </section>
+
+      <!-- Clients Section -->
+      <section id="clients">
+        <h2>Müşterilerim</h2>
+        <ul>
+          <li>Ahmet Yılmaz - Fitness Başlangıç Programı - %70 Tamamlandı</li>
+          <li>Elif Kaya - Kardiyo Yoğunluğu - %30 Tamamlandı</li>
+        </ul>
+      </section>
+
+      <!-- Analytics Section -->
+      <section id="analytics">
+        <h2>Analizler</h2>
+        <div id="chart-container">
+          <!-- Chart.js will render charts here -->
+          <canvas id="analyticsChart"></canvas>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Example Chart.js code
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    const analyticsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Ahmet', 'Elif', 'Mehmet'],
+        datasets: [{
+          label: '% Tamamlanma',
+          data: [70, 30, 50],
+          backgroundColor: ['#658B6F', '#2F575D', '#99AEAD']
+        }]
+      }
+    });
+  </script>
+</body>
+</html>
