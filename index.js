@@ -1,26 +1,43 @@
-require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
-const authRoutes = require("./routes/auth");
-const coachRoutes = require("./routes/coach");
-const programRoutes = require("./routes/program");
-const cors = require("cors");
+const dotenv = require("dotenv");
+const { Sequelize } = require("sequelize");
+
+// Load environment variables
+dotenv.config();
+
 const app = express();
-const PORT = 5003;
+const PORT = process.env.PORT || 5003;
 
 // Middleware
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Database connection
+const sequelize = new Sequelize({
+  dialect: "sqlite",
+  storage: "./database/database.sqlite",
+});
+
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log("Database connected...");
+  })
+  .catch((err) => {
+    console.error("Error connecting to database:", err);
+  });
 
 // Routes
+app.get("/", (req, res) => {
+  res.send("Server is running!");
+});
+
+// Import routes
+const authRoutes = require("./routes/auth"); // Example route
 app.use("/auth", authRoutes);
-app.use("/coach", coachRoutes); // Add the coach routes
-app.use("/programs", programRoutes); // Attach program routes
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-app.use(cors()); // Enable CORS
-app.get("/", (req, res) => {
-  res.send("Server is running!");
-});
-console.log("JWT Secret:", process.env.JWT_SECRET);
