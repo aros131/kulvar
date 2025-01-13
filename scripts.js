@@ -1,6 +1,8 @@
 
 // Back to Top Button Logic
-const backToTop = document.getElementById('backToTop');
+
+const backToTop = document.getElementById('backToTop'); // Use const for fixed references
+let currentIndex = 0; // Use let for mutable variables
 
 // Show/Hide Button on Scroll
 window.addEventListener('scroll', () => {
