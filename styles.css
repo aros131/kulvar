@@ -487,6 +487,17 @@ body {
     }
 }
 
+.navbar {
+    position: sticky; /* Make the navbar sticky */
+    top: 0; /* Stick to the top of the viewport */
+    z-index: 1000; /* Ensure it stays above other elements */
+    background-color: #FFFFFF; /* Background color to prevent transparency */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for separation */
+}
 
 
 /* Hero Section */
