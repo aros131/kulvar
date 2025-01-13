@@ -108,6 +108,62 @@ nextButton.addEventListener('click', () => {
         updateCarousel();
     }
 });
+// Back to Top Button Logic
+const backToTop = document.getElementById('backToTop');
+
+// Show/Hide Button on Scroll
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+        backToTop.classList.add('show'); // Add 'show' class to make it visible
+    } else {
+        backToTop.classList.remove('show'); // Remove 'show' class to hide it
+    }
+});
+
+// Smooth Scroll to Top
+backToTop.addEventListener('click', () => {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+    });
+});
+
+// Chat Popup Logic
+const chatButton = document.getElementById("chatButton");
+const chatPopup = document.getElementById("chatPopup");
+
+chatButton.addEventListener("click", () => {
+    chatPopup.style.display = chatPopup.style.display === "block" ? "none" : "block";
+});
+
+// Carousel Logic
+const prevButton = document.querySelector('.carousel-prev');
+const nextButton = document.querySelector('.carousel-next');
+const carouselTrack = document.querySelector('.carousel-track');
+const productCards = document.querySelectorAll('.product-card');
+let currentIndex = 0;
+
+const updateCarousel = () => {
+    const offset = -currentIndex * productCards[0].offsetWidth;
+    carouselTrack.style.transform = `translateX(${offset}px)`;
+};
+
+prevButton.addEventListener('click', () => {
+    if (currentIndex > 0) {
+        currentIndex--;
+        updateCarousel();
+    }
+});
+
+nextButton.addEventListener('click', () => {
+    if (currentIndex < productCards.length - 1) {
+        currentIndex++;
+        updateCarousel();
+    }
+});
+
+// Initial Setup
+updateCarousel();
 
 // Update carousel on window resize
 window.addEventListener('resize', updateCarousel);
