@@ -122,6 +122,131 @@ body {
     transform: translateY(-5px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+/* Carousel Section */
+.product-carousel {
+    margin: 40px auto;
+    max-width: 1000px;
+    text-align: center;
+    padding: 20px;
+}
+
+.product-carousel h2 {
+    font-size: 24px;
+    color: #28363D;
+    margin-bottom: 20px;
+}
+
+/* Carousel Container */
+.carousel-container {
+    position: relative;
+    overflow: hidden; /* Prevent items from overflowing */
+    width: 100%; /* Take full width of the parent */
+    padding: 0 20px; /* Add some padding for better visuals */
+}
+
+/* Carousel Track */
+.carousel-track {
+    display: flex;
+    gap: 15px; /* Space between items */
+    transition: transform 0.3s ease; /* Smooth scrolling effect */
+    will-change: transform; /* Optimize performance */
+}
+
+/* Product Cards */
+.product-card {
+    flex: 0 0 calc(100% / 3 - 20px); /* Show 3 cards per row on larger screens */
+    max-width: calc(100% / 3 - 20px);
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.product-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.product-card h3 {
+    font-size: 18px;
+    color: #28363D;
+    margin-bottom: 10px;
+}
+
+.product-card p {
+    font-size: 14px;
+    color: #6D9197;
+    margin-bottom: 10px;
+}
+
+.review-link {
+    font-size: 14px;
+    color: #2F575D;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.review-link:hover {
+    text-decoration: underline;
+}
+
+/* Navigation Arrows */
+.carousel-prev,
+.carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #28363D;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0.8;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.carousel-prev:hover,
+.carousel-next:hover {
+    background-color: #2F575D;
+    opacity: 1;
+}
+
+.carousel-prev {
+    left: 10px;
+}
+
+.carousel-next {
+    right: 10px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .product-card {
+        flex: 0 0 90%; /* Show one card per row on mobile */
+        max-width: 90%;
+    }
+
+    .carousel-prev,
+    .carousel-next {
+        display: none; /* Hide arrows for touch scrolling */
+    }
+
+    .carousel-container {
+        overflow-x: auto; /* Enable horizontal scrolling */
+        scroll-behavior: smooth; /* Smooth scrolling for touch */
+        -webkit-overflow-scrolling: touch; /* Enable touch scrolling on iOS */
+    }
+
+    .carousel-track {
+        gap: 10px; /* Reduce gap for smaller screens */
+    }
+}
 
 /* Footer */
 footer {
