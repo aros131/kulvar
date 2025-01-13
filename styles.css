@@ -11,8 +11,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+<<<<<<< HEAD
     background-color: #28363D;
     color: #FFFFFF;
+=======
+    background-color: #FFFFFF ;
+    color: #28363D;
+>>>>>>> 0048630 (ok)
     padding: 10px 20px;
 }
 
