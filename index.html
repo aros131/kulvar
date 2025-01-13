@@ -234,6 +234,40 @@
 
     // Initial Setup for Carousel
     updateCarousel();
+    // Product Categories Carousel Logic
+const productPrevButton = document.querySelector('.product-carousel-prev');
+const productNextButton = document.querySelector('.product-carousel-next');
+const productTrack = document.querySelector('.product-carousel-track');
+const productCards = document.querySelectorAll('.product-card');
+let productIndex = 0;
+
+const updateProductCarousel = () => {
+    if (productTrack && productCards.length > 0) {
+        const cardWidth = productCards[0].offsetWidth;
+        const gap = 15; // Space between cards
+        const offset = -(productIndex * (cardWidth + gap));
+        productTrack.style.transform = `translateX(${offset}px)`;
+    }
+};
+
+productPrevButton?.addEventListener('click', () => {
+    if (productIndex > 0) {
+        productIndex--;
+        updateProductCarousel();
+    }
+});
+
+productNextButton?.addEventListener('click', () => {
+    if (productIndex < productCards.length - 1) {
+        productIndex++;
+        updateProductCarousel();
+    }
+});
+
+// Initialize Product Categories Carousel
+updateProductCarousel();
+window.addEventListener('resize', updateProductCarousel);
+
 
     // Update carousel on window resize
     window.addEventListener('resize', updateCarousel);
