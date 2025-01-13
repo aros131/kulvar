@@ -553,57 +553,6 @@ footer a:hover {
    <!-- Link the Scripts -->
     <script src="scripts.js"></script>
 
-    <!-- JavaScript -->
-    <script>
-        const backToTop = document.getElementById('backToTop');
 
-window.addEventListener('scroll', () => {
-    console.log("ScrollY:", window.scrollY); // Check the scroll position
-    if (window.scrollY > 300) {
-        backToTop.classList.add('show'); // Make the button visible
-    } else {
-        backToTop.classList.remove('show'); // Hide the button
-    }
-});
-
-backToTop.addEventListener('click', () => {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-    });
-});
-
-        // Chat Popup
-        function openChat() {
-            const chatPopup = document.getElementById("chatPopup");
-            chatPopup.style.display = chatPopup.style.display === "block" ? "none" : "block";
-        }
-
-        // Carousel Logic
-        const prevButton = document.querySelector('.carousel-prev');
-        const nextButton = document.querySelector('.carousel-next');
-        const carouselTrack = document.querySelector('.carousel-track');
-        const productCards = document.querySelectorAll('.product-card');
-        let currentIndex = 0;
-
-        const updateCarousel = () => {
-            const offset = -currentIndex * productCards[0].offsetWidth;
-            carouselTrack.style.transform = `translateX(${offset}px)`;
-        };
-
-        prevButton.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateCarousel();
-            }
-        });
-
-        nextButton.addEventListener('click', () => {
-            if (currentIndex < productCards.length - 1) {
-                currentIndex++;
-                updateCarousel();
-            }
-        });
-    </script>
 </body>
 </html>
