@@ -1,1 +1,0 @@
-<JavaScript content from file>
