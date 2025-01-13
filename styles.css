@@ -1043,7 +1043,7 @@ line-height: 1.6;
 display: flex;
 justify-content: space-between;
 align-items: center;
-padding: 20px;
+padding: 10px;
 background-color: #FFFFFF;
 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
