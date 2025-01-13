@@ -1,1 +1,51 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kullanıcı Paneli</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Left Navigation Pane -->
+    <nav class="dashboard-nav">
+      <h2>Panelim</h2>
+      <ul>
+        <li><a href="#programs" class="active">Programlarım</a></li>
+        <li><a href="#notifications">Bildirimler</a></li>
+        <li><a href="login.html">Çıkış Yap</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-content">
+      <!-- Programs Section -->
+      <section id="programs">
+        <h2>Programlarım</h2>
+        <div class="program">
+          <h3>Fitness Başlangıç Programı</h3>
+          <ul class="task-list">
+            <li><input type="checkbox"> Görev 1: Isınma Egzersizleri (10dk)</li>
+            <li><input type="checkbox"> Görev 2: Kardiyo (15dk)</li>
+            <li><input type="checkbox"> Görev 3: Kuvvet Çalışması (20dk)</li>
+          </ul>
+          <progress value="30" max="100"></progress>
+          <p>%30 Tamamlandı</p>
+        </div>
+      </section>
+
+      <!-- Notifications Section -->
+      <section id="notifications">
+        <h2>Bildirimler</h2>
+        <ul>
+          <li>Yeni bir program eklediniz.</li>
+          <li>Kardiyo görevinde %50 tamamlandınız.</li>
+          <li>Hedeflerinize çok yaklaştınız, devam edin!</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
 
