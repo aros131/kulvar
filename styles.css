@@ -1888,3 +1888,71 @@ transform: scale(1.05);
         -webkit-overflow-scrolling: touch;
     }
 }
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  background-color: #DEE1DD;
+}
+
+.dashboard-container {
+  display: flex;
+}
+
+.dashboard-nav {
+  width: 250px;
+  background-color: #2F575D;
+  color: white;
+  padding: 20px;
+}
+
+.dashboard-nav h2 {
+  font-size: 22px;
+}
+
+.dashboard-nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.dashboard-nav li {
+  margin: 10px 0;
+}
+
+.dashboard-nav a {
+  text-decoration: none;
+  color: white;
+  display: block;
+  padding: 10px;
+}
+
+.dashboard-nav a.active, .dashboard-nav a:hover {
+  background-color: #658B6F;
+  border-radius: 5px;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 20px;
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+}
+
+.task-list li {
+  margin: 5px 0;
+}
+
+button {
+  padding: 10px 15px;
+  background-color: #658B6F;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #28363D;
+}
