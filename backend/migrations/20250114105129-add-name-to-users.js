@@ -17,3 +17,21 @@ const authMiddleware = (req, res, next) => {
 };
 
 module.exports = authMiddleware;
+'use strict';
+
+/** @type {import('sequelize-cli').Migration} */
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    // Add the column (example)
+    await queryInterface.addColumn('Users', 'name', {
+      type: Sequelize.STRING,
+      allowNull: false,
+      defaultValue: 'Unnamed User',
+    });
+  },
+
+  async down(queryInterface, Sequelize) {
+    // Remove the column (rollback)
+    await queryInterface.removeColumn('Users', 'name');
+  },
+};

@@ -12,6 +12,9 @@ router.get('/test', (req, res) => {
 
 // Create a program
 router.post('/programs', authMiddleware, roleMiddleware(['coach']), async (req, res) => {
+  console.log('Request Body:', req.body);  // Log the request body
+    console.log('Authenticated User:', req.user); // Log the decoded token
+
   const { name, description, price } = req.body;
   if (!name || !description || !price) {
     return res.status(400).json({ message: 'All fields are required' });
