@@ -17,7 +17,12 @@ exports.register = async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: "Error registering user", error });
   }
-};
+  router.post('/register', async (req, res) => {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+})
 
 // Login function
 exports.login = async (req, res) => {
@@ -36,4 +41,4 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
-};
+}}
