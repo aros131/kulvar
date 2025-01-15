@@ -219,6 +219,7 @@ display: none; /* Hide arrows for touch devices */
 }
 <style>
 /* General Styles */
+
 body {
 font-family: 'Poppins', sans-serif;
 margin: 0;
@@ -410,30 +411,32 @@ text-decoration: underline;
 position: absolute;
 top: 50%;
 transform: translateY(-50%);
-background-color: #28363D;
-color: #FFFFFF;
+background: none;
 border: none;
 padding: 10px;
 border-radius: 50%;
 cursor: pointer;
 z-index: 10;
-opacity: 0.8;
-transition: background-color 0.3s ease, opacity 0.3s ease;
+    width: 24px; /* Set width for the SVG icon */
+    height: 24px; /* Set height for the SVG icon */
+    background-size: contain; /* Ensure the SVG scales appropriately */
+    background-repeat: no-repeat; /* Prevent tiling */
+}
+.carousel-prev {
+    left: 10px;
+    background-image: url('images/angle-left.svg'); /* Use the left arrow SVG */
+}
+
+.carousel-next {
+    right: 10px;
+    background-image: url('images/angle-right.svg'); /* Use the right arrow SVG */
 }
 
 .carousel-prev:hover,
 .carousel-next:hover {
-background-color: #2F575D;
-opacity: 1;
+    filter: brightness(1.2); /* Optional hover effect */
 }
 
-.carousel-prev {
-left: 10px;
-}
-
-.carousel-next {
-right: 10px;
-}
 /* Responsive Adjustments */
 @media (max-width: 768px) {
 .product-card {
@@ -1098,20 +1101,6 @@ font-size: 14px;
 color: #6D9197;
 }
 
-/* Carousel Container */
-.testimonials-carousel .carousel-container {
-position: relative;
-overflow: hidden;
-width: 100%; /* Take the full width of the parent */
-}
-/* Carousel Track */
-.testimonials-carousel .carousel-track {
-display: flex;
-gap: 15px;
-transition: transform 0.3s ease; /* Smooth scrolling effect */
-will-change: transform; /* Optimize scrolling performance */
-width: max-content; /* Ensure all cards are in one line */
-}
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
