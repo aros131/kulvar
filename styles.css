@@ -426,7 +426,7 @@ will-change: transform; /* Optimize performance */
 }
 
 .product-card img {
-    width: 90%; /* Slightly smaller images */
+    width: 10%; /* Slightly smaller images */
     height: auto;
     border-radius: 6px;
     margin-bottom: 8px; /* Reduced spacing below the image */
