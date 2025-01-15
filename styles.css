@@ -405,37 +405,8 @@ font-weight: bold;
 .review-link:hover {
 text-decoration: underline;
 }
-/* Navigation Arrows */
-.carousel-prev,
-.carousel-next {
-position: absolute;
-top: 50%;
-transform: translateY(-50%);
-background: none;
-border: none;
-padding: 10px;
-border-radius: 50%;
-cursor: pointer;
-z-index: 10;
-    width: 24px; /* Set width for the SVG icon */
-    height: 24px; /* Set height for the SVG icon */
-    background-size: contain; /* Ensure the SVG scales appropriately */
-    background-repeat: no-repeat; /* Prevent tiling */
-}
-.carousel-prev {
-    left: 10px;
-    background-image: url('images/angle-left.svg'); /* Use the left arrow SVG */
-}
 
-.carousel-next {
-    right: 10px;
-    background-image: url('images/angle-right.svg'); /* Use the right arrow SVG */
-}
 
-.carousel-prev:hover,
-.carousel-next:hover {
-    filter: brightness(1.2); /* Optional hover effect */
-}
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
@@ -1536,30 +1507,35 @@ transform: scale(1.05);
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background-color: #28363D;
-    color: #FFFFFF;
+    background: none; /* Remove button background */
     border: none;
-    padding: 10px;
-    border-radius: 50%;
+    padding: 0;
     cursor: pointer;
     z-index: 10;
-    opacity: 0.8;
-    transition: background-color 0.3s ease, opacity 0.3s ease;
-}
-
-.product-carousel .product-carousel-prev:hover,
-.product-carousel .product-carousel-next:hover {
-    background-color: #2F575D;
-    opacity: 1;
+    width: 24px; /* Set width for SVG icon */
+    height: 24px; /* Set height for SVG icon */
+    background-size: contain; /* Scale SVG to fit the button */
+    background-repeat: no-repeat; /* Prevent tiling of the image */
+    opacity: 0.8; /* Default opacity */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth transitions */
 }
 
 .product-carousel .product-carousel-prev {
     left: 10px;
+    background-image: url('images/angle-left.svg'); /* Path to left arrow SVG */
 }
 
 .product-carousel .product-carousel-next {
     right: 10px;
+    background-image: url('images/angle-right.svg'); /* Path to right arrow SVG */
 }
+
+.product-carousel .product-carousel-prev:hover,
+.product-carousel .product-carousel-next:hover {
+    opacity: 1; /* Increase visibility on hover */
+    transform: scale(1.1); /* Slightly enlarge on hover */
+}
+
 
 @media (max-width: 768px) {
     .product-carousel .product-card {
