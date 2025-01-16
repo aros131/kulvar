@@ -3,6 +3,12 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const path = require('path');
 const cors = require('cors');
+// Allow CORS from your GitHub Pages domain
+app.use(cors({
+  origin: 'https://aros131.github.io', // Allow only this origin
+  methods: ['GET', 'POST'], // Allowed methods
+  credentials: true, // If you're using cookies/auth headers
+}));
 // Load environment variables
 dotenv.config();
 
@@ -43,10 +49,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-// Allow CORS from your GitHub Pages domain
-app.use(cors({
-  origin: 'https://aros131.github.io', // Allow only this origin
-  methods: ['GET', 'POST'], // Allowed methods
-  credentials: true, // If you're using cookies/auth headers
-}));
+
 module.exports = app;
