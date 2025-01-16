@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const { register } = require('../controllers/userController');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models'); // Ensure this path is correct
 const router = express.Router();

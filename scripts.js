@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const headers = { Authorization: `Bearer ${token}` };
   
     try {
-      const response = await fetch('http://localhost:5003/api/user/programs', { headers });
+      const response = await fetch('https://aros131.github.io/kulvar//api/user/programs', { headers });
       const data = await response.json();
   
       if (response.ok) {
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isCoach = window.location.pathname.includes('/dashboard/coach');
     const endpoint = isCoach ? '/api/coach/programs' : '/api/user/programs';
   
-    fetch(`http://localhost:5003${endpoint}`, { headers })
+    fetch(`https://aros131.github.io/kulvar/${endpoint}`, { headers })
       .then(response => response.json())
       .then(data => {
         if (response.ok) {
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const role = document.getElementById('role').value;
   
     try {
-      const response = await fetch('http://localhost:5003/auth/register', {
+      const response = await fetch('https://aros131.github.io/kulvar//auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
