@@ -1,55 +1,18 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
-const path = require('path');
 const cors = require('cors');
-// Load environment variables
+const dotenv = require('dotenv');
+const connectDB = require('./config/db');
+
 dotenv.config();
+connectDB();
 
 const app = express();
-const PORT = process.env.PORT || 5003;
-
-// Allow CORS from your GitHub Pages domain
-app.use(cors({
-  origin: 'https://aros131.github.io', // Allow only this origin
-  methods: ['GET', 'POST'], // Allowed methods
-  credentials: true, // If you're using cookies/auth headers
-}));
-
-
-// Middleware to parse JSON and URL-encoded data
+app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static frontend files (CSS, JS, etc.) from the "kulvar" root directory
-app.use(express.static(path.join(__dirname, '..')));
+app.use('/auth', require('./routes/authRoutes'));
 
-// Route to serve the User Dashboard
-app.get('/dashboard/user', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'user_dashboard.html'));
-});
-
-// Route to serve the Coach Dashboard
-app.get('/dashboard/coach', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'coach_dashboard.html'));
-});
-
-// Import API routes
-const authRoutes = require('./routes/authRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-
-// Register API routes
-app.use('/auth', authRoutes);
-app.use('/api', dashboardRoutes);
-
-// Default route (health check)
-app.get('/', (req, res) => {
-  res.send('Server is running!');
-});
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-
-module.exports = app;
+const PORT = process.env.PORT || 5003;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.use('/dashboard', require('./routes/dashboardRoutes'));

@@ -113,3 +113,22 @@ if (chatButton && chatPopup) {
         chatPopup.style.display = chatPopup.style.display === 'block' ? 'none' : 'block';
     });
 }
+
+
+const BASE_URL = 'https://kulvar.onrender.com';
+
+async function loginUser(email, password) {
+  const response = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await response.json();
+  if (response.ok) {
+    localStorage.setItem('token', data.token);
+    window.location.href = `${BASE_URL}${data.dashboardUrl}`;
+  } else {
+    alert(data.message);
+  }
+}
+
