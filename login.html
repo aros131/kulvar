@@ -26,13 +26,48 @@
     </nav>
 
     <script>
-        const hamburger = document.querySelector('.hamburger');
-        const navLinks = document.querySelector('.nav-links');
-
-        hamburger.addEventListener('click', () => {
-            navLinks.classList.toggle('show');
-        });
-    </script>
+        async function redirectToDashboard() {
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+      
+          if (!email || !password) {
+            alert("Lütfen tüm alanları doldurun."); // Please fill out all fields.
+            return;
+          }
+      
+          try {
+            const response = await fetch('http://localhost:5003/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email, password }),
+            });
+      
+            const data = await response.json();
+      
+            if (response.ok) {
+              // Store token in localStorage
+              localStorage.setItem('token', data.token);
+      
+              // Redirect based on role
+              if (data.role === 'user') {
+                window.location.href = '/dashboard/user';
+              } else if (data.role === 'coach') {
+                window.location.href = '/dashboard/coach';
+              } else {
+                alert("Geçersiz rol."); // Invalid role.
+              }
+            } else {
+              alert(data.message || "Giriş başarısız."); // Login failed.
+            }
+          } catch (error) {
+            console.error("Error during login:", error);
+            alert("Bir hata oluştu. Lütfen tekrar deneyin."); // An error occurred. Please try again.
+          }
+        }
+      </script>
+      
 
     <!-- Login Form Section -->
     <section class="login-section">
@@ -40,10 +75,10 @@
             <h2>Giriş Yap</h2>
             <input type="email" id="email" placeholder="E-posta Adresiniz" required>
             <input type="password" id="password" placeholder="Şifreniz" required>
-            <button onclick="redirectToProfile()">Giriş Yap</button>
-            <div class="coach-login">
-                <button onclick="window.location.href='coach_login.html';" type="button">Koç Girişi</button>
-            </div>
+            <button onclick="redirectToDashboard()">Giriş Yap</button>
+            
+
+
             <p>Hesabınız yok mu? <a href="signup.html">Kayıt Ol</a></p>
         </div>
     </section>

@@ -27,15 +27,20 @@
 
     <!-- Registration Form Section -->
     <section class="signup-section">
-        <form class="signup-form" action="#" method="post">
+        <form class="signup-form" id="signup-form">
             <h2>Kayıt Ol</h2>
-            <input type="text" name="name" placeholder="Adınız" required>
-            <input type="email" name="email" placeholder="E-posta Adresiniz" required>
-            <input type="password" name="password" placeholder="Şifreniz" required>
-            <input type="password" name="confirm_password" placeholder="Şifrenizi Onaylayın" required>
+            <input type="text" id="name" name="name" placeholder="Adınız" required>
+            <input type="email" id="email" name="email" placeholder="E-posta Adresiniz" required>
+            <input type="password" id="password" name="password" placeholder="Şifreniz" required>
+            <select id="role" name="role" required>
+                <option value="user">Kullanıcı</option>
+                <option value="coach">Koç</option>
+            </select>
             <button type="submit">Kayıt Ol</button>
+            <p id="error-message" style="color: red; display: none;"></p>
             <p>Zaten bir hesabınız var mı? <a href="login.html">Giriş Yap</a></p>
         </form>
+        
     </section>
 
     <script>
