@@ -118,17 +118,35 @@ if (chatButton && chatPopup) {
 const BASE_URL = 'https://kulvar.onrender.com';
 
 async function loginUser(email, password) {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await response.json();
-  if (response.ok) {
-    localStorage.setItem('token', data.token);
-    window.location.href = `${BASE_URL}${data.dashboardUrl}`;
-  } else {
-    alert(data.message);
+    try {
+      const response = await fetch('https://kulvar.onrender.com/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        // Store token in localStorage
+        localStorage.setItem('token', data.token);
+  
+        // Redirect to the dashboard
+        window.location.href = data.dashboardUrl;
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
+      alert('An error occurred while logging in.');
+    }
   }
-}
-
+  
+  // Attach event listener for login
+  document.getElementById('loginForm').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    loginUser(email, password);
+  });
+  
