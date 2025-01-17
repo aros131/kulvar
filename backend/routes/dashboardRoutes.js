@@ -17,21 +17,31 @@ router.get('/coach', authMiddleware, roleMiddleware(['coach']), (req, res) => {
 router.get('/user/data', authMiddleware, roleMiddleware(['user']), async (req, res) => {
   try {
     // Fetch user-specific data (replace with your data model)
-    const data = {
-      name: req.user.name,
-      programs: [
-        { title: 'Fitness Program 1', progress: '30%' },
-        { title: 'Cardio Program', progress: '50%' },
-      ],
-    };
-    res.status(200).json(data);
-  } catch (err) {
-    console.error('Error fetching user data:', err);
-    res.status(500).json({ message: 'Failed to fetch user data' });
-  }
-});
-router.get('/coach/data', authMiddleware, roleMiddleware(['coach']), async (req, res) => {
-  try {
+    router.get('/user/data', authMiddleware, roleMiddleware(['user']), async (req, res) => {
+      try {
+        // Example user data with tasks
+        const data = {
+          name: req.user.name,
+          programs: [
+            {
+              title: 'Fitness Program 1',
+              progress: '30%',
+              tasks: ['Isınma Egzersizleri (10dk)', 'Kardiyo (15dk)', 'Kuvvet Çalışması (20dk)'],
+            },
+            {
+              title: 'Cardio Program',
+              progress: '50%',
+              tasks: ['Koşu (20dk)', 'Bisiklet (15dk)'],
+            },
+          ],
+        };
+        res.status(200).json(data);
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        res.status(500).json({ message: 'Failed to fetch user data' });
+      }
+    });
+    
     // Fetch coach-specific data (replace with your data model)
     const data = {
       name: req.user.name,

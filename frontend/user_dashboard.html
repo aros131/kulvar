@@ -7,9 +7,6 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="username" class="greeting">Yükleniyor...</div>
-<div id="programs"></div>
-
   <div class="dashboard-container">
     <!-- Left Navigation Pane -->
     <nav class="dashboard-nav">
@@ -20,24 +17,16 @@
         <li><a href="login.html">Çıkış Yap</a></li>
       </ul>
     </nav>
-    <link rel="stylesheet" href="styles.css">
-    <script src="backend-utils.js" defer></script>
-    
+
     <!-- Main Content Area -->
     <main class="dashboard-content">
+      <!-- Dynamic Greeting -->
+      <div id="username" class="greeting">Yükleniyor...</div>
+
       <!-- Programs Section -->
       <section id="programs">
         <h2>Programlarım</h2>
-        <div class="program">
-          <h3>Fitness Başlangıç Programı</h3>
-          <ul class="task-list">
-            <li><input type="checkbox"> Görev 1: Isınma Egzersizleri (10dk)</li>
-            <li><input type="checkbox"> Görev 2: Kardiyo (15dk)</li>
-            <li><input type="checkbox"> Görev 3: Kuvvet Çalışması (20dk)</li>
-          </ul>
-          <progress value="30" max="100"></progress>
-          <p>%30 Tamamlandı</p>
-        </div>
+        <div id="programs-container"></div>
       </section>
 
       <!-- Notifications Section -->
@@ -49,62 +38,60 @@
           <li>Hedeflerinize çok yaklaştınız, devam edin!</li>
         </ul>
       </section>
-      <script>
-        async function fetchUserData() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert('Yetkisiz giriş! Lütfen oturum açın.');
-        window.location.href = '/login.html';
-        return;
-    }
-
-    try {
-        const response = await fetch('https://kulvar.onrender.com/dashboard/user/data', {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) throw new Error('Veri alınamadı!');
-
-        const data = await response.json();
-
-        // Set dynamic greeting
-        document.getElementById('username').textContent = `Hoş geldiniz, ${data.name}!`;
-
-        // Display user programs
-        const programsContainer = document.getElementById('programs');
-        programsContainer.innerHTML = ''; // Clear existing
-        data.programs.forEach((program) => {
-            const programElement = document.createElement('div');
-            programElement.classList.add('program');
-            programElement.innerHTML = `
-                <h3>${program.title}</h3>
-                <ul class="task-list">
-                    ${program.tasks.map(task => `<li>${task}</li>`).join('')}
-                </ul>
-                <progress value="${program.progress}" max="100"></progress>
-                <p>%${program.progress} Tamamlandı</p>
-            `;
-            programsContainer.appendChild(programElement);
-        });
-
-    } catch (err) {
-        console.error(err);
-        alert('Veri alınırken bir hata oluştu.');
-    }
-}
-
-fetchUserData();
-
-      </script>
-      
     </main>
-    <div id="username"></div>
-<div id="programs"></div>
-
   </div>
+
+  <!-- JavaScript -->
+  <script>
+    async function fetchUserData() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          alert('Yetkisiz giriş! Lütfen oturum açın.');
+          window.location.href = '/login.html';
+          return;
+      }
+
+      try {
+          const response = await fetch('https://kulvar.onrender.com/dashboard/user/data', {
+              method: 'GET',
+              headers: {
+                  Authorization: `Bearer ${token}`,
+              },
+          });
+
+          if (!response.ok) throw new Error('Veri alınamadı!');
+
+          const data = await response.json();
+
+          // Set dynamic greeting
+          document.getElementById('username').textContent = `Hoş geldiniz, ${data.name}!`;
+
+          // Display user programs
+          const programsContainer = document.getElementById('programs-container');
+          programsContainer.innerHTML = ''; // Clear existing content
+
+          data.programs.forEach((program) => {
+              const programElement = document.createElement('div');
+              programElement.classList.add('program');
+              programElement.innerHTML = `
+                  <h3>${program.title}</h3>
+                  <ul class="task-list">
+                      ${program.tasks.map(task => `<li>${task}</li>`).join('')}
+                  </ul>
+                  <progress value="${parseInt(program.progress)}" max="100"></progress>
+                  <p>${program.progress} Tamamlandı</p>
+              `;
+              programsContainer.appendChild(programElement);
+          });
+
+      } catch (err) {
+          console.error(err);
+          alert('Veri alınırken bir hata oluştu.');
+      }
+    }
+
+    // Fetch user data on page load
+    fetchUserData();
+  </script>
 </body>
 </html>
-
