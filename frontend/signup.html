@@ -27,21 +27,21 @@
 
     <!-- Registration Form Section -->
     <section class="signup-section">
-      <form class="signup-form">
-          <h2>Kayıt Ol</h2>
-          <input type="text" id="name" placeholder="Ad Soyad" required>
-          <input type="email" id="email" placeholder="Email" required>
-          <input type="password" id="password" placeholder="Şifre" required>
-          <select id="role">
-              <option value="user">Kullanıcı</option>
-              <option value="coach">Koç</option>
-          </select>
-          <button type="button" onclick="handleSignup()">Kayıt Ol</button>
-          <p>Zaten hesabınız var mı? <a href="login.html">Giriş Yap</a></p>
-      </form>
-  </section>
+        <form id="signupForm" class="signup-form">
+            <h2>Kayıt Ol</h2>
+            <input type="text" id="name" placeholder="Ad Soyad" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Şifre" required>
+            <select id="role" required>
+                <option value="user">Kullanıcı</option>
+                <option value="coach">Koç</option>
+            </select>
+            <button type="submit">Kayıt Ol</button>
+            <p>Zaten hesabınız var mı? <a href="login.html">Giriş Yap</a></p>
+        </form>
+    </section>
 
-     <script>
+    <script>
         async function handleSignup(event) {
             event.preventDefault(); // Prevent form reload
             const name = document.getElementById('name').value;
@@ -72,6 +72,5 @@
 
         document.getElementById('signupForm').addEventListener('submit', handleSignup);
     </script>
-      
 </body>
 </html>

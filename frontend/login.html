@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 
-
 <body>
     <!-- Navbar -->
     <nav class="navbar">
@@ -27,55 +26,51 @@
         </ul>
     </nav>
 
-    
-      
-
     <!-- Login Form Section -->
     <section class="login-section">
-      <form class="login-form">
-          <h2>Giriş Yap</h2>
-          <input type="email" id="email" placeholder="Email" required>
-          <input type="password" id="password" placeholder="Şifre" required>
-          <button type="button" onclick="handleLogin()">Giriş Yap</button>
-          <p>Hesabınız yok mu? <a href="signup.html">Kayıt Ol</a></p>
-      </form>
-  </section>
+        <form id="loginForm" class="login-form">
+            <h2>Giriş Yap</h2>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Şifre" required>
+            <button type="submit">Giriş Yap</button>
+            <p>Hesabınız yok mu? <a href="signup.html">Kayıt Ol</a></p>
+        </form>
+    </section>
 
     <script>
-    async function loginUser(event) {
-      event.preventDefault(); // Prevent form reload
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+        async function loginUser(event) {
+            event.preventDefault(); // Prevent form reload
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
-      try {
-        const response = await fetch('https://kulvar.onrender.com/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
+            try {
+                const response = await fetch('https://kulvar.onrender.com/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
 
-        const data = await response.json();
+                const data = await response.json();
 
-        if (response.ok) {
-          // Save token and redirect based on role
-          localStorage.setItem('token', data.token);
-          if (data.role === 'user') {
-            window.location.href = 'user_dashboard.html';
-          } else if (data.role === 'coach') {
-            window.location.href = 'coach_dashboard.html';
-          }
-        } else {
-          alert(`Hata: ${data.message}`);
+                if (response.ok) {
+                    // Save token and redirect based on role
+                    localStorage.setItem('token', data.token);
+                    if (data.role === 'user') {
+                        window.location.href = 'user_dashboard.html';
+                    } else if (data.role === 'coach') {
+                        window.location.href = 'coach_dashboard.html';
+                    }
+                } else {
+                    alert(`Hata: ${data.message}`);
+                }
+            } catch (err) {
+                console.error('Giriş hatası:', err);
+                alert('Giriş sırasında bir hata oluştu.');
+            }
         }
-      } catch (err) {
-        console.error('Giriş hatası:', err);
-        alert('Giriş sırasında bir hata oluştu.');
-      }
-    }
 
-    // Attach event listener to the form
-    document.getElementById('loginForm').addEventListener('submit', loginUser);
-  </script>
-    
+        // Attach event listener to the form
+        document.getElementById('loginForm').addEventListener('submit', loginUser);
+    </script>
 </body>
 </html>
