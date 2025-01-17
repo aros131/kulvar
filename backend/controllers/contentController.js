@@ -1,4 +1,18 @@
 const Content = require('../models/Content');
+const BASE_URL = "https://kulvar.onrender.com";
+
+async function getContent() {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${BASE_URL}/content`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  console.log("Content:", data);
+}
 
 // Yeni içerik yükle
 exports.uploadContent = async (req, res) => {

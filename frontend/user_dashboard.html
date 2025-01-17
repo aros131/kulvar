@@ -64,6 +64,21 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+
+async function getUserPrograms() {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  console.log("User programs:", data);
+}
+
     // İlerleme Grafik Örneği
     const ctx = document.getElementById('progressChart').getContext('2d');
     const progressChart = new Chart(ctx, {

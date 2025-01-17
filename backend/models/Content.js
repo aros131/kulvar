@@ -1,4 +1,19 @@
 const mongoose = require('mongoose');
+const BASE_URL = "https://kulvar.onrender.com";
+
+async function getContent() {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${BASE_URL}/content`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  console.log("Content:", data);
+}
+
 
 const ContentSchema = new mongoose.Schema({
   title: { type: String, required: true },

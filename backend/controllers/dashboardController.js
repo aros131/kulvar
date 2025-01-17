@@ -2,6 +2,20 @@ const Program = require('../models/Program');
 const User = require('../models/User');
 const Progress = require('../models/Progress');
 const Content = require('../models/Content');
+const BASE_URL = "https://kulvar.onrender.com";
+
+async function getPrograms() {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${BASE_URL}/dashboard/programs`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  console.log("Coach programs:", data);
+}
 
 // Koçun programlarını getir
 exports.getPrograms = async (req, res) => {

@@ -74,6 +74,21 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+
+async function getPrograms() {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${BASE_URL}/dashboard/programs`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  console.log("Coach programs:", data);
+}
+
     // Analiz Grafik Örneği
     const ctx = document.getElementById('analyticsChart').getContext('2d');
     const analyticsChart = new Chart(ctx, {
