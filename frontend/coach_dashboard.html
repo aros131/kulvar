@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="username" class="greeting">Yükleniyor...</div>
+
   <div class="dashboard-container">
     <!-- Left Navigation Pane -->
     <nav class="dashboard-nav">
@@ -65,48 +67,51 @@
         }]
       }
     });
-  </script>
-  <script>
-    async function fetchCoachData() {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Unauthorized! Please log in.');
+
+  async function fetchCoachData() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Yetkisiz giriş! Lütfen oturum açın.');
         window.location.href = '/login.html';
         return;
-      }
-  
-      try {
-        const response = await fetch('https://kulvar.onrender.com/dashboard/coach/data', {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-  
-        if (!response.ok) {
-          throw new Error('Failed to fetch coach data');
-        }
-  
-        const data = await response.json();
-        document.getElementById('username').textContent = data.name;
-  
-        const clientsContainer = document.getElementById('clients');
-        data.clients.forEach((client) => {
-          const clientElement = document.createElement('div');
-          clientElement.innerHTML = `
-            <h3>${client.name}</h3>
-            <p>Program: ${client.program}</p>
-          `;
-          clientsContainer.appendChild(clientElement);
-        });
-      } catch (err) {
-        console.error(err);
-        alert('An error occurred while fetching data.');
-      }
     }
-  
-    fetchCoachData();
-  </script>
+
+    try {
+        const response = await fetch('https://kulvar.onrender.com/dashboard/coach/data', {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) throw new Error('Veri alınamadı!');
+
+        const data = await response.json();
+
+        // Set dynamic greeting
+        const usernameElement = document.getElementById('username');
+        usernameElement.textContent = `Merhaba, ${data.name}!`;
+        
+        // Load clients dynamically
+        const clientsContainer = document.getElementById('clients');
+        clientsContainer.innerHTML = '';
+        data.clients.forEach((client) => {
+            const clientElement = document.createElement('div');
+            clientElement.innerHTML = `
+                <h3>${client.name}</h3>
+                <p>Program: ${client.program}</p>
+            `;
+            clientsContainer.appendChild(clientElement);
+        });
+
+    } catch (err) {
+        console.error(err);
+        alert('Veri alınırken bir hata oluştu.');
+    }
+}
+
+fetchCoachData();
+</script>
   <div id="username"></div>
   <div id="clients"></div>
   

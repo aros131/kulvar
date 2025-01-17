@@ -150,3 +150,32 @@ async function loginUser(email, password) {
     loginUser(email, password);
   });
   
+  async function handleSignup(event) {
+    event.preventDefault(); // Prevent form reload
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+
+    try {
+        const response = await fetch('https://kulvar.onrender.com/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, role }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+            window.location.href = 'login.html'; // Redirect to login page
+        } else {
+            alert(`Hata: ${data.message}`);
+        }
+    } catch (err) {
+        console.error('Kayıt sırasında hata:', err);
+        alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    }
+}
+
+document.getElementById('signupForm').addEventListener('submit', handleSignup);
