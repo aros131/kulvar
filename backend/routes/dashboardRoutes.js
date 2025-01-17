@@ -19,42 +19,45 @@ router.get('/user/data', authMiddleware, roleMiddleware(['user']), async (req, r
     // Fetch user-specific data (replace with your data model)
     router.get('/user/data', authMiddleware, roleMiddleware(['user']), async (req, res) => {
       try {
-        // Example user data with tasks
-        const data = {
-          name: req.user.name,
-          programs: [
-            {
-              title: 'Fitness Program 1',
-              progress: '30%',
-              tasks: ['Isınma Egzersizleri (10dk)', 'Kardiyo (15dk)', 'Kuvvet Çalışması (20dk)'],
-            },
-            {
-              title: 'Cardio Program',
-              progress: '50%',
-              tasks: ['Koşu (20dk)', 'Bisiklet (15dk)'],
-            },
-          ],
-        };
-        res.status(200).json(data);
+        const Program = require('../models/Program'); // Import the Program model
+
+router.get('/user/data', authMiddleware, roleMiddleware(['user']), async (req, res) => {
+  try {
+    // Fetch programs for the authenticated user
+    const programs = await Program.find({ userId: req.user.id });
+
+    res.status(200).json({
+      name: req.user.name,
+      programs: programs.map((program) => ({
+        title: program.title,
+        progress: program.progress,
+        tasks: program.tasks,
+      })),
+    });
+  } catch (err) {
+    console.error('Error fetching user data:', err);
+    res.status(500).json({ message: 'Failed to fetch user data' });
+  }
+});
+
+    
+    // Fetch coach-specific data 
+    router.get('/coach/profile', authMiddleware, roleMiddleware(['coach']), async (req, res) => {
+      try {
+        const coach = await User.findById(req.user.id).select('-password');
+        if (!coach) {
+          return res.status(404).json({ message: 'Coach not found' });
+        }
+    
+        res.status(200).json({
+          name: coach.name,
+          email: coach.email,
+        });
       } catch (err) {
-        console.error('Error fetching user data:', err);
-        res.status(500).json({ message: 'Failed to fetch user data' });
+        console.error('Error fetching coach profile:', err);
+        res.status(500).json({ message: 'Failed to fetch coach profile' });
       }
     });
     
-    // Fetch coach-specific data (replace with your data model)
-    const data = {
-      name: req.user.name,
-      clients: [
-        { name: 'John Doe', program: 'Fitness Program 1' },
-        { name: 'Jane Smith', program: 'Weight Loss Plan' },
-      ],
-    };
-    res.status(200).json(data);
-  } catch (err) {
-    console.error('Error fetching coach data:', err);
-    res.status(500).json({ message: 'Failed to fetch coach data' });
-  }
-});
 
 module.exports = router;
