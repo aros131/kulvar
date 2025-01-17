@@ -4,116 +4,156 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Koç Paneli</title>
-  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="username" class="greeting">Yükleniyor...</div>
-
   <div class="dashboard-container">
-    <!-- Left Navigation Pane -->
+    <!-- Sol Navigasyon -->
     <nav class="dashboard-nav">
-      <h2>Panelim</h2>
+      <h2>Koç Paneli</h2>
       <ul>
         <li><a href="#programs" class="active">Programlarım</a></li>
         <li><a href="#clients">Müşterilerim</a></li>
         <li><a href="#analytics">Analizler</a></li>
-        <li><a href="login.html">Çıkış Yap</a></li>
+        <li><a href="#content-library">İçerik Kütüphanesi</a></li>
+        <li><a href="#notifications">Bildirimler</a></li>
+        <li><a href="#settings">Ayarlar</a></li>
+        <li><a href="#logout">Çıkış Yap</a></li>
       </ul>
     </nav>
-    <link rel="stylesheet" href="styles.css">
-    <script src="backend-utils.js" defer></script>
-    
-    <!-- Main Content Area -->
+
+    <!-- Ana İçerik -->
     <main class="dashboard-content">
-      <!-- Programs Section -->
+      <!-- Program Yönetimi -->
       <section id="programs">
         <h2>Programlarım</h2>
-        <button>Program Ekle</button>
-        <button>Program Düzenle</button>
-        <button>Program Sil</button>
-      </section>
-
-      <!-- Clients Section -->
-      <section id="clients">
-        <h2>Müşterilerim</h2>
-        <ul>
-          <li>Ahmet Yılmaz - Fitness Başlangıç Programı - %70 Tamamlandı</li>
-          <li>Elif Kaya - Kardiyo Yoğunluğu - %30 Tamamlandı</li>
+        <button>Yeni Program Ekle</button>
+        <ul id="program-list">
+          <!-- Dinamik olarak doldurulacak -->
         </ul>
       </section>
 
-      <!-- Analytics Section -->
+      <!-- Müşteri Yönetimi -->
+      <section id="clients">
+        <h2>Müşterilerim</h2>
+        <ul id="client-list">
+          <!-- Dinamik olarak doldurulacak -->
+        </ul>
+      </section>
+
+      <!-- Analitik -->
       <section id="analytics">
         <h2>Analizler</h2>
-        <div id="chart-container">
-          <!-- Chart.js will render charts here -->
-          <canvas id="analyticsChart"></canvas>
+        <canvas id="analyticsChart"></canvas>
+      </section>
+
+      <!-- İçerik Kütüphanesi -->
+      <section id="content-library">
+        <h2>İçerik Kütüphanesi</h2>
+        <button>Yeni İçerik Yükle</button>
+        <div id="content-grid">
+          <!-- Dinamik içerik görüntülenecek -->
         </div>
+      </section>
+
+      <!-- Bildirimler -->
+      <section id="notifications">
+        <h2>Bildirimler</h2>
+        <ul id="notification-list">
+          <!-- Dinamik bildirimler -->
+        </ul>
+      </section>
+
+      <!-- Ayarlar -->
+      <section id="settings">
+        <h2>Ayarlar</h2>
+        <button>Şifre Değiştir</button>
+        <button>Bildirim Tercihleri</button>
       </section>
     </main>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    // Example Chart.js code
+    // Analiz Grafik Örneği
     const ctx = document.getElementById('analyticsChart').getContext('2d');
     const analyticsChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: ['Ahmet', 'Elif', 'Mehmet'],
+        labels: ['Program 1', 'Program 2', 'Program 3'],
         datasets: [{
-          label: '% Tamamlanma',
-          data: [70, 30, 50],
-          backgroundColor: ['#658B6F', '#2F575D', '#99AEAD']
+          label: 'Tamamlanma Oranı',
+          data: [75, 50, 90],
+          backgroundColor: ['#2F575D', '#658B6F', '#99AEAD']
         }]
       }
     });
 
-  async function fetchCoachData() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert('Yetkisiz giriş! Lütfen oturum açın.');
-        window.location.href = '/login.html';
-        return;
-    }
-
-    try {
-        const response = await fetch('https://kulvar.onrender.com/dashboard/coach/data', {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) throw new Error('Veri alınamadı!');
-
-        const data = await response.json();
-
-        // Set dynamic greeting
-        const usernameElement = document.getElementById('username');
-        usernameElement.textContent = `Merhaba, ${data.name}!`;
-        
-        // Load clients dynamically
-        const clientsContainer = document.getElementById('clients');
-        clientsContainer.innerHTML = '';
-        data.clients.forEach((client) => {
-            const clientElement = document.createElement('div');
-            clientElement.innerHTML = `
-                <h3>${client.name}</h3>
-                <p>Program: ${client.program}</p>
-            `;
-            clientsContainer.appendChild(clientElement);
-        });
-
-    } catch (err) {
-        console.error(err);
-        alert('Veri alınırken bir hata oluştu.');
-    }
+    // Placeholder veri eklenmeden backend entegrasyonuna uygun boş içerik
+    document.getElementById('program-list').innerHTML = `<li>Program verisi API'den gelecek.</li>`;
+    document.getElementById('client-list').innerHTML = `<li>Müşteri verisi API'den gelecek.</li>`;
+    document.getElementById('notification-list').innerHTML = `<li>Bildirimler API'den gelecek.</li>`;
+  </script>
+</body>
+  
+</html>
+<style>
+  /* Dashboard Genel Stilleri */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
 }
 
-fetchCoachData();
-</script>
-  <div id="username"></div>
-  <div id="clients"></div>
-  
-</body>
-</html>
+.dashboard-nav {
+  width: 250px;
+  background-color: #2F575D;
+  color: #FFF;
+  padding: 20px;
+}
+
+.dashboard-nav h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.dashboard-nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.dashboard-nav li {
+  margin: 10px 0;
+}
+
+.dashboard-nav a {
+  text-decoration: none;
+  color: #FFF;
+  display: block;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.dashboard-nav a.active,
+.dashboard-nav a:hover {
+  background-color: #658B6F;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 20px;
+  background-color: #F7F9FA;
+}
+
+button {
+  padding: 10px 15px;
+  background-color: #658B6F;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #28363D;
+}
+
+</style>
