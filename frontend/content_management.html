@@ -154,5 +154,105 @@ document.addEventListener("DOMContentLoaded", function () {
 // Load content and initialize the calendar
 loadContent();
 </script>
+  <style>/* General Reset */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+header {
+  background-color: #4CAF50;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+}
+
+header .back-btn {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+h1, h2 {
+  margin: 10px 0;
+}
+
+section {
+  padding: 20px;
+  margin: 20px auto;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+input[type="text"], input[type="number"], textarea {
+  font-size: 16px;
+}
+
+#content-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.content-item {
+  background-color: #f3f3f3;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: calc(33.33% - 20px);
+}
+
+.content-item h3 {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.content-item a {
+  color: #4CAF50;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+#calendar {
+  margin-top: 20px;
+}
+
+.fc {
+  border: none;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+</style>
 </body>
 </html>
