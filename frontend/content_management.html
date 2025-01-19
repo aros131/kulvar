@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Content Management & Calendar</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.css" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <h1>İçerik Yönetimi ve Takvim</h1>
+    <a href="coach_dashboard.html" class="back-btn">← Geri Dön</a>
+  </header>
+
+  <!-- Content Management Section -->
+  <section id="upload-section">
+    <h2>Yeni İçerik Yükle</h2>
+    <form id="upload-form">
+      <label for="content-title">Başlık:</label>
+      <input type="text" id="content-title" required>
+
+      <label for="content-type">Tür:</label>
+      <select id="content-type" required>
+        <option value="video">Video</option>
+        <option value="image">Resim</option>
+        <option value="document">Döküman</option>
+      </select>
+
+      <label for="content-url">Dosya URL:</label>
+      <input type="text" id="content-url" placeholder="https://example.com/file.mp4" required>
+
+      <button type="submit">Yükle</button>
+    </form>
+  </section>
+
+  <!-- Uploaded Content Section -->
+  <section id="content-list-section">
+    <h2>Yüklenmiş İçerikler</h2>
+    <div id="content-list">
+      <!-- Dynamically populated content will go here -->
+    </div>
+  </section>
+
+  <!-- Calendar Section -->
+  <section id="calendar-section">
+    <h2>Takvim</h2>
+    <div id="calendar"></div> <!-- FullCalendar will render here -->
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.js"></script>
+  <script src="content_calendar.js"></script>
+</body>
+</html>
