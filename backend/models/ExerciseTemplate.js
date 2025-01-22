@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const ExerciseTemplateSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String },
