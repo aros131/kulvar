@@ -4,188 +4,324 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Koç Paneli</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="dashboard-container">
-    <!-- Sol Navigasyon -->
     <nav class="dashboard-nav">
       <h2>Koç Paneli</h2>
       <ul>
         <li><a href="#programs" class="active">Programlarım</a></li>
         <li><a href="#clients">Müşterilerim</a></li>
+        <li><a href="#groups">Gruplar</a></li>
         <li><a href="#analytics">Analizler</a></li>
-        <li><a href="#content-library">İçerik Kütüphanesi</a></li>
         <li><a href="#notifications">Bildirimler</a></li>
-        <li><a href="#settings">Ayarlar</a></li>
         <li><a href="#logout">Çıkış Yap</a></li>
       </ul>
     </nav>
 
-    <!-- Ana İçerik -->
     <main class="dashboard-content">
-      <!-- Program Yönetimi -->
+      <!-- Programs Section -->
       <section id="programs">
         <h2>Programlarım</h2>
-        <a href="content_management.html#upload-section" id="add-program-btn" class="btn">Yeni Program Ekle</a>
-
-
-        <ul id="program-list">
-          <!-- Dinamik olarak doldurulacak -->
-        </ul>
+        <a href="content_management.html#program-creation" class="btn">Yeni Program Ekle</a>
+        <ul id="program-list"></ul>
       </section>
 
-      <!-- Müşteri Yönetimi -->
+      <!-- Clients Section -->
       <section id="clients">
         <h2>Müşterilerim</h2>
-        <ul id="client-list">
-          <!-- Dinamik olarak doldurulacak -->
-        </ul>
+        <ul id="client-list"></ul>
       </section>
 
-      <!-- Analitik -->
+      <!-- Groups Section -->
+      <section id="groups">
+        <h2>Gruplar</h2>
+        <form id="group-form">
+          <input type="text" id="group-name" placeholder="Grup Adı" required>
+          <button type="submit">Grup Oluştur</button>
+        </form>
+        <ul id="group-list"></ul>
+      </section>
+
+      <!-- Analytics Section -->
       <section id="analytics">
         <h2>Analizler</h2>
         <canvas id="analyticsChart"></canvas>
       </section>
 
-      <!-- İçerik Kütüphanesi -->
-      <section id="content-library">
-        <h2>İçerik Kütüphanesi</h2>
-        <button>Yeni İçerik Yükle</button>
-        <div id="content-grid">
-          <!-- Dinamik içerik görüntülenecek -->
-        </div>
-      </section>
-
-      <!-- Bildirimler -->
+      <!-- Notifications Section -->
       <section id="notifications">
         <h2>Bildirimler</h2>
-        <ul id="notification-list">
-          <!-- Dinamik bildirimler -->
-        </ul>
-      </section>
-
-      <!-- Ayarlar -->
-      <section id="settings">
-        <h2>Ayarlar</h2>
-        <button>Şifre Değiştir</button>
-        <button>Bildirim Tercihleri</button>
+        <ul id="notification-list"></ul>
       </section>
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
+const token = localStorage.getItem("token");
 
-async function getPrograms() {
-  const token = localStorage.getItem("token");
+// Load programs
+async function loadPrograms() {
   const response = await fetch(`${BASE_URL}/dashboard/programs`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  const data = await response.json();
-  console.log("Coach programs:", data);
+  const programs = await response.json();
+  const programList = document.getElementById("program-list");
+  programs.forEach((program) => {
+    const li = document.createElement("li");
+    li.textContent = `${program.name} (${program.duration} gün)`;
+    programList.appendChild(li);
+  });
 }
 
-    // Analiz Grafik Örneği
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
-    const analyticsChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Program 1', 'Program 2', 'Program 3'],
-        datasets: [{
-          label: 'Tamamlanma Oranı',
-          data: [75, 50, 90],
-          backgroundColor: ['#2F575D', '#658B6F', '#99AEAD']
-        }]
-      }
-    });
+// Load clients
+async function loadClients() {
+  const response = await fetch(`${BASE_URL}/dashboard/clients`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-    // Placeholder veri eklenmeden backend entegrasyonuna uygun boş içerik
-    document.getElementById('program-list').innerHTML = `<li>Program verisi API'den gelecek.</li>`;
-    document.getElementById('client-list').innerHTML = `<li>Müşteri verisi API'den gelecek.</li>`;
-    document.getElementById('notification-list').innerHTML = `<li>Bildirimler API'den gelecek.</li>`;
+  const clients = await response.json();
+  const clientList = document.getElementById("client-list");
+  clients.forEach((client) => {
+    const li = document.createElement("li");
+    li.textContent = `${client.name} - ${client.email}`;
+    clientList.appendChild(li);
+  });
+}
+
+// Load groups
+async function loadGroups() {
+  const response = await fetch(`${BASE_URL}/groups`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const groups = await response.json();
+  const groupList = document.getElementById("group-list");
+  groups.forEach((group) => {
+    const li = document.createElement("li");
+    li.textContent = `${group.name} (${group.clientIds.length} üyeler)`;
+    groupList.appendChild(li);
+  });
+}
+
+// Create group
+document.getElementById("group-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("group-name").value;
+
+  const response = await fetch(`${BASE_URL}/groups`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  if (response.ok) {
+    alert("Grup başarıyla oluşturuldu!");
+    loadGroups();
+  } else {
+    alert("Grup oluşturulamadı!");
+  }
+});
+
+// Load analytics
+async function loadAnalytics() {
+  const response = await fetch(`${BASE_URL}/analytics`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const analytics = await response.json();
+  const labels = analytics.map((item) => item.programName);
+  const completionRates = analytics.map((item) => item.completionRate);
+
+  new Chart(document.getElementById("analyticsChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Tamamlama Oranı (%)",
+          data: completionRates,
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true },
+      },
+    },
+  });
+}
+
+// Load notifications
+async function loadNotifications() {
+  const response = await fetch(`${BASE_URL}/notifications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const notifications = await response.json();
+  const notificationList = document.getElementById("notification-list");
+  notifications.forEach((notification) => {
+    const li = document.createElement("li");
+    li.textContent = notification.message;
+    notificationList.appendChild(li);
+  });
+}
+
+// Load all data on page load
+loadPrograms();
+loadClients();
+loadGroups();
+loadAnalytics();
+loadNotifications();
+
   </script>
-</body>
-  
-</html>
-<style>
-  /* Dashboard Genel Stilleri */
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
+  <style>
+    /* General Styles */
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #DEE1DD; /* Primary Background */
+  color: #28363D; /* Primary Text */
 }
 
-.dashboard-nav {
-  width: 250px;
-  background-color: #2F575D;
-  color: #FFF;
-  padding: 20px;
+h1, h2, h3 {
+  font-weight: 600;
+  color: #2F575D; /* Header Accent */
 }
 
-.dashboard-nav h2 {
-  font-size: 22px;
-  margin-bottom: 20px;
+a {
+  text-decoration: none;
+  color: #658B6F; /* Accent */
 }
 
-.dashboard-nav ul {
+ul {
   list-style: none;
   padding: 0;
 }
 
-.dashboard-nav li {
-  margin: 10px 0;
-}
-
-.dashboard-nav a {
-  text-decoration: none;
-  color: #FFF;
-  display: block;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.dashboard-nav a.active,
-.dashboard-nav a:hover {
-  background-color: #658B6F;
-}
-
-.dashboard-content {
-  flex: 1;
-  padding: 20px;
-  background-color: #F7F9FA;
-}
-
 button {
-  padding: 10px 15px;
-  background-color: #658B6F;
-  color: white;
+  background-color: #2F575D; /* Button Highlight */
+  color: #DEE1DD;
   border: none;
+  padding: 10px 20px;
   border-radius: 5px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #28363D;
+  background-color: #658B6F; /* Slightly lighter on hover */
 }
-/* Button Styles */
-.btn {
-  display: inline-block;
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 15px;
-  text-align: center;
-  text-decoration: none;
+
+/* Containers */
+.dashboard-container,
+.content-container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+}
+
+/* Sidebar Navigation */
+.dashboard-nav,
+.content-nav {
+  width: 20%;
+  background-color: #28363D; /* Dark Sidebar Background */
+  color: #DEE1DD;
+  padding: 20px;
+}
+
+.dashboard-nav h2,
+.content-nav h2 {
+  margin-bottom: 20px;
+  color: #6D9197; /* Header */
+}
+
+.dashboard-nav ul li,
+.content-nav ul li {
+  margin: 15px 0;
+}
+
+.dashboard-nav ul li a,
+.content-nav ul li a {
+  color: #DEE1DD; /* Text in Sidebar */
+  padding: 10px;
+  display: block;
   border-radius: 5px;
-  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.btn:hover {
-  background-color: #45a049;
+.dashboard-nav ul li a:hover,
+.content-nav ul li a:hover {
+  background-color: #658B6F; /* Hover Effect */
 }
 
-</style>
+/* Main Content */
+.dashboard-content,
+.content-main {
+  flex: 1;
+  background-color: #C4CDC1; /* Secondary Background */
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.dashboard-content h2,
+.content-main h2 {
+  margin-bottom: 20px;
+  color: #2F575D; /* Accent */
+}
+
+.section {
+  background-color: #99AEAD; /* Light Section Background */
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Program and Client Lists */
+ul#program-list,
+ul#client-list,
+ul#group-list {
+  padding: 10px;
+  background-color: #DEE1DD; /* List Background */
+  border-radius: 5px;
+}
+
+ul#program-list li,
+ul#client-list li,
+ul#group-list li {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #6D9197; /* List Item */
+  color: #DEE1DD;
+  border-radius: 5px;
+}
+
+/* Buttons for Adding/Editing */
+#add-event,
+#upload-content {
+  margin-top: 20px;
+  background-color: #2F575D; /* Button Color */
+  color: #DEE1DD;
+}
+
+/* Charts */
+canvas {
+  max-width: 100%;
+  margin-top: 20px;
+}
+
+  </styles>
+</body>
+</html>

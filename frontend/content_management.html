@@ -1,89 +1,127 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Content Management & Calendar</title>
+  <title>İçerik Yönetimi</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- FullCalendar CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <header>
-    <h1>İçerik Yönetimi ve Takvim</h1>
-    <a href="coach_dashboard.html" class="back-btn">← Geri Dön</a>
-  </header>
+  <div class="content-container">
+    <nav class="content-nav">
+      <h2>İçerik Yönetimi</h2>
+      <ul>
+        <li><a href="#calendar">Takvim</a></li>
+        <li><a href="#content-library">İçerik Kütüphanesi</a></li>
+        <li><a href="#content-analytics">İçerik Analizi</a></li>
+        <li><a href="#program-creation">Yeni Program</a></li>
+      </ul>
+    </nav>
 
-  <!-- Content Management Section -->
-  <section id="upload-section">
-    <h2>Yeni İçerik Yükle</h2>
-    <form id="upload-form">
-      <label for="content-title">Başlık:</label>
-      <input type="text" id="content-title" required>
+    <main class="content-main">
+      <!-- Calendar Section -->
+      <section id="calendar">
+        <h2>Takvim</h2>
+        <div id="calendar-grid"></div>
+        <button id="add-event">Yeni Etkinlik Ekle</button>
+      </section>
 
-      <label for="content-type">Tür:</label>
-      <select id="content-type" required>
-        <option value="video">Video</option>
-        <option value="image">Resim</option>
-        <option value="document">Döküman</option>
-      </select>
+      <!-- Content Library -->
+      <section id="content-library">
+        <h2>İçerik Kütüphanesi</h2>
+        <button id="upload-content">İçerik Yükle</button>
+        <div id="content-list"></div>
+      </section>
 
-      <label for="content-url">Dosya URL:</label>
-      <input type="text" id="content-url" placeholder="https://example.com/file.mp4" required>
+      <!-- Content Analytics -->
+      <section id="content-analytics">
+        <h2>İçerik Analizi</h2>
+        <canvas id="contentAnalyticsChart"></canvas>
+      </section>
 
-      <button type="submit">Yükle</button>
-    </form>
-  </section>
+      <!-- Program Creation -->
+      <section id="program-creation">
+        <h2>Yeni Program Oluştur</h2>
+        <form id="program-form">
+          <label for="program-name">Program Adı:</label>
+          <input type="text" id="program-name" required>
+          <label for="program-duration">Süre (Gün):</label>
+          <input type="number" id="program-duration" min="1" required>
+          <button type="submit">Program Kaydet</button>
+        </form>
+      </section>
+    </main>
+  </div>
 
-  <!-- Uploaded Content Section -->
-  <section id="content-list-section">
-    <h2>Yüklenmiş İçerikler</h2>
-    <div id="content-list">
-      <!-- Dynamically populated content will go here -->
-    </div>
-  </section>
-
-  <!-- Calendar Section -->
-  <section id="calendar-section">
-    <h2>Takvim</h2>
-    <div id="calendar"></div> <!-- FullCalendar will render here -->
-  </section>
-
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.js"></script>
-  <script>const BASE_URL = "https://kulvar.onrender.com";
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
 const token = localStorage.getItem("token");
 
-// Load Content
+// Load calendar events
+async function loadCalendar() {
+  const response = await fetch(`${BASE_URL}/calendar`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const events = await response.json();
+  const calendarGrid = document.getElementById("calendar-grid");
+
+  events.forEach((event) => {
+    const div = document.createElement("div");
+    div.classList.add("calendar-event");
+    div.textContent = `${event.title} (${event.date})`;
+    calendarGrid.appendChild(div);
+  });
+}
+
+// Add new event
+document.getElementById("add-event").addEventListener("click", async () => {
+  const title = prompt("Etkinlik Başlığı:");
+  const date = prompt("Tarih (YYYY-MM-DD):");
+
+  const response = await fetch(`${BASE_URL}/calendar`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ title, date }),
+  });
+
+  if (response.ok) {
+    alert("Etkinlik başarıyla eklendi!");
+    loadCalendar();
+  } else {
+    alert("Etkinlik eklenemedi!");
+  }
+});
+
+// Load content library
 async function loadContent() {
   const response = await fetch(`${BASE_URL}/content`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  const contents = await response.json();
+  const content = await response.json();
   const contentList = document.getElementById("content-list");
 
-  // Clear existing content
-  contentList.innerHTML = "";
-
-  contents.forEach((content) => {
+  content.forEach((item) => {
     const div = document.createElement("div");
     div.classList.add("content-item");
-
     div.innerHTML = `
-      <h3>${content.title} (${content.type})</h3>
-      <a href="${content.fileUrl}" target="_blank">Görüntüle</a>
+      <p>${item.title} (${item.type})</p>
+      <a href="${item.fileUrl}" target="_blank">Görüntüle</a>
     `;
     contentList.appendChild(div);
   });
 }
 
-// Handle Content Upload
-document.getElementById("upload-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const title = document.getElementById("content-title").value;
-  const type = document.getElementById("content-type").value;
-  const fileUrl = document.getElementById("content-url").value;
+// Upload content
+document.getElementById("upload-content").addEventListener("click", async () => {
+  const title = prompt("İçerik Başlığı:");
+  const type = prompt("Tür (video/image/document):");
+  const fileUrl = prompt("Dosya URL'si:");
 
   const response = await fetch(`${BASE_URL}/content`, {
     method: "POST",
@@ -96,171 +134,187 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
   if (response.ok) {
     alert("İçerik başarıyla yüklendi!");
-    loadContent(); // Refresh the content list
+    loadContent();
   } else {
     alert("İçerik yüklenemedi!");
   }
 });
 
-// Initialize FullCalendar
-document.addEventListener("DOMContentLoaded", function () {
-  const calendarEl = document.getElementById("calendar");
-
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: "dayGridMonth",
-    headerToolbar: {
-      left: "prev,next today",
-      center: "title",
-      right: "dayGridMonth,timeGridWeek,timeGridDay",
-    },
-    events: async function (fetchInfo, successCallback, failureCallback) {
-      // Fetch scheduled content events
-      const response = await fetch(`${BASE_URL}/calendar/schedule`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const events = await response.json();
-      successCallback(events);
-    },
-    dateClick: function (info) {
-      const title = prompt("Bu tarihe içerik planlamak ister misiniz? Başlık girin:");
-      if (title) {
-        calendar.addEvent({
-          title,
-          start: info.dateStr,
-          allDay: true,
-        });
-
-        // Save the event to the backend
-        fetch(`${BASE_URL}/calendar/schedule`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            title,
-            date: info.dateStr,
-          }),
-        }).then((response) => {
-          if (!response.ok) alert("Planlama kaydedilemedi!");
-        });
-      }
-    },
+// Load content analytics
+async function loadContentAnalytics() {
+  const response = await fetch(`${BASE_URL}/content/analytics`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  calendar.render();
-});
+  const analytics = await response.json();
+  const labels = analytics.map((item) => item.title);
+  const views = analytics.map((item) => item.viewCount);
 
-// Load content and initialize the calendar
+  new Chart(document.getElementById("contentAnalyticsChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Görüntüleme Sayısı",
+          data: views,
+          backgroundColor: "rgba(255, 99, 132, 0.2)",
+          borderColor: "rgba(255, 99, 132, 1)",
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true },
+      },
+    },
+  });
+}
+
+// Load all data
+loadCalendar();
 loadContent();
-    // Auto-scroll to the upload section if the URL contains "#upload-section"
-document.addEventListener("DOMContentLoaded", () => {
-  const hash = window.location.hash;
-  if (hash === "#upload-section") {
-    document.getElementById("upload-section").scrollIntoView({ behavior: "smooth" });
-  }
-});
+loadContentAnalytics();
 
-</script>
-  <style>/* General Reset */
+  </script>
+  <style>
+    /* General Styles */
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f9f9f9;
-  color: #333;
+  background-color: #DEE1DD; /* Primary Background */
+  color: #28363D; /* Primary Text */
 }
 
-header {
-  background-color: #4CAF50;
-  color: white;
-  padding: 20px;
-  text-align: center;
-  position: sticky;
-  top: 0;
+h1, h2, h3 {
+  font-weight: 600;
+  color: #2F575D; /* Header Accent */
 }
 
-header .back-btn {
-  color: white;
+a {
   text-decoration: none;
-  font-size: 14px;
-  margin-right: 10px;
+  color: #658B6F; /* Accent */
 }
 
-h1, h2 {
-  margin: 10px 0;
-}
-
-section {
-  padding: 20px;
-  margin: 20px auto;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
+ul {
+  list-style: none;
+  padding: 0;
 }
 
 button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 15px;
+  background-color: #2F575D; /* Button Highlight */
+  color: #DEE1DD;
   border: none;
+  padding: 10px 20px;
   border-radius: 5px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: #658B6F; /* Slightly lighter on hover */
 }
 
-input, select, textarea {
-  width: 100%;
+/* Containers */
+.dashboard-container,
+.content-container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+}
+
+/* Sidebar Navigation */
+.dashboard-nav,
+.content-nav {
+  width: 20%;
+  background-color: #28363D; /* Dark Sidebar Background */
+  color: #DEE1DD;
+  padding: 20px;
+}
+
+.dashboard-nav h2,
+.content-nav h2 {
+  margin-bottom: 20px;
+  color: #6D9197; /* Header */
+}
+
+.dashboard-nav ul li,
+.content-nav ul li {
+  margin: 15px 0;
+}
+
+.dashboard-nav ul li a,
+.content-nav ul li a {
+  color: #DEE1DD; /* Text in Sidebar */
   padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
+  display: block;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.dashboard-nav ul li a:hover,
+.content-nav ul li a:hover {
+  background-color: #658B6F; /* Hover Effect */
+}
+
+/* Main Content */
+.dashboard-content,
+.content-main {
+  flex: 1;
+  background-color: #C4CDC1; /* Secondary Background */
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.dashboard-content h2,
+.content-main h2 {
+  margin-bottom: 20px;
+  color: #2F575D; /* Accent */
+}
+
+.section {
+  background-color: #99AEAD; /* Light Section Background */
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Program and Client Lists */
+ul#program-list,
+ul#client-list,
+ul#group-list {
+  padding: 10px;
+  background-color: #DEE1DD; /* List Background */
   border-radius: 5px;
 }
 
-input[type="text"], input[type="number"], textarea {
-  font-size: 16px;
+ul#program-list li,
+ul#client-list li,
+ul#group-list li {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #6D9197; /* List Item */
+  color: #DEE1DD;
+  border-radius: 5px;
 }
 
-#content-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+/* Buttons for Adding/Editing */
+#add-event,
+#upload-content {
+  margin-top: 20px;
+  background-color: #2F575D; /* Button Color */
+  color: #DEE1DD;
 }
 
-.content-item {
-  background-color: #f3f3f3;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  width: calc(33.33% - 20px);
-}
-
-.content-item h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.content-item a {
-  color: #4CAF50;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-#calendar {
+/* Charts */
+canvas {
+  max-width: 100%;
   margin-top: 20px;
 }
 
-.fc {
-  border: none;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 10px;
-}
-</style>
+  </style>
 </body>
 </html>

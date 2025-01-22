@@ -24,12 +24,18 @@ const authRoutes = require('./routes/authRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const contentRoutes = require('./routes/contentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const exerciseTemplateRoutes = require("./routes/exerciseTemplateRoutes");
+const feedbackRoutes = require("./routes/feedbackRoutes");
+const clientGroupRoutes = require("./routes/clientGroupRoutes");
 
 // API Endpoints
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/content', contentRoutes);
 app.use('/notifications', notificationRoutes);
+app.use("/exercise-templates", exerciseTemplateRoutes); 
+app.use("/feedback", feedbackRoutes);
+app.use("/groups", clientGroupRoutes);
 
 // Default Route
 app.get('/', (req, res) => {

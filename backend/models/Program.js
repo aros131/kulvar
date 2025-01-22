@@ -1,19 +1,30 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ProgramSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String },
-  coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Program creator (coach)
-  userIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users assigned to this program
-  exercises: [
+  duration: { type: Number, required: true }, // In days
+  days: [
     {
-      name: { type: String, required: true },
-      repetitions: { type: Number },
-      duration: { type: String }, // Example: "30 mins"
+      dayNumber: { type: Number, required: true }, // Day 1, Day 2, etc.
+      exercises: [
+        {
+          name: { type: String, required: true },
+          repetitions: { type: Number },
+          duration: { type: String }, // e.g., "30 minutes"
+          demoLink: { type: String }, // Video or image URL for the exercise
+        },
+      ],
     },
   ],
-  completionRates: [{ userId: mongoose.Schema.Types.ObjectId, rate: Number }], // Completion rates per user
+  coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  assignedClients: [
+    {
+      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      completionRate: { type: Number, default: 0 }, // % of program completed
+    },
+  ],
   createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('Program', ProgramSchema);
+module.exports = mongoose.model("Program", ProgramSchema);
