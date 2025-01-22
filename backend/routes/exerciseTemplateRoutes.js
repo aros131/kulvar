@@ -14,4 +14,4 @@ router.get("/", protect, getTemplates);
 router.delete("/:id", protect, deleteTemplate);
 
 module.exports = router;
-console.log(createTemplate); // Should print the function definition
+console.log({ createTemplate, getTemplates, deleteTemplate }); // Debugging
