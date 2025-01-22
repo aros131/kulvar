@@ -153,6 +153,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Load content and initialize the calendar
 loadContent();
+    // Auto-scroll to the upload section if the URL contains "#upload-section"
+document.addEventListener("DOMContentLoaded", () => {
+  const hash = window.location.hash;
+  if (hash === "#upload-section") {
+    document.getElementById("upload-section").scrollIntoView({ behavior: "smooth" });
+  }
+});
+
 </script>
   <style>/* General Reset */
 body {
