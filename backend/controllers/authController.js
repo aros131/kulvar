@@ -1,62 +1,64 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
-// Kullanıcı Kaydı
+// Register a new user or coach
 exports.register = async (req, res) => {
-  const { name, email, password, role } = req.body;
-
   try {
-    // Şifreyi hashleme
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { name, email, password, role } = req.body;
 
-    // Yeni kullanıcı oluşturma
-    const user = new User({
+    // Validate role
+    if (!["user", "coach"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role. Role must be 'user' or 'coach'." });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user
+    const user = await User.create({
       name,
       email,
       password: hashedPassword,
       role,
     });
 
-    await user.save();
-    res.status(201).json({ message: 'Kayıt başarılı!' });
+    res.status(201).json({ message: "User registered successfully", user });
   } catch (err) {
-    res.status(500).json({ message: 'Kayıt sırasında hata oluştu.', error: err.message });
+    res.status(500).json({ message: "Error registering user", error: err.message });
   }
 };
 
-// Kullanıcı Girişi
+// Log in a user
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    // Kullanıcıyı e-posta ile bul
+    const { email, password } = req.body;
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    // Şifre doğrulama
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) return res.status(401).json({ message: 'Şifre yanlış!' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    // Token oluşturma
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
     res.json({ token, role: user.role });
   } catch (err) {
-    res.status(500).json({ message: 'Giriş sırasında hata oluştu.', error: err.message });
+    res.status(500).json({ message: "Error logging in", error: err.message });
   }
 };
 
-// Kullanıcı Bilgilerini Al
-exports.getMe = async (req, res) => {
+// Get user profile
+exports.getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select("-password");
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: 'Kullanıcı bilgileri alınamadı.', error: err.message });
+    res.status(500).json({ message: "Error fetching profile", error: err.message });
   }
 };

@@ -1,6 +1,6 @@
 const ExerciseTemplate = require("../models/ExerciseTemplate");
 
-// Create a new exercise template
+// Create a new template
 exports.createTemplate = async (req, res) => {
   try {
     const { name, description, videoUrl } = req.body;
@@ -9,7 +9,7 @@ exports.createTemplate = async (req, res) => {
       name,
       description,
       videoUrl,
-      coachId: req.user.id, // Ensure this is the logged-in coach
+      coachId: req.user.id, // Requires `req.user` from protect middleware
     });
 
     await template.save();
@@ -19,7 +19,7 @@ exports.createTemplate = async (req, res) => {
   }
 };
 
-// Get all templates for a coach
+// Get all templates
 exports.getTemplates = async (req, res) => {
   try {
     const templates = await ExerciseTemplate.find({ coachId: req.user.id });
@@ -35,7 +35,6 @@ exports.deleteTemplate = async (req, res) => {
     const template = await ExerciseTemplate.findById(req.params.id);
     if (!template) return res.status(404).json({ message: "Template not found." });
 
-    // Ensure the coach owns this template
     if (template.coachId.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not authorized to delete this template." });
     }

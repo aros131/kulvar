@@ -5,9 +5,12 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ["coach", "user"], required: true },
-  specialization: { type: String }, // For coaches (e.g., "Strength Training")
-  fitnessGoals: { type: String },  // For users (e.g., "Lose weight")
-  profilePicture: { type: String }, // URL of the profile picture
+  specialization: { type: String }, // Optional field for coaches
+  fitnessGoals: { type: String }, // Optional field for users
+  profilePicture: {
+    type: String,
+    default: "http://example.com/default-profile-picture.jpg",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

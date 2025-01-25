@@ -82,6 +82,30 @@
         hamburger.addEventListener('click', () => {
             navLinks.classList.toggle('show');
         });
+        const BASE_URL = "https://kulvar.onrender.com";
+const token = localStorage.getItem("token");
+
+// Fetch user profile
+async function loadProfile() {
+  const response = await fetch(`${BASE_URL}/profile`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    document.querySelector(".profile-info h1").textContent = data.name;
+    document.querySelector(".profile-info p").textContent = data.email;
+  } else {
+    alert("Profil bilgileri alınamadı.");
+  }
+}
+
+// Load profile data on page load
+loadProfile();
+
     </script>
 </body>
 </html>
