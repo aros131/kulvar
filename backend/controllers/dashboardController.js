@@ -60,6 +60,18 @@ exports.getUserPrograms = async (req, res) => {
     res.status(500).json({ message: 'Programlar alınamadı.', error: err.message });
   }
 };
+// Kullanıcı ilerlemesini getir
+exports.getProgress = async (req, res) => {
+  try {
+    const progress = await Progress.find({ userId: req.user.id });
+    if (!progress.length) {
+      return res.status(404).json({ message: "No progress found" });
+    }
+    res.json(progress);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching progress", error: err.message });
+  }
+};
 
 // Kullanıcı ilerlemesini kaydet
 exports.saveProgress = async (req, res) => {
