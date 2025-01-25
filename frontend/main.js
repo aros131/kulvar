@@ -1,3 +1,51 @@
+async function fetchNotifications() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${BASE_URL}/notifications`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.ok) {
+    const notifications = await response.json();
+    displayNotifications(notifications);
+  } else {
+    console.error("Failed to fetch notifications");
+  }
+}
+
+// Display notifications in the UI
+function displayNotifications(notifications) {
+  const notificationList = document.querySelector("#notification-list");
+  notificationList.innerHTML = ""; // Clear old notifications
+
+  notifications.forEach((notification) => {
+    const li = document.createElement("li");
+    li.textContent = `${notification.message} - ${notification.isRead ? "Read" : "Unread"}`;
+    li.onclick = () => markAsRead(notification._id); // Mark as read when clicked
+    notificationList.appendChild(li);
+  });
+}
+
+// Mark a notification as read
+async function markAsRead(notificationId) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${BASE_URL}/notifications/${notificationId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.ok) {
+    fetchNotifications(); // Refresh notifications
+  } else {
+    console.error("Failed to mark notification as read");
+  }
+}
 // Back-to-Top Button Logic
 const backToTop = document.getElementById('backToTop');
 if (backToTop) {
