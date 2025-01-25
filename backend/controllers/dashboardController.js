@@ -16,7 +16,6 @@ async function getPrograms() {
   const data = await response.json();
   console.log("Coach programs:", data);
 }
-router.get("/progress", protect, roleMiddleware(["user"]), dashboardController.getProgress);
 
 // Koçun programlarını getir
 exports.getPrograms = async (req, res) => {

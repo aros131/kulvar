@@ -12,6 +12,6 @@ router.get("/analytics", protect, roleMiddleware(["coach"]), dashboardController
 
 // User Dashboard Routes
 router.get("/user-programs", protect, roleMiddleware(["user"]), dashboardController.getUserPrograms);
-router.post("/progress", protect, roleMiddleware(["user"]), dashboardController.saveProgress);
+router.get("/progress", protect, roleMiddleware(["user"]), dashboardController.getProgress);
 
 module.exports = router;
