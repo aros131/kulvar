@@ -1,11 +1,10 @@
-const User = require("../models/User");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
+const User = require("../models/User");
 
-// Register a new user or coach
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, fitnessGoals, specialization } = req.body;
 
     // Validate role
     if (!["user", "coach"].includes(role)) {
@@ -16,13 +15,23 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
-    const user = await User.create({
+    // Prepare user data
+    const userData = {
       name,
       email,
       password: hashedPassword,
       role,
-    });
+    };
+
+    // Add role-specific fields
+    if (role === "user") {
+      userData.fitnessGoals = fitnessGoals;
+    } else if (role === "coach") {
+      userData.specialization = specialization;
+    }
+
+    // Create user
+    const user = await User.create(userData);
 
     res.status(201).json({ message: "User registered successfully", user });
   } catch (err) {
@@ -30,34 +39,58 @@ exports.register = async (req, res) => {
   }
 };
 
-// Log in a user
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(404).json({ message: "User not found" });
     }
 
+    // Validate password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "30d" });
+    // Generate JWT
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-    res.json({ token, role: user.role });
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: "Error logging in", error: err.message });
   }
 };
 
-// Get user profile
 exports.getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
-    res.json(user);
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      specialization: user.specialization || null,
+      fitnessGoals: user.fitnessGoals || null,
+    });
   } catch (err) {
     res.status(500).json({ message: "Error fetching profile", error: err.message });
   }

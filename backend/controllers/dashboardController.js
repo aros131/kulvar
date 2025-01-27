@@ -1,94 +1,148 @@
-const Program = require('../models/Program');
-const User = require('../models/User');
-const Progress = require('../models/Progress');
-const Content = require('../models/Content');
-const BASE_URL = "https://kulvar.onrender.com";
+const Program = require("../models/Program");
+const User = require("../models/User");
+const Notification = require("../models/Notification");
+const Progress = require("../models/Progress");
 
-async function getPrograms() {
-  const token = localStorage.getItem("token");
-  const response = await fetch(`${BASE_URL}/dashboard/programs`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+// Create a new program
+exports.createProgram = async (req, res) => {
+  try {
+    const { name, description, duration, days } = req.body;
+    const newProgram = await Program.create({
+      name,
+      description,
+      duration,
+      days,
+      coachId: req.user.id,
+    });
+    res.status(201).json(newProgram);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating program", error: error.message });
+  }
+};
 
-  const data = await response.json();
-  console.log("Coach programs:", data);
-}
-
-// Koçun programlarını getir
+// Get all programs for the logged-in coach
 exports.getPrograms = async (req, res) => {
   try {
     const programs = await Program.find({ coachId: req.user.id });
-    res.json({ programs });
-  } catch (err) {
-    res.status(500).json({ message: 'Programlar alınamadı.', error: err.message });
+    res.status(200).json({ programs });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving programs", error: error.message });
   }
 };
 
-// Koçun müşterilerini getir
+// Update a program
+exports.updateProgram = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedProgram = await Program.findByIdAndUpdate(
+      id,
+      { ...req.body },
+      { new: true }
+    );
+    res.status(200).json(updatedProgram);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating program", error: error.message });
+  }
+};
+
+// Delete a program
+exports.deleteProgram = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Program.findByIdAndDelete(id);
+    res.status(200).json({ message: "Program deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting program", error: error.message });
+  }
+};
+
+// Assign a program to a client
+exports.assignProgram = async (req, res) => {
+  try {
+    const { programId, clientId } = req.body;
+    const client = await User.findById(clientId);
+    if (!client || client.role !== "user") {
+      return res.status(404).json({ message: "Client not found or invalid role" });
+    }
+
+    client.assignedPrograms = [...(client.assignedPrograms || []), programId];
+    await client.save();
+
+    res.status(200).json({ message: "Program assigned successfully", client });
+  } catch (error) {
+    res.status(500).json({ message: "Error assigning program", error: error.message });
+  }
+};
+
+// Get clients for a coach
 exports.getClients = async (req, res) => {
   try {
-    const clients = await User.find({ coachId: req.user.id, role: 'user' });
-    res.json({ clients });
-  } catch (err) {
-    res.status(500).json({ message: 'Müşteriler alınamadı.', error: err.message });
+    const clients = await User.find({ coachId: req.user.id, role: "user" });
+    res.status(200).json({ clients });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving clients", error: error.message });
   }
 };
 
-// Analiz verilerini getir
+// Get progress for a specific client
+exports.getClientProgress = async (req, res) => {
+  try {
+    const { id } = req.params; // Client ID
+    const progress = await Progress.find({ clientId: id });
+    res.status(200).json({ progress });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving client progress", error: error.message });
+  }
+};
+
+// Save progress for a user
+exports.saveProgress = async (req, res) => {
+  try {
+    const { programId, data } = req.body; // Data may include details like days completed
+    const newProgress = await Progress.create({
+      programId,
+      clientId: req.user.id,
+      data,
+    });
+    res.status(201).json(newProgress);
+  } catch (error) {
+    res.status(500).json({ message: "Error saving progress", error: error.message });
+  }
+};
+
+// Get analytics for a coach
 exports.getAnalytics = async (req, res) => {
   try {
-    const programs = await Program.find({ coachId: req.user.id });
-    const analytics = programs.map((program) => ({
-      programName: program.name,
-      completionRate: program.completionRates.reduce((acc, curr) => acc + curr.rate, 0) / program.completionRates.length || 0,
-    }));
-    res.json({ analytics });
-  } catch (err) {
-    res.status(500).json({ message: 'Analizler alınamadı.', error: err.message });
+    const totalClients = await User.countDocuments({ coachId: req.user.id, role: "user" });
+    const totalPrograms = await Program.countDocuments({ coachId: req.user.id });
+
+    res.status(200).json({ totalClients, totalPrograms });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving analytics", error: error.message });
   }
 };
 
-// Kullanıcı programlarını getir
-exports.getUserPrograms = async (req, res) => {
+// Send notification to a client
+exports.sendNotification = async (req, res) => {
   try {
-    const programs = await Program.find({ userIds: req.user.id });
-    res.json({ programs });
-  } catch (err) {
-    res.status(500).json({ message: 'Programlar alınamadı.', error: err.message });
-  }
-};
-// Kullanıcı ilerlemesini getir
-exports.getProgress = async (req, res) => {
-  try {
-    const progress = await Progress.find({ userId: req.user.id });
-    if (!progress.length) {
-      return res.status(404).json({ message: "No progress found" });
-    }
-    res.json(progress);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching progress", error: err.message });
-  }
-};
-
-// Kullanıcı ilerlemesini kaydet
-exports.saveProgress = async (req, res) => {
-  const { programId, completedExercises, notes } = req.body;
-
-  try {
-    const progress = new Progress({
-      userId: req.user.id,
-      programId,
-      date: new Date(),
-      completedExercises,
-      notes,
+    const { clientId, message } = req.body;
+    const notification = await Notification.create({
+      clientId,
+      message,
+      coachId: req.user.id,
     });
+    res.status(201).json(notification);
+  } catch (error) {
+    res.status(500).json({ message: "Error sending notification", error: error.message });
+  }
+};
 
-    await progress.save();
-    res.status(201).json({ message: 'İlerleme kaydedildi.' });
-  } catch (err) {
-    res.status(500).json({ message: 'İlerleme kaydedilemedi.', error: err.message });
+// Get notifications for a coach
+exports.getNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find({ coachId: req.user.id });
+    res.status(200).json({ notifications });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
 };

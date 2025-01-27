@@ -227,3 +227,28 @@ async function loginUser(email, password) {
 }
 
 document.getElementById('signupForm').addEventListener('submit', handleSignup);
+
+document.getElementById("feedback-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const feedbackText = document.getElementById("feedback-text").value;
+  const rating = document.getElementById("feedback-rating").value;
+  const coachId = "dynamic-coach-id"; // Replace this with the actual coach ID
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${BASE_URL}/feedback`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ feedbackText, rating, coachId }),
+  });
+
+  if (response.ok) {
+    alert("Thank you for your feedback!");
+    document.getElementById("feedback-form").reset();
+  } else {
+    console.error("Failed to submit feedback");
+  }
+});

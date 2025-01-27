@@ -1,16 +1,11 @@
 const express = require("express");
-const { createTemplate, getTemplates, deleteTemplate } = require("../controllers/exerciseTemplateController");
-const protect = require("../middleware/authMiddleware");
-
 const router = express.Router();
+const protect = require("../middleware/authMiddleware");
+const roleMiddleware = require("../middleware/roleMiddleware");
+const { createTemplate, getTemplates, deleteTemplate } = require("../controllers/exerciseTemplateController");
 
-// POST /exercise-templates: Create a new template
-router.post("/", protect, createTemplate);
-
-// GET /exercise-templates: Get all templates
-router.get("/", protect, getTemplates);
-
-// DELETE /exercise-templates/:id: Delete a template
-router.delete("/:id", protect, deleteTemplate);
+router.post("/", protect, roleMiddleware(["coach"]), createTemplate); // Create exercise template
+router.get("/", protect, getTemplates); // Get all exercise templates
+router.delete("/:id", protect, roleMiddleware(["coach"]), deleteTemplate); // Delete a template
 
 module.exports = router;

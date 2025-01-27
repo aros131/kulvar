@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kullanıcı Profilim</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Kullanıcı Profilim</h1>
+  </header>
+  <main>
+    <section class="profile-info">
+      <img src="default-avatar.png" alt="Profile Picture" id="profile-picture">
+      <h2 id="profile-name">Ad Soyad</h2>
+      <p id="fitness-goals">Fitness Hedefleri: ...</p>
+      <button onclick="editProfile()">Profili Düzenle</button>
+    </section>
+    <section class="achievements-section">
+      <h3>Başarılar</h3>
+      <ul id="achievements-list"></ul>
+    </section>
+  </main>
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+const token = localStorage.getItem("token");
+
+// Fetch user profile data
+async function loadUserProfile() {
+  const response = await fetch(`${BASE_URL}/profile/user`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    document.getElementById("profile-name").textContent = data.name;
+    document.getElementById("fitness-goals").textContent = `Fitness Hedefleri: ${data.fitnessGoals}`;
+    document.getElementById("profile-picture").src = data.profilePicture || "default-avatar.png";
+
+    loadAchievements(); // Load achievements for the user
+  } else {
+    console.error("Failed to load profile");
+  }
+}
+
+// Fetch achievements for the user
+async function loadAchievements() {
+  // Replace this with an actual API call if achievements are stored in the backend
+  const achievements = ["100 Egzersiz Tamamlandı", "5 KG Zayıflandı"];
+  const achievementsContainer = document.getElementById("achievements-list");
+  achievementsContainer.innerHTML = "";
+
+  achievements.forEach((achievement) => {
+    const li = document.createElement("li");
+    li.textContent = achievement;
+    achievementsContainer.appendChild(li);
+  });
+}
+
+loadUserProfile();
+
+  </script>
+  <style>
+    /* General Layout */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #F4F6F8;
+  color: #28363D;
+}
+
+header {
+  background-color: #658B6F;
+  color: #FFFFFF;
+  padding: 20px 0;
+  text-align: center;
+  font-size: 1.8rem;
+}
+
+main {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Profile Info Section */
+.profile-info {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.profile-info img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #658B6F;
+  margin-bottom: 15px;
+}
+
+.profile-info h2 {
+  font-size: 1.6rem;
+  margin: 10px 0;
+}
+
+.profile-info p {
+  font-size: 1.1rem;
+  color: #586A72;
+}
+
+.profile-info button {
+  background-color: #658B6F;
+  color: #FFFFFF;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.profile-info button:hover {
+  background-color: #4C7159;
+}
+
+/* Feedback Section */
+.feedback-section, .achievements-section {
+  margin-top: 40px;
+}
+
+.feedback-section h3, .achievements-section h3 {
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+  color: #28363D;
+  border-bottom: 2px solid #658B6F;
+  display: inline-block;
+  padding-bottom: 5px;
+}
+
+.feedback-section ul, .achievements-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feedback-section li, .achievements-section li {
+  background-color: #F9F9F9;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-section li p, .achievements-section li {
+  margin: 5px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  main {
+    padding: 15px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.4rem;
+  }
+
+  .profile-info p {
+    font-size: 1rem;
+  }
+}
+
+  </style>
+</body>
+</html>

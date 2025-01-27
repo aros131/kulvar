@@ -42,3 +42,12 @@ exports.getContents = async (req, res) => {
     res.status(500).json({ message: 'İçerikler alınamadı.', error: err.message });
   }
 };
+exports.createContent = async (req, res) => {
+  try {
+      const { title, description } = req.body;
+      const newContent = await Content.create({ title, description });
+      res.status(201).json(newContent);
+  } catch (error) {
+      res.status(500).json({ message: "Error creating content", error: error.message });
+  }
+};

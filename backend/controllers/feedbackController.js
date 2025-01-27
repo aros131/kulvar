@@ -1,28 +1,21 @@
 const Feedback = require("../models/Feedback");
-
-// Submit feedback
-exports.submitFeedback = async (req, res) => {
+exports.createFeedback = async (req, res) => {
   try {
-    const { feedbackText, rating } = req.body;
-
-    if (!feedbackText || !rating) {
-      return res.status(400).json({ message: "Feedback text and rating are required" });
-    }
-
-    const feedback = await Feedback.create({
-      userId: req.user.id,
-      feedbackText,
-      rating,
-    });
-
-    res.status(201).json({ message: "Feedback submitted successfully", feedback });
-  } catch (err) {
-    res.status(500).json({ message: "Error submitting feedback", error: err.message });
+      const { content, coachId } = req.body;
+      const feedback = await Feedback.create({
+          content,
+          coachId,
+          userId: req.user.id,
+      });
+      res.status(201).json(feedback);
+  } catch (error) {
+      res.status(500).json({ message: "Error creating feedback", error: error.message });
   }
 };
 
+
 // Get feedback (already implemented)
-exports.getFeedback = async (req, res) => {
+exports.getFeedbacks = async (req, res) => {
   const { programId, coachId } = req.query;
 
   try {

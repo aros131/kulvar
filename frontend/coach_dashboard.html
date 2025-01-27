@@ -23,7 +23,8 @@
         <li><a href="#analytics">Analizler</a></li>
         <li><a href="#notifications">Bildirimler</a></li>
         <li><a href="#logout">Çıkış Yap</a></li>
-        <li><a href="profile.html">Profilim</a></li>
+        <li><a href="coach_profile.html">Profilim</a></li>
+
       </ul>
     </nav>
 
@@ -180,6 +181,40 @@ async function loadNotifications() {
     const li = document.createElement("li");
     li.textContent = notification.message;
     notificationList.appendChild(li);
+  });
+}
+async function fetchCoachFeedback() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${BASE_URL}/feedback/coach`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.ok) {
+    const feedback = await response.json();
+    displayFeedback(feedback);
+  } else {
+    console.error("Failed to fetch feedback");
+  }
+}
+
+// Display feedback
+function displayFeedback(feedbackList) {
+  const feedbackSection = document.querySelector("#coach-feedback");
+  feedbackSection.innerHTML = "";
+
+  feedbackList.forEach((feedback) => {
+    const div = document.createElement("div");
+    div.classList.add("feedback-item");
+    div.innerHTML = `
+      <p><strong>Comment:</strong> ${feedback.feedbackText}</p>
+      <p><strong>Rating:</strong> ${feedback.rating} Stars</p>
+      <p><strong>User:</strong> ${feedback.userId}</p>
+    `;
+    feedbackSection.appendChild(div);
   });
 }
 

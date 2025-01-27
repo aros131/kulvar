@@ -1,13 +1,9 @@
 const express = require("express");
-const { submitFeedback, getFeedback } = require("../controllers/feedbackController");
-const protect = require("../middleware/authMiddleware");
-
 const router = express.Router();
+const protect = require("../middleware/authMiddleware");
+const { createFeedback, getFeedbacks } = require("../controllers/feedbackController");
 
-// POST /feedback: Submit feedback
-router.post("/", protect, submitFeedback);
-
-// GET /feedback: Get all feedback (optional)
-router.get("/", protect, getFeedback);
+router.post("/", protect, createFeedback); // Submit feedback
+router.get("/", protect, getFeedbacks); // Fetch all feedback for the coach
 
 module.exports = router;

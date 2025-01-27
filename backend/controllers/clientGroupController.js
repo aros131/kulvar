@@ -1,22 +1,49 @@
 const ClientGroup = require("../models/ClientGroup");
+const User = require("../models/User");
 
+exports.addClientToGroup = async (req, res) => {
+  try {
+      const groupId = req.params.id;
+      const { clientId } = req.body;
+
+      // Find the client
+      const client = await User.findById(clientId);
+      if (!client || client.role !== "user") {
+          return res.status(404).json({ message: "Client not found or invalid role" });
+      }
+
+      // Add client to the group
+      const group = await ClientGroup.findById(groupId);
+      if (!group) {
+          return res.status(404).json({ message: "Group not found" });
+      }
+
+      group.clientIds.push(clientId);
+      await group.save();
+
+      res.status(200).json({ message: "Client added to group successfully", group });
+  } catch (error) {
+      res.status(500).json({ message: "Error adding client to group", error: error.message });
+  }
+};
 // Create a new group
 exports.createGroup = async (req, res) => {
   try {
     const { groupName, members } = req.body;
+    const coachId = req.user.id; // Extract coachId from the authenticated user
 
-    const group = new ClientGroup({
-      coachId: req.user.id, // Requires protect middleware
-      groupName,
-      members, // List of client IDs
+    const group = await ClientGroup.create({
+      name: groupName,
+      clientIds: members,
+      coachId: coachId, // Add coachId to the group
     });
 
-    await group.save();
     res.status(201).json(group);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to create group", error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to create group", error: error.message });
   }
 };
+
 
 // Get all groups
 exports.getGroups = async (req, res) => {
@@ -25,6 +52,18 @@ exports.getGroups = async (req, res) => {
     res.json(groups);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch groups", error: err.message });
+  }
+};
+
+exports.getGroupById = async (req, res) => {
+  try {
+    const group = await ClientGroup.findById(req.params.id);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    res.status(200).json(group);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving group", error: error.message });
   }
 };
 

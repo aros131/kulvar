@@ -1,16 +1,13 @@
 const express = require("express");
-const { createGroup, getGroups, deleteGroup } = require("../controllers/clientGroupController");
-const protect = require("../middleware/authMiddleware");
-
 const router = express.Router();
+const protect = require("../middleware/authMiddleware");
+const roleMiddleware = require("../middleware/roleMiddleware");
+const { createGroup, getGroups, addClientToGroup } = require("../controllers/clientGroupController");
+const { getGroupById } = require("../controllers/clientGroupController");
 
-// POST /groups: Create a new client group
-router.post("/", protect, createGroup);
-
-// GET /groups: Get all client groups
-router.get("/", protect, getGroups);
-
-// DELETE /groups/:id: Delete a client group
-router.delete("/:id", protect, deleteGroup);
+router.post("/", protect, roleMiddleware(["coach"]), createGroup); // Create a new client group
+router.get("/", protect, roleMiddleware(["coach"]), getGroups); // Get all client groups
+router.post("/:id/add-client", protect, roleMiddleware(["coach"]), addClientToGroup); // Add a client to a group
+router.get("/:id", protect, roleMiddleware(["coach"]), getGroupById);
 
 module.exports = router;
