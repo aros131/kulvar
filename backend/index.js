@@ -28,7 +28,8 @@ const exerciseTemplateRoutes = require("./routes/exerciseTemplateRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const clientGroupRoutes = require("./routes/clientGroupRoutes");
 const profileRoutes = require("./routes/profileRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");const programRoutes = require("./routes/programRoutes");
+
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/content', contentRoutes);
@@ -38,6 +39,7 @@ app.use("/feedback", feedbackRoutes);
 app.use("/groups", clientGroupRoutes);
 app.use("/profile", profileRoutes);
 app.use("/analytics", analyticsRoutes);
+app.use("/programs", programRoutes);
 // Default Route
 app.get('/', (req, res) => {
   res.send('Welcome to the backend API!');

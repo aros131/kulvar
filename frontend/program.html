@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Program Yönetimi</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Program Yönetimi</h1>
+  </header>
+  <main class="program-management">
+    <!-- List of Existing Programs -->
+    <section id="existing-programs">
+      <h2>Mevcut Programlar</h2>
+      <ul id="program-list">
+        <!-- Programs will be dynamically rendered here -->
+        <li>
+          <span>Strength Training - 12 Hafta</span>
+          <button onclick="editProgram('programId')">Düzenle</button>
+          <button onclick="deleteProgram('programId')">Sil</button>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Program Creation/Editing Form -->
+    <section id="program-form-section">
+      <h2 id="form-title">Yeni Program Oluştur</h2>
+      <form id="program-form">
+        <label for="program-name">Program Adı:</label>
+        <input type="text" id="program-name" placeholder="Örneğin: Güçlenme Programı" required>
+
+        <label for="program-description">Açıklama:</label>
+        <textarea id="program-description" placeholder="Program açıklamasını girin" required></textarea>
+
+        <label for="program-duration">Süre (Hafta):</label>
+        <input type="number" id="program-duration" min="1" placeholder="Örneğin: 12" required>
+
+        <button type="submit" id="save-program-button">Kaydet</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    // Example data for demo purposes
+    const programs = [
+      { id: 1, name: "Strength Training", description: "Kas güçlendirme programı", duration: 12 },
+      { id: 2, name: "Yoga Programı", description: "Esneklik ve rahatlama", duration: 8 }
+    ];
+
+    // Render programs
+    function renderPrograms() {
+      const programList = document.getElementById("program-list");
+      programList.innerHTML = programs.map(program => `
+        <li>
+          <span>${program.name} - ${program.duration} Hafta</span>
+          <button onclick="editProgram(${program.id})">Düzenle</button>
+          <button onclick="deleteProgram(${program.id})">Sil</button>
+        </li>
+      `).join('');
+    }
+
+    // Handle edit
+    function editProgram(id) {
+      const program = programs.find(p => p.id === id);
+      if (program) {
+        document.getElementById("program-name").value = program.name;
+        document.getElementById("program-description").value = program.description;
+        document.getElementById("program-duration").value = program.duration;
+        document.getElementById("form-title").textContent = "Programı Düzenle";
+        document.getElementById("save-program-button").onclick = () => saveProgram(id);
+      }
+    }
+
+    // Handle save (create or edit)
+    function saveProgram(id = null) {
+      const name = document.getElementById("program-name").value;
+      const description = document.getElementById("program-description").value;
+      const duration = document.getElementById("program-duration").value;
+
+      if (id) {
+        // Edit existing program
+        const program = programs.find(p => p.id === id);
+        if (program) {
+          program.name = name;
+          program.description = description;
+          program.duration = duration;
+        }
+      } else {
+        // Create new program
+        const newProgram = {
+          id: programs.length + 1,
+          name,
+          description,
+          duration: parseInt(duration, 10)
+        };
+        programs.push(newProgram);
+      }
+
+      renderPrograms();
+      resetForm();
+    }
+
+    // Handle delete
+    function deleteProgram(id) {
+      const index = programs.findIndex(p => p.id === id);
+      if (index !== -1) {
+        programs.splice(index, 1);
+        renderPrograms();
+      }
+    }
+
+    // Reset form
+    function resetForm() {
+      document.getElementById("program-name").value = "";
+      document.getElementById("program-description").value = "";
+      document.getElementById("program-duration").value = "";
+      document.getElementById("form-title").textContent = "Yeni Program Oluştur";
+      document.getElementById("save-program-button").onclick = () => saveProgram();
+    }
+
+    // Initialize
+    renderPrograms();
+  </script>
+
+  <style>
+    /* Basic styling for demo purposes */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    header {
+      background-color: #2F575D;
+      color: #FFF;
+      padding: 10px 20px;
+      text-align: center;
+    }
+    main {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    section {
+      flex: 1;
+      background-color: #F4F6F8;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #658B6F;
+      color: #FFF;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    button {
+      background: #2F575D;
+      color: #FFF;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #658B6F;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    input, textarea, button {
+      padding: 10px;
+      border: 1px solid #CCC;
+      border-radius: 4px;
+    }
+  </style>
+</body>
+</html>

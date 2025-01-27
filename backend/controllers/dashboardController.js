@@ -3,76 +3,9 @@ const User = require("../models/User");
 const Notification = require("../models/Notification");
 const Progress = require("../models/Progress");
 
-// Create a new program
-exports.createProgram = async (req, res) => {
-  try {
-    const { name, description, duration, days } = req.body;
-    const newProgram = await Program.create({
-      name,
-      description,
-      duration,
-      days,
-      coachId: req.user.id,
-    });
-    res.status(201).json(newProgram);
-  } catch (error) {
-    res.status(500).json({ message: "Error creating program", error: error.message });
-  }
-};
 
-// Get all programs for the logged-in coach
-exports.getPrograms = async (req, res) => {
-  try {
-    const programs = await Program.find({ coachId: req.user.id });
-    res.status(200).json({ programs });
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving programs", error: error.message });
-  }
-};
 
-// Update a program
-exports.updateProgram = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedProgram = await Program.findByIdAndUpdate(
-      id,
-      { ...req.body },
-      { new: true }
-    );
-    res.status(200).json(updatedProgram);
-  } catch (error) {
-    res.status(500).json({ message: "Error updating program", error: error.message });
-  }
-};
 
-// Delete a program
-exports.deleteProgram = async (req, res) => {
-  try {
-    const { id } = req.params;
-    await Program.findByIdAndDelete(id);
-    res.status(200).json({ message: "Program deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting program", error: error.message });
-  }
-};
-
-// Assign a program to a client
-exports.assignProgram = async (req, res) => {
-  try {
-    const { programId, clientId } = req.body;
-    const client = await User.findById(clientId);
-    if (!client || client.role !== "user") {
-      return res.status(404).json({ message: "Client not found or invalid role" });
-    }
-
-    client.assignedPrograms = [...(client.assignedPrograms || []), programId];
-    await client.save();
-
-    res.status(200).json({ message: "Program assigned successfully", client });
-  } catch (error) {
-    res.status(500).json({ message: "Error assigning program", error: error.message });
-  }
-};
 
 // Get clients for a coach
 exports.getClients = async (req, res) => {
