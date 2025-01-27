@@ -73,6 +73,32 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
+    async function fetchUserData() {
+    const userId = getUserIdFromUrl();
+    try {
+        const response = await fetch(`https://kulvar.onrender.com/users/${userId}`, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+            },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Render user-specific data
+            document.getElementById('user-name').textContent = data.name;
+            // Populate other user details here
+        } else {
+            console.error('Error fetching user data:', data.message);
+        }
+    } catch (err) {
+        console.error('Error:', err);
+    }
+}
+
+// Call fetchUserData when the page loads
+fetchUserData();
+
 
 async function getUserPrograms() {
   const token = localStorage.getItem("token");

@@ -39,38 +39,41 @@
 
     <script>
         async function loginUser(event) {
-            event.preventDefault(); // Prevent form reload
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+    event.preventDefault(); // Prevent form reload
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-            try {
-                const response = await fetch('https://kulvar.onrender.com/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
-                });
+    try {
+        const response = await fetch('https://kulvar.onrender.com/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
 
-                const data = await response.json();
+        const data = await response.json();
 
-                if (response.ok) {
-                    // Save token and redirect based on role
-                    localStorage.setItem('token', data.token);
-                    if (data.role === 'user') {
-                        window.location.href = 'user_dashboard.html';
-                    } else if (data.role === 'coach') {
-                        window.location.href = 'coach_dashboard.html';
-                    }
-                } else {
-                    alert(`Hata: ${data.message}`);
-                }
-            } catch (err) {
-                console.error('Giriş hatası:', err);
-                alert('Giriş sırasında bir hata oluştu.');
+        if (response.ok) {
+            // Save token in localStorage
+            localStorage.setItem('token', data.token);
+
+            // Redirect based on role with ID
+            if (data.user.role === 'user') {
+                window.location.href = `user_dashboard.html?id=${data.user.id}`;
+            } else if (data.user.role === 'coach') {
+                window.location.href = `coach_dashboard.html?id=${data.user.id}`;
             }
+        } else {
+            alert(`Hata: ${data.message}`);
         }
+    } catch (err) {
+        console.error('Giriş hatası:', err);
+        alert('Giriş sırasında bir hata oluştu.');
+    }
+}
 
-        // Attach event listener to the form
-        document.getElementById('loginForm').addEventListener('submit', loginUser);
+// Attach event listener to the form
+document.getElementById('loginForm').addEventListener('submit', loginUser);
+
     </script>
 </body>
 </html>
