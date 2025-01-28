@@ -76,100 +76,107 @@
   const BASE_URL = "https://kulvar.onrender.com";
 
   // Extract User ID from URL
-  function getUserIdFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("id");
+function getUserIdFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("id");
+}
+
+  /// Fetch User Data
+async function fetchUserData() {
+  const userId = getUserIdFromUrl();
+  const token = localStorage.getItem("token");
+
+  if (!userId || !token) {
+    alert("User not authorized or ID missing");
+    window.location.href = "/login.html";
+    return;
   }
 
-  // Fetch User Data
-  async function fetchUserData() {
-    const userId = getUserIdFromUrl();
-    const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`${BASE_URL}/auth/${userId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    if (!userId || !token) {
-      alert("User not authorized or ID missing");
-      return;
+    const data = await response.json();
+
+    if (response.ok) {
+            // Populate user details
+      document.getElementById("user-name").textContent = data.name;
+      document.getElementById("user-email").textContent = data.email;
+    } else {
+      console.error("Error fetching user data:", data.message);
+      alert(`Error: ${data.message}`);
     }
+  } catch (error) {
+    console.error("Error during fetch:", error.message);
+    alert("An error occurred while fetching user data.");
+  }
+}
 
-    try {
-      const response = await fetch(`${BASE_URL}/users/${userId}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+ // Fetch User Programs
+async function getUserPrograms() {
+  const token = localStorage.getItem("token");
 
-      const data = await response.json();
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      if (response.ok) {
-        // Populate user details
-        document.getElementById("user-name").textContent = data.name;
-        document.getElementById("user-email").textContent = data.email;
+    const data = await response.json();
+
+    if (response.ok) {
+      const programList = document.getElementById("program-list");
+      if (data.programs.length === 0) {
+        programList.innerHTML = `<li>No programs assigned yet.</li>`;
       } else {
-        console.error("Error fetching user data:", data.message);
-        alert(`Error: ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error during fetch:", error);
-      alert("An error occurred while fetching user data.");
-    }
-  }
-
-  // Fetch User Programs
-  async function getUserPrograms() {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const programList = document.getElementById("program-list");
-        // Populate programs dynamically
         programList.innerHTML = data.programs
-          .map(program => `<li>${program.name} - ${program.duration} Hafta</li>`)
+          .map(program => `<li>${program.name} - ${program.duration} weeks</li>`)
           .join("");
-      } else {
-        console.error("Error fetching programs:", data.message);
       }
-    } catch (error) {
-      console.error("Error fetching programs:", error);
+    } else {
+      console.error("Error fetching programs:", data.message);
     }
+  } catch (error) {
+    console.error("Error fetching programs:", error.message);
   }
+}
 
-  // Fetch Notifications
-  async function fetchNotifications() {
-    const token = localStorage.getItem("token");
+// Fetch Notifications
+async function fetchNotifications() {
+  const token = localStorage.getItem("token");
 
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/notifications`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/notifications/user`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        const notificationList = document.getElementById("notification-list");
-        // Populate notifications dynamically
+    if (response.ok) {
+      const notificationList = document.getElementById("notification-list");
+      if (data.notifications.length === 0) {
+        notificationList.innerHTML = `<li>No notifications found.</li>`;
+      } else {
         notificationList.innerHTML = data.notifications
           .map(notification => `<li>${notification.message}</li>`)
           .join("");
-      } else {
-        console.error("Error fetching notifications:", data.message);
       }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
+    } else {
+      console.error("Error fetching notifications:", data.message);
     }
+  } catch (error) {
+    console.error("Error fetching notifications:", error.message);
   }
+}
 
   // Initialize Dashboard
   function initializeDashboard() {
