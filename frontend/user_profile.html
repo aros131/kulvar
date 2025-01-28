@@ -21,6 +21,8 @@
       <h3>Başarılar</h3>
       <ul id="achievements-list"></ul>
     </section>
+    <li><a href="#logout" onclick="logout()">Çıkış Yap</a></li>
+
   </main>
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
@@ -62,6 +64,25 @@ async function loadAchievements() {
 }
 
 loadUserProfile();
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "login.html"; // Redirect to login page
+}
+async function fetchProgressData() {
+  const response = await fetch(`${BASE_URL}/progress/${userId}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+
+  const data = await response.json();
+  if (response.ok) {
+    progressChart.data.labels = data.labels;
+    progressChart.data.datasets[0].data = data.progress;
+    progressChart.update();
+  } else {
+    console.error("Error fetching progress:", data.message);
+  }
+}
+fetchProgressData();
 
   </script>
   <style>
@@ -175,7 +196,19 @@ main {
   .profile-info p {
     font-size: 1rem;
   }
+}@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+  .dashboard-nav {
+    width: 100%;
+    text-align: center;
+  }
+  .dashboard-content {
+    padding: 10px;
+  }
 }
+
 
   </style>
 </body>

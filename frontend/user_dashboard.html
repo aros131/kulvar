@@ -72,98 +72,115 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const BASE_URL = "https://kulvar.onrender.com";
-    async function fetchUserData() {
-    const userId = getUserIdFromUrl();
-    try {
-        const response = await fetch(`https://kulvar.onrender.com/users/${userId}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`
-            },
-        });
+   
+  const BASE_URL = "https://kulvar.onrender.com";
 
-        const data = await response.json();
-
-        if (response.ok) {
-            // Render user-specific data
-            document.getElementById('user-name').textContent = data.name;
-            // Populate other user details here
-        } else {
-            console.error('Error fetching user data:', data.message);
-        }
-    } catch (err) {
-        console.error('Error:', err);
-    }
-}
-
-// Call fetchUserData when the page loads
-fetchUserData();
-
-
-async function getUserPrograms() {
-  const token = localStorage.getItem("token");
-  const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-  console.log("User programs:", data);
-}
-
-    // İlerleme Grafik Örneği
-    const ctx = document.getElementById('progressChart').getContext('2d');
-    const progressChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['1. Hafta', '2. Hafta', '3. Hafta', '4. Hafta'],
-        datasets: [{
-          label: 'Tamamlanan Egzersizler',
-          data: [3, 5, 7, 10],
-          backgroundColor: 'rgba(47, 87, 93, 0.5)',
-          borderColor: '#2F575D',
-          borderWidth: 2,
-        }]
-      }
-    });
-
-    // Dinamik veriler için yer tutucu
-    document.getElementById('user-name').textContent = 'Ahmet Yılmaz';
-    document.getElementById('user-email').textContent = 'ahmet@example.com';
-    document.getElementById('program-list').innerHTML = `
-      <li>Pilates Programı - %50 Tamamlandı</li>
-      <li>Yoga Programı - %30 Tamamlandı</li>
-    `;
-    document.getElementById('notification-list').innerHTML = `
-      <li>Koçunuz yeni bir mesaj gönderdi.</li>
-      <li>Bugünkü egzersizinizi tamamladınız mı?</li>
-    `;
-    document.getElementById("feedback-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const feedbackText = document.getElementById("feedback-text").value;
-  const rating = document.getElementById("feedback-rating").value;
-  const coachId = "dynamic-coach-id"; // Replace this with the actual coach ID
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${BASE_URL}/feedback`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ feedbackText, rating, coachId }),
-  });
-
-  if (response.ok) {
-    alert("Thank you for your feedback!");
-    document.getElementById("feedback-form").reset();
-  } else {
-    console.error("Failed to submit feedback");
+  // Extract User ID from URL
+  function getUserIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
   }
-});
+
+  // Fetch User Data
+  async function fetchUserData() {
+    const userId = getUserIdFromUrl();
+    const token = localStorage.getItem("token");
+
+    if (!userId || !token) {
+      alert("User not authorized or ID missing");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/users/${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Populate user details
+        document.getElementById("user-name").textContent = data.name;
+        document.getElementById("user-email").textContent = data.email;
+      } else {
+        console.error("Error fetching user data:", data.message);
+        alert(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error during fetch:", error);
+      alert("An error occurred while fetching user data.");
+    }
+  }
+
+  // Fetch User Programs
+  async function getUserPrograms() {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const programList = document.getElementById("program-list");
+        // Populate programs dynamically
+        programList.innerHTML = data.programs
+          .map(program => `<li>${program.name} - ${program.duration} Hafta</li>`)
+          .join("");
+      } else {
+        console.error("Error fetching programs:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching programs:", error);
+    }
+  }
+
+  // Fetch Notifications
+  async function fetchNotifications() {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/notifications`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const notificationList = document.getElementById("notification-list");
+        // Populate notifications dynamically
+        notificationList.innerHTML = data.notifications
+          .map(notification => `<li>${notification.message}</li>`)
+          .join("");
+      } else {
+        console.error("Error fetching notifications:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  }
+
+  // Initialize Dashboard
+  function initializeDashboard() {
+    fetchUserData(); // Fetch user details
+    getUserPrograms(); // Fetch programs
+    fetchNotifications(); // Fetch notifications
+  }
+
+  // Call initializeDashboard when the page loads
+  document.addEventListener("DOMContentLoaded", initializeDashboard);
+
 
   </script>
 </body>

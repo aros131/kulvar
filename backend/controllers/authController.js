@@ -87,11 +87,33 @@ exports.getUserProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      profilePicture: user.profilePicture,
+      profilePicture: user.profilePicture || null,
       specialization: user.specialization || null,
       fitnessGoals: user.fitnessGoals || null,
     });
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching profile", error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching profile", error: error.message });
   }
 };
+
+exports.getUserProfileById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      fitnessGoals: user.fitnessGoals || "Not specified",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user profile", error: error.message });
+  }
+};
+console.log("Exports from authController.js:", module.exports);
