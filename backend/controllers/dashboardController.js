@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Notification = require("../models/Notification");
 const Progress = require("../models/Progress");
 
+
 // Get clients for a coach
 exports.getClients = async (req, res) => {
   try {

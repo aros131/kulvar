@@ -2,13 +2,12 @@ const express = require("express");
 const router = express.Router();
 const protect = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
-
+const { sendNotification, getNotificationsForCoach, getNotificationsForUser } = require("../controllers/dashboardController");
 // Import dashboardController
 const { 
-  getAnalytics, 
-  sendNotification, 
-  getNotifications, 
-  getUserPrograms 
+  getUserPrograms,
+  getAnalyticsForCoach, 
+  getAnalyticsForUser 
 } = require("../controllers/dashboardController");
 
 // Route to fetch user-specific programs
