@@ -27,7 +27,13 @@
 
       </ul>
     </nav>
-
+    <main>
+      <img id="profile-picture" src="images/default.jpg" alt="Profil Resmi" width="150" />
+      <p>Ad Soyad: <span id="coach-name"></span></p>
+      <p>E-posta: <span id="coach-email"></span></p>
+      <p>Rol: <span id="coach-role"></span></p>
+      <p>Uzmanlık Alanı: <span id="coach-specialization"></span></p>
+    </main>
     <main class="dashboard-content">
       <!-- Programs Section -->
       <section id="programs">
@@ -41,7 +47,7 @@
         <h2>Müşterilerim</h2>
         <ul id="client-list"></ul>
       </section>
-      <section id="clients">
+     
         <h2>Müşterilerim</h2>
         <input type="text" id="search-clients" placeholder="Müşteri ara..." oninput="loadClients()" />
         <ul id="client-list"></ul>
@@ -89,7 +95,15 @@
 
   <script>
     
-  
+    const BASE_URL = "https://kulvar.onrender.com";
+
+// Fetch the token from localStorage
+const token = localStorage.getItem("token");
+
+// Check if token exists
+if (!token) {
+  alert("Oturum açılmamış! Lütfen giriş yapın.");
+  window.location.href = "login.html"; // Redirect to login page
 
   // Redirect to login if token is missing
   if (!token) {
@@ -168,8 +182,8 @@
       console.error("Error fetching clients:", error.message);
     }
   }
-  const BASE_URL = "https://kulvar.onrender.com";
-const token = localStorage.getItem("token");
+ 
+
 
 // Müşterileri getir (sayfalama ve arama ile)
 async function loadClients(page = 1) {
@@ -291,67 +305,65 @@ document.addEventListener("DOMContentLoaded", loadClients);
   }
 
   // Fetch Notifications Sent by the Coach
-  async function loadNotifications() {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/notifications/coach`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  async function fetchNotifications() {
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/notifications/user`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (response.ok) {
-        const notifications = await response.json();
-        const notificationList = document.getElementById("notification-list");
+    if (response.ok) {
+      const data = await response.json();
+      const notificationList = document.getElementById("notification-list");
 
-        if (notifications.length === 0) {
-          notificationList.innerHTML = `<li>No notifications sent yet.</li>`;
-        } else {
-          notificationList.innerHTML = notifications
-            .map((notification) => `<li>${notification.message}</li>`)
-            .join("");
-        }
+      if (data.notifications.length === 0) {
+        notificationList.innerHTML = `<li>Bildirim yok.</li>`;
       } else {
-        console.error("Error fetching notifications:", response.statusText);
-        alert("Failed to load notifications.");
+        notificationList.innerHTML = data.notifications
+          .map(notification => `<li>${notification.message}</li>`)
+          .join("");
       }
-    } catch (error) {
-      console.error("Error fetching notifications:", error.message);
-      alert("An error occurred while fetching notifications.");
+    } else {
+      console.error("Bildirimler alınamadı:", response.statusText);
     }
+  } catch (error) {
+    console.error("Hata:", error.message);
   }
-  async function loadFeedbacks() {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/feedbacks`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+}
 
-      if (response.ok) {
-        const { feedbacks } = await response.json();
-        const feedbackList = document.getElementById("feedback-list");
+ 
 
-        if (feedbacks.length === 0) {
-          feedbackList.innerHTML = `<li>No feedbacks received yet.</li>`;
-        } else {
-          feedbackList.innerHTML = feedbacks
-            .map(
-              (feedback) =>
-                `<li>
-                  <strong>${feedback.clientId.name} (${feedback.clientId.email}):</strong> ${feedback.feedbackText}
-                  <button onclick="markFeedbackAsRead('${feedback._id}')">Mark as Read</button>
-                  <button onclick="deleteFeedback('${feedback._id}')">Delete</button>
-                </li>`
-            )
-            .join("");
-        }
+async function loadFeedbacks() {
+  try {
+    const response = await fetch(`${BASE_URL}/feedback/coach`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.ok) {
+      const { feedbacks } = await response.json();
+      const feedbackList = document.getElementById("feedback-list");
+
+      if (feedbacks.length === 0) {
+        feedbackList.innerHTML = `<li>Henüz geri bildirim yok.</li>`;
       } else {
-        console.error("Error fetching feedbacks:", response.statusText);
+        feedbackList.innerHTML = feedbacks
+          .map(
+            (feedback) =>
+              `<li>
+                <strong>${feedback.clientId.name}:</strong> ${feedback.feedbackText}
+              </li>`
+          )
+          .join("");
       }
-    } catch (error) {
-      console.error("Error fetching feedbacks:", error.message);
+    } else {
+      console.error("Feedback alınamadı:", response.statusText);
     }
+  } catch (error) {
+    console.error("Hata:", error.message);
   }
+}
+
 
   async function markFeedbackAsRead(feedbackId) {
     try {

@@ -12,9 +12,11 @@
   </header>
   <main>
     <section class="profile-info">
-      <img src="default-avatar.png" alt="Profile Picture" id="profile-picture">
-      <h2 id="profile-name">Ad Soyad</h2>
-      <p id="profile-specialization">Uzmanlık: ...</p>
+      <img id="profile-picture" src="images/default.jpg" alt="Profil Resmi" width="150" />
+    <p>Ad Soyad: <span id="coach-name"></span></p>
+    <p>E-posta: <span id="coach-email"></span></p>
+    <p>Rol: <span id="coach-role"></span></p>
+    <p>Uzmanlık Alanı: <span id="coach-specialization"></span></p>
       <button onclick="editProfile()">Profili Düzenle</button>
     </section>
     <section class="feedback-section">
@@ -26,43 +28,42 @@
     const BASE_URL = "https://kulvar.onrender.com";
 const token = localStorage.getItem("token");
 
+
+
+if (!token) {
+  alert("Oturum açılmamış! Lütfen giriş yapın.");
+  window.location.href = "login.html";
+}
+
 // Fetch coach profile data
 async function loadCoachProfile() {
-  const response = await fetch(`${BASE_URL}/profile/coach`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (response.ok) {
-    const data = await response.json();
-    document.getElementById("profile-name").textContent = data.name;
-    document.getElementById("profile-specialization").textContent = `Uzmanlık: ${data.specialization}`;
-    document.getElementById("profile-picture").src = data.profilePicture || "default-avatar.png";
-
-    loadFeedback(); // Load feedback for the coach
-  } else {
-    console.error("Failed to load profile");
-  }
-}
-
-async function viewClientDetails(clientId) {
   try {
-    const response = await fetch(`${BASE_URL}/clients/${clientId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch(`${BASE_URL}/auth/profile`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    const client = await response.json();
+
     if (response.ok) {
-      alert(`Client: ${client.name}, Goals: ${client.fitnessGoals}`);
-      // Populate modal or redirect to a new page
+      const data = await response.json();
+      document.getElementById("coach-name").textContent = data.name;
+      document.getElementById("coach-email").textContent = data.email;
+      document.getElementById("coach-role").textContent = "Koç";
+      document.getElementById("coach-specialization").textContent =
+        data.specialization || "Belirtilmemiş";
+      document.getElementById("profile-picture").src =
+        data.profilePicture || "images/default.jpg";
     } else {
-      console.error("Error fetching client details:", client.message);
+      console.error("Profil verileri alınamadı");
     }
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("Hata oluştu:", error.message);
   }
 }
+
+
+document.addEventListener("DOMContentLoaded", loadCoachProfile);
 
 // Fetch feedback for the coach
 async function loadFeedback() {

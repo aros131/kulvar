@@ -12,7 +12,7 @@
   </header>
   <main>
     <section class="profile-info">
-      <img src="default-avatar.png" alt="Profile Picture" id="profile-picture">
+      <img src="images/default.jpg" alt="Profile Picture" id="profile-picture">
       <h2 id="profile-name">Ad Soyad</h2>
       <p id="fitness-goals">Fitness Hedefleri: ...</p>
       <button onclick="editProfile()">Profili Düzenle</button>
@@ -27,27 +27,40 @@
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
 const token = localStorage.getItem("token");
+if (!token) {
+  alert("Oturum açılmamış! Lütfen giriş yapın.");
+  window.location.href = "login.html";
+}
 
 // Fetch user profile data
 async function loadUserProfile() {
-  const response = await fetch(`${BASE_URL}/profile/user`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${BASE_URL}/auth/profile`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (response.ok) {
-    const data = await response.json();
-    document.getElementById("profile-name").textContent = data.name;
-    document.getElementById("fitness-goals").textContent = `Fitness Hedefleri: ${data.fitnessGoals}`;
-    document.getElementById("profile-picture").src = data.profilePicture || "default-avatar.png";
-
-    loadAchievements(); // Load achievements for the user
-  } else {
-    console.error("Failed to load profile");
+    if (response.ok) {
+      const data = await response.json();
+      document.getElementById("profile-name").textContent = data.name;
+      document.getElementById("fitness-goals").textContent =
+        `Fitness Hedefleri: ${data.fitnessGoals || "Belirtilmemiş"}`;
+      document.getElementById("profile-picture").src =
+        data.profilePicture || "images/default.jpg";
+    } else {
+      console.error("Profil verileri alınamadı");
+    }
+  } catch (error) {
+    console.error("Hata oluştu:", error.message);
   }
 }
+
+
+document.addEventListener("DOMContentLoaded", loadUserProfile);
+
+
 
 // Fetch achievements for the user
 async function loadAchievements() {
