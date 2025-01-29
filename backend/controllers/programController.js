@@ -1,70 +1,78 @@
 const Program = require("../models/Program");
 
-
-// Create a new program
+// 🟢 Create a new program
 exports.createProgram = async (req, res) => {
   try {
-    const { name, description, duration, dailySchedule, nutritionPlan, documents } = req.body;
+    const { name, description, duration, difficulty, nutritionPlan, dailySchedule } = req.body;
+    const coachId = req.user.id;
+    let documents = [];
 
-    // Create the program
+    if (req.files) {
+      documents = req.files.map(file => ({
+        name: file.originalname,
+        url: `/uploads/${file.filename}`,
+      }));
+    }
+
     const newProgram = await Program.create({
       name,
       description,
       duration,
-      dailySchedule,
+      difficulty,
+      coachId,
+      dailySchedule: JSON.parse(dailySchedule),
       nutritionPlan,
       documents,
-      coachId: req.user.id, // Authenticated coach
     });
+    const schedule = typeof dailySchedule === "string" ? JSON.parse(dailySchedule) : dailySchedule;
 
-    res.status(201).json({ message: "Program created successfully", program: newProgram });
+
+    res.status(201).json({ message: "Program başarıyla oluşturuldu", program: newProgram });
   } catch (error) {
-    res.status(500).json({ message: "Error creating program", error: error.message });
+    res.status(500).json({ message: "Program oluşturulamadı", error: error.message });
   }
-  if (!name || !duration) {
-    return res.status(400).json({ message: "Name and duration are required" });
-  }
-  
 };
 
-// Get all programs for the logged-in coach
+// 🟢 Get all programs for the logged-in coach
 exports.getPrograms = async (req, res) => {
   try {
-    const programs = await Program.find({ coachId: req.user.id }).sort({ createdAt: -1 });
+    const coachId = req.user.id;
+    const programs = await Program.find({ coachId }).sort({ createdAt: -1 });
     res.status(200).json({ programs });
   } catch (error) {
-    res.status(500).json({ message: "Error retrieving programs", error: error.message });
+    res.status(500).json({ message: "Programlar yüklenemedi", error: error.message });
   }
 };
 
-// Update an existing program
+
+// 🟢 Update a program
 exports.updateProgram = async (req, res) => {
   try {
     const { id } = req.params;
     const updatedProgram = await Program.findByIdAndUpdate(id, req.body, { new: true });
 
     if (!updatedProgram) {
-      return res.status(404).json({ message: "Program not found" });
+      return res.status(404).json({ message: "Program bulunamadı" });
     }
 
-    res.status(200).json({ message: "Program updated successfully", program: updatedProgram });
+    res.status(200).json({ message: "Program başarıyla güncellendi", program: updatedProgram });
   } catch (error) {
-    res.status(500).json({ message: "Error updating program", error: error.message });
+    res.status(500).json({ message: "Program güncellenirken hata oluştu", error: error.message });
   }
 };
 
-// Delete a program
+// 🟢 Delete a program
 exports.deleteProgram = async (req, res) => {
   try {
     const { id } = req.params;
     const deletedProgram = await Program.findByIdAndDelete(id);
 
     if (!deletedProgram) {
-      return res.status(404).json({ message: "Program not found" });
+      return res.status(404).json({ message: "Program bulunamadı" });
     }
 
-    res.status(200).json({ message: "Program deleted successfully" });
+    res.status(200).json({ message: "Program başarıyla silindi" });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting program", error: error.message });
+    res.status(500).json({ message: "Program silinirken hata oluştu", error: error.message });
   }
 };

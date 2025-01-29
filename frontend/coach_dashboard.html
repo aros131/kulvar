@@ -27,13 +27,13 @@
 
       </ul>
     </nav>
-    <main>
+    <section id="coach-info">
+      <h2>Koç Bilgileri</h2>
       <img id="profile-picture" src="images/default.jpg" alt="Profil Resmi" width="150" />
-      <p>Ad Soyad: <span id="coach-name"></span></p>
-      <p>E-posta: <span id="coach-email"></span></p>
-      <p>Rol: <span id="coach-role"></span></p>
-      <p>Uzmanlık Alanı: <span id="coach-specialization"></span></p>
-    </main>
+      <p><strong>Ad Soyad:</strong> <span id="coach-name">Yükleniyor...</span></p>
+      <p><strong>E-Posta:</strong> <span id="coach-email">Yükleniyor...</span></p>
+      <p><strong>Uzmanlık Alanı:</strong> <span id="coach-specialization">Yükleniyor...</span></p>
+    </section>
     <main class="dashboard-content">
       <!-- Programs Section -->
       <section id="programs">
@@ -121,36 +121,41 @@ if (!token) {
     return params.get("id");
   }
 
-  // Fetch Coach Data
-  async function fetchCoachData() {
-    const userId = getUserId();
-    if (!userId) {
-      alert("User ID missing. Please log in again.");
-      window.location.href = "/login.html";
-      return;
+ // Check if token exists
+if (!token) {
+  alert("Oturum açılmamış! Lütfen giriş yapın.");
+  window.location.href = "login.html"; // Redirect to login page
+}
+
+// Fetch Coach Profile Data for the Dashboard
+async function fetchCoachData() {
+  try {
+    const response = await fetch(`${BASE_URL}/auth/profile`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Koç bilgileri alınamadı");
     }
 
-    try {
-      const response = await fetch(`${BASE_URL}/auth/${userId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const data = await response.json();
 
-      if (response.ok) {
-        const coach = await response.json();
-        document.getElementById("coach-name").textContent = coach.name || "N/A";
-        document.getElementById("coach-email").textContent = coach.email || "N/A";
-      } else {
-        console.error("Error fetching coach data:", response.statusText);
-        alert("Failed to load coach data.");
-      }
-    } catch (error) {
-      console.error("Error fetching coach data:", error.message);
-      alert("An error occurred while fetching coach data.");
-    }
+    // Render coach data in the dashboard
+    document.getElementById("coach-name").textContent = data.name || "Bilinmiyor";
+    document.getElementById("coach-email").textContent = data.email || "Bilinmiyor";
+    document.getElementById("coach-specialization").textContent =
+      data.specialization || "Uzmanlık belirtilmemiş";
+
+    document.getElementById("profile-picture").src =
+      data.profilePicture || "images/default.jpg"; // Set default image if none exists
+  } catch (error) {
+    console.error("Hata:", error.message);
+    alert("Koç bilgileri yüklenirken hata oluştu.");
   }
+}
   async function loadClients() {
     try {
       const response = await fetch(`${BASE_URL}/dashboard/clients`, {

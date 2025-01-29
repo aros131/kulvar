@@ -6,13 +6,15 @@ const ProgramSchema = new mongoose.Schema({
   duration: { type: Number, required: true }, // Duration in weeks
   coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Linked coach
   assignedClients: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Clients assigned to this program
+  difficulty: { type: String, enum: ["Beginner", "Intermediate", "Advanced"], default: "Beginner" }, // NEW
+
   dailySchedule: [
     {
       day: { type: String, required: true }, // e.g., "Monday"
-      goals: { type: String }, // Overall goal for the day (e.g., "Strength Training")
+      goals: { type: String }, // Overall goal for the day
       exercises: [
         {
-          name: { type: String, required: true }, // Exercise name
+          name: { type: String, required: true },
           sets: { type: Number, default: 0 },
           reps: { type: Number, default: 0 },
           duration: { type: Number, default: 0 }, // In minutes
@@ -22,6 +24,7 @@ const ProgramSchema = new mongoose.Schema({
       ],
     },
   ],
+
   nutritionPlan: {
     tips: [{ type: String }], // Array of nutrition tips
     meals: [
@@ -32,12 +35,14 @@ const ProgramSchema = new mongoose.Schema({
       },
     ],
   },
+
   documents: [
     {
       name: { type: String }, // Document name (e.g., "Weekly Plan")
       url: { type: String }, // Link to document (PDFs, etc.)
     },
   ],
+
   feedback: [
     {
       clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -46,6 +51,7 @@ const ProgramSchema = new mongoose.Schema({
       date: { type: Date, default: Date.now },
     },
   ],
+
   progressTracking: {
     metrics: [
       {
@@ -60,6 +66,18 @@ const ProgramSchema = new mongoose.Schema({
       },
     ],
   },
+
+  completedDays: [ // NEW ✅
+    {
+      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      day: { type: String }, // e.g., "Monday"
+      completed: { type: Boolean, default: false },
+      dateCompleted: { type: Date },
+    },
+  ],
+
+  visibility: { type: String, enum: ["public", "private"], default: "private" }, // NEW ✅
+
   createdAt: { type: Date, default: Date.now },
 });
 

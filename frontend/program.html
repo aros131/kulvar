@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,32 +10,43 @@
   <header>
     <h1>Program Yönetimi</h1>
   </header>
+
   <main class="program-management">
     <!-- List of Existing Programs -->
     <section id="existing-programs">
       <h2>Mevcut Programlar</h2>
-      <ul id="program-list">
-        <!-- Programs will be dynamically rendered here -->
-        <li>
-          <span>Strength Training - 12 Hafta</span>
-          <button onclick="editProgram('programId')">Düzenle</button>
-          <button onclick="deleteProgram('programId')">Sil</button>
-        </li>
-      </ul>
+      <ul id="program-list"></ul>
     </section>
 
-    <!-- Program Creation/Editing Form -->
+    <!-- Program Creation Form -->
     <section id="program-form-section">
       <h2 id="form-title">Yeni Program Oluştur</h2>
       <form id="program-form">
         <label for="program-name">Program Adı:</label>
-        <input type="text" id="program-name" placeholder="Örneğin: Güçlenme Programı" required>
+        <input type="text" id="program-name" required>
 
         <label for="program-description">Açıklama:</label>
-        <textarea id="program-description" placeholder="Program açıklamasını girin" required></textarea>
+        <textarea id="program-description" required></textarea>
 
         <label for="program-duration">Süre (Hafta):</label>
-        <input type="number" id="program-duration" min="1" placeholder="Örneğin: 12" required>
+        <input type="number" id="program-duration" min="1" required>
+
+        <label for="program-difficulty">Zorluk Seviyesi:</label>
+        <select id="program-difficulty">
+          <option value="Beginner">Başlangıç</option>
+          <option value="Intermediate">Orta Seviye</option>
+          <option value="Advanced">İleri Seviye</option>
+        </select>
+
+        <h3>Günlük Egzersizler</h3>
+        <div id="daily-workouts"></div>
+        <button type="button" onclick="addWorkoutDay()">+ Gün Ekle</button>
+
+        <h3>Beslenme Planı</h3>
+        <textarea id="nutrition-plan" placeholder="Beslenme planını girin"></textarea>
+
+        <h3>Dosya Yükle</h3>
+        <input type="file" id="file-upload" multiple>
 
         <button type="submit" id="save-program-button">Kaydet</button>
       </form>
@@ -43,118 +54,57 @@
   </main>
 
   <script>
-    async function fetchPrograms() {
-  try {
-    const response = await fetch(`${BASE_URL}/programs/coach`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await response.json();
-    if (response.ok) {
-      renderPrograms(data.programs); // Pass API response to renderPrograms
-    } else {
-      console.error("Error fetching programs:", data.message);
-    }
-  } catch (error) {
-    console.error("Error fetching programs:", error.message);
-  }
-}
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+    let dailyWorkouts = [];
 
-    // Example data for demo purposes
-    const programs = [
-      { id: 1, name: "Strength Training", description: "Kas güçlendirme programı", duration: 12 },
-      { id: 2, name: "Yoga Programı", description: "Esneklik ve rahatlama", duration: 8 }
-    ];
-
-    // Render programs
-    function renderPrograms() {
-      const programList = document.getElementById("program-list");
-      programList.innerHTML = programs.map(program => `
-        <li>
-          <span>${program.name} - ${program.duration} Hafta</span>
-          <button onclick="editProgram(${program.id})">Düzenle</button>
-          <button onclick="deleteProgram(${program.id})">Sil</button>
-        </li>
-      `).join('');
+    function addWorkoutDay() {
+      const dayNumber = dailyWorkouts.length + 1;
+      const dayDiv = document.createElement("div");
+      dayDiv.innerHTML = `
+        <h4>Gün ${dayNumber}</h4>
+        <textarea id="day-${dayNumber}" placeholder="Egzersizleri girin (virgülle ayırın)"></textarea>
+      `;
+      document.getElementById("daily-workouts").appendChild(dayDiv);
+      dailyWorkouts.push({ day: dayNumber, exercises: [] });
     }
 
-    // Handle edit
-    function editProgram(id) {
-      const program = programs.find(p => p.id === id);
-      if (program) {
-        document.getElementById("program-name").value = program.name;
-        document.getElementById("program-description").value = program.description;
-        document.getElementById("program-duration").value = program.duration;
-        document.getElementById("form-title").textContent = "Programı Düzenle";
-        document.getElementById("save-program-button").onclick = () => saveProgram(id);
+    async function createProgram(event) {
+      event.preventDefault();
+      let schedule = dailyWorkouts.map((day, index) => ({
+        day: index + 1,
+        exercises: document.getElementById(`day-${index + 1}`).value.split(","),
+      }));
+
+      const formData = new FormData();
+      formData.append("name", document.getElementById("program-name").value);
+      formData.append("description", document.getElementById("program-description").value);
+      formData.append("duration", document.getElementById("program-duration").value);
+      formData.append("difficulty", document.getElementById("program-difficulty").value);
+      formData.append("nutritionPlan", document.getElementById("nutrition-plan").value);
+      formData.append("dailySchedule", JSON.stringify(schedule));
+
+      const fileInput = document.getElementById("file-upload");
+      for (let i = 0; i < fileInput.files.length; i++) {
+        formData.append("documents", fileInput.files[i]);
+      }
+
+      const response = await fetch(`${BASE_URL}/programs`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (response.ok) {
+        alert("Program başarıyla oluşturuldu!");
+        fetchPrograms();
       }
     }
 
-    // Handle save (create or edit)
-    function saveProgram(id = null) {
-      const name = document.getElementById("program-name").value;
-      const description = document.getElementById("program-description").value;
-      const duration = document.getElementById("program-duration").value;
-
-      if (id) {
-        // Edit existing program
-        const program = programs.find(p => p.id === id);
-        if (program) {
-          program.name = name;
-          program.description = description;
-          program.duration = duration;
-        }
-      } else {
-        // Create new program
-        const newProgram = {
-          id: programs.length + 1,
-          name,
-          description,
-          duration: parseInt(duration, 10)
-        };
-        programs.push(newProgram);
-      }
-
-      renderPrograms();
-      resetForm();
-    }
-
-    // Handle delete
-    function deleteProgram(id) {
-      const index = programs.findIndex(p => p.id === id);
-      if (index !== -1) {
-        programs.splice(index, 1);
-        renderPrograms();
-      }
-    }
-
-    // Reset form
-    function resetForm() {
-      document.getElementById("program-name").value = "";
-      document.getElementById("program-description").value = "";
-      document.getElementById("program-duration").value = "";
-      document.getElementById("form-title").textContent = "Yeni Program Oluştur";
-      document.getElementById("save-program-button").onclick = () => saveProgram();
-    }
-    function deleteProgram(id) {
-  if (confirm("Bu programı silmek istediğinize emin misiniz?")) {
-    // Proceed with deletion
-    // Call delete API here
-  }
-}
-async function createProgram() {
-  document.getElementById("save-program-button").textContent = "Kaydediliyor...";
-  // Call API
-  document.getElementById("save-program-button").textContent = "Kaydet";
-}
-
-    // Initialize
-    renderPrograms();
-
-
-
+    document.getElementById("program-form").addEventListener("submit", createProgram);
   </script>
+
+
 
   <style>
 
