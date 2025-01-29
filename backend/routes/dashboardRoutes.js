@@ -5,7 +5,11 @@ const roleMiddleware = require("../middleware/roleMiddleware");
 const { sendNotification, getNotificationsForCoach, getNotificationsForUser } = require("../controllers/dashboardController");
 // Import dashboardController
 const { 
-  getUserPrograms,
+  getClients,
+  getClientDetails,
+  getFeedbacks,
+  markFeedbackAsRead,
+  deleteFeedback,getUserPrograms,
   getAnalyticsForCoach, 
   getAnalyticsForUser 
 } = require("../controllers/dashboardController");
@@ -21,5 +25,12 @@ router.get("/analytics/user", protect, roleMiddleware(["user"]), getAnalyticsFor
 router.post("/notifications", protect, roleMiddleware(["coach"]), sendNotification); // Send notification (coach only)
 router.get("/notifications/coach", protect, roleMiddleware(["coach"]), getNotificationsForCoach); // Get notifications sent by a coach
 router.get("/notifications/user", protect, roleMiddleware(["user"]), getNotificationsForUser); // Get notifications for a user
+
+router.get("/clients", protect, roleMiddleware(["coach"]), getClients);
+router.get("/clients/:id", protect, roleMiddleware(["coach"]), getClientDetails);
+
+router.get("/feedbacks", protect, roleMiddleware(["coach"]), getFeedbacks);
+router.post("/feedbacks/read/:id", protect, roleMiddleware(["coach"]), markFeedbackAsRead);
+router.delete("/feedbacks/:id", protect, roleMiddleware(["coach"]), deleteFeedback);
 
 module.exports = router;

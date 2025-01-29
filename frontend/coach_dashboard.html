@@ -32,7 +32,7 @@
       <!-- Programs Section -->
       <section id="programs">
         <h2>Programlarım</h2>
-        <a href="programs.html" class="btn">Yeni Program Ekle/Düzenle</a>
+        <a href="program.html" class="btn">Yeni Program Ekle/Düzenle</a>
         <ul id="program-list"></ul>
       </section>
 
@@ -41,6 +41,20 @@
         <h2>Müşterilerim</h2>
         <ul id="client-list"></ul>
       </section>
+      <section id="clients">
+        <h2>Müşterilerim</h2>
+        <input type="text" id="search-clients" placeholder="Müşteri ara..." oninput="loadClients()" />
+        <ul id="client-list"></ul>
+      </section>
+      <div id="client-details-modal" class="modal hidden">
+        <div class="modal-content">
+          <h2 id="client-name">Müşteri Adı</h2>
+          <p>E-posta: <span id="client-email"></span></p>
+          <p>Hedefler: <span id="client-goals"></span></p>
+          <button onclick="closeModal()">Kapat</button>
+        </div>
+      </div>
+      
 
       <!-- Groups Section -->
       <section id="groups">
@@ -57,7 +71,14 @@
         <h2>Analizler</h2>
         <canvas id="analyticsChart"></canvas>
       </section>
-
+      
+      <section id="feedbacks">
+        <h2>Feedbacks</h2>
+        <ul id="feedback-list">
+          <!-- Dynamically populated -->
+        </ul>
+      </section>
+      
       <!-- Notifications Section -->
       <section id="notifications">
         <h2>Bildirimler</h2>
@@ -67,167 +88,348 @@
   </div>
 
   <script>
-    const BASE_URL = "https://kulvar.onrender.com";
+    
+  
+
+  // Redirect to login if token is missing
+  if (!token) {
+    alert("You are not authorized. Please log in.");
+    window.location.href = "/login.html";
+  }
+
+  // Get user ID from localStorage or URL
+  function getUserId() {
+    const userId = localStorage.getItem("userId"); // Check localStorage first
+    if (userId) return userId;
+
+    // Fallback to extracting from URL
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
+  }
+
+  // Fetch Coach Data
+  async function fetchCoachData() {
+    const userId = getUserId();
+    if (!userId) {
+      alert("User ID missing. Please log in again.");
+      window.location.href = "/login.html";
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/auth/${userId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const coach = await response.json();
+        document.getElementById("coach-name").textContent = coach.name || "N/A";
+        document.getElementById("coach-email").textContent = coach.email || "N/A";
+      } else {
+        console.error("Error fetching coach data:", response.statusText);
+        alert("Failed to load coach data.");
+      }
+    } catch (error) {
+      console.error("Error fetching coach data:", error.message);
+      alert("An error occurred while fetching coach data.");
+    }
+  }
+  async function loadClients() {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/clients`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const { clients } = await response.json();
+        const clientList = document.getElementById("client-list");
+
+        if (clients.length === 0) {
+          clientList.innerHTML = `<li>No clients assigned yet.</li>`;
+        } else {
+          clientList.innerHTML = clients
+            .map(
+              (client) =>
+                `<li>
+                  ${client.name} (${client.email}) - ${client.fitnessGoals || "No goals set"}
+                  <button onclick="viewClientDetails('${client._id}')">View Details</button>
+                </li>`
+            )
+            .join("");
+        }
+      } else {
+        console.error("Error fetching clients:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching clients:", error.message);
+    }
+  }
+  const BASE_URL = "https://kulvar.onrender.com";
 const token = localStorage.getItem("token");
 
-// Load programs
-async function loadPrograms() {
-  const response = await fetch(`${BASE_URL}/dashboard/programs`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+// Müşterileri getir (sayfalama ve arama ile)
+async function loadClients(page = 1) {
+  const searchQuery = document.getElementById("search-clients").value;
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/clients?page=${page}&search=${searchQuery}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  const programs = await response.json();
-  const programList = document.getElementById("program-list");
-  programs.forEach((program) => {
-    const li = document.createElement("li");
-    li.textContent = `${program.name} (${program.duration} gün)`;
-    programList.appendChild(li);
-  });
-}
-
-// Load clients
-async function loadClients() {
-  const response = await fetch(`${BASE_URL}/dashboard/clients`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const clients = await response.json();
-  const clientList = document.getElementById("client-list");
-  clients.forEach((client) => {
-    const li = document.createElement("li");
-    li.textContent = `${client.name} - ${client.email}`;
-    clientList.appendChild(li);
-  });
-}
-
-// Load groups
-async function loadGroups() {
-  const response = await fetch(`${BASE_URL}/groups`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const groups = await response.json();
-  const groupList = document.getElementById("group-list");
-  groups.forEach((group) => {
-    const li = document.createElement("li");
-    li.textContent = `${group.name} (${group.clientIds.length} üyeler)`;
-    groupList.appendChild(li);
-  });
-}
-
-// Create group
-document.getElementById("group-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name = document.getElementById("group-name").value;
-
-  const response = await fetch(`${BASE_URL}/groups`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ name }),
-  });
-
-  if (response.ok) {
-    alert("Grup başarıyla oluşturuldu!");
-    loadGroups();
-  } else {
-    alert("Grup oluşturulamadı!");
+    const data = await response.json();
+    if (response.ok) {
+      const clientList = document.getElementById("client-list");
+      clientList.innerHTML = data.clients
+        .map(
+          (client) => `
+        <li>
+          ${client.name} (${client.email})
+          <button onclick="viewClientDetails('${client._id}')">Detay Gör</button>
+        </li>`
+        )
+        .join("");
+    } else {
+      console.error("Müşteriler yüklenirken hata oluştu:", data.message);
+    }
+  } catch (error) {
+    console.error("Hata:", error.message);
   }
-});
+}
 
-// Load analytics
-async function loadAnalytics() {
-  const response = await fetch(`${BASE_URL}/analytics`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+// Müşteri detaylarını getir ve modalda göster
+async function viewClientDetails(clientId) {
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/clients/${clientId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  const analytics = await response.json();
-  const labels = analytics.map((item) => item.programName);
-  const completionRates = analytics.map((item) => item.completionRate);
+    const client = await response.json();
+    if (response.ok) {
+      document.getElementById("client-name").textContent = client.name;
+      document.getElementById("client-email").textContent = client.email;
+      document.getElementById("client-goals").textContent = client.fitnessGoals || "Belirtilmemiş";
+      document.getElementById("client-details-modal").classList.remove("hidden");
+    } else {
+      console.error("Müşteri detayları alınırken hata oluştu:", client.message);
+    }
+  } catch (error) {
+    console.error("Hata:", error.message);
+  }
+}
 
-  new Chart(document.getElementById("analyticsChart"), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Tamamlama Oranı (%)",
-          data: completionRates,
-          backgroundColor: "rgba(75, 192, 192, 0.2)",
-          borderColor: "rgba(75, 192, 192, 1)",
-          borderWidth: 1,
+// Modalı kapat
+function closeModal() {
+  document.getElementById("client-details-modal").classList.add("hidden");
+}
+
+// Sayfa yüklendiğinde müşterileri getir
+document.addEventListener("DOMContentLoaded", loadClients);
+
+
+  // Call loadClients within the dashboard initialization
+  document.addEventListener("DOMContentLoaded", loadClients);
+
+  // Fetch Programs Created by the Coach
+  async function loadPrograms() {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/programs/coach`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      ],
-    },
-    options: {
-      scales: {
-        y: { beginAtZero: true },
-      },
-    },
-  });
-}
+      });
 
-// Load notifications
-async function loadNotifications() {
-  const response = await fetch(`${BASE_URL}/notifications`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+      if (response.ok) {
+        const programs = await response.json();
+        const programList = document.getElementById("program-list");
 
-  const notifications = await response.json();
-  const notificationList = document.getElementById("notification-list");
-  notifications.forEach((notification) => {
-    const li = document.createElement("li");
-    li.textContent = notification.message;
-    notificationList.appendChild(li);
-  });
-}
-async function fetchCoachFeedback() {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${BASE_URL}/feedback/coach`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (response.ok) {
-    const feedback = await response.json();
-    displayFeedback(feedback);
-  } else {
-    console.error("Failed to fetch feedback");
+        if (programs.length === 0) {
+          programList.innerHTML = `<li>No programs created yet.</li>`;
+        } else {
+          programList.innerHTML = programs
+            .map(
+              (program) =>
+                `<li>${program.name} - ${program.duration} weeks</li>`
+            )
+            .join("");
+        }
+      } else {
+        console.error("Error fetching programs:", response.statusText);
+        alert("Failed to load programs.");
+      }
+    } catch (error) {
+      console.error("Error fetching programs:", error.message);
+      alert("An error occurred while fetching programs.");
+    }
   }
+
+  // Fetch Analytics for the Coach
+  async function loadAnalytics() {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/analytics/coach`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const { totalClients, totalPrograms } = await response.json();
+        document.getElementById("total-clients").textContent = totalClients || 0;
+        document.getElementById("total-programs").textContent = totalPrograms || 0;
+      } else {
+        console.error("Error fetching analytics:", response.statusText);
+        alert("Failed to load analytics.");
+      }
+    } catch (error) {
+      console.error("Error fetching analytics:", error.message);
+      alert("An error occurred while fetching analytics.");
+    }
+  }
+
+  // Fetch Notifications Sent by the Coach
+  async function loadNotifications() {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/notifications/coach`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const notifications = await response.json();
+        const notificationList = document.getElementById("notification-list");
+
+        if (notifications.length === 0) {
+          notificationList.innerHTML = `<li>No notifications sent yet.</li>`;
+        } else {
+          notificationList.innerHTML = notifications
+            .map((notification) => `<li>${notification.message}</li>`)
+            .join("");
+        }
+      } else {
+        console.error("Error fetching notifications:", response.statusText);
+        alert("Failed to load notifications.");
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error.message);
+      alert("An error occurred while fetching notifications.");
+    }
+  }
+  async function loadFeedbacks() {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/feedbacks`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const { feedbacks } = await response.json();
+        const feedbackList = document.getElementById("feedback-list");
+
+        if (feedbacks.length === 0) {
+          feedbackList.innerHTML = `<li>No feedbacks received yet.</li>`;
+        } else {
+          feedbackList.innerHTML = feedbacks
+            .map(
+              (feedback) =>
+                `<li>
+                  <strong>${feedback.clientId.name} (${feedback.clientId.email}):</strong> ${feedback.feedbackText}
+                  <button onclick="markFeedbackAsRead('${feedback._id}')">Mark as Read</button>
+                  <button onclick="deleteFeedback('${feedback._id}')">Delete</button>
+                </li>`
+            )
+            .join("");
+        }
+      } else {
+        console.error("Error fetching feedbacks:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching feedbacks:", error.message);
+    }
+  }
+
+  async function markFeedbackAsRead(feedbackId) {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/feedbacks/read/${feedbackId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        alert("Feedback marked as read.");
+        loadFeedbacks(); // Reload feedbacks
+      } else {
+        console.error("Error marking feedback as read:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error marking feedback as read:", error.message);
+    }
+  }
+
+  async function deleteFeedback(feedbackId) {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/feedbacks/${feedbackId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        alert("Feedback deleted successfully.");
+        loadFeedbacks(); // Reload feedbacks
+      } else {
+        console.error("Error deleting feedback:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting feedback:", error.message);
+    }
+  }
+
+  // Call loadFeedbacks within the dashboard initialization
+  document.addEventListener("DOMContentLoaded", loadFeedbacks);
+  // Initialize Coach Dashboard
+  function initializeCoachDashboard() {
+  fetchCoachData(); // Fetch profile
+  loadPrograms(); // Fetch programs
+  loadAnalytics(); // Fetch analytics
+  loadNotifications(); // Fetch notifications
+  loadClients(); // Fetch clients
+  loadFeedbacks(); // Fetch feedbacks
 }
 
-// Display feedback
-function displayFeedback(feedbackList) {
-  const feedbackSection = document.querySelector("#coach-feedback");
-  feedbackSection.innerHTML = "";
 
-  feedbackList.forEach((feedback) => {
-    const div = document.createElement("div");
-    div.classList.add("feedback-item");
-    div.innerHTML = `
-      <p><strong>Comment:</strong> ${feedback.feedbackText}</p>
-      <p><strong>Rating:</strong> ${feedback.rating} Stars</p>
-      <p><strong>User:</strong> ${feedback.userId}</p>
-    `;
-    feedbackSection.appendChild(div);
-  });
-}
-
-// Load all data on page load
-loadPrograms();
-loadClients();
-loadGroups();
-loadAnalytics();
-loadNotifications();
+  // Load Data When Page is Ready
+  document.addEventListener("DOMContentLoaded", initializeCoachDashboard);
 
   </script>
   <style>
     /* General Styles */
+    .modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 500px;
+}
+.modal.hidden {
+  display: none;
+}
+
 body {
   font-family: 'Roboto', sans-serif;
   margin: 0;

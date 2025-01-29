@@ -1,5 +1,16 @@
 const ClientGroup = require("../models/ClientGroup");
 const User = require("../models/User");
+exports.getClientDetails = async (req, res) => {
+  try {
+    const client = await User.findById(req.params.id).select("-password");
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+    res.status(200).json(client);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching client details", error: error.message });
+  }
+};
 
 exports.addClientToGroup = async (req, res) => {
   try {

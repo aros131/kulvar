@@ -43,6 +43,24 @@
   </main>
 
   <script>
+    async function fetchPrograms() {
+  try {
+    const response = await fetch(`${BASE_URL}/programs/coach`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    if (response.ok) {
+      renderPrograms(data.programs); // Pass API response to renderPrograms
+    } else {
+      console.error("Error fetching programs:", data.message);
+    }
+  } catch (error) {
+    console.error("Error fetching programs:", error.message);
+  }
+}
+
     // Example data for demo purposes
     const programs = [
       { id: 1, name: "Strength Training", description: "Kas güçlendirme programı", duration: 12 },
@@ -119,12 +137,37 @@
       document.getElementById("form-title").textContent = "Yeni Program Oluştur";
       document.getElementById("save-program-button").onclick = () => saveProgram();
     }
+    function deleteProgram(id) {
+  if (confirm("Bu programı silmek istediğinize emin misiniz?")) {
+    // Proceed with deletion
+    // Call delete API here
+  }
+}
+async function createProgram() {
+  document.getElementById("save-program-button").textContent = "Kaydediliyor...";
+  // Call API
+  document.getElementById("save-program-button").textContent = "Kaydet";
+}
 
     // Initialize
     renderPrograms();
+
+
+
   </script>
 
   <style>
+
+@media (max-width: 768px) {
+  main {
+    flex-direction: column;
+  }
+  li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
     /* Basic styling for demo purposes */
     body {
       font-family: Arial, sans-serif;

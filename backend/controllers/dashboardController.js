@@ -3,18 +3,44 @@ const User = require("../models/User");
 const Notification = require("../models/Notification");
 const Progress = require("../models/Progress");
 
-
-// Get clients for a coach
+// Get all clients for the coach
 exports.getClients = async (req, res) => {
   try {
-    const clients = await User.find({ coachId: req.user.id, role: "user" });
-    res.status(200).json({ clients });
+    const { page = 1, limit = 10, search = "" } = req.query;
+    const coachId = req.user.id;
+
+    // Filter clients by search keyword (if provided)
+    const query = {
+      coachId,
+      role: "user",
+      name: { $regex: search, $options: "i" }, // Case-insensitive search
+    };
+
+    const clients = await User.find(query)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .select("-password");
+
+    const totalClients = await User.countDocuments(query);
+
+    res.status(200).json({ clients, totalClients });
   } catch (error) {
-    console.error("Error retrieving clients:", error.message);
-    res.status(500).json({ message: "Error retrieving clients", error: error.message });
+    res.status(500).json({ message: "Error fetching clients", error: error.message });
   }
 };
 
+// Get details of a specific client
+exports.getClientDetails = async (req, res) => {
+  try {
+    const client = await User.findById(req.params.id).select("-password");
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+    res.status(200).json(client);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching client details", error: error.message });
+  }
+};
 // Get progress for a specific client
 exports.getClientProgress = async (req, res) => {
   try {
@@ -166,5 +192,50 @@ exports.getGroups = async (req, res) => {
   } catch (error) {
     console.error("Error retrieving groups:", error.message);
     res.status(500).json({ message: "Error retrieving groups", error: error.message });
+  }
+};
+const Feedback = require("../models/Feedback");
+
+exports.getFeedbacks = async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find({ coachId: req.user.id }).populate("clientId", "name email");
+
+    if (!feedbacks || feedbacks.length === 0) {
+      return res.status(404).json({ message: "No feedbacks found" });
+    }
+
+    res.status(200).json({ feedbacks });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching feedbacks", error: error.message });
+  }
+};
+
+exports.markFeedbackAsRead = async (req, res) => {
+  try {
+    const feedbackId = req.params.id;
+    const feedback = await Feedback.findByIdAndUpdate(feedbackId, { isRead: true }, { new: true });
+
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    res.status(200).json({ feedback });
+  } catch (error) {
+    res.status(500).json({ message: "Error marking feedback as read", error: error.message });
+  }
+};
+
+exports.deleteFeedback = async (req, res) => {
+  try {
+    const feedbackId = req.params.id;
+    const feedback = await Feedback.findByIdAndDelete(feedbackId);
+
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    res.status(200).json({ message: "Feedback deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting feedback", error: error.message });
   }
 };

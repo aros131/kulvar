@@ -47,6 +47,23 @@ async function loadCoachProfile() {
   }
 }
 
+async function viewClientDetails(clientId) {
+  try {
+    const response = await fetch(`${BASE_URL}/clients/${clientId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const client = await response.json();
+    if (response.ok) {
+      alert(`Client: ${client.name}, Goals: ${client.fitnessGoals}`);
+      // Populate modal or redirect to a new page
+    } else {
+      console.error("Error fetching client details:", client.message);
+    }
+  } catch (error) {
+    console.error("Error:", error.message);
+  }
+}
+
 // Fetch feedback for the coach
 async function loadFeedback() {
   const response = await fetch(`${BASE_URL}/feedback/coach`, {

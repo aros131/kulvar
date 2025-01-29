@@ -1,5 +1,6 @@
 const Program = require("../models/Program");
 
+
 // Create a new program
 exports.createProgram = async (req, res) => {
   try {
@@ -20,6 +21,10 @@ exports.createProgram = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Error creating program", error: error.message });
   }
+  if (!name || !duration) {
+    return res.status(400).json({ message: "Name and duration are required" });
+  }
+  
 };
 
 // Get all programs for the logged-in coach
