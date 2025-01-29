@@ -8,7 +8,9 @@ const {
     getPrograms,
   } = require("../controllers/programController"); 
 // Program management routes
-
+// ✅ Import Multer (Fix the error)
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" }); // Change the folder if needed
 router.get("/", protect, roleMiddleware(["coach"]), programController.getPrograms);
 router.put("/:id", protect, roleMiddleware(["coach"]), programController.updateProgram);
 router.delete("/:id", protect, roleMiddleware(["coach"]), programController.deleteProgram);
