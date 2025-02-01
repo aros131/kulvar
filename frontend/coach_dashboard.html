@@ -28,16 +28,18 @@
         <li><a href="notifications.html">🔔 Bildirimler</a></li>
         <li><a href="messages.html">💬 Mesajlar</a></li>
         <li><a href="payments.html">💰 Ödemeler</a></li>
-        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+        <li><a href="#" onclick="logout()">🚪 Çıkış Yap</a></li>
+
     </ul>
     
     </nav>
-    <section id="coach-info">
-      <h2>Koç Bilgileri</h2>
+    <section class="profile-info">
       <img id="profile-picture" src="images/default.jpg" alt="Profil Resmi" width="150" />
-      <p><strong>Ad Soyad:</strong> <span id="coach-name">Yükleniyor...</span></p>
-      <p><strong>E-Posta:</strong> <span id="coach-email">Yükleniyor...</span></p>
-      <p><strong>Uzmanlık Alanı:</strong> <span id="coach-specialization">Yükleniyor...</span></p>
+    <p>Ad Soyad: <span id="coach-name"></span></p>
+    <p>E-posta: <span id="coach-email"></span></p>
+    <p>Rol: <span id="coach-role"></span></p>
+    <p>Uzmanlık Alanı: <span id="coach-specialization"></span></p>
+      <button onclick="editProfile()">Profili Düzenle</button>
     </section>
     <main class="dashboard-content">
       <!-- Programs Section -->
@@ -138,96 +140,33 @@ if (!token) {
   window.location.href = "login.html"; // Redirect to login page
 }
 
-// Fetch Coach Profile Data for the Dashboard
-async function fetchCoachData() {
+// Fetch coach profile data
+async function loadCoachProfile() {
   try {
     const response = await fetch(`${BASE_URL}/auth/profile`, {
       method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (response.ok) {
       const data = await response.json();
-
-      // Set profile data, use default values if missing
-      document.getElementById("coach-name").textContent = data.name || "Koç Bilgisi Eksik";
-      document.getElementById("coach-email").textContent = data.email || "E-posta Yok";
+      document.getElementById("coach-name").textContent = data.name;
+      document.getElementById("coach-email").textContent = data.email;
+      document.getElementById("coach-role").textContent = "Koç";
       document.getElementById("coach-specialization").textContent =
-        data.specialization || "Uzmanlık belirtilmemiş";
-
-      // Handle profile picture
+        data.specialization || "Belirtilmemiş";
       document.getElementById("profile-picture").src =
-        data.profilePicture || "images/default.jpg"; 
+        data.profilePicture || "images/default.jpg";
     } else {
-      console.error("Koç bilgileri alınamadı:", response.statusText);
-      alert("Koç bilgileri alınamadı!");
+      console.error("Profil verileri alınamadı");
     }
   } catch (error) {
-    console.error("Hata:", error.message);
-    alert("Koç bilgileri yüklenirken hata oluştu.");
-  }
-  async function fetchCoachDashboardData() {
-  try {
-    const [profileRes, analyticsRes, clientsRes, programsRes] = await Promise.all([
-      fetch(`${BASE_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${BASE_URL}/dashboard/analytics/coach`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${BASE_URL}/dashboard/clients`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${BASE_URL}/dashboard/user-programs`, { headers: { Authorization: `Bearer ${token}` } })
-    ]);
-
-    const profileData = await profileRes.json();
-    const analyticsData = await analyticsRes.json();
-    const clientsData = await clientsRes.json();
-    const programsData = await programsRes.json();
-
-    if (profileRes.ok) {
-      document.getElementById("coach-name").textContent = profileData.name || "Bilinmiyor";
-      document.getElementById("coach-email").textContent = profileData.email || "Bilinmiyor";
-      document.getElementById("coach-specialization").textContent = profileData.specialization || "Uzmanlık belirtilmemiş";
-      document.getElementById("profile-picture").src = profileData.profilePicture || "images/default.jpg";
-    }
-
-    if (analyticsRes.ok) {
-      document.getElementById("total-clients").textContent = analyticsData.totalClients || 0;
-      document.getElementById("total-programs").textContent = analyticsData.totalPrograms || 0;
-    }
-
-    if (clientsRes.ok) {
-      document.getElementById("client-list").innerHTML = clientsData.clients
-        .map(client => `<li>${client.name} (${client.email})</li>`)
-        .join("");
-    }
-
-    if (programsRes.ok) {
-      document.getElementById("program-list").innerHTML = programsData.programs
-        .map(program => `<li>${program.name} - ${program.duration} hafta</li>`)
-        .join("");
-    }
-  } catch (error) {
-    console.error("Dashboard verileri alınamadı:", error.message);
-    alert("Dashboard yüklenirken hata oluştu!");
+    console.error("Hata oluştu:", error.message);
   }
 }
 
-// Load all data when the page is ready
-document.addEventListener("DOMContentLoaded", fetchCoachDashboardData);
-
-
-
-
-    // Render coach data in the dashboard
-    document.getElementById("coach-name").textContent = data.name || "Bilinmiyor";
-    document.getElementById("coach-email").textContent = data.email || "Bilinmiyor";
-    document.getElementById("coach-specialization").textContent =
-      data.specialization || "Uzmanlık belirtilmemiş";
-
-    document.getElementById("profile-picture").src =
-      data.profilePicture || "images/default.jpg"; // Set default image if none exists
-  } catch (error) {
-    console.error("Hata:", error.message);
-    alert("Koç bilgileri yüklenirken hata oluştu.");
-  }
-}
 async function loadClients(page = 1) {
   const searchQuery = document.getElementById("search-clients")?.value || "";
 
@@ -495,6 +434,11 @@ async function loadPrograms() {
     console.error("Error fetching programs:", error.message);
     alert("Programları yüklerken bir hata oluştu.");
   }
+}
+function logout() {
+  localStorage.removeItem("token"); // Remove stored token
+  localStorage.removeItem("userId"); // Remove user ID if stored
+  window.location.href = "login.html"; // Redirect to login page
 }
 
 
