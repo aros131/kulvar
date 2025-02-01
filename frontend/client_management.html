@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Müşteri Yönetimi</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="dashboard-nav">
+      <h2>Müşteri Yönetimi</h2>
+      <ul>
+        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+        <li><a href="client_management.html" class="active">👥 Müşterilerim</a></li>
+        <li><a href="program.html">📋 Programlarım</a></li>
+        <li><a href="exercise_templates.html">🏋️ Egzersiz Şablonları</a></li>
+        <li><a href="progress_tracking.html">📊 İlerleme</a></li>
+        <li><a href="messages.html">💬 Mesajlar</a></li>
+        <li><a href="payments.html">💰 Ödemeler</a></li>
+        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+      </ul>
+    </nav>
+
+    <main class="dashboard-content">
+      <h2>Müşterilerim</h2>
+      
+      <!-- Client Search -->
+      <input type="text" id="search-clients" placeholder="Müşteri ara..." oninput="loadClients()">
+      
+      <!-- Client List -->
+      <ul id="client-list"></ul>
+
+      <!-- Assign Program to Client -->
+      <h3>Programa Ata</h3>
+      <form id="assign-program-form">
+        <select id="client-select">
+          <option value="">Müşteri Seç</option>
+        </select>
+        <select id="program-select">
+          <option value="">Program Seç</option>
+        </select>
+        <button type="submit">Ata</button>
+      </form>
+
+      <!-- Create & Manage Groups -->
+      <h3>Grupları Yönet</h3>
+      <form id="create-group-form">
+        <input type="text" id="group-name" placeholder="Grup Adı" required>
+        <button type="submit">Grup Oluştur</button>
+      </form>
+      <ul id="group-list"></ul>
+
+      <!-- Client Progress -->
+      <h3>Müşteri İlerlemesi</h3>
+      <canvas id="progressChart"></canvas>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+
+    // Load Clients
+    async function loadClients() {
+      const searchQuery = document.getElementById("search-clients").value;
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/clients?search=${searchQuery}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          const clientList = document.getElementById("client-list");
+          clientList.innerHTML = data.clients
+            .map(client => `<li>${client.name} (${client.email})</li>`)
+            .join("");
+
+          // Populate dropdown
+          const clientSelect = document.getElementById("client-select");
+          clientSelect.innerHTML = data.clients
+            .map(client => `<option value="${client._id}">${client.name}</option>`)
+            .join("");
+        } else {
+          console.error("Müşteriler yüklenemedi:", data.message);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Load Programs for Assignment
+    async function loadPrograms() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/programs`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          const programSelect = document.getElementById("program-select");
+          programSelect.innerHTML = data.programs
+            .map(program => `<option value="${program._id}">${program.name}</option>`)
+            .join("");
+        } else {
+          console.error("Programlar yüklenemedi:", data.message);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Assign Program to Client
+    document.getElementById("assign-program-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const clientId = document.getElementById("client-select").value;
+      const programId = document.getElementById("program-select").value;
+
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/assign-program`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ clientId, programId })
+        });
+
+        if (response.ok) {
+          alert("Program başarıyla atandı.");
+        } else {
+          console.error("Program atanamadı.");
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    });
+
+    // Load Groups
+    async function loadGroups() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/groups`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          const groupList = document.getElementById("group-list");
+          groupList.innerHTML = data.groups
+            .map(group => `<li>${group.name}</li>`)
+            .join("");
+        } else {
+          console.error("Gruplar yüklenemedi:", data.message);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Create Group
+    document.getElementById("create-group-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const groupName = document.getElementById("group-name").value;
+
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/groups`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: groupName })
+        });
+
+        if (response.ok) {
+          alert("Grup başarıyla oluşturuldu.");
+          loadGroups();
+        } else {
+          console.error("Grup oluşturulamadı.");
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    });
+
+    // Load Client Progress (Graph)
+    async function loadProgress() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/progress`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          const ctx = document.getElementById("progressChart").getContext("2d");
+          new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: data.clients.map(c => c.name),
+              datasets: [{ label: "Tamamlanan Günler", data: data.clients.map(c => c.completedDays) }]
+            }
+          });
+        } else {
+          console.error("İlerleme verileri yüklenemedi.");
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadClients();
+      loadPrograms();
+      loadGroups();
+      loadProgress();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İlerleme Takibi</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="dashboard-nav">
+      <h2>İlerleme Takibi</h2>
+      <ul>
+        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+        <li><a href="coach_profile.html">👤 Profilim</a></li>
+        <li><a href="program.html">📋 Programlarım</a></li>
+        <li><a href="exercise_templates.html">🏋️ Egzersiz Şablonları</a></li>
+        <li><a href="progress_tracking.html" class="active">📊 İlerleme</a></li>
+        <li><a href="messages.html">💬 Mesajlar</a></li>
+        <li><a href="payments.html">💰 Ödemeler</a></li>
+        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+      </ul>
+    </nav>
+
+    <main class="dashboard-content">
+      <h2>İlerleme Takibi</h2>
+
+      <!-- Müşteri Seçme -->
+      <label for="client-select">Müşteri Seç:</label>
+      <select id="client-select" onchange="fetchProgress()">
+        <option value="">Müşteri Seç</option>
+        <!-- Dynamically populated -->
+      </select>
+
+      <!-- Genel İlerleme Durumu -->
+      <section id="progress-summary">
+        <h3>Genel Program İlerlemesi</h3>
+        <canvas id="progressChart"></canvas>
+      </section>
+
+      <!-- Günlük İlerleme -->
+      <section id="daily-progress">
+        <h3>Günlük İlerleme</h3>
+        <ul id="daily-progress-list">
+          <!-- Dynamically populated -->
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Yetkilendirme hatası. Lütfen giriş yapın.");
+      window.location.href = "/login.html";
+    }
+
+    // Fetch clients for the dropdown
+    async function fetchClients() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/clients`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const { clients } = await response.json();
+        if (response.ok) {
+          const clientSelect = document.getElementById("client-select");
+          clients.forEach(client => {
+            const option = document.createElement("option");
+            option.value = client._id;
+            option.textContent = client.name;
+            clientSelect.appendChild(option);
+          });
+        } else {
+          console.error("Müşteriler alınamadı:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Fetch and display progress data
+    async function fetchProgress() {
+      const clientId = document.getElementById("client-select").value;
+      if (!clientId) return;
+
+      try {
+        const response = await fetch(`${BASE_URL}/progress/${clientId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          renderProgressChart(data.progress);
+          renderDailyProgress(data.dailyProgress);
+        } else {
+          console.error("İlerleme verisi alınamadı:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Render progress chart
+    function renderProgressChart(progressData) {
+      const ctx = document.getElementById("progressChart").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: progressData.map(entry => entry.date),
+          datasets: [
+            {
+              label: "Tamamlanan Günler",
+              data: progressData.map(entry => entry.completedDays),
+              backgroundColor: "rgba(47, 87, 93, 0.5)",
+              borderColor: "#2F575D",
+              borderWidth: 2,
+            },
+          ],
+        },
+      });
+    }
+
+    // Render daily progress
+    function renderDailyProgress(dailyProgress) {
+      const progressList = document.getElementById("daily-progress-list");
+      progressList.innerHTML = dailyProgress
+        .map(
+          entry => `
+        <li>
+          <strong>${entry.day}:</strong> ${entry.completed ? "Tamamlandı ✅" : "Tamamlanmadı ❌"}
+        </li>`
+        )
+        .join("");
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchClients);
+  </script>
+</body>
+</html>

@@ -17,15 +17,20 @@
     <nav class="dashboard-nav">
       <h2>Koç Paneli</h2>
       <ul>
-        <li><a href="#programs" class="active">Programlarım</a></li>
-        <li><a href="#clients">Müşterilerim</a></li>
-        <li><a href="#groups">Gruplar</a></li>
-        <li><a href="#analytics">Analizler</a></li>
-        <li><a href="#notifications">Bildirimler</a></li>
-        <li><a href="#logout">Çıkış Yap</a></li>
-        <li><a href="coach_profile.html">Profilim</a></li>
-
-      </ul>
+        <li><a href="coach_dashboard.html" class="active">🏠 Ana Sayfa</a></li>
+        <li><a href="coach_profile.html">👤 Profilim</a></li>
+        <li><a href="program.html">📋 Programlarım</a></li>
+        <li><a href="exercise_templates.html">🏋️ Egzersiz Şablonları</a></li>
+        <li><a href="progress_tracking.html">📊 İlerleme</a></li>
+        <li><a href="client_management.html">👥 Müşteri Yönetimi</a></li>
+        <li><a href="groups.html">👨‍👩‍👦 Gruplar</a></li>
+        <li><a href="analytics.html">📈 Analizler</a></li>
+        <li><a href="notifications.html">🔔 Bildirimler</a></li>
+        <li><a href="messages.html">💬 Mesajlar</a></li>
+        <li><a href="payments.html">💰 Ödemeler</a></li>
+        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+    </ul>
+    
     </nav>
     <section id="coach-info">
       <h2>Koç Bilgileri</h2>
@@ -49,7 +54,13 @@
       </section>
      
         <h2>Müşterilerim</h2>
-        <input type="text" id="search-clients" placeholder="Müşteri ara..." oninput="loadClients()" />
+        <input
+  type="text"
+  id="search-clients"
+  placeholder="Müşteri ara..."
+  oninput="loadClients(1)"
+/>
+
         <ul id="client-list"></ul>
       </section>
       <div id="client-details-modal" class="modal hidden">
@@ -132,16 +143,31 @@ async function fetchCoachData() {
   try {
     const response = await fetch(`${BASE_URL}/auth/profile`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) {
-      throw new Error("Koç bilgileri alınamadı");
-    }
+    if (response.ok) {
+      const data = await response.json();
 
-    const data = await response.json();
+      // Set profile data, use default values if missing
+      document.getElementById("coach-name").textContent = data.name || "Koç Bilgisi Eksik";
+      document.getElementById("coach-email").textContent = data.email || "E-posta Yok";
+      document.getElementById("coach-specialization").textContent =
+        data.specialization || "Uzmanlık belirtilmemiş";
+
+      // Handle profile picture
+      document.getElementById("profile-picture").src =
+        data.profilePicture || "images/default.jpg"; 
+    } else {
+      console.error("Koç bilgileri alınamadı:", response.statusText);
+      alert("Koç bilgileri alınamadı!");
+    }
+  } catch (error) {
+    console.error("Hata:", error.message);
+    alert("Koç bilgileri yüklenirken hata oluştu.");
+  }
+
+
 
     // Render coach data in the dashboard
     document.getElementById("coach-name").textContent = data.name || "Bilinmiyor";
@@ -156,88 +182,76 @@ async function fetchCoachData() {
     alert("Koç bilgileri yüklenirken hata oluştu.");
   }
 }
-  async function loadClients() {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/clients`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const { clients } = await response.json();
-        const clientList = document.getElementById("client-list");
-
-        if (clients.length === 0) {
-          clientList.innerHTML = `<li>No clients assigned yet.</li>`;
-        } else {
-          clientList.innerHTML = clients
-            .map(
-              (client) =>
-                `<li>
-                  ${client.name} (${client.email}) - ${client.fitnessGoals || "No goals set"}
-                  <button onclick="viewClientDetails('${client._id}')">View Details</button>
-                </li>`
-            )
-            .join("");
-        }
-      } else {
-        console.error("Error fetching clients:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error fetching clients:", error.message);
-    }
-  }
- 
-
-
-// Müşterileri getir (sayfalama ve arama ile)
 async function loadClients(page = 1) {
-  const searchQuery = document.getElementById("search-clients").value;
+  const searchQuery = document.getElementById("search-clients")?.value || "";
+
   try {
     const response = await fetch(`${BASE_URL}/dashboard/clients?page=${page}&search=${searchQuery}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     const data = await response.json();
+
+    if (response.ok) {
+      const clientList = document.getElementById("client-list");
+      clientList.innerHTML = data.clients.length
+        ? data.clients.map(client => `
+          <li>
+            ${client.name} (${client.email})
+            <button onclick="viewClientDetails('${client._id}')">Detay Gör</button>
+          </li>`).join("")
+        : "<li>Müşteri bulunamadı.</li>";
+
+      // Pagination Buttons
+      const paginationControls = document.getElementById("pagination-controls");
+      paginationControls.innerHTML = `
+        <button onclick="loadClients(${page - 1})" ${page === 1 ? "disabled" : ""}>Önceki</button>
+        <span>Sayfa ${page}</span>
+        <button onclick="loadClients(${page + 1})">Sonraki</button>
+      `;
+    } else {
+      console.error("Müşteriler yüklenirken hata oluştu:", data.message);
+      alert("Müşteriler yüklenemedi!");
+    }
+  } catch (error) {
+    console.error("Hata:", error.message);
+    alert("Müşteriler yüklenirken bir hata oluştu!");
+  }
+}
+
+
+// Consolidated loadClients function with search and pagination
+async function loadClients(page = 1) {
+  const searchQuery = document.getElementById("search-clients")?.value || "";
+
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/clients?page=${page}&search=${searchQuery}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = await response.json();
+
     if (response.ok) {
       const clientList = document.getElementById("client-list");
       clientList.innerHTML = data.clients
         .map(
           (client) => `
-        <li>
-          ${client.name} (${client.email})
-          <button onclick="viewClientDetails('${client._id}')">Detay Gör</button>
-        </li>`
+          <li>
+            ${client.name} (${client.email})
+            <button onclick="viewClientDetails('${client._id}')">Detay Gör</button>
+          </li>`
         )
         .join("");
     } else {
       console.error("Müşteriler yüklenirken hata oluştu:", data.message);
+      alert("Müşteriler yüklenemedi!");
     }
   } catch (error) {
     console.error("Hata:", error.message);
+    alert("Müşteriler yüklenirken bir hata oluştu!");
   }
 }
 
-// Müşteri detaylarını getir ve modalda göster
-async function viewClientDetails(clientId) {
-  try {
-    const response = await fetch(`${BASE_URL}/dashboard/clients/${clientId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const client = await response.json();
-    if (response.ok) {
-      document.getElementById("client-name").textContent = client.name;
-      document.getElementById("client-email").textContent = client.email;
-      document.getElementById("client-goals").textContent = client.fitnessGoals || "Belirtilmemiş";
-      document.getElementById("client-details-modal").classList.remove("hidden");
-    } else {
-      console.error("Müşteri detayları alınırken hata oluştu:", client.message);
-    }
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
 
 // Modalı kapat
 function closeModal() {
@@ -321,13 +335,9 @@ document.addEventListener("DOMContentLoaded", loadClients);
       const data = await response.json();
       const notificationList = document.getElementById("notification-list");
 
-      if (data.notifications.length === 0) {
-        notificationList.innerHTML = `<li>Bildirim yok.</li>`;
-      } else {
-        notificationList.innerHTML = data.notifications
-          .map(notification => `<li>${notification.message}</li>`)
-          .join("");
-      }
+      notificationList.innerHTML = data.notifications.length
+        ? data.notifications.map(notification => `<li>${notification.message}</li>`).join("")
+        : "<li>Bildirim yok.</li>";
     } else {
       console.error("Bildirimler alınamadı:", response.statusText);
     }
@@ -416,6 +426,29 @@ async function loadFeedbacks() {
   loadNotifications(); // Fetch notifications
   loadClients(); // Fetch clients
   loadFeedbacks(); // Fetch feedbacks
+}
+async function loadPrograms() {
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/programs/coach`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.ok) {
+      const programs = await response.json();
+      const programList = document.getElementById("program-list");
+
+      programList.innerHTML = programs.length
+        ? programs.map(program => `<li>${program.name} - ${program.duration} hafta</li>`).join("")
+        : "<li>Henüz program oluşturulmadı.</li>";
+    } else {
+      console.error("Error fetching programs:", response.statusText);
+      alert("Programlar yüklenemedi.");
+    }
+  } catch (error) {
+    console.error("Error fetching programs:", error.message);
+    alert("Programları yüklerken bir hata oluştu.");
+  }
 }
 
 

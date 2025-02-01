@@ -7,6 +7,7 @@ const {
     createProgram,
     getPrograms,
   } = require("../controllers/programController"); 
+  const { assignProgramToClients, cloneProgram, trackSessionCompletion } = require("../controllers/programController");
 // Program management routes
 // ✅ Import Multer (Fix the error)
 const multer = require("multer");
@@ -16,4 +17,8 @@ router.put("/:id", protect, roleMiddleware(["coach"]), programController.updateP
 router.delete("/:id", protect, roleMiddleware(["coach"]), programController.deleteProgram);
 router.post("/", protect, upload.array("documents"), createProgram);
 router.get("/", protect, getPrograms);
+router.post("/:programId/assign", protect, assignProgramToClients);
+router.post("/:programId/clone", protect, cloneProgram);
+router.post("/:programId/track-session", protect, trackSessionCompletion);
+
 module.exports = router;

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ödemeler</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="dashboard-nav">
+      <h2>Ödeme Takibi</h2>
+      <ul>
+        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+        <li><a href="coach_profile.html">👤 Profilim</a></li>
+        <li><a href="payments.html" class="active">💰 Ödemeler</a></li>
+        <li><a href="messages.html">💬 Mesajlar</a></li>
+        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+      </ul>
+    </nav>
+
+    <main class="dashboard-content">
+      <h2>Müşteri Ödemeleri</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Müşteri</th>
+            <th>Tarih</th>
+            <th>Miktar</th>
+            <th>Durum</th>
+          </tr>
+        </thead>
+        <tbody id="payment-list"></tbody>
+      </table>
+    </main>
+  </div>
+
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+
+    async function loadPayments() {
+      try {
+        const response = await fetch(`${BASE_URL}/payments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const { payments } = await response.json();
+        if (response.ok) {
+          const paymentList = document.getElementById("payment-list");
+          paymentList.innerHTML = payments.map(payment =>
+            `<tr>
+              <td>${payment.clientName}</td>
+              <td>${new Date(payment.date).toLocaleDateString()}</td>
+              <td>${payment.amount} TL</td>
+              <td>${payment.status}</td>
+            </tr>`
+          ).join("");
+        } else {
+          console.error("Ödemeler yüklenemedi:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadPayments);
+  </script>
+</body>
+</html>

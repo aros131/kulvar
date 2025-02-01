@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mesajlar</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="dashboard-nav">
+      <h2>Mesajlar</h2>
+      <ul>
+        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+        <li><a href="coach_profile.html">👤 Profilim</a></li>
+        <li><a href="messages.html" class="active">💬 Mesajlar</a></li>
+        <li><a href="program.html">📋 Programlarım</a></li>
+        <li><a href="payments.html">💰 Ödemeler</a></li>
+        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+      </ul>
+    </nav>
+
+    <main class="dashboard-content">
+      <h2>Mesajlaşma</h2>
+
+      <div id="message-container">
+        <ul id="message-list"></ul>
+      </div>
+
+      <form id="message-form">
+        <input type="text" id="message-input" placeholder="Mesajınızı yazın..." required>
+        <button type="submit">Gönder</button>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+
+    async function loadMessages() {
+      try {
+        const response = await fetch(`${BASE_URL}/messages`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const { messages } = await response.json();
+        if (response.ok) {
+          const messageList = document.getElementById("message-list");
+          messageList.innerHTML = messages.map(msg =>
+            `<li><strong>${msg.senderName}:</strong> ${msg.text}</li>`
+          ).join("");
+        } else {
+          console.error("Mesajlar yüklenemedi:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    document.getElementById("message-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const messageText = document.getElementById("message-input").value;
+
+      try {
+        const response = await fetch(`${BASE_URL}/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text: messageText }),
+        });
+
+        if (response.ok) {
+          loadMessages();
+          document.getElementById("message-form").reset();
+        } else {
+          console.error("Mesaj gönderilemedi.");
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", loadMessages);
+  </script>
+</body>
+</html>

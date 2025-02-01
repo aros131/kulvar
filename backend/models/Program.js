@@ -6,7 +6,7 @@ const ProgramSchema = new mongoose.Schema({
   duration: { type: Number, required: true }, // Duration in weeks
   coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Linked coach
   assignedClients: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Clients assigned to this program
-  difficulty: { type: String, enum: ["Beginner", "Intermediate", "Advanced"], default: "Beginner" }, // NEW
+  difficulty: { type: String, enum: ["Başlangıç", "Orta Düzey", "İleri Seviye"], default: "Başlangıç" }, // NEW
 
   dailySchedule: [
     {
@@ -78,7 +78,49 @@ const ProgramSchema = new mongoose.Schema({
 
   visibility: { type: String, enum: ["public", "private"], default: "private" }, // NEW ✅
 
+  // ✅ NEW: Custom Workout Schedules
+  scheduleType: { type: String, enum: ["Fixed", "Custom"], default: "Fixed" },
+  customSchedule: [
+    {
+      day: { type: String }, // Example: "Monday, Wednesday, Friday"
+      workout: { type: String } // Example: "Upper Body Strength"
+    }
+  ],
+
+  // ✅ NEW: Progressive Overload (Tracking Improvements)
+  progressiveOverload: [
+    {
+      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      exerciseName: { type: String },
+      initialWeight: { type: Number }, // e.g., 50 kg
+      currentWeight: { type: Number }, // e.g., 60 kg
+      improvement: { type: Number }, // e.g., +10 kg
+    }
+  ],
+
+  // ✅ NEW: Session-Based Tracking
+  sessionTracking: [
+    {
+      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      sessionId: { type: String }, // Unique session identifier
+      completed: { type: Boolean, default: false },
+      feedback: { type: String }, // Client comments on the session
+      dateCompleted: { type: Date },
+    }
+  ],
+
+  // ✅ NEW: Private Notes for Coaches
+  privateNotes: [
+    {
+      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      note: { type: String },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
+
   createdAt: { type: Date, default: Date.now },
 });
+
+
 
 module.exports = mongoose.model("Program", ProgramSchema);

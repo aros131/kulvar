@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Egzersiz Şablonları</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="dashboard-nav">
+      <h2>Egzersiz Şablonları</h2>
+      <ul>
+        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+        <li><a href="coach_profile.html">👤 Profilim</a></li>
+        <li><a href="program.html">📋 Programlarım</a></li>
+        <li><a href="exercise_templates.html" class="active">🏋️ Egzersiz Şablonları</a></li>
+        <li><a href="progress_tracking.html">📊 İlerleme</a></li>
+        <li><a href="messages.html">💬 Mesajlar</a></li>
+        <li><a href="payments.html">💰 Ödemeler</a></li>
+        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+      </ul>
+    </nav>
+    <main class="dashboard-content">
+      <h2>Egzersiz Şablonları</h2>
+      <section id="templates">
+        <h3>Mevcut Şablonlar</h3>
+        <ul id="template-list">
+          <!-- Template list will be dynamically populated -->
+        </ul>
+      </section>
+      <section id="template-form">
+        <h3>Yeni Egzersiz Şablonu Oluştur</h3>
+        <form id="exercise-template-form">
+          <label for="template-name">Şablon Adı:</label>
+          <input type="text" id="template-name" placeholder="Örn: Başlangıç Egzersizi" required>
+          
+          <label for="exercise-list">Egzersizler:</label>
+          <textarea id="exercise-list" placeholder="Egzersizleri girin, her birini yeni satırda listeleyin"></textarea>
+          
+          <button type="submit">Kaydet</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+
+    // Redirect to login if token is missing
+    if (!token) {
+      alert("Yetkilendirme hatası. Lütfen giriş yapın.");
+      window.location.href = "/login.html";
+    }
+
+    // Fetch existing templates
+    async function fetchTemplates() {
+      try {
+        const response = await fetch(`${BASE_URL}/exercise-templates`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const templates = await response.json();
+
+        if (response.ok) {
+          const templateList = document.getElementById("template-list");
+          templateList.innerHTML = templates
+            .map(
+              (template) => `
+            <li>
+              <strong>${template.name}</strong>
+              <p>${template.exercises.join(", ")}</p>
+              <button onclick="editTemplate('${template._id}')">Düzenle</button>
+              <button onclick="deleteTemplate('${template._id}')">Sil</button>
+            </li>`
+            )
+            .join("");
+        } else {
+          console.error("Egzersiz şablonları alınamadı:", templates.message);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Save a new or edited template
+    async function saveTemplate(event) {
+      event.preventDefault();
+      const name = document.getElementById("template-name").value;
+      const exercises = document.getElementById("exercise-list").value.split("\n").filter(Boolean);
+
+      const templateData = { name, exercises };
+
+      try {
+        const response = await fetch(`${BASE_URL}/exercise-templates`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(templateData),
+        });
+
+        if (response.ok) {
+          alert("Egzersiz şablonu başarıyla kaydedildi!");
+          fetchTemplates();
+          document.getElementById("exercise-template-form").reset();
+        } else {
+          const errorData = await response.json();
+          console.error("Şablon kaydedilemedi:", errorData.message);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Delete a template
+    async function deleteTemplate(templateId) {
+      try {
+        const response = await fetch(`${BASE_URL}/exercise-templates/${templateId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          alert("Egzersiz şablonu silindi!");
+          fetchTemplates();
+        } else {
+          console.error("Silme işlemi başarısız oldu.");
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    // Initialize page
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchTemplates();
+      document
+        .getElementById("exercise-template-form")
+        .addEventListener("submit", saveTemplate);
+    });
+  </script>
+</body>
+</html>
