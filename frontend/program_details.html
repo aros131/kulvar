@@ -7,59 +7,206 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Program Detayları</h1>
-  <p><strong>Adı:</strong> <span id="program-name"></span></p>
-  <p><strong>Açıklama:</strong> <span id="program-description"></span></p>
-  <p><strong>Süre:</strong> <span id="program-duration"></span> Hafta</p>
-  <h3>Egzersiz Planı</h3>
-  <ul id="daily-schedule"></ul>
-  <h3>Beslenme Planı</h3>
-  <ul id="nutrition-plan"></ul>
+  <header>
+    <h1>Program Detayları</h1>
+    <a href="program.html" class="btn">← Program Listesine Dön</a>
+  </header>
+
+  <main class="program-details">
+    <section id="program-info">
+      <h2 id="program-name">Program Adı Yükleniyor...</h2>
+      <p><strong>Açıklama:</strong> <span id="program-description">Yükleniyor...</span></p>
+      <p><strong>Süre:</strong> <span id="program-duration">Yükleniyor...</span> hafta</p>
+      <p><strong>Zorluk:</strong> <span id="program-difficulty">Yükleniyor...</span></p>
+      <p><strong>Görünürlük:</strong> <span id="program-visibility">Yükleniyor...</span></p>
+    </section>
+
+    <section id="daily-schedule">
+      <h3>Günlük Egzersiz Planı</h3>
+      <ul id="daily-schedule-list">
+        <!-- Daily schedule will be dynamically populated -->
+      </ul>
+    </section>
+
+    <section id="nutrition-plan">
+      <h3>Beslenme Planı</h3>
+      <ul id="nutrition-tips-list">
+        <!-- Nutrition tips will be dynamically populated -->
+      </ul>
+      <h4>Öğünler</h4>
+      <ul id="meals-list">
+        <!-- Meals will be dynamically populated -->
+      </ul>
+    </section>
+
+    <section id="feedbacks">
+      <h3>Geri Bildirimler</h3>
+      <ul id="feedback-list">
+        <!-- Feedbacks will be dynamically populated -->
+      </ul>
+    </section>
+
+    <section id="documents">
+      <h3>Belgeler</h3>
+      <ul id="documents-list">
+        <!-- Documents will be dynamically populated -->
+      </ul>
+    </section>
+  </main>
 
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
     const token = localStorage.getItem("token");
 
+    if (!token) {
+      alert("Oturum açılmamış! Lütfen giriş yapın.");
+      window.location.href = "login.html";
+    }
+
+    const programId = new URLSearchParams(window.location.search).get("id");
+
+    if (!programId) {
+      alert("Geçerli bir program seçilmedi!");
+      window.location.href = "program.html";
+    }
+
     async function fetchProgramDetails() {
-      const params = new URLSearchParams(window.location.search);
-      const programId = params.get("id");
-
-      if (!programId) {
-        alert("Program ID bulunamadı.");
-        return;
-      }
-
       try {
         const response = await fetch(`${BASE_URL}/programs/${programId}`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const data = await response.json();
-
-        if (response.ok) {
-          document.getElementById("program-name").textContent = data.name;
-          document.getElementById("program-description").textContent = data.description;
-          document.getElementById("program-duration").textContent = data.duration;
-
-          const scheduleList = document.getElementById("daily-schedule");
-          scheduleList.innerHTML = data.dailySchedule.map(day => `
-            <li><strong>${day.day}:</strong> ${day.goals}</li>
-          `).join("");
-
-          const nutritionList = document.getElementById("nutrition-plan");
-          nutritionList.innerHTML = data.nutritionPlan.meals.map(meal => `
-            <li><strong>${meal.name}:</strong> ${meal.description} (${meal.time})</li>
-          `).join("");
-        } else {
-          alert("Program detayları alınamadı.");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Program detayları alınamadı");
         }
+
+        const program = await response.json();
+
+        // Populate general program info
+        document.getElementById("program-name").textContent = program.name || "Belirtilmemiş";
+        document.getElementById("program-description").textContent = program.description || "Belirtilmemiş";
+        document.getElementById("program-duration").textContent = program.duration || "Belirtilmemiş";
+        document.getElementById("program-difficulty").textContent = program.difficulty || "Belirtilmemiş";
+        document.getElementById("program-visibility").textContent = program.visibility || "Belirtilmemiş";
+
+        // Populate daily schedule
+        const dailyScheduleList = document.getElementById("daily-schedule-list");
+        dailyScheduleList.innerHTML = program.dailySchedule
+          .map(
+            (day) => `
+            <li>
+              <strong>${day.day}:</strong> ${day.goals || "Hedef belirtilmemiş"}
+              <ul>
+                ${day.exercises
+                  .map(
+                    (exercise) =>
+                      `<li>${exercise.name} - ${exercise.sets} set x ${exercise.reps} tekrar</li>`
+                  )
+                  .join("")}
+              </ul>
+            </li>`
+          )
+          .join("");
+
+        // Populate nutrition plan
+        const nutritionTipsList = document.getElementById("nutrition-tips-list");
+        nutritionTipsList.innerHTML = program.nutritionPlan.tips
+          .map((tip) => `<li>${tip}</li>`)
+          .join("");
+
+        const mealsList = document.getElementById("meals-list");
+        mealsList.innerHTML = program.nutritionPlan.meals
+          .map(
+            (meal) =>
+              `<li><strong>${meal.name}:</strong> ${meal.description} (${meal.time})</li>`
+          )
+          .join("");
+
+        // Populate feedbacks
+        const feedbackList = document.getElementById("feedback-list");
+        feedbackList.innerHTML = program.feedback.length
+          ? program.feedback
+              .map(
+                (feedback) =>
+                  `<li><strong>${feedback.clientId?.name || "Anonim"}:</strong> ${feedback.feedbackText}</li>`
+              )
+              .join("")
+          : "<li>Henüz geri bildirim yok.</li>";
+
+        // Populate documents
+        const documentsList = document.getElementById("documents-list");
+        documentsList.innerHTML = program.documents.length
+          ? program.documents
+              .map(
+                (doc) =>
+                  `<li><a href="${doc.url}" target="_blank">${doc.name}</a></li>`
+              )
+              .join("")
+          : "<li>Henüz belge yok.</li>";
       } catch (error) {
-        console.error("Hata:", error);
+        console.error("Error fetching program details:", error.message);
+        alert("Program detayları alınamadı!");
       }
     }
 
     document.addEventListener("DOMContentLoaded", fetchProgramDetails);
   </script>
+
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #DEE1DD;
+      color: #28363D;
+    }
+
+    h1, h2, h3, h4 {
+      color: #2F575D;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #2F575D;
+      color: #FFF;
+    }
+
+    main {
+      margin-top: 20px;
+    }
+
+    section {
+      background-color: #C4CDC1;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li {
+      margin-bottom: 10px;
+    }
+
+    a.btn {
+      text-decoration: none;
+      padding: 10px 15px;
+      background-color: #658B6F;
+      color: #FFF;
+      border-radius: 5px;
+    }
+
+    a.btn:hover {
+      background-color: #2F575D;
+    }
+  </style>
 </body>
 </html>

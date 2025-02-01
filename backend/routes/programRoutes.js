@@ -6,6 +6,7 @@ const roleMiddleware = require("../middleware/roleMiddleware");
 const {
     createProgram,
     getPrograms,
+    getProgramById,
   } = require("../controllers/programController"); 
   const { assignProgramToClients, cloneProgram, trackSessionCompletion } = require("../controllers/programController");
 // Program management routes
@@ -14,6 +15,8 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" }); // Change the folder if needed
 
 router.put("/:id", protect, roleMiddleware(["coach"]), programController.updateProgram);
+router.get("/:id", protect, getProgramById);
+
 router.delete("/:id", protect, roleMiddleware(["coach"]), programController.deleteProgram);
 router.post("/", protect, upload.array("documents"), createProgram);
 router.get("/", protect, getPrograms);

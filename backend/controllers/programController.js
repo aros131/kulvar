@@ -43,6 +43,17 @@ exports.getPrograms = async (req, res) => {
     res.status(500).json({ message: "Programlar yüklenemedi", error: error.message });
   }
 };
+exports.getProgramById = async (req, res) => {
+  try {
+    const program = await Program.findById(req.params.id);
+    if (!program) {
+      return res.status(404).json({ message: "Program not found" });
+    }
+    res.status(200).json(program);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching program details", error: error.message });
+  }
+};
 
 
 // 🟢 Update a program
