@@ -104,6 +104,36 @@
     console.error("Hata:", error.message);
   }
 }
+async function fetchPrograms() {
+  try {
+    const response = await fetch("https://kulvar.onrender.com/programs", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      const programList = document.getElementById("program-list");
+
+      programList.innerHTML = data.programs
+        .map(
+          (program) => `
+            <li>
+              <h3>${program.name} - ${program.duration} Hafta</h3>
+              <p>${program.description}</p>
+              <button onclick="viewProgramDetails('${program._id}')">Detayları Gör</button>
+            </li>
+          `
+        )
+        .join("");
+    } else {
+      console.error("Programlar alınamadı:", data.message);
+    }
+  } catch (error) {
+    console.error("Hata:", error.message);
+  }
+}
 
 // Sayfa yüklendiğinde programları getir
 document.addEventListener("DOMContentLoaded", fetchPrograms);
@@ -150,6 +180,10 @@ document.addEventListener("DOMContentLoaded", fetchPrograms);
         fetchPrograms();
       }
     }
+    function viewProgramDetails(programId) {
+  window.location.href = `program_details.html?id=${programId}`;
+}
+
 
     document.getElementById("program-form").addEventListener("submit", createProgram);
   </script>
