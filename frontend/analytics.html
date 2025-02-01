@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizler</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>📊 Koç Analizleri</h1>
+    </header>
+
+    <nav class="dashboard-nav">
+        <ul>
+            <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+            <li><a href="analytics.html" class="active">📊 Analizler</a></li>
+            <li><a href="payments.html">💰 Ödemeler</a></li>
+            <li><a href="messages.html">💬 Mesajlar</a></li>
+            <li><a href="#" onclick="logout()">🚪 Çıkış Yap</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="analytics-summary">
+            <h2>Genel Bakış</h2>
+            <div class="stat-box">
+                <h3>👥 Toplam Müşteri</h3>
+                <p id="total-clients">0</p>
+            </div>
+            <div class="stat-box">
+                <h3>📋 Toplam Program</h3>
+                <p id="total-programs">0</p>
+            </div>
+            <div class="stat-box">
+                <h3>💰 Gelir (₺)</h3>
+                <p id="total-revenue">0</p>
+            </div>
+        </section>
+
+        <section id="progress-chart-section">
+            <h2>İlerleme Takibi</h2>
+            <canvas id="progressChart"></canvas>
+        </section>
+
+        <section id="engagement-chart-section">
+            <h2>Müşteri Etkileşimi</h2>
+            <canvas id="engagementChart"></canvas>
+        </section>
+
+        <section id="revenue-chart-section">
+            <h2>Gelir Grafiği</h2>
+            <canvas id="revenueChart"></canvas>
+        </section>
+    </main>
+
+    <script>
+        const BASE_URL = "https://kulvar.onrender.com";
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            alert("Oturum açılmamış! Lütfen giriş yapın.");
+            window.location.href = "login.html";
+        }
+
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch(`${BASE_URL}/analytics/coach`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error("Analiz verileri alınamadı!");
+
+                const { totalClients, totalPrograms, totalRevenue, progress, engagement, revenueHistory } = await response.json();
+
+                document.getElementById("total-clients").textContent = totalClients;
+                document.getElementById("total-programs").textContent = totalPrograms;
+                document.getElementById("total-revenue").textContent = `${totalRevenue}₺`;
+
+                renderChart("progressChart", "İlerleme Oranları", progress.labels, progress.data);
+                renderChart("engagementChart", "Müşteri Etkileşimi", engagement.labels, engagement.data);
+                renderChart("revenueChart", "Aylık Gelir", revenueHistory.labels, revenueHistory.data);
+
+            } catch (error) {
+                console.error("Analiz verileri yüklenirken hata:", error);
+            }
+        }
+
+        function renderChart(canvasId, label, labels, data) {
+            new Chart(document.getElementById(canvasId), {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: "#2F575D",
+                        backgroundColor: "rgba(47, 87, 93, 0.2)",
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            alert("Çıkış yapıldı!");
+            window.location.href = "login.html";
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchAnalytics);
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #F5F5F5;
+        }
+
+        h1, h2 {
+            color: #2F575D;
+        }
+
+        .stat-box {
+            background: #658B6F;
+            color: white;
+            padding: 20px;
+            margin: 10px;
+            display: inline-block;
+            border-radius: 5px;
+            text-align: center;
+            width: 200px;
+        }
+
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+
+        nav ul {
+            padding: 0;
+            list-style: none;
+            background: #28363D;
+            margin-bottom: 20px;
+        }
+
+        nav ul li {
+            display: inline;
+            padding: 10px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+
+        nav ul li a.active {
+            font-weight: bold;
+        }
+
+        main {
+            padding: 20px;
+            background: #DEE1DD;
+            border-radius: 5px;
+        }
+    </style>
+
+</body>
+</html>

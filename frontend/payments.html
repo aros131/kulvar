@@ -1,71 +1,207 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ödemeler</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ödemeler</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="dashboard-container">
+
+    <header>
+        <h1>Ödemeler</h1>
+    </header>
+
     <nav class="dashboard-nav">
-      <h2>Ödeme Takibi</h2>
-      <ul>
-        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
-        <li><a href="coach_profile.html">👤 Profilim</a></li>
-        <li><a href="payments.html" class="active">💰 Ödemeler</a></li>
-        <li><a href="messages.html">💬 Mesajlar</a></li>
-        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
-      </ul>
+        <ul>
+            <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+            <li><a href="payments.html" class="active">💰 Ödemeler</a></li>
+            <li><a href="messages.html">💬 Mesajlar</a></li>
+            <li><a href="groups.html">👥 Gruplar</a></li>
+            <li><a href="#" onclick="logout()">🚪 Çıkış Yap</a></li>
+        </ul>
     </nav>
 
-    <main class="dashboard-content">
-      <h2>Müşteri Ödemeleri</h2>
+    <main>
+        <section id="payment-section">
+            <h2>Ödeme Geçmişi</h2>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Müşteri</th>
-            <th>Tarih</th>
-            <th>Miktar</th>
-            <th>Durum</th>
-          </tr>
-        </thead>
-        <tbody id="payment-list"></tbody>
-      </table>
+            <table id="payment-table">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Müşteri</th>
+                        <th>Tutar</th>
+                        <th>Durum</th>
+                        <th>Fatura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Ödemeler buraya yüklenecek -->
+                </tbody>
+            </table>
+        </section>
+
+        <section id="request-payment">
+            <h2>Ödeme Talebi Gönder</h2>
+
+            <form id="payment-form">
+                <label for="client-select">Müşteri:</label>
+                <select id="client-select" required>
+                    <!-- Müşteri listesi dinamik olarak yüklenecek -->
+                </select>
+
+                <label for="amount">Tutar (₺):</label>
+                <input type="number" id="amount" min="1" required>
+
+                <button type="submit">Talep Gönder</button>
+            </form>
+        </section>
     </main>
-  </div>
 
-  <script>
-    const BASE_URL = "https://kulvar.onrender.com";
-    const token = localStorage.getItem("token");
+    <script>
+        const BASE_URL = "https://kulvar.onrender.com";
+        const token = localStorage.getItem("token");
 
-    async function loadPayments() {
-      try {
-        const response = await fetch(`${BASE_URL}/payments`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const { payments } = await response.json();
-        if (response.ok) {
-          const paymentList = document.getElementById("payment-list");
-          paymentList.innerHTML = payments.map(payment =>
-            `<tr>
-              <td>${payment.clientName}</td>
-              <td>${new Date(payment.date).toLocaleDateString()}</td>
-              <td>${payment.amount} TL</td>
-              <td>${payment.status}</td>
-            </tr>`
-          ).join("");
-        } else {
-          console.error("Ödemeler yüklenemedi:", response.statusText);
+        if (!token) {
+            alert("Oturum açılmamış! Lütfen giriş yapın.");
+            window.location.href = "login.html";
         }
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
-    }
 
-    document.addEventListener("DOMContentLoaded", loadPayments);
-  </script>
+        async function fetchPayments() {
+            try {
+                const response = await fetch(`${BASE_URL}/payments/history`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                const payments = await response.json();
+                const tableBody = document.querySelector("#payment-table tbody");
+
+                tableBody.innerHTML = payments.map(payment => `
+                    <tr>
+                        <td>${new Date(payment.date).toLocaleDateString()}</td>
+                        <td>${payment.clientName}</td>
+                        <td>${payment.amount}₺</td>
+                        <td>${payment.status}</td>
+                        <td>
+                            ${payment.invoiceUrl 
+                                ? `<a href="${payment.invoiceUrl}" target="_blank">📄 İndir</a>`
+                                : "Yok"}
+                        </td>
+                    </tr>
+                `).join("");
+            } catch (error) {
+                console.error("Ödeme geçmişi yüklenirken hata:", error);
+            }
+        }
+
+        async function fetchClients() {
+            try {
+                const response = await fetch(`${BASE_URL}/dashboard/clients`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                const { clients } = await response.json();
+                const clientSelect = document.getElementById("client-select");
+
+                clientSelect.innerHTML = clients.map(client => `
+                    <option value="${client._id}">${client.name}</option>
+                `).join("");
+            } catch (error) {
+                console.error("Müşteri listesi yüklenirken hata:", error);
+            }
+        }
+
+        async function requestPayment(event) {
+            event.preventDefault();
+
+            const clientId = document.getElementById("client-select").value;
+            const amount = document.getElementById("amount").value;
+
+            try {
+                const response = await fetch(`${BASE_URL}/payments/request`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ clientId, amount })
+                });
+
+                if (response.ok) {
+                    alert("Ödeme talebi gönderildi!");
+                    fetchPayments(); // Refresh the table
+                } else {
+                    console.error("Ödeme talebi başarısız:", response.statusText);
+                }
+            } catch (error) {
+                console.error("Ödeme talebi gönderilirken hata:", error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            alert("Çıkış yapıldı!");
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("payment-form").addEventListener("submit", requestPayment);
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchPayments();
+            fetchClients();
+        });
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #F5F5F5;
+        }
+
+        h1, h2 {
+            color: #2F575D;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #2F575D;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #658B6F;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #CCC;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #658B6F;
+            color: white;
+        }
+
+        #request-payment {
+            margin-top: 30px;
+            padding: 20px;
+            background: #DEE1DD;
+            border-radius: 5px;
+        }
+    </style>
+
 </body>
 </html>

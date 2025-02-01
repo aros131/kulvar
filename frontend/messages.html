@@ -1,89 +1,220 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mesajlar</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesajlar</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="dashboard-container">
+
+    <header>
+        <h1>Mesajlar</h1>
+    </header>
+
     <nav class="dashboard-nav">
-      <h2>Mesajlar</h2>
-      <ul>
-        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
-        <li><a href="coach_profile.html">👤 Profilim</a></li>
-        <li><a href="messages.html" class="active">💬 Mesajlar</a></li>
-        <li><a href="program.html">📋 Programlarım</a></li>
-        <li><a href="payments.html">💰 Ödemeler</a></li>
-        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
-      </ul>
+        <ul>
+            <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+            <li><a href="messages.html" class="active">💬 Mesajlar</a></li>
+            <li><a href="groups.html">👥 Gruplar</a></li>
+            <li><a href="payments.html">💰 Ödemeler</a></li>
+            <li><a href="#" onclick="logout()">🚪 Çıkış Yap</a></li>
+        </ul>
     </nav>
 
-    <main class="dashboard-content">
-      <h2>Mesajlaşma</h2>
+    <main>
+        <section id="message-section">
+            <h2>Mesajlar</h2>
 
-      <div id="message-container">
-        <ul id="message-list"></ul>
-      </div>
+            <div id="chat-container">
+                <div id="chat-list">
+                    <h3>Kişiler</h3>
+                    <ul id="user-list">
+                        <!-- Kullanıcılar buraya yüklenecek -->
+                    </ul>
+                </div>
 
-      <form id="message-form">
-        <input type="text" id="message-input" placeholder="Mesajınızı yazın..." required>
-        <button type="submit">Gönder</button>
-      </form>
+                <div id="chat-box">
+                    <h3 id="chat-header">Mesajlaşma</h3>
+                    <div id="message-list">
+                        <!-- Mesajlar buraya yüklenecek -->
+                    </div>
+
+                    <form id="message-form">
+                        <input type="text" id="message-input" placeholder="Mesajınızı yazın..." required>
+                        <input type="file" id="file-input">
+                        <button type="submit">Gönder</button>
+                    </form>
+                </div>
+            </div>
+        </section>
     </main>
-  </div>
 
-  <script>
-    const BASE_URL = "https://kulvar.onrender.com";
-    const token = localStorage.getItem("token");
+    <script>
+        const BASE_URL = "https://kulvar.onrender.com";
+        const token = localStorage.getItem("token");
 
-    async function loadMessages() {
-      try {
-        const response = await fetch(`${BASE_URL}/messages`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const { messages } = await response.json();
-        if (response.ok) {
-          const messageList = document.getElementById("message-list");
-          messageList.innerHTML = messages.map(msg =>
-            `<li><strong>${msg.senderName}:</strong> ${msg.text}</li>`
-          ).join("");
-        } else {
-          console.error("Mesajlar yüklenemedi:", response.statusText);
+        if (!token) {
+            alert("Oturum açılmamış! Lütfen giriş yapın.");
+            window.location.href = "login.html";
         }
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
-    }
 
-    document.getElementById("message-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const messageText = document.getElementById("message-input").value;
+        async function fetchUsers() {
+            try {
+                const response = await fetch(`${BASE_URL}/messages/users`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
 
-      try {
-        const response = await fetch(`${BASE_URL}/messages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ text: messageText }),
-        });
+                const users = await response.json();
+                const userList = document.getElementById("user-list");
 
-        if (response.ok) {
-          loadMessages();
-          document.getElementById("message-form").reset();
-        } else {
-          console.error("Mesaj gönderilemedi.");
+                userList.innerHTML = users.map(user => `
+                    <li onclick="openChat('${user._id}', '${user.name}')">
+                        ${user.name} <span class="unread-count">(${user.unreadMessages})</span>
+                    </li>
+                `).join("");
+            } catch (error) {
+                console.error("Kullanıcılar yüklenirken hata oluştu:", error);
+            }
         }
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
-    });
 
-    document.addEventListener("DOMContentLoaded", loadMessages);
-  </script>
+        async function openChat(userId, userName) {
+            document.getElementById("chat-header").textContent = `Mesajlaşma: ${userName}`;
+            document.getElementById("message-form").dataset.userId = userId;
+
+            try {
+                const response = await fetch(`${BASE_URL}/messages/${userId}`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                const messages = await response.json();
+                const messageList = document.getElementById("message-list");
+
+                messageList.innerHTML = messages.map(msg => `
+                    <div class="${msg.sender === 'me' ? 'my-message' : 'their-message'}">
+                        <p>${msg.text}</p>
+                        ${msg.fileUrl ? `<a href="${msg.fileUrl}" target="_blank">📎 Ekli Dosya</a>` : ""}
+                        <span class="timestamp">${new Date(msg.createdAt).toLocaleTimeString()}</span>
+                    </div>
+                `).join("");
+            } catch (error) {
+                console.error("Mesajlar yüklenirken hata oluştu:", error);
+            }
+        }
+
+        async function sendMessage(event) {
+            event.preventDefault();
+
+            const userId = event.target.dataset.userId;
+            const messageInput = document.getElementById("message-input");
+            const fileInput = document.getElementById("file-input");
+
+            const formData = new FormData();
+            formData.append("text", messageInput.value);
+            if (fileInput.files.length > 0) {
+                formData.append("file", fileInput.files[0]);
+            }
+
+            try {
+                await fetch(`${BASE_URL}/messages/${userId}`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${token}` },
+                    body: formData
+                });
+
+                messageInput.value = "";
+                fileInput.value = "";
+                openChat(userId, document.getElementById("chat-header").textContent.replace("Mesajlaşma: ", ""));
+            } catch (error) {
+                console.error("Mesaj gönderilirken hata oluştu:", error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            alert("Çıkış yapıldı!");
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("message-form").addEventListener("submit", sendMessage);
+        document.addEventListener("DOMContentLoaded", fetchUsers);
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #F5F5F5;
+        }
+
+        h1, h2 {
+            color: #2F575D;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #2F575D;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #658B6F;
+        }
+
+        #chat-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        #chat-list {
+            width: 30%;
+            background: #DEE1DD;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #chat-box {
+            flex: 1;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #message-list {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #CCC;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .my-message {
+            text-align: right;
+            background: #658B6F;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .their-message {
+            text-align: left;
+            background: #99AEAD;
+            padding: 5px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .timestamp {
+            font-size: 10px;
+            color: #444;
+        }
+    </style>
+
 </body>
 </html>

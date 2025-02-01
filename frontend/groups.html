@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gruplar</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>Grup Yönetimi</h1>
+    </header>
+
+    <nav class="dashboard-nav">
+        <ul>
+            <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
+            <li><a href="groups.html" class="active">👥 Gruplar</a></li>
+            <li><a href="program.html">📋 Programlar</a></li>
+            <li><a href="messages.html">💬 Mesajlar</a></li>
+            <li><a href="payments.html">💰 Ödemeler</a></li>
+            <li><a href="#" onclick="logout()">🚪 Çıkış Yap</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section>
+            <h2>Mevcut Gruplar</h2>
+            <ul id="group-list">
+                <!-- Gruplar dinamik olarak buraya yüklenecek -->
+            </ul>
+            <button onclick="showCreateGroupForm()">➕ Yeni Grup Oluştur</button>
+        </section>
+
+        <section id="group-form-section" class="hidden">
+            <h2 id="group-form-title">Yeni Grup Oluştur</h2>
+            <form id="group-form">
+                <label for="group-name">Grup Adı:</label>
+                <input type="text" id="group-name" required>
+
+                <label for="group-clients">Müşterileri Seç:</label>
+                <select id="group-clients" multiple>
+                    <!-- Müşteriler buraya yüklenecek -->
+                </select>
+
+                <label for="group-program">Atanacak Program:</label>
+                <select id="group-program">
+                    <!-- Programlar buraya yüklenecek -->
+                </select>
+
+                <button type="submit">Kaydet</button>
+                <button type="button" onclick="hideCreateGroupForm()">İptal</button>
+            </form>
+        </section>
+
+        <section id="group-actions">
+            <h2>Grup Yönetimi</h2>
+            <button onclick="sendGroupMessage()">📩 Grup Mesajı Gönder</button>
+            <button onclick="uploadGroupFile()">📂 Dosya Paylaş</button>
+        </section>
+
+        <section>
+            <h2>Grup İlerlemesi</h2>
+            <canvas id="group-progress-chart"></canvas>
+        </section>
+    </main>
+
+    <script>
+        const BASE_URL = "https://kulvar.onrender.com";
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            alert("Oturum açılmamış! Lütfen giriş yapın.");
+            window.location.href = "login.html";
+        }
+
+        async function fetchGroups() {
+            try {
+                const response = await fetch(`${BASE_URL}/groups`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const groups = await response.json();
+
+                const groupList = document.getElementById("group-list");
+                groupList.innerHTML = groups.map(group => `
+                    <li>
+                        ${group.name} (${group.clients.length} Müşteri)
+                        <button onclick="editGroup('${group._id}')">Düzenle</button>
+                        <button onclick="deleteGroup('${group._id}')">Sil</button>
+                    </li>
+                `).join("");
+            } catch (error) {
+                console.error("Gruplar yüklenirken hata oluştu:", error);
+            }
+        }
+
+        async function fetchClientsAndPrograms() {
+            try {
+                const clientsResponse = await fetch(`${BASE_URL}/dashboard/clients`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const programsResponse = await fetch(`${BASE_URL}/dashboard/programs/coach`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                const clients = await clientsResponse.json();
+                const programs = await programsResponse.json();
+
+                const clientSelect = document.getElementById("group-clients");
+                clientSelect.innerHTML = clients.map(client => 
+                    `<option value="${client._id}">${client.name}</option>`
+                ).join("");
+
+                const programSelect = document.getElementById("group-program");
+                programSelect.innerHTML = programs.map(program => 
+                    `<option value="${program._id}">${program.name}</option>`
+                ).join("");
+            } catch (error) {
+                console.error("Müşteriler ve programlar yüklenirken hata oluştu:", error);
+            }
+        }
+
+        function showCreateGroupForm() {
+            document.getElementById("group-form-section").classList.remove("hidden");
+            document.getElementById("group-form-title").textContent = "Yeni Grup Oluştur";
+            document.getElementById("group-form").reset();
+        }
+
+        function hideCreateGroupForm() {
+            document.getElementById("group-form-section").classList.add("hidden");
+        }
+
+        async function createGroup(event) {
+            event.preventDefault();
+            const name = document.getElementById("group-name").value;
+            const clients = Array.from(document.getElementById("group-clients").selectedOptions).map(option => option.value);
+            const program = document.getElementById("group-program").value;
+
+            try {
+                await fetch(`${BASE_URL}/groups`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, clients, program })
+                });
+                alert("Grup oluşturuldu!");
+                hideCreateGroupForm();
+                fetchGroups();
+            } catch (error) {
+                console.error("Grup oluşturulurken hata:", error);
+            }
+        }
+
+        async function deleteGroup(groupId) {
+            if (!confirm("Bu grubu silmek istediğinize emin misiniz?")) return;
+
+            try {
+                await fetch(`${BASE_URL}/groups/${groupId}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                alert("Grup silindi!");
+                fetchGroups();
+            } catch (error) {
+                console.error("Grup silinirken hata oluştu:", error);
+            }
+        }
+
+        function sendGroupMessage() {
+            const message = prompt("Grup mesajı girin:");
+            if (!message) return;
+
+            alert("Mesaj gönderildi: " + message);
+        }
+
+        function uploadGroupFile() {
+            alert("Dosya yükleme özelliği henüz eklenmedi.");
+        }
+
+        document.getElementById("group-form").addEventListener("submit", createGroup);
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchGroups();
+            fetchClientsAndPrograms();
+        });
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            alert("Çıkış yapıldı!");
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #F5F5F5;
+        }
+
+        h1, h2 {
+            color: #2F575D;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #2F575D;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #658B6F;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+
+</body>
+</html>
