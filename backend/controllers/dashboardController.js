@@ -2,7 +2,27 @@ const Program = require("../models/Program");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
 const Progress = require("../models/Progress");
+// Fetch Profile
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      specialization: user.specialization,
+      fitnessGoals: user.fitnessGoals,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching profile", error: error.message });
+  }
+};
 // Get all clients for the coach
 exports.getClients = async (req, res) => {
   try {
