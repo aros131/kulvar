@@ -166,6 +166,52 @@ async function fetchCoachData() {
     console.error("Hata:", error.message);
     alert("Koç bilgileri yüklenirken hata oluştu.");
   }
+  async function fetchCoachDashboardData() {
+  try {
+    const [profileRes, analyticsRes, clientsRes, programsRes] = await Promise.all([
+      fetch(`${BASE_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${BASE_URL}/dashboard/analytics/coach`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${BASE_URL}/dashboard/clients`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${BASE_URL}/dashboard/user-programs`, { headers: { Authorization: `Bearer ${token}` } })
+    ]);
+
+    const profileData = await profileRes.json();
+    const analyticsData = await analyticsRes.json();
+    const clientsData = await clientsRes.json();
+    const programsData = await programsRes.json();
+
+    if (profileRes.ok) {
+      document.getElementById("coach-name").textContent = profileData.name || "Bilinmiyor";
+      document.getElementById("coach-email").textContent = profileData.email || "Bilinmiyor";
+      document.getElementById("coach-specialization").textContent = profileData.specialization || "Uzmanlık belirtilmemiş";
+      document.getElementById("profile-picture").src = profileData.profilePicture || "images/default.jpg";
+    }
+
+    if (analyticsRes.ok) {
+      document.getElementById("total-clients").textContent = analyticsData.totalClients || 0;
+      document.getElementById("total-programs").textContent = analyticsData.totalPrograms || 0;
+    }
+
+    if (clientsRes.ok) {
+      document.getElementById("client-list").innerHTML = clientsData.clients
+        .map(client => `<li>${client.name} (${client.email})</li>`)
+        .join("");
+    }
+
+    if (programsRes.ok) {
+      document.getElementById("program-list").innerHTML = programsData.programs
+        .map(program => `<li>${program.name} - ${program.duration} hafta</li>`)
+        .join("");
+    }
+  } catch (error) {
+    console.error("Dashboard verileri alınamadı:", error.message);
+    alert("Dashboard yüklenirken hata oluştu!");
+  }
+}
+
+// Load all data when the page is ready
+document.addEventListener("DOMContentLoaded", fetchCoachDashboardData);
+
 
 
 
