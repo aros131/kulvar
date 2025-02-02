@@ -43,15 +43,14 @@
         <div id="badges-container">
           <!-- Badges will be dynamically added here -->
         </div>
-      </section>
-
-      <!-- ✅ Workout Completion Section -->
-      <section id="daily-progress">
-        <h3>Günlük İlerleme</h3>
-        <ul id="daily-progress-list">
-          <!-- Populated dynamically -->
-        </ul>
-      </section>
+        <section id="daily-progress">
+          <h3>Günlük İlerleme</h3>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <p><strong>Tamamlanan Günler:</strong> <span id="completedDays">0</span> / <span id="totalDays">0</span></p>
+        </section>
+        
       <!-- 📜 Coach Notes for Daily Workouts -->
       <section id="coach-notes">
         <h3>Koç Notları</h3>
@@ -142,6 +141,38 @@ async function fetchProgress() {
   } catch (error) {
     console.error("Hata:", error);
   }
+}
+const ctx = document.getElementById("progressChart").getContext("2d");
+
+const progressChart = new Chart(ctx, {
+  type: "doughnut",
+  data: {
+    labels: ["Tamamlanan Günler", "Kalan Günler"],
+    datasets: [{
+      data: [5, 10],  // Example
+      backgroundColor: ["#6a11cb", "#e0e0e0"],
+      hoverBackgroundColor: ["#5a0fb4", "#ccc"]
+    }]
+  },
+  options: {
+    responsive: true,
+    animation: {
+      duration: 2000,
+      easing: "easeInOutBounce"
+    }
+  }
+});
+
+function updateProgressBar(completedDays, totalDays) {
+  const progressBar = document.getElementById("progressBar");
+  const completedSpan = document.getElementById("completedDays");
+  const totalSpan = document.getElementById("totalDays");
+
+  completedSpan.textContent = completedDays;
+  totalSpan.textContent = totalDays;
+
+  let progressPercentage = (completedDays / totalDays) * 100;
+  progressBar.style.width = `${progressPercentage}%`;
 }
 
 // ✅ Display Daily Progress & Mark Completion
@@ -379,5 +410,115 @@ async function submitFeedback() {
 }
 
   </script>
+  <style>
+    /* 🌟 General Styles */
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #f4f7fc;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.dashboard-nav {
+  width: 250px;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.dashboard-nav h2 {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.dashboard-nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.dashboard-nav ul li {
+  padding: 15px;
+  margin: 10px 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.dashboard-nav ul li a {
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  display: block;
+  transition: all 0.3s ease;
+}
+
+.dashboard-nav ul li:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.dashboard-content {
+  flex-grow: 1;
+  padding: 40px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* 🌟 Progress Bars */
+.progress-bar-container {
+  background: #e0e0e0;
+  border-radius: 25px;
+  padding: 5px;
+  margin: 15px 0;
+  width: 100%;
+}
+
+.progress-bar {
+  height: 20px;
+  border-radius: 25px;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  width: 0%;
+  transition: width 0.5s ease-in-out;
+}
+
+/* 🌟 Charts */
+canvas {
+  max-width: 100% !important;
+  max-height: 400px !important;
+  display: block;
+  border-radius: 12px;
+}
+
+/* 🌟 Buttons */
+button {
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+button:hover {
+  background: linear-gradient(135deg, #5a0fb4, #1f60d0);
+}
+canvas {
+  max-width: 100% !important; 
+  max-height: 400px !important; /* Limits the chart height */
+  width: auto;
+  height: auto;
+  display: block;
+}
+
+  </style>
 </body>
 </html>
