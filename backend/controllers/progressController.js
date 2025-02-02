@@ -23,6 +23,22 @@ exports.getClientProgress = async (req, res) => {
   }
 };
 
+exports.getStrengthProgress = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const progress = await Progress.findOne({ programId });
+
+    if (!progress) {
+      return res.status(404).json({ message: "İlerleme verisi bulunamadı" });
+    }
+
+    res.status(200).json({ strength: progress.progressiveOverload });
+  } catch (error) {
+    res.status(500).json({ message: "Güç gelişimi verisi alınamadı", error: error.message });
+  }
+};
+
+
 exports.getProgressReport = async (req, res) => {
   try {
     const report = await Progress.find({ userId: req.params.id }).populate("programId");
@@ -227,3 +243,69 @@ exports.submitFeedback = async (req, res) => {
     res.status(500).json({ message: "Error submitting feedback", error: error.message });
   }
 };
+exports.updateAdaptiveAdjustments = async (req, res) => {
+  try {
+    const { programId, exerciseName, fatigueLevel } = req.body;
+
+    const progress = await Progress.findOne({ programId, clientId: req.user.id });
+
+    if (!progress) return res.status(404).json({ message: "Progress not found" });
+
+    let adjustment = { suggestedWeightIncrease: 0, suggestedRepsIncrease: 0 };
+
+    if (fatigueLevel === "Low") {
+      adjustment = { suggestedWeightIncrease: 2.5, suggestedRepsIncrease: 2 };
+    } else if (fatigueLevel === "High") {
+      adjustment = { suggestedWeightIncrease: -2.5, suggestedRepsIncrease: -2 };
+    }
+
+    // Update the progress model
+    progress.adaptiveAdjustments.push({ exerciseName, ...adjustment, fatigueLevel });
+    await progress.save();
+
+    res.status(200).json({ message: "Adjustment saved", adjustment });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating adaptive adjustments", error: error.message });
+  }
+};
+exports.updateGoalProgress = async (req, res) => {
+  try {
+    const { programId, currentMetric } = req.body;
+
+    const progress = await Progress.findOne({ programId, clientId: req.user.id });
+
+    if (!progress) return res.status(404).json({ message: "Progress not found" });
+
+    // Auto-calculate progress percentage
+    progress.goalTracking.currentMetric = currentMetric;
+    progress.goalTracking.progressPercentage = 
+      ((currentMetric - progress.goalTracking.initialMetric) / 
+      (progress.goalTracking.targetMetric - progress.goalTracking.initialMetric)) * 100;
+
+    await progress.save();
+    res.status(200).json({ message: "Goal progress updated", progress });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating goal progress", error: error.message });
+  }
+};
+exports.getProgressTrend = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const progress = await Progress.find({ programId, clientId: req.user.id });
+
+    if (!progress) {
+      return res.status(404).json({ message: "Progress not found" });
+    }
+
+    const trendData = progress.completedDays.map(day => ({
+      date: day.dateCompleted,
+      completed: day.completed,
+    }));
+
+    res.status(200).json({ trendData });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching progress trend", error: error.message });
+  }
+};
+
+

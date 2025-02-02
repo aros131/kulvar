@@ -23,5 +23,11 @@ router.get("/", protect, getPrograms);
 router.post("/:programId/assign", protect, assignProgramToClients);
 router.post("/:programId/clone", protect, cloneProgram);
 router.post("/:programId/track-session", protect, trackSessionCompletion);
+const { updateAdaptiveAdjustments, updateGoalProgress } = require("../controllers/progressController");
 
+// 🟢 Update fatigue-based adjustments
+router.post("/adjustments", protect, updateAdaptiveAdjustments);
+
+// 🟢 Update goal tracking automatically
+router.post("/goal-progress", protect, updateGoalProgress);
 module.exports = router;

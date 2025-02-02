@@ -24,6 +24,9 @@ const ProgramSchema = new mongoose.Schema({
           sets: { type: Number, default: 0 },
           reps: { type: Number, default: 0 },
           duration: { type: Number, default: 0 }, // In minutes
+          completedSets: { type: Number, default: 0 }, // NEW
+        completedReps: { type: Number, default: 0 }, // NEW
+        completedDuration: { type: Number, default: 0 }, // NEW
           videoUrls: [{ type: String }], // ✅ NOW MULTIPLE VIDEOS PER EXERCISE
           notes: { type: String },
         },
@@ -73,14 +76,7 @@ const ProgramSchema = new mongoose.Schema({
     ],
   },
 
-  completedDays: [
-    {
-      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      day: { type: String },
-      completed: { type: Boolean, default: false },
-      dateCompleted: { type: Date },
-    },
-  ],
+  
 
   // ✅ NEW: Missed Workouts (Clients Can Reschedule)
   missedWorkouts: [
@@ -101,16 +97,7 @@ const ProgramSchema = new mongoose.Schema({
     }
   ],
 
-  progressiveOverload: [
-    {
-      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      exerciseName: { type: String },
-      initialWeight: { type: Number },
-      currentWeight: { type: Number },
-      improvement: { type: Number },
-    }
-  ],
-
+  
   sessionTracking: [
     {
       clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

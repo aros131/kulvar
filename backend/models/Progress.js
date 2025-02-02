@@ -5,11 +5,20 @@ const ProgressSchema = new mongoose.Schema({
   programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true },
   completedDays: [
     {
-      day: { type: String, required: true },
-      completed: { type: Boolean, default: false },
+      day: { type: String }, // e.g., "Monday"
+      exercises: [
+        {
+          name: { type: String },
+          completedSets: { type: Number, default: 0 },
+          completedReps: { type: Number, default: 0 },
+          completedDuration: { type: Number, default: 0 }, 
+          isFullyCompleted: { type: Boolean, default: false },
+        }
+      ],
       dateCompleted: { type: Date },
-    },
+    }
   ],
+  
   progressiveOverload: [
     {
       exerciseName: { type: String },
@@ -27,6 +36,77 @@ const ProgressSchema = new mongoose.Schema({
     },
   ],
   lastUpdated: { type: Date, default: Date.now },
+  exerciseCompletion: [
+    {
+      day: { type: String }, // Example: "Monday"
+      exercises: [
+        {
+          name: { type: String },
+          completedSets: { type: Number, default: 0 },
+          completedReps: { type: Number, default: 0 },
+          completedDuration: { type: Number, default: 0 },
+          isFullyCompleted: { type: Boolean, default: false }, // ✅ Track if fully completed
+        }
+      ]
+    }
+  ],
+  progressiveOverload: [
+    {
+      exerciseName: { type: String },
+      history: [
+        {
+          date: { type: Date, default: Date.now },
+          weight: { type: Number },
+          reps: { type: Number },
+          duration: { type: Number },
+        }
+      ],
+      improvement: { type: Number }, // Total improvement tracking
+    }
+  ],
+  previousAttempts: [
+    {
+      startDate: { type: Date },
+      endDate: { type: Date },
+      completionRate: { type: Number }, // Example: 80% before restarting
+    }
+  ],
+  adaptiveAdjustments: [
+    {
+      exerciseName: { type: String },
+      suggestedWeightIncrease: { type: Number }, // Example: "Increase by 2.5kg"
+      suggestedRepsIncrease: { type: Number }, // Example: "Increase by 2 reps"
+      fatigueLevel: { type: String, enum: ["Low", "Moderate", "High"], default: "Moderate" },
+    }
+  ],
+  streaks: {
+    currentStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    lastWorkoutDate: { type: Date },
+  },
+  weeklySummary: [
+    {
+      weekNumber: { type: Number },
+      workoutsCompleted: { type: Number },
+      totalVolumeLifted: { type: Number }, // Example: "5000 kg lifted"
+      feedbackSummary: { type: String },
+    }
+  ],
+  monthlySummary: [
+    {
+      month: { type: String },
+      completionRate: { type: Number }, // Example: "85% of sessions completed"
+      biggestImprovement: { type: String }, // Example: "Squat +10kg"
+    }
+  ],
+  goalTracking: {
+    goalType: { type: String, enum: ["Weight Loss", "Muscle Gain", "Endurance"], required: true },
+    initialMetric: { type: Number }, // Example: "Start Weight: 80kg"
+    targetMetric: { type: Number }, // Example: "Goal Weight: 75kg"
+    currentMetric: { type: Number }, // Example: "Now: 78kg"
+    progressPercentage: { type: Number, default: 0 }, // Auto-calculated
+  },
+  
 });
 
 module.exports = mongoose.model("Progress", ProgressSchema);

@@ -69,6 +69,12 @@
         <h3>Güç Gelişimi</h3>
         <canvas id="strengthChart"></canvas>
       </section>
+      
+      <section id="progress-trend">
+        <h3>İlerleme Trendi</h3>
+        <canvas id="trendChart"></canvas>
+      </section>
+      
 
       <!-- 💬 Feedback for Each Session -->
       <section id="feedback-section">
@@ -304,6 +310,45 @@ function displayCoachNotes(program) {
   const notesContent = document.getElementById("coach-notes-content");
   notesContent.innerHTML = program.dailySchedule.map(day => `<p><strong>${day.day}:</strong> ${day.notes || "Koç notu eklenmedi."}</p>`).join("");
 }
+
+async function loadProgressTrend(programId) {
+  const response = await fetch(`${BASE_URL}/progress-trend/${programId}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+
+  const data = await response.json();
+  const labels = data.trendData.map(entry => entry.date);
+  const progressValues = data.trendData.map(entry => entry.completed ? 1 : 0);
+
+  new Chart(document.getElementById("trendChart").getContext("2d"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{ label: "İlerleme", data: progressValues, borderColor: "blue" }],
+    },
+    options: { responsive: true, maintainAspectRatio: false },
+  });
+}
+
+async function loadStrengthProgress(programId) {
+  const response = await fetch(`${BASE_URL}/progress/strength-chart/${programId}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+
+  const data = await response.json();
+  const labels = data.strength.map(entry => entry.exerciseName);
+  const weightValues = data.strength.map(entry => entry.currentWeight);
+
+  new Chart(document.getElementById("strengthChart").getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{ label: "Şu Anki Ağırlık", data: weightValues, backgroundColor: "green" }],
+    },
+    options: { responsive: true, maintainAspectRatio: false },
+  });
+}
+
 
 // ✅ Submit Workout Feedback
 async function submitFeedback() {

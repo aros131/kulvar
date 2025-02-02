@@ -31,4 +31,9 @@ router.post("/reschedule", protect, progressController.rescheduleWorkout);
 
 // ✅ Submit workout feedback
 router.post("/feedback", protect, progressController.submitFeedback);
+router.get("/progress-trend/:programId", protect, getProgressTrend);
+
+
+
+
 module.exports = router;
