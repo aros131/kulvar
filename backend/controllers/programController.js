@@ -93,7 +93,7 @@ exports.assignProgramToClients = async (req, res) => {
     const { programId, clientIds } = req.body;
 
     // Ensure program exists
-    const program = await Program.findById(programId);
+    const program = await Program.findById(req.params.id);
     if (!program) {
       return res.status(404).json({ message: "Program not found" });
     }
