@@ -252,3 +252,33 @@ document.getElementById("feedback-form").addEventListener("submit", async (e) =>
     console.error("Failed to submit feedback");
   }
 });
+async function getUserPrograms() {
+  const token = localStorage.getItem("token");
+
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+    console.log("Fetched Programs:", data); // Debugging log
+
+    if (response.ok) {
+      const programList = document.getElementById("program-list");
+      if (data.programs.length === 0) {
+        programList.innerHTML = `<li>No programs assigned yet.</li>`;
+      } else {
+        programList.innerHTML = data.programs
+          .map(program => `<li>${program.name} - ${program.duration} weeks</li>`)
+          .join("");
+      }
+    } else {
+      console.error("Error fetching programs:", data.message);
+    }
+  } catch (error) {
+    console.error("Error fetching programs:", error.message);
+  }
+}

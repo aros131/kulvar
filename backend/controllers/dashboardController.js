@@ -185,13 +185,13 @@ exports.getNotificationsForUser = async (req, res) => {
 };
 
 
-// Get user-specific programs
 exports.getUserPrograms = async (req, res) => {
   try {
-    const userId = req.user.id; // Extract user ID from token (set by `protect` middleware)
+    console.log("Fetching programs for user:", req.user.id); // Debugging log
 
-    // Fetch programs assigned to the user
-    const programs = await Program.find({ userId });
+    const programs = await Program.find({ assignedClients: req.user.id });
+
+    console.log("Programs Found:", programs); // Debugging log
 
     if (!programs || programs.length === 0) {
       return res.status(404).json({ message: "No programs found for this user" });
@@ -203,6 +203,7 @@ exports.getUserPrograms = async (req, res) => {
     res.status(500).json({ message: "Error fetching user programs", error: error.message });
   }
 };
+
 
 // Get groups for a coach (Optional, if needed)
 exports.getGroups = async (req, res) => {
