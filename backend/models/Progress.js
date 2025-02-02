@@ -1,17 +1,32 @@
 const mongoose = require("mongoose");
 
 const ProgressSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true },
-  dayNumber: { type: Number, required: true }, // Day 1, Day 2, etc.
-  completedExercises: [
+  completedDays: [
     {
-      name: { type: String },
-      setsCompleted: { type: Number },
-      notes: { type: String }, // Optional user feedback on the exercise
+      day: { type: String, required: true },
+      completed: { type: Boolean, default: false },
+      dateCompleted: { type: Date },
     },
   ],
-  createdAt: { type: Date, default: Date.now },
+  progressiveOverload: [
+    {
+      exerciseName: { type: String },
+      initialWeight: { type: Number },
+      currentWeight: { type: Number },
+      improvement: { type: Number },
+    },
+  ],
+  sessionTracking: [
+    {
+      sessionId: { type: String },
+      completed: { type: Boolean, default: false },
+      feedback: { type: String },
+      dateCompleted: { type: Date },
+    },
+  ],
+  lastUpdated: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("Progress", ProgressSchema);

@@ -12,13 +12,10 @@
     <nav class="dashboard-nav">
       <h2>İlerleme Takibi</h2>
       <ul>
-        <li><a href="coach_dashboard.html">🏠 Ana Sayfa</a></li>
-        <li><a href="coach_profile.html">👤 Profilim</a></li>
-        <li><a href="program.html">📋 Programlarım</a></li>
-        <li><a href="exercise_templates.html">🏋️ Egzersiz Şablonları</a></li>
+        <li><a href="user_dashboard.html">🏠 Ana Sayfa</a></li>
+        <li><a href="profile.html">👤 Profilim</a></li>
         <li><a href="progress_tracking.html" class="active">📊 İlerleme</a></li>
         <li><a href="messages.html">💬 Mesajlar</a></li>
-        <li><a href="payments.html">💰 Ödemeler</a></li>
         <li><a href="logout.html">🚪 Çıkış Yap</a></li>
       </ul>
     </nav>
@@ -26,121 +23,316 @@
     <main class="dashboard-content">
       <h2>İlerleme Takibi</h2>
 
-      <!-- Müşteri Seçme -->
-      <label for="client-select">Müşteri Seç:</label>
-      <select id="client-select" onchange="fetchProgress()">
-        <option value="">Müşteri Seç</option>
-        <!-- Dynamically populated -->
+      <!-- 🏋️ Select Program -->
+      <label for="program-select">Program Seç:</label>
+      <select id="program-select" onchange="fetchProgress()">
+        <option value="">Program Seç</option>
       </select>
+      <!-- 🔄 Restart Program -->
+      <button id="restart-program" onclick="restartProgram()">🔄 Programı Yeniden Başlat</button>
 
-      <!-- Genel İlerleme Durumu -->
+
+      <!-- 📊 Overall Progress Chart -->
       <section id="progress-summary">
         <h3>Genel Program İlerlemesi</h3>
         <canvas id="progressChart"></canvas>
       </section>
+      <!-- 🏆 Achievement Badges -->
+      <section id="achievements">
+        <h3>Kazanılan Başarımlar</h3>
+        <div id="badges-container">
+          <!-- Badges will be dynamically added here -->
+        </div>
+      </section>
 
-      <!-- Günlük İlerleme -->
+      <!-- ✅ Workout Completion Section -->
       <section id="daily-progress">
         <h3>Günlük İlerleme</h3>
         <ul id="daily-progress-list">
-          <!-- Dynamically populated -->
+          <!-- Populated dynamically -->
         </ul>
+      </section>
+      <!-- 📜 Coach Notes for Daily Workouts -->
+      <section id="coach-notes">
+        <h3>Koç Notları</h3>
+        <p id="coach-notes-content">Koçunuzun eklediği notlar burada görünecek.</p>
+      </section>
+
+      <!-- 🔄 Reschedule Missed Workouts -->
+      <section id="missed-workouts">
+        <h3>Kaçırılan Egzersizler</h3>
+        <ul id="missed-list"></ul>
+      </section>
+
+      <!-- 🏋️‍♂️ Strength Progress (Progressive Overload) -->
+      <section id="progressive-overload">
+        <h3>Güç Gelişimi</h3>
+        <canvas id="strengthChart"></canvas>
+      </section>
+
+      <!-- 💬 Feedback for Each Session -->
+      <section id="feedback-section">
+        <h3>Geri Bildirim</h3>
+        <textarea id="feedback-input" placeholder="Egzersiz hakkında düşüncelerinizi paylaşın..."></textarea>
+        <button onclick="submitFeedback()">Gönder</button>
       </section>
     </main>
   </div>
 
-  <script>
-    const BASE_URL = "https://kulvar.onrender.com";
-    const token = localStorage.getItem("token");
+  <script src="progress_tracking.js"></script>
+</body>
+</html>
+<script>
+    const BASE_URL = "https://kulvar.onrender.com"; 
 
-    if (!token) {
-      alert("Yetkilendirme hatası. Lütfen giriş yapın.");
-      window.location.href = "/login.html";
-    }
+document.addEventListener("DOMContentLoaded", async () => {
+  await fetchUserPrograms();
+});
 
-    // Fetch clients for the dropdown
-    async function fetchClients() {
-      try {
-        const response = await fetch(`${BASE_URL}/dashboard/clients`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+// 🟢 Fetch User's Assigned Programs
+async function fetchUserPrograms() {
+  try {
+    const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
 
-        const { clients } = await response.json();
-        if (response.ok) {
-          const clientSelect = document.getElementById("client-select");
-          clients.forEach(client => {
-            const option = document.createElement("option");
-            option.value = client._id;
-            option.textContent = client.name;
-            clientSelect.appendChild(option);
-          });
-        } else {
-          console.error("Müşteriler alınamadı:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
-    }
-
-    // Fetch and display progress data
-    async function fetchProgress() {
-      const clientId = document.getElementById("client-select").value;
-      if (!clientId) return;
-
-      try {
-        const response = await fetch(`${BASE_URL}/progress/${clientId}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          renderProgressChart(data.progress);
-          renderDailyProgress(data.dailyProgress);
-        } else {
-          console.error("İlerleme verisi alınamadı:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
-    }
-
-    // Render progress chart
-    function renderProgressChart(progressData) {
-      const ctx = document.getElementById("progressChart").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: progressData.map(entry => entry.date),
-          datasets: [
-            {
-              label: "Tamamlanan Günler",
-              data: progressData.map(entry => entry.completedDays),
-              backgroundColor: "rgba(47, 87, 93, 0.5)",
-              borderColor: "#2F575D",
-              borderWidth: 2,
-            },
-          ],
-        },
+    const data = await response.json();
+    if (response.ok) {
+      const programSelect = document.getElementById("program-select");
+      data.programs.forEach(program => {
+        const option = document.createElement("option");
+        option.value = program._id;
+        option.textContent = program.name;
+        programSelect.appendChild(option);
       });
+    } else {
+      console.error("Programlar yüklenemedi:", data.message);
     }
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+}
 
-    // Render daily progress
-    function renderDailyProgress(dailyProgress) {
-      const progressList = document.getElementById("daily-progress-list");
-      progressList.innerHTML = dailyProgress
-        .map(
-          entry => `
-        <li>
-          <strong>${entry.day}:</strong> ${entry.completed ? "Tamamlandı ✅" : "Tamamlanmadı ❌"}
-        </li>`
-        )
-        .join("");
+// 🟢 Fetch Progress When Program is Selected
+async function fetchProgress() {
+  const programId = document.getElementById("program-select").value;
+  if (!programId) return;
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+
+    const program = await response.json();
+    if (response.ok) {
+      displayDailyProgress(program);
+      displayMissedWorkouts(program);
+      loadProgressCharts(program);
+    } else {
+      console.error("Program bilgileri alınamadı:", program.message);
     }
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+}
 
-    document.addEventListener("DOMContentLoaded", fetchClients);
+// ✅ Display Daily Progress & Mark Completion
+function displayDailyProgress(program) {
+  const dailyProgressList = document.getElementById("daily-progress-list");
+  dailyProgressList.innerHTML = "";
+
+  program.dailySchedule.forEach((day, index) => {
+    const li = document.createElement("li");
+    const isCompleted = program.completedDays.some(d => d.day === day.day);
+    
+    li.innerHTML = `
+      <p><strong>Gün ${day.day}:</strong> ${day.exercises.map(ex => ex.name).join(", ")}</p>
+      <input type="checkbox" id="day-${index}" ${isCompleted ? "checked" : ""} 
+        onchange="markWorkoutCompleted('${program._id}', '${day.day}')">
+      <label for="day-${index}">Tamamlandı</label>
+    `;
+    dailyProgressList.appendChild(li);
+  });
+}
+//restart
+
+async function restartProgram() {
+  const programId = document.getElementById("program-select").value;
+  if (!programId) return alert("Lütfen bir program seçin!");
+
+  try {
+    const response = await fetch(`${BASE_URL}/progress/restart`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ programId }),
+    });
+
+    if (response.ok) {
+      alert("Program sıfırlandı!");
+      fetchProgress();
+    } else {
+      console.error("Program sıfırlama hatası:", await response.json());
+    }
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+}
+// ✅ Mark Workout as Completed
+async function markWorkoutCompleted(programId, day) {
+  try {
+    const response = await fetch(`${BASE_URL}/programs/progress/complete`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ programId, day }),
+    });
+
+    if (response.ok) {
+      alert(`Gün ${day} tamamlandı!`);
+      fetchProgress();
+    } else {
+      console.error("Tamamlama hatası:", await response.json());
+    }
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+}
+
+// 🔄 Display & Reschedule Missed Workouts
+function displayMissedWorkouts(program) {
+  const missedList = document.getElementById("missed-list");
+  missedList.innerHTML = "";
+
+  program.missedWorkouts.forEach(missed => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <p><strong>Kaçırılan Gün:</strong> ${missed.missedDay}</p>
+      <input type="text" placeholder="Yeni gün girin..." id="reschedule-${missed.missedDay}">
+      <button onclick="rescheduleWorkout('${program._id}', '${missed.missedDay}')">Günü Değiştir</button>
+    `;
+    missedList.appendChild(li);
+  });
+}
+
+// ✅ Reschedule a Missed Workout
+async function rescheduleWorkout(programId, missedDay) {
+  const newDay = document.getElementById(`reschedule-${missedDay}`).value;
+  if (!newDay) return alert("Lütfen yeni bir gün girin!");
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/reschedule`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ programId, missedDay, newDay }),
+    });
+
+    if (response.ok) {
+      alert(`Kaçırılan gün "${missedDay}" artık "${newDay}" olarak ayarlandı.`);
+      fetchProgress();
+    } else {
+      console.error("Gün değiştirme hatası:", await response.json());
+    }
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+}
+
+// 📊 Load Progress Tracking Charts
+function loadProgressCharts(program) {
+  // Strength Chart (Progressive Overload)
+  const ctx = document.getElementById("strengthChart").getContext("2d");
+  const labels = program.progressiveOverload.map(ex => ex.exerciseName);
+  const initialWeights = program.progressiveOverload.map(ex => ex.initialWeight);
+  const currentWeights = program.progressiveOverload.map(ex => ex.currentWeight);
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        { label: "Başlangıç Ağırlığı", data: initialWeights, backgroundColor: "blue" },
+        { label: "Şu Anki Ağırlık", data: currentWeights, backgroundColor: "green" },
+      ],
+    },
+    options: { responsive: true, maintainAspectRatio: false },
+  });
+
+  // Program Progress Chart
+  const ctx2 = document.getElementById("progressChart").getContext("2d");
+  const completedDays = program.completedDays.length;
+  const remainingDays = program.duration - completedDays;
+
+  new Chart(ctx2, {
+    type: "doughnut",
+    data: {
+      labels: ["Tamamlanan Günler", "Kalan Günler"],
+      datasets: [{ data: [completedDays, remainingDays], backgroundColor: ["#4CAF50", "#FFC107"] }],
+    },
+    options: { responsive: true, maintainAspectRatio: false },
+  });
+}
+ //Achievement Badges
+function updateAchievementBadges(progress) {
+  const badgesContainer = document.getElementById("badges-container");
+  badgesContainer.innerHTML = ""; // Clear previous badges
+
+  const completedDays = progress.completedDays.length;
+
+  if (completedDays >= 5) {
+    badgesContainer.innerHTML += `<span class="badge">🏆 5 Gün Tamamlandı!</span>`;
+  }
+  if (completedDays >= 10) {
+    badgesContainer.innerHTML += `<span class="badge">🔥 10 Günlük Seri!</span>`;
+  }
+  if (completedDays >= 15) {
+    badgesContainer.innerHTML += `<span class="badge">💪 15 Günlük Başarı!</span>`;
+  }
+}
+//coach notes
+
+function displayCoachNotes(program) {
+  const notesContent = document.getElementById("coach-notes-content");
+  notesContent.innerHTML = program.dailySchedule.map(day => `<p><strong>${day.day}:</strong> ${day.notes || "Koç notu eklenmedi."}</p>`).join("");
+}
+
+// ✅ Submit Workout Feedback
+async function submitFeedback() {
+  const programId = document.getElementById("program-select").value;
+  const message = document.getElementById("feedback-input").value;
+
+  if (!message) return alert("Lütfen bir geri bildirim yazın!");
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/feedback`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ programId, message }),
+    });
+
+    if (response.ok) {
+      alert("Geri bildirim gönderildi!");
+      document.getElementById("feedback-input").value = "";
+    } else {
+      console.error("Geri bildirim hatası:", await response.json());
+    }
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+}
+
   </script>
 </body>
 </html>

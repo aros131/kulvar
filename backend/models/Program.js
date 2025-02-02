@@ -6,40 +6,46 @@ const ProgramSchema = new mongoose.Schema({
   duration: { type: Number, required: true }, // Duration in weeks
   coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Linked coach
   assignedClients: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Clients assigned to this program
-  difficulty: { type: String, enum: ["Başlangıç", "Orta Düzey", "İleri Seviye"], default: "Başlangıç" }, // NEW
+  difficulty: { type: String, enum: ["Başlangıç", "Orta Düzey", "İleri Seviye"], default: "Başlangıç" },
+
+  // ✅ NEW: Start Date Per Client (Tracking)
+  startDate: { type: Date, default: Date.now },
+
+  // ✅ NEW: Overall Program Goal (e.g., "Lose 5kg in 12 weeks")
+  targetGoal: { type: String },
 
   dailySchedule: [
     {
       day: { type: String, required: true }, // e.g., "Monday"
-      goals: { type: String }, // Overall goal for the day
+      goals: { type: String },
       exercises: [
         {
           name: { type: String, required: true },
           sets: { type: Number, default: 0 },
           reps: { type: Number, default: 0 },
           duration: { type: Number, default: 0 }, // In minutes
-          videoUrl: { type: String }, // Optional video
-          notes: { type: String }, // Additional instructions
+          videoUrls: [{ type: String }], // ✅ NOW MULTIPLE VIDEOS PER EXERCISE
+          notes: { type: String },
         },
       ],
     },
   ],
 
   nutritionPlan: {
-    tips: [{ type: String }], // Array of nutrition tips
+    tips: [{ type: String }], 
     meals: [
       {
-        name: { type: String }, // Meal name (e.g., "Breakfast")
-        description: { type: String }, // What to eat
-        time: { type: String }, // Suggested time (e.g., "08:00 AM")
+        name: { type: String },
+        description: { type: String },
+        time: { type: String },
       },
     ],
   },
 
   documents: [
     {
-      name: { type: String }, // Document name (e.g., "Weekly Plan")
-      url: { type: String }, // Link to document (PDFs, etc.)
+      name: { type: String },
+      url: { type: String },
     },
   ],
 
@@ -47,7 +53,7 @@ const ProgramSchema = new mongoose.Schema({
     {
       clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       feedbackText: { type: String },
-      rating: { type: Number, min: 1, max: 5 }, // Client rating
+      rating: { type: Number, min: 1, max: 5 },
       date: { type: Date, default: Date.now },
     },
   ],
@@ -55,8 +61,8 @@ const ProgramSchema = new mongoose.Schema({
   progressTracking: {
     metrics: [
       {
-        name: { type: String, required: true }, // Metric name (e.g., "Weight")
-        unit: { type: String }, // Unit of measurement (e.g., "kg")
+        name: { type: String, required: true },
+        unit: { type: String },
         values: [
           {
             value: { type: Number, required: true },
@@ -67,49 +73,54 @@ const ProgramSchema = new mongoose.Schema({
     ],
   },
 
-  completedDays: [ // NEW ✅
+  completedDays: [
     {
       clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      day: { type: String }, // e.g., "Monday"
+      day: { type: String },
       completed: { type: Boolean, default: false },
       dateCompleted: { type: Date },
     },
   ],
 
-  visibility: { type: String, enum: ["public", "private"], default: "private" }, // NEW ✅
-
-  // ✅ NEW: Custom Workout Schedules
-  scheduleType: { type: String, enum: ["Fixed", "Custom"], default: "Fixed" },
-  customSchedule: [
+  // ✅ NEW: Missed Workouts (Clients Can Reschedule)
+  missedWorkouts: [
     {
-      day: { type: String }, // Example: "Monday, Wednesday, Friday"
-      workout: { type: String } // Example: "Upper Body Strength"
+      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      missedDay: { type: String },
+      rescheduledDay: { type: String },
     }
   ],
 
-  // ✅ NEW: Progressive Overload (Tracking Improvements)
+  visibility: { type: String, enum: ["public", "private"], default: "private" },
+
+  scheduleType: { type: String, enum: ["Fixed", "Custom"], default: "Fixed" },
+  customSchedule: [
+    {
+      day: { type: String },
+      workout: { type: String }
+    }
+  ],
+
   progressiveOverload: [
     {
       clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       exerciseName: { type: String },
-      initialWeight: { type: Number }, // e.g., 50 kg
-      currentWeight: { type: Number }, // e.g., 60 kg
-      improvement: { type: Number }, // e.g., +10 kg
+      initialWeight: { type: Number },
+      currentWeight: { type: Number },
+      improvement: { type: Number },
     }
   ],
 
-  // ✅ NEW: Session-Based Tracking
   sessionTracking: [
     {
       clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      sessionId: { type: String }, // Unique session identifier
+      sessionId: { type: String },
       completed: { type: Boolean, default: false },
-      feedback: { type: String }, // Client comments on the session
+      feedback: { type: String },
       dateCompleted: { type: Date },
     }
   ],
 
-  // ✅ NEW: Private Notes for Coaches
   privateNotes: [
     {
       clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -118,9 +129,18 @@ const ProgramSchema = new mongoose.Schema({
     }
   ],
 
+  // ✅ NEW: Program Status (Active, Completed, Paused)
+  status: { type: String, enum: ["Active", "Completed", "Paused"], default: "Active" },
+
+  // ✅ NEW: Coach Announcements
+  announcements: [
+    {
+      message: { type: String },
+      date: { type: Date, default: Date.now },
+    }
+  ],
+
   createdAt: { type: Date, default: Date.now },
 });
-
-
 
 module.exports = mongoose.model("Program", ProgramSchema);
