@@ -8,11 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="notifications">
-  <h3>Bildirimler</h3>
-  <ul id="notification-list"></ul>
-</div>
-
   <div class="dashboard-container">
     <nav class="dashboard-nav">
       <h2>Koç Paneli</h2>
@@ -20,84 +15,44 @@
         <li><a href="coach_dashboard.html" class="active">🏠 Ana Sayfa</a></li>
         <li><a href="coach_profile.html">👤 Profilim</a></li>
         <li><a href="program.html">📋 Programlarım</a></li>
-        <li><a href="exercise_templates.html">🏋️ Egzersiz Şablonları</a></li>
         <li><a href="progress_tracking.html">📊 İlerleme</a></li>
         <li><a href="client_management.html">👥 Müşteri Yönetimi</a></li>
         <li><a href="groups.html">👨‍👩‍👦 Gruplar</a></li>
         <li><a href="analytics.html">📈 Analizler</a></li>
         <li><a href="notifications.html">🔔 Bildirimler</a></li>
-        <li><a href="messages.html">💬 Mesajlar</a></li>
-        <li><a href="payments.html">💰 Ödemeler</a></li>
         <li><a href="#" onclick="logout()">🚪 Çıkış Yap</a></li>
-
-    </ul>
-    
+      </ul>
     </nav>
-    <section class="profile-info">
-      <img id="profile-picture" src="images/default.jpg" alt="Profil Resmi" width="150" />
-    <p>Ad Soyad: <span id="coach-name"></span></p>
-    <p>E-posta: <span id="coach-email"></span></p>
-    <p>Rol: <span id="coach-role"></span></p>
-    <p>Uzmanlık Alanı: <span id="coach-specialization"></span></p>
-      <button onclick="editProfile()">Profili Düzenle</button>
-    </section>
+
     <main class="dashboard-content">
+      <!-- Profile Section -->
+      <section class="profile-info">
+        <img id="profile-picture" src="images/default.jpg" alt="Profil Resmi" width="150" />
+        <p>Ad Soyad: <span id="coach-name"></span></p>
+        <p>E-posta: <span id="coach-email"></span></p>
+        <p>Uzmanlık Alanı: <span id="coach-specialization"></span></p>
+      </section>
+
       <!-- Programs Section -->
       <section id="programs">
         <h2>Programlarım</h2>
-        <a href="program.html" class="btn">Yeni Program Ekle/Düzenle</a>
+        <a href="program.html" class="btn">Yeni Program Ekle</a>
         <ul id="program-list"></ul>
       </section>
 
       <!-- Clients Section -->
       <section id="clients">
         <h2>Müşterilerim</h2>
+        <input type="text" id="search-clients" placeholder="Müşteri ara..." oninput="loadClients(1)" />
         <ul id="client-list"></ul>
       </section>
-     
-        <h2>Müşterilerim</h2>
-        <input
-  type="text"
-  id="search-clients"
-  placeholder="Müşteri ara..."
-  oninput="loadClients(1)"
-/>
 
-        <ul id="client-list"></ul>
-      </section>
-      <div id="client-details-modal" class="modal hidden">
-        <div class="modal-content">
-          <h2 id="client-name">Müşteri Adı</h2>
-          <p>E-posta: <span id="client-email"></span></p>
-          <p>Hedefler: <span id="client-goals"></span></p>
-          <button onclick="closeModal()">Kapat</button>
-        </div>
-      </div>
-      
-
-      <!-- Groups Section -->
-      <section id="groups">
-        <h2>Gruplar</h2>
-        <form id="group-form">
-          <input type="text" id="group-name" placeholder="Grup Adı" required>
-          <button type="submit">Grup Oluştur</button>
-        </form>
-        <ul id="group-list"></ul>
-      </section>
-
-      <!-- Analytics Section -->
-      <section id="analytics">
-        <h2>Analizler</h2>
-        <canvas id="analyticsChart"></canvas>
-      </section>
-      
+      <!-- Feedback Section -->
       <section id="feedbacks">
-        <h2>Feedbacks</h2>
-        <ul id="feedback-list">
-          <!-- Dynamically populated -->
-        </ul>
+        <h2>Geri Bildirimler</h2>
+        <ul id="feedback-list"></ul>
       </section>
-      
+
       <!-- Notifications Section -->
       <section id="notifications">
         <h2>Bildirimler</h2>
@@ -107,345 +62,156 @@
   </div>
 
   <script>
-    
     const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
 
-// Fetch the token from localStorage
-const token = localStorage.getItem("token");
-
-// Check if token exists
-if (!token) {
-  alert("Oturum açılmamış! Lütfen giriş yapın.");
-  window.location.href = "login.html"; // Redirect to login page
-
-  // Redirect to login if token is missing
-  if (!token) {
-    alert("You are not authorized. Please log in.");
-    window.location.href = "/login.html";
-  }
-
-  // Get user ID from localStorage or URL
-  function getUserId() {
-    const userId = localStorage.getItem("userId"); // Check localStorage first
-    if (userId) return userId;
-
-    // Fallback to extracting from URL
-    const params = new URLSearchParams(window.location.search);
-    return params.get("id");
-  }
-
- // Check if token exists
-if (!token) {
-  alert("Oturum açılmamış! Lütfen giriş yapın.");
-  window.location.href = "login.html"; // Redirect to login page
-}
-
-// Fetch coach profile data
-async function loadCoachProfile() {
-  try {
-    const response = await fetch(`${BASE_URL}/auth/profile`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      document.getElementById("coach-name").textContent = data.name;
-      document.getElementById("coach-email").textContent = data.email;
-      document.getElementById("coach-role").textContent = "Koç";
-      document.getElementById("coach-specialization").textContent =
-        data.specialization || "Belirtilmemiş";
-      document.getElementById("profile-picture").src =
-        data.profilePicture || "images/default.jpg";
-    } else {
-      console.error("Profil verileri alınamadı");
+    if (!token) {
+      alert("Oturum açılmamış! Lütfen giriş yapın.");
+      window.location.href = "login.html";
     }
-  } catch (error) {
-    console.error("Hata oluştu:", error.message);
-  }
-}
 
-async function loadClients(page = 1) {
-  const searchQuery = document.getElementById("search-clients")?.value || "";
+    async function loadCoachProfile() {
+      try {
+        const response = await fetch(`${BASE_URL}/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  try {
-    const response = await fetch(`${BASE_URL}/dashboard/clients?page=${page}&search=${searchQuery}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      const clientList = document.getElementById("client-list");
-      clientList.innerHTML = data.clients.length
-        ? data.clients.map(client => `
-          <li>
-            ${client.name} (${client.email})
-            <button onclick="viewClientDetails('${client._id}')">Detay Gör</button>
-          </li>`).join("")
-        : "<li>Müşteri bulunamadı.</li>";
-
-      // Pagination Buttons
-      const paginationControls = document.getElementById("pagination-controls");
-      paginationControls.innerHTML = `
-        <button onclick="loadClients(${page - 1})" ${page === 1 ? "disabled" : ""}>Önceki</button>
-        <span>Sayfa ${page}</span>
-        <button onclick="loadClients(${page + 1})">Sonraki</button>
-      `;
-    } else {
-      console.error("Müşteriler yüklenirken hata oluştu:", data.message);
-      alert("Müşteriler yüklenemedi!");
-    }
-  } catch (error) {
-    console.error("Hata:", error.message);
-    alert("Müşteriler yüklenirken bir hata oluştu!");
-  }
-}
-
-
-// Consolidated loadClients function with search and pagination
-async function loadClients(page = 1) {
-  const searchQuery = document.getElementById("search-clients")?.value || "";
-
-  try {
-    const response = await fetch(`${BASE_URL}/dashboard/clients?page=${page}&search=${searchQuery}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      const clientList = document.getElementById("client-list");
-      clientList.innerHTML = data.clients
-        .map(
-          (client) => `
-          <li>
-            ${client.name} (${client.email})
-            <button onclick="viewClientDetails('${client._id}')">Detay Gör</button>
-          </li>`
-        )
-        .join("");
-    } else {
-      console.error("Müşteriler yüklenirken hata oluştu:", data.message);
-      alert("Müşteriler yüklenemedi!");
-    }
-  } catch (error) {
-    console.error("Hata:", error.message);
-    alert("Müşteriler yüklenirken bir hata oluştu!");
-  }
-}
-
-
-// Modalı kapat
-function closeModal() {
-  document.getElementById("client-details-modal").classList.add("hidden");
-}
-
-// Sayfa yüklendiğinde müşterileri getir
-document.addEventListener("DOMContentLoaded", loadClients);
-
-
-  // Call loadClients within the dashboard initialization
-  document.addEventListener("DOMContentLoaded", loadClients);
-
-  // Fetch Programs Created by the Coach
-  async function loadPrograms() {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/programs/coach`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const programs = await response.json();
-        const programList = document.getElementById("program-list");
-
-        if (programs.length === 0) {
-          programList.innerHTML = `<li>No programs created yet.</li>`;
-        } else {
-          programList.innerHTML = programs
-            .map(
-              (program) =>
-                `<li>${program.name} - ${program.duration} weeks</li>`
-            )
-            .join("");
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById("coach-name").textContent = data.name;
+          document.getElementById("coach-email").textContent = data.email;
+          document.getElementById("coach-specialization").textContent = data.specialization || "Belirtilmemiş";
+          document.getElementById("profile-picture").src = data.profilePicture || "images/default.jpg";
         }
-      } else {
-        console.error("Error fetching programs:", response.statusText);
-        alert("Failed to load programs.");
+      } catch (error) {
+        console.error("Hata:", error.message);
       }
-    } catch (error) {
-      console.error("Error fetching programs:", error.message);
-      alert("An error occurred while fetching programs.");
     }
-  }
 
-  // Fetch Analytics for the Coach
-  async function loadAnalytics() {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/analytics/coach`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    async function loadPrograms() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/programs/coach`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      if (response.ok) {
-        const { totalClients, totalPrograms } = await response.json();
-        document.getElementById("total-clients").textContent = totalClients || 0;
-        document.getElementById("total-programs").textContent = totalPrograms || 0;
-      } else {
-        console.error("Error fetching analytics:", response.statusText);
-        alert("Failed to load analytics.");
+        if (response.ok) {
+          const programs = await response.json();
+          const programList = document.getElementById("program-list");
+
+          programList.innerHTML = programs.length
+            ? programs.map(program => `
+              <li>
+                ${program.name} - ${program.duration} hafta
+                <button onclick="viewProgramDetails('${program._id}')">Detay Gör</button>
+                ${program.documents.length ? `
+                  <ul>${program.documents.map(doc => `<li><a href="${doc.url}" target="_blank">${doc.name}</a></li>`).join("")}</ul>
+                ` : ""}
+              </li>`).join("")
+            : "<li>Henüz program oluşturulmadı.</li>";
+        }
+      } catch (error) {
+        console.error("Error fetching programs:", error.message);
       }
-    } catch (error) {
-      console.error("Error fetching analytics:", error.message);
-      alert("An error occurred while fetching analytics.");
     }
-  }
 
-  // Fetch Notifications Sent by the Coach
-  async function fetchNotifications() {
-  try {
-    const response = await fetch(`${BASE_URL}/dashboard/notifications/user`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
+    function viewProgramDetails(programId) {
+      window.location.href = `program_details.html?programId=${programId}`;
+    }
+
+    async function loadClients() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/clients`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const clientList = document.getElementById("client-list");
+
+          clientList.innerHTML = data.clients.map(client => `
+            <li>
+              ${client.name} (${client.email})
+              <button onclick="viewClientDetails('${client._id}')">Detay Gör</button>
+            </li>`).join("");
+        }
+      } catch (error) {
+        console.error("Error loading clients:", error.message);
+      }
+    }
+
+    async function loadFeedbacks() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/feedbacks`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const feedbackList = document.getElementById("feedback-list");
+
+          feedbackList.innerHTML = data.feedbacks.map(feedback => `
+            <li>
+              ${feedback.clientId.name}: ${feedback.feedbackText}
+              <button onclick="replyToFeedback('${feedback._id}')">Yanıtla</button>
+            </li>`).join("");
+        }
+      } catch (error) {
+        console.error("Error loading feedbacks:", error.message);
+      }
+    }
+
+    async function replyToFeedback(feedbackId) {
+      const message = prompt("Yanıtınızı girin:");
+      if (!message) return;
+
+      try {
+        await fetch(`${BASE_URL}/dashboard/feedbacks/reply`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ feedbackId, message }),
+        });
+
+        alert("Yanıt gönderildi.");
+        loadFeedbacks();
+      } catch (error) {
+        console.error("Error replying to feedback:", error.message);
+      }
+    }
+
+    async function loadNotifications() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/notifications`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById("notification-list").innerHTML =
+            data.notifications.map(n => `<li>${n.message}</li>`).join("");
+        }
+      } catch (error) {
+        console.error("Error loading notifications:", error.message);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadCoachProfile();
+      loadPrograms();
+      loadClients();
+      loadFeedbacks();
+      loadNotifications();
     });
-
-    if (response.ok) {
-      const data = await response.json();
-      const notificationList = document.getElementById("notification-list");
-
-      notificationList.innerHTML = data.notifications.length
-        ? data.notifications.map(notification => `<li>${notification.message}</li>`).join("")
-        : "<li>Bildirim yok.</li>";
-    } else {
-      console.error("Bildirimler alınamadı:", response.statusText);
-    }
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
-
- 
-
-async function loadFeedbacks() {
-  try {
-    const response = await fetch(`${BASE_URL}/feedback/coach`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (response.ok) {
-      const { feedbacks } = await response.json();
-      const feedbackList = document.getElementById("feedback-list");
-
-      if (feedbacks.length === 0) {
-        feedbackList.innerHTML = `<li>Henüz geri bildirim yok.</li>`;
-      } else {
-        feedbackList.innerHTML = feedbacks
-          .map(
-            (feedback) =>
-              `<li>
-                <strong>${feedback.clientId.name}:</strong> ${feedback.feedbackText}
-              </li>`
-          )
-          .join("");
-      }
-    } else {
-      console.error("Feedback alınamadı:", response.statusText);
-    }
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
-
-
-  async function markFeedbackAsRead(feedbackId) {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/feedbacks/read/${feedbackId}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        alert("Feedback marked as read.");
-        loadFeedbacks(); // Reload feedbacks
-      } else {
-        console.error("Error marking feedback as read:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error marking feedback as read:", error.message);
-    }
-  }
-
-  async function deleteFeedback(feedbackId) {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/feedbacks/${feedbackId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        alert("Feedback deleted successfully.");
-        loadFeedbacks(); // Reload feedbacks
-      } else {
-        console.error("Error deleting feedback:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error deleting feedback:", error.message);
-    }
-  }
-
-  // Call loadFeedbacks within the dashboard initialization
-  document.addEventListener("DOMContentLoaded", loadFeedbacks);
-  // Initialize Coach Dashboard
-  function initializeCoachDashboard() {
-  fetchCoachData(); // Fetch profile
-  loadPrograms(); // Fetch programs
-  loadAnalytics(); // Fetch analytics
-  loadNotifications(); // Fetch notifications
-  loadClients(); // Fetch clients
-  loadFeedbacks(); // Fetch feedbacks
-}
-async function loadPrograms() {
-  try {
-    const response = await fetch(`${BASE_URL}/dashboard/programs/coach`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (response.ok) {
-      const programs = await response.json();
-      const programList = document.getElementById("program-list");
-
-      programList.innerHTML = programs.length
-        ? programs.map(program => `<li>${program.name} - ${program.duration} hafta</li>`).join("")
-        : "<li>Henüz program oluşturulmadı.</li>";
-    } else {
-      console.error("Error fetching programs:", response.statusText);
-      alert("Programlar yüklenemedi.");
-    }
-  } catch (error) {
-    console.error("Error fetching programs:", error.message);
-    alert("Programları yüklerken bir hata oluştu.");
-  }
-}
-function logout() {
-  localStorage.removeItem("token"); // Remove stored token
-  localStorage.removeItem("userId"); // Remove user ID if stored
-  window.location.href = "login.html"; // Redirect to login page
-}
-
-
-  // Load Data When Page is Ready
-  document.addEventListener("DOMContentLoaded", initializeCoachDashboard);
-
   </script>
+
+
   <style>
     /* General Styles */
     .modal {

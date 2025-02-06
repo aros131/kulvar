@@ -44,7 +44,25 @@ router.post("/restart", protect, restartProgram);
 router.get("/progress-trend/:programId", protect, getProgressTrend);
 // ✅ Complete a session
 router.post("/session/complete", protect, markSessionCompleted);
+// ✅ Import new functions
+const { updateGoalProgress, getUserStreaks } = require("../controllers/progressController");
 
-// ✅ Fetch progress trend
-router.get("/session-trend/:programId", protect, getProgressTrend);
+// ✅ Update Goal Tracking Automatically
+router.post("/goal-progress", protect, updateGoalProgress);
+
+// ✅ Get User Streaks
+router.get("/streaks/:userId", protect, getUserStreaks);
+const { getUserStreaks, rescheduleWorkout, getAdaptiveGoalProgress } = require("../controllers/progressController");
+
+// ✅ Get workout streaks
+router.get("/streaks/:userId", protect, getUserStreaks);
+
+// ✅ Reschedule missed workouts
+router.post("/reschedule", protect, rescheduleWorkout);
+
+// ✅ Fetch goal progress for adaptive tracking
+router.get("/goal-progress/:userId", protect, getAdaptiveGoalProgress);
+router.get("/strength-chart/:programId", protect, getStrengthProgress);
+
+
 module.exports = router;

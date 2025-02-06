@@ -5,13 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kulvar Kullanıcı Paneli</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="notifications">
-  <h3>Bildirimler</h3>
-  <ul id="notification-list"></ul>
-</div>
-
   <div class="dashboard-container">
     <!-- Sol Navigasyon Menüsü -->
     <nav class="dashboard-nav">
@@ -20,11 +16,12 @@
         <li><a href="#profile" class="active">Profil</a></li>
         <li><a href="#my-programs">Programlarım</a></li>
         <li><a href="#progress">İlerleme</a></li>
+        <li><a href="#workout-calendar">Takvim</a></li>
+        <li><a href="#achievements">Başarılar</a></li>
+        <li><a href="#messages">Mesajlar</a></li>
         <li><a href="#notifications">Bildirimler</a></li>
         <li><a href="#settings">Ayarlar</a></li>
-        <li><a href="#logout">Çıkış Yap</a></li>
         <li><a href="user_profile.html">Profilim</a></li>
-
       </ul>
     </nav>
 
@@ -35,17 +32,12 @@
         <h2>Profilim</h2>
         <p>Ad Soyad: <span id="user-name"></span></p>
         <p>E-posta: <span id="user-email"></span></p>
-        <button>Profili Güncelle</button>
       </section>
 
       <!-- Programlarım -->
       <section id="my-programs">
         <h2>Programlarım</h2>
-        <ul id="program-list">
-          <!-- Dinamik olarak doldurulacak -->
-        </ul>
-        <button onclick="viewProgramDetails('programId')">Detayları Gör</button>
-        <a href="progress_tracking.html" class="btn">Detayları Gör</a>
+        <ul id="program-list"></ul>
       </section>
 
       <!-- İlerleme -->
@@ -54,213 +46,209 @@
         <canvas id="progressChart"></canvas>
       </section>
 
+      <!-- Takvim -->
+      <section id="workout-calendar">
+        <h2>Takvim</h2>
+        <div id="calendar"></div>
+      </section>
+
+      <!-- Başarılar -->
+      <section id="achievements">
+        <h2>Başarılar</h2>
+        <ul id="badges-list"></ul>
+      </section>
+
+      <!-- Mesajlar -->
+      <section id="messages">
+        <h2>Mesajlar</h2>
+        <div id="chat-box"></div>
+        <input type="text" id="chat-input" placeholder="Mesajınızı yazın...">
+        <button onclick="sendMessage()">Gönder</button>
+      </section>
+
       <!-- Bildirimler -->
       <section id="notifications">
         <h2>Bildirimler</h2>
-        <ul id="notification-list">
-          <!-- Dinamik olarak doldurulacak -->
-        </ul>
-      </section>
-
-      <!-- Ayarlar -->
-      <section id="settings">
-        <h2>Ayarlar</h2>
-        <button>Şifre Değiştir</button>
-        <button>Dil Tercihi</button>
+        <ul id="notification-list"></ul>
       </section>
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-   
-  const BASE_URL = "https://kulvar.onrender.com";
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
 
-  // Extract User ID from URL
-function getUserIdFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("id");
-}
-
-  /// Fetch User Data
-async function fetchUserData() {
-  const userId = getUserIdFromUrl();
-  const token = localStorage.getItem("token");
-
-  if (!userId || !token) {
-    alert("User not authorized or ID missing");
-    window.location.href = "/login.html";
-    return;
-  }
-
-  try {
-    const response = await fetch(`${BASE_URL}/auth/${userId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-            // Populate user details
-      document.getElementById("user-name").textContent = data.name;
-      document.getElementById("user-email").textContent = data.email;
-    } else {
-      console.error("Error fetching user data:", data.message);
-      alert(`Error: ${data.message}`);
+    function getUserIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("id");
     }
-  } catch (error) {
-    console.error("Error during fetch:", error.message);
-    alert("An error occurred while fetching user data.");
-  }
-}
 
- // Fetch User Programs
-async function getUserPrograms() {
-  const token = localStorage.getItem("token");
-
-  try {
-    const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      const programList = document.getElementById("program-list");
-      if (data.programs.length === 0) {
-        programList.innerHTML = `<li>No programs assigned yet.</li>`;
-      } else {
-        programList.innerHTML = data.programs
-          .map(program => `<li>${program.name} - ${program.duration} weeks</li>`)
-          .join("");
+    async function fetchUserData() {
+      const userId = getUserIdFromUrl();
+      if (!userId || !token) {
+        alert("User not authorized");
+        window.location.href = "/login.html";
+        return;
       }
-    } else {
-      console.error("Error fetching programs:", data.message);
-    }
-  } catch (error) {
-    console.error("Error fetching programs:", error.message);
-  }
-}
 
-// Fetch Notifications
-async function fetchNotifications() {
-  const token = localStorage.getItem("token");
+      try {
+        const response = await fetch(`${BASE_URL}/auth/${userId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  try {
-    const response = await fetch(`${BASE_URL}/dashboard/notifications/user`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      const notificationList = document.getElementById("notification-list");
-      if (data.notifications.length === 0) {
-        notificationList.innerHTML = `<li>No notifications found.</li>`;
-      } else {
-        notificationList.innerHTML = data.notifications
-          .map(notification => `<li>${notification.message}</li>`)
-          .join("");
+        const data = await response.json();
+        if (response.ok) {
+          document.getElementById("user-name").textContent = data.name;
+          document.getElementById("user-email").textContent = data.email;
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error.message);
       }
-    } else {
-      console.error("Error fetching notifications:", data.message);
     }
-  } catch (error) {
-    console.error("Error fetching notifications:", error.message);
-  }
-}
 
-  // Initialize Dashboard
-  function initializeDashboard() {
-    fetchUserData(); // Fetch user details
-    getUserPrograms(); // Fetch programs
-    fetchNotifications(); // Fetch notifications
-  }
+    async function fetchUserProgramsForCalendar() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  // Call initializeDashboard when the page loads
-  document.addEventListener("DOMContentLoaded", initializeDashboard);
+        const data = await response.json();
+        if (response.ok) {
+          let calendarHTML = "";
+          data.programs.forEach(program => {
+            program.dailySchedule.forEach(day => {
+              calendarHTML += `<div class="calendar-day"><strong>Gün ${day.day}:</strong> ${day.exercises.join(", ")}</div>`;
+            });
+          });
+          document.getElementById("calendar").innerHTML = calendarHTML;
+        }
+      } catch (error) {
+        console.error("Error fetching programs:", error.message);
+      }
+    }
 
+    async function fetchUserStreaks() {
+      const userId = getUserIdFromUrl();
+      try {
+        const response = await fetch(`${BASE_URL}/progress/streaks/${userId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
+        const data = await response.json();
+        if (response.ok) {
+          let badgesHTML = "";
+          if (data.currentStreak >= 7) badgesHTML += `<li>🔥 7 Günlük Streak</li>`;
+          if (data.currentStreak >= 14) badgesHTML += `<li>🏆 14 Günlük Streak</li>`;
+          if (data.maxStreak >= 30) badgesHTML += `<li>🎖 30 Günlük Streak</li>`;
+          document.getElementById("badges-list").innerHTML = badgesHTML;
+        }
+      } catch (error) {
+        console.error("Error fetching streaks:", error.message);
+      }
+    }
+
+    async function fetchNotifications() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/notifications/user`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          document.getElementById("notification-list").innerHTML = data.notifications.map(n => `
+            <li>${n.message} <button onclick="markNotificationAsRead('${n._id}')">✓</button></li>
+          `).join("");
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error.message);
+      }
+    }
+
+    function markNotificationAsRead(notificationId) {
+      fetch(`${BASE_URL}/dashboard/notifications/read/${notificationId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(() => fetchNotifications());
+    }
+
+    function initializeDashboard() {
+      fetchUserData();
+      fetchUserProgramsForCalendar();
+      fetchUserStreaks();
+      fetchNotifications();
+    }
+
+    document.addEventListener("DOMContentLoaded", initializeDashboard);
   </script>
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #F7F9FA;
+      color: #28363D;
+    }
+
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .dashboard-nav {
+      width: 250px;
+      background-color: #2F575D;
+      color: #FFF;
+      padding: 20px;
+    }
+
+    .dashboard-nav h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .dashboard-nav ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .dashboard-nav a {
+      text-decoration: none;
+      color: #FFF;
+      display: block;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .dashboard-content {
+      flex: 1;
+      padding: 20px;
+    }
+
+    button {
+      background: #658B6F;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #calendar {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .calendar-day {
+      padding: 10px;
+      margin: 5px;
+      background: #C4CDC1;
+      border-radius: 5px;
+    }
+  </style>
 </body>
-  <style>/* Kullanıcı Paneli */
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
-}
-
-.dashboard-nav {
-  width: 250px;
-  background-color: #2F575D;
-  color: #FFF;
-  padding: 20px;
-}
-
-.dashboard-nav h2 {
-  font-size: 22px;
-  margin-bottom: 20px;
-}
-
-.dashboard-nav ul {
-  list-style: none;
-  padding: 0;
-}
-
-.dashboard-nav li {
-  margin: 10px 0;
-}
-
-.dashboard-nav a {
-  text-decoration: none;
-  color: #FFF;
-  display: block;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.dashboard-nav a.active,
-.dashboard-nav a:hover {
-  background-color: #658B6F;
-}
-
-.dashboard-content {
-  flex: 1;
-  padding: 20px;
-  background-color: #F7F9FA;
-}
-
-button {
-  padding: 10px 15px;
-  background-color: #658B6F;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #28363D;
-}
-.nav-links a {
-  text-decoration: none;
-  color: #28363D;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.nav-links a:hover {
-  background-color: #658B6F;
-  color: #FFF;
-}
-
-</style>
 </html>

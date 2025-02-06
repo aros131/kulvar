@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Program Detayları</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
@@ -16,6 +17,7 @@
     <h2 id="program-name"></h2>
     <p id="program-description"></p>
     <p><strong>Süre:</strong> <span id="program-duration"></span> hafta</p>
+    <div id="program-documents"></div>
     <button onclick="editProgram()">✏️ Düzenle</button>
     <button onclick="deleteProgram()">🗑️ Sil</button>
   </section>
@@ -33,6 +35,7 @@
           <th>İsim</th>
           <th>Tamamlanma Oranı</th>
           <th>Geri Bildirim</th>
+          <th>Yanıtla</th>
         </tr>
       </thead>
       <tbody id="client-list"></tbody>
@@ -44,83 +47,154 @@
     <canvas id="progress-chart"></canvas>
   </section>
 
-  </main>
-<script>
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
 
-  const BASE_URL = "https://kulvar.onrender.com";
+    async function fetchProgramDetails() {
+      const params = new URLSearchParams(window.location.search);
+      const programId = params.get("id");
 
-async function fetchProgramDetails() {
-  const params = new URLSearchParams(window.location.search);
-  const programId = params.get("id");
+      if (!programId) {
+        document.getElementById("program-info").innerHTML = "<p>Program bulunamadı.</p>";
+        return;
+      }
 
-  if (!programId) {
-    document.getElementById("program-info").innerHTML = "<p>Program bulunamadı.</p>";
-    return;
-  }
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+        const program = await response.json();
 
-    const program = await response.json();
+        if (response.ok) {
+          document.getElementById("program-name").textContent = program.name;
+          document.getElementById("program-description").textContent = program.description;
+          document.getElementById("program-duration").textContent = program.duration;
 
-    if (response.ok) {
-      document.getElementById("program-name").textContent = program.name;
-      document.getElementById("program-description").textContent = program.description;
-      document.getElementById("program-duration").textContent = program.duration;
+          // ✅ Display Documents
+          if (program.documents.length) {
+            const docList = document.createElement("ul");
+            program.documents.forEach(doc => {
+              const li = document.createElement("li");
+              li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.name}</a>`;
+              docList.appendChild(li);
+            });
+            document.getElementById("program-documents").appendChild(docList);
+          }
 
-      const scheduleList = document.getElementById("daily-schedule");
-      program.dailySchedule.forEach(day => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <p><strong>Gün ${day.day}:</strong> ${day.exercises}</p>
-          <input type="text" placeholder="YouTube veya Vimeo Linki Ekle" onchange="updateVideo('${day.day}', this.value)">
-          <button onclick="saveVideo('${day.day}')">Kaydet</button>
-        `;
-        scheduleList.appendChild(li);
-      });
-
-      fetchClientProgress(programId);
-    } else {
-      console.error("Program detayları alınamadı:", program.message);
+          fetchClientProgress(programId);
+        } else {
+          console.error("Program detayları alınamadı:", program.message);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
     }
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
 
-async function fetchClientProgress(programId) {
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}/clients`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    async function fetchClientProgress(programId) {
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}/clients`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-    const clients = await response.json();
-    const clientList = document.getElementById("client-list");
+        const clients = await response.json();
+        const clientList = document.getElementById("client-list");
 
-    clients.forEach(client => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${client.name}</td>
-        <td>${client.progressPercentage}%</td>
-        <td>${client.feedback || "Yok"}</td>
-      `;
-      clientList.appendChild(row);
-    });
-  } catch (error) {
-    console.error("Müşteri ilerleme verileri alınamadı:", error.message);
-  }
-}
+        let progressData = [];
+        let labels = [];
 
-document.addEventListener("DOMContentLoaded", fetchProgramDetails);
-</script>
+        clients.forEach(client => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${client.name}</td>
+            <td>${client.progressPercentage}%</td>
+            <td>${client.feedback || "Yok"}</td>
+            <td><button onclick="sendFeedback('${client._id}', '${programId}')">Yanıtla</button></td>
+          `;
+          clientList.appendChild(row);
+
+          progressData.push(client.progressPercentage);
+          labels.push(client.name);
+        });
+
+        // ✅ Update Chart
+        const ctx = document.getElementById("progress-chart").getContext("2d");
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [{
+              label: "Tamamlama Oranı (%)",
+              data: progressData,
+              backgroundColor: "rgba(47, 87, 93, 0.7)"
+            }]
+          }
+        });
+      } catch (error) {
+        console.error("Müşteri ilerleme verileri alınamadı:", error.message);
+      }
+    }
+
+    async function editProgram() {
+      const programId = new URLSearchParams(window.location.search).get("id");
+      if (!programId) return alert("Program ID bulunamadı!");
+
+      window.location.href = `program.html?id=${programId}`;
+    }
+
+    async function deleteProgram() {
+      const programId = new URLSearchParams(window.location.search).get("id");
+      if (!programId) return alert("Program ID bulunamadı!");
+
+      if (!confirm("Bu programı silmek istediğinizden emin misiniz?")) return;
+
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          alert("Program başarıyla silindi!");
+          window.location.href = "coach_dashboard.html";
+        } else {
+          console.error("Program silinemedi:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    async function sendFeedback(clientId, programId) {
+      const feedback = prompt("Müşteriye geri bildiriminizi yazın:");
+      if (!feedback) return;
+
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/feedbacks/reply`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ clientId, programId, message: feedback }),
+        });
+
+        if (response.ok) {
+          alert("Geri bildirim gönderildi!");
+          fetchClientProgress(programId);
+        } else {
+          console.error("Geri bildirim gönderilemedi:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchProgramDetails);
+  </script>
 
   <style>
     body {
@@ -131,7 +205,7 @@ document.addEventListener("DOMContentLoaded", fetchProgramDetails);
       color: #28363D;
     }
 
-    h1, h2, h3, h4 {
+    h1, h2, h3 {
       color: #2F575D;
     }
 
@@ -144,10 +218,6 @@ document.addEventListener("DOMContentLoaded", fetchProgramDetails);
       color: #FFF;
     }
 
-    main {
-      margin-top: 20px;
-    }
-
     section {
       background-color: #C4CDC1;
       padding: 20px;
@@ -155,25 +225,20 @@ document.addEventListener("DOMContentLoaded", fetchProgramDetails);
       margin-bottom: 20px;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
+    table {
+      width: 100%;
+      border-collapse: collapse;
     }
 
-    ul li {
-      margin-bottom: 10px;
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #6D9197;
     }
 
-    a.btn {
-      text-decoration: none;
-      padding: 10px 15px;
-      background-color: #658B6F;
-      color: #FFF;
-      border-radius: 5px;
-    }
-
-    a.btn:hover {
-      background-color: #2F575D;
+    canvas {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
     }
   </style>
 </body>

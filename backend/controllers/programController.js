@@ -1,9 +1,12 @@
+console.log("✅ programController.js is loaded");
 const Program = require("../models/Program");
+const User = require("../models/User");
 
+module.exports = require("./programController");
 // 🟢 Create a new program
 exports.createProgram = async (req, res) => {
   try {
-    const { name, description, duration, difficulty, nutritionPlan, dailySchedule } = req.body;
+    const { name, description, duration, difficulty, nutritionPlan, dailySchedule, fitnessGoal } = req.body;
     const coachId = req.user.id;
     let documents = [];
 
@@ -19,155 +22,199 @@ exports.createProgram = async (req, res) => {
       description,
       duration,
       difficulty,
+      fitnessGoal,
       coachId,
-      dailySchedule: JSON.parse(dailySchedule),
+      dailySchedule,
       nutritionPlan,
       documents,
+      progressTracking: {
+        totalSessions: dailySchedule.length,
+        completedSessions: 0,
+        completionRate: 0
+      },
+      feedback: [],
     });
-    const schedule = typeof dailySchedule === "string" ? JSON.parse(dailySchedule) : dailySchedule;
 
-
-    res.status(201).json({ message: "Program başarıyla oluşturuldu", program: newProgram });
+    res.status(201).json({ message: "Program created successfully", program: newProgram });
   } catch (error) {
-    res.status(500).json({ message: "Program oluşturulamadı", error: error.message });
+    res.status(500).json({ message: "Program creation failed", error: error.message });
   }
 };
 
-// 🟢 Get all programs for the logged-in coach
+// 🟢 Get all programs
 exports.getPrograms = async (req, res) => {
   try {
-    const coachId = req.user.id;
-    const programs = await Program.find({ coachId }).sort({ createdAt: -1 });
+    const programs = await Program.find();
     res.status(200).json({ programs });
   } catch (error) {
-    res.status(500).json({ message: "Programlar yüklenemedi", error: error.message });
+    res.status(500).json({ message: "Error fetching programs", error: error.message });
   }
 };
+
+// 🟢 Get a single program by ID
 exports.getProgramById = async (req, res) => {
   try {
-    const program = await Program.findById(req.params.id);
+    const { id } = req.params;
+    const program = await Program.findById(id).populate("assignedClients", "name email");
+
     if (!program) {
       return res.status(404).json({ message: "Program not found" });
     }
-    res.status(200).json(program);
+
+    res.status(200).json({ program });
   } catch (error) {
     res.status(500).json({ message: "Error fetching program details", error: error.message });
   }
 };
 
-
-// 🟢 Update a program
-exports.updateProgram = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedProgram = await Program.findByIdAndUpdate(id, req.body, { new: true });
-
-    if (!updatedProgram) {
-      return res.status(404).json({ message: "Program bulunamadı" });
-    }
-
-    res.status(200).json({ message: "Program başarıyla güncellendi", program: updatedProgram });
-  } catch (error) {
-    res.status(500).json({ message: "Program güncellenirken hata oluştu", error: error.message });
-  }
-};
-
-// 🟢 Delete a program
-exports.deleteProgram = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deletedProgram = await Program.findByIdAndDelete(id);
-
-    if (!deletedProgram) {
-      return res.status(404).json({ message: "Program bulunamadı" });
-    }
-
-    res.status(200).json({ message: "Program başarıyla silindi" });
-  } catch (error) {
-    res.status(500).json({ message: "Program silinirken hata oluştu", error: error.message });
-  }
-};
- // 🟢 Multi-client 
+// 🟢 Assign program to multiple clients
 exports.assignProgramToClients = async (req, res) => {
   try {
     const { programId, clientIds } = req.body;
+    const program = await Program.findById(programId);
 
-    // Ensure program exists
-    const program = await Program.findById(req.body.programId || req.params.id);
+    if (!program) return res.status(404).json({ message: "Program not found" });
 
-    if (!program) {
-      return res.status(404).json({ message: "Program not found" });
+    const validClients = await User.find({ _id: { $in: clientIds }, role: "user" });
+    if (validClients.length !== clientIds.length) {
+      return res.status(400).json({ message: "Invalid client IDs found" });
     }
 
-    // Add new clients (prevent duplicates)
     program.assignedClients = [...new Set([...program.assignedClients, ...clientIds])];
-
     await program.save();
-    res.status(200).json({ message: "Program assigned successfully", program });
-  } catch (error) {
-    res.status(500).json({ message: "Error assigning program", error: error.message });
-  }
 
-  // clone
+    res.status(200).json({ message: "Program successfully assigned!", program });
+  } catch (error) {
+    res.status(500).json({ message: "Program assignment error", error: error.message });
+  }
 };
+
+// 🟢 Clone a program
 exports.cloneProgram = async (req, res) => {
   try {
     const { programId } = req.params;
-    const program = await Program.findById(programId);
+    const originalProgram = await Program.findById(programId);
 
-    if (!program) {
-      return res.status(404).json({ message: "Program not found" });
-    }
+    if (!originalProgram) return res.status(404).json({ message: "Original program not found" });
 
-    // Clone the program
-    const clonedProgram = new Program({
-      name: program.name + " (Copy)",
-      description: program.description,
-      duration: program.duration,
-      coachId: program.coachId,
-      difficulty: program.difficulty,
-      dailySchedule: program.dailySchedule,
-      visibility: "private", // Make cloned programs private by default
+    const clonedProgram = await Program.create({
+      ...originalProgram.toObject(),
+      _id: undefined,
+      name: `${originalProgram.name} (Copy)`,
+      createdAt: new Date(),
     });
 
-    await clonedProgram.save();
-    res.status(201).json({ message: "Program cloned successfully", clonedProgram });
+    res.status(201).json({ message: "Program cloned successfully!", program: clonedProgram });
   } catch (error) {
     res.status(500).json({ message: "Error cloning program", error: error.message });
   }
 };
-//tracking
+
+// 🟢 Track Session Completion
 exports.trackSessionCompletion = async (req, res) => {
   try {
-    const { programId, clientId, sessionId, feedback } = req.body;
+    const { programId, session } = req.body;
+    const userId = req.user.id;
 
     const program = await Program.findById(programId);
-    if (!program) {
-      return res.status(404).json({ message: "Program not found" });
-    }
+    if (!program) return res.status(404).json({ message: "Program not found" });
 
-    // Update or add session tracking
-    const sessionIndex = program.sessionTracking.findIndex(
-      (session) => session.clientId.toString() === clientId && session.sessionId === sessionId
+    program.progressTracking.completedSessions += 1;
+    program.progressTracking.completionRate =
+      (program.progressTracking.completedSessions / program.progressTracking.totalSessions) * 100;
+
+    await program.save();
+    res.status(200).json({ message: "Session completion tracked", program });
+  } catch (error) {
+    res.status(500).json({ message: "Error tracking session completion", error: error.message });
+  }
+};
+
+// 🟢 Submit feedback
+exports.submitFeedback = async (req, res) => {
+  try {
+    const { programId, message, rating } = req.body;
+    const userId = req.user.id;
+
+    if (rating < 1 || rating > 5) return res.status(400).json({ message: "Invalid rating (1-5)" });
+
+    const program = await Program.findByIdAndUpdate(
+      programId,
+      { $push: { feedback: { userId, comment: message, rating, createdAt: new Date() } } },
+      { new: true }
     );
 
-    if (sessionIndex >= 0) {
-      program.sessionTracking[sessionIndex].completed = true;
-      program.sessionTracking[sessionIndex].feedback = feedback;
-      program.sessionTracking[sessionIndex].dateCompleted = new Date();
+    res.status(201).json({ message: "Feedback submitted successfully!", program });
+  } catch (error) {
+    res.status(500).json({ message: "Error submitting feedback", error: error.message });
+  }
+};
+
+// 🟢 Get program videos
+exports.getProgramVideos = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const program = await Program.findById(id);
+
+    if (!program) {
+      return res.status(404).json({ message: "Program not found." });
+    }
+
+    const videoUrls = program.dailySchedule.flatMap(day =>
+      day.sessions.flatMap(session =>
+        session.exercises.flatMap(exercise =>
+          exercise.videoUrls ? exercise.videoUrls.map(video => video.url) : []
+        )
+      )
+    );
+
+    res.status(200).json({ videos: videoUrls });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching videos", error: error.message });
+  }
+};
+
+// 🟢 Reschedule a missed workout
+exports.rescheduleWorkout = async (req, res) => {
+  try {
+    const { programId, missedDay, newDay } = req.body;
+    const program = await Program.findById(programId);
+
+    if (!program) return res.status(404).json({ message: "Program not found" });
+
+    if (!program.missedWorkouts) {
+      program.missedWorkouts = [];
+    }
+
+    const missedIndex = program.missedWorkouts.findIndex(w => w.missedDay === missedDay);
+    if (missedIndex === -1) {
+      program.missedWorkouts.push({ missedDay, rescheduledTo: newDay });
     } else {
-      program.sessionTracking.push({
-        clientId,
-        sessionId,
-        completed: true,
-        feedback,
-        dateCompleted: new Date(),
-      });
+      program.missedWorkouts[missedIndex].rescheduledTo = newDay;
     }
 
     await program.save();
-    res.status(200).json({ message: "Session tracked successfully", program });
+    res.status(200).json({ message: `Missed workout rescheduled to day ${newDay}.` });
   } catch (error) {
-    res.status(500).json({ message: "Error tracking session", error: error.message });
+    res.status(500).json({ message: "Error rescheduling workout", error: error.message });
   }
+};
+
+// ✅ Export all functions
+module.exports = {
+  createProgram,
+  getPrograms,
+  getProgramById,
+  updateProgram,
+  deleteProgram,
+  assignProgramToClients,
+  trackSessionCompletion,
+  submitFeedback,
+  getProgramDocuments,
+  updateProgramDocuments,
+  updateWorkoutVideo,
+  getSessionCompletionData,
+  getProgramVideos,
+  submitSessionFeedback,
+  rescheduleWorkout
 };

@@ -8,7 +8,8 @@
 </head>
 <body>
   <header>
-    <h1>Program Yönetimi</h1>
+    <h1 id="form-title">Yeni Program Oluştur</h1>
+    <a href="coach_dashboard.html">← Geri Dön</a>
   </header>
 
   <main class="program-management">
@@ -20,7 +21,6 @@
 
     <!-- Program Creation Form -->
     <section id="program-form-section">
-      <h2 id="form-title">Yeni Program Oluştur</h2>
       <form id="program-form">
         <label for="program-name">Program Adı:</label>
         <input type="text" id="program-name" required>
@@ -47,10 +47,6 @@
 
         <h3>Dosya Yükle</h3>
         <input type="file" id="file-upload" multiple>
-        <button onclick="cloneProgram(programId)">📄 Klonla</button>
-<button onclick="assignProgramToClients(programId)">👥 Çoklu Atama</button>
-<button onclick="trackSessionCompletion(programId, sessionId)">✅ Seansı Tamamla</button>
-
 
         <button type="submit" id="save-program-button">Kaydet</button>
       </form>
@@ -61,82 +57,41 @@
     const BASE_URL = "https://kulvar.onrender.com";
     const token = localStorage.getItem("token");
     let dailyWorkouts = [];
-    async function fetchPrograms() {
-  try {
-    const token = localStorage.getItem("token");
+
     if (!token) {
       alert("Lütfen giriş yapın.");
       window.location.href = "login.html";
-      return;
     }
 
-    const response = await fetch("https://kulvar.onrender.com/programs", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    async function fetchPrograms() {
+      try {
+        const response = await fetch(`${BASE_URL}/programs`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-    const data = await response.json();
+        const data = await response.json();
+        const programList = document.getElementById("program-list");
 
-    if (response.ok) {
-      const programList = document.getElementById("program-list");
-
-      if (data.programs.length === 0) {
-        programList.innerHTML = "<li>Henüz program eklenmemiş.</li>";
-      } else {
-        programList.innerHTML = data.programs
-          .map(
-            (program) => `
-              <li>
-                <h3>${program.name} - ${program.duration} Hafta</h3>
-                <p>${program.description}</p>
-                <button onclick="viewProgramDetails('${program._id}')">Detayları Gör</button>
-              </li>
-            `
-          )
-          .join("");
+        programList.innerHTML = data.programs.length
+          ? data.programs.map(
+              (program) => `
+                <li>
+                  <h3>${program.name} - ${program.duration} Hafta</h3>
+                  <p>${program.description}</p>
+                  <button onclick="viewProgramDetails('${program._id}')">Detayları Gör</button>
+                  <button onclick="editProgram('${program._id}')">Düzenle</button>
+                  <button onclick="deleteProgram('${program._id}')">Sil</button>
+                  <button onclick="cloneProgram('${program._id}')">📄 Klonla</button>
+                  <button onclick="assignProgramToClients('${program._id}')">👥 Çoklu Atama</button>
+                  <button onclick="trackSessionCompletion('${program._id}')">✅ Seansı Tamamla</button>
+                </li>`
+            ).join("")
+          : "<li>Henüz program eklenmemiş.</li>";
+      } catch (error) {
+        console.error("Hata:", error.message);
       }
-    } else {
-      console.error("Programlar alınamadı:", data.message);
     }
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
-async function fetchPrograms() {
-  try {
-    const response = await fetch("https://kulvar.onrender.com/programs", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      const programList = document.getElementById("program-list");
-
-      programList.innerHTML = data.programs
-        .map(
-          (program) => `
-            <li>
-              <h3>${program.name} - ${program.duration} Hafta</h3>
-              <p>${program.description}</p>
-              <button onclick="viewProgramDetails('${program._id}')">Detayları Gör</button>
-            </li>
-          `
-        )
-        .join("");
-    } else {
-      console.error("Programlar alınamadı:", data.message);
-    }
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
-
-// Sayfa yüklendiğinde programları getir
-document.addEventListener("DOMContentLoaded", fetchPrograms);
 
     function addWorkoutDay() {
       const dayNumber = dailyWorkouts.length + 1;
@@ -144,16 +99,20 @@ document.addEventListener("DOMContentLoaded", fetchPrograms);
       dayDiv.innerHTML = `
         <h4>Gün ${dayNumber}</h4>
         <textarea id="day-${dayNumber}" placeholder="Egzersizleri girin (virgülle ayırın)"></textarea>
+        <input type="text" id="video-${dayNumber}" placeholder="Egzersiz video linki ekleyin">
       `;
       document.getElementById("daily-workouts").appendChild(dayDiv);
-      dailyWorkouts.push({ day: dayNumber, exercises: [] });
+      dailyWorkouts.push({ day: dayNumber, exercises: [], videoUrl: "" });
     }
 
-    async function createProgram(event) {
+    async function createOrUpdateProgram(event) {
       event.preventDefault();
+      const programId = new URLSearchParams(window.location.search).get("id");
+
       let schedule = dailyWorkouts.map((day, index) => ({
         day: index + 1,
         exercises: document.getElementById(`day-${index + 1}`).value.split(","),
+        videoUrl: document.getElementById(`video-${index + 1}`).value,
       }));
 
       const formData = new FormData();
@@ -169,25 +128,67 @@ document.addEventListener("DOMContentLoaded", fetchPrograms);
         formData.append("documents", fileInput.files[i]);
       }
 
-      const response = await fetch(`${BASE_URL}/programs`, {
-        method: "POST",
+      const method = programId ? "PUT" : "POST";
+      const url = programId ? `${BASE_URL}/programs/${programId}` : `${BASE_URL}/programs`;
+
+      const response = await fetch(url, {
+        method,
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       if (response.ok) {
-        alert("Program başarıyla oluşturuldu!");
-        fetchPrograms();
+        alert(programId ? "Program başarıyla güncellendi!" : "Program başarıyla oluşturuldu!");
+        window.location.href = "program.html";
+      } else {
+        console.error("Hata:", await response.json());
       }
     }
-    function viewProgramDetails(programId) {
-  window.location.href = `program_details.html?id=${programId}`;
-}
 
+    async function preloadProgramData() {
+      const programId = new URLSearchParams(window.location.search).get("id");
+      if (!programId) return;
 
-    document.getElementById("program-form").addEventListener("submit", createProgram);
+      document.getElementById("form-title").textContent = "Programı Düzenle";
+      document.getElementById("save-program-button").textContent = "Güncelle";
+
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const program = await response.json();
+
+        if (response.ok) {
+          document.getElementById("program-name").value = program.name;
+          document.getElementById("program-description").value = program.description;
+          document.getElementById("program-duration").value = program.duration;
+          document.getElementById("program-difficulty").value = program.difficulty;
+          document.getElementById("nutrition-plan").value = program.nutritionPlan || "";
+
+          dailyWorkouts = program.dailySchedule;
+          document.getElementById("daily-workouts").innerHTML = "";
+          program.dailySchedule.forEach((day, index) => {
+            addWorkoutDay();
+            document.getElementById(`day-${index + 1}`).value = day.exercises.join(", ");
+            document.getElementById(`video-${index + 1}`).value = day.videoUrl || "";
+          });
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchPrograms();
+      preloadProgramData();
+    });
+
+    document.getElementById("program-form").addEventListener("submit", createOrUpdateProgram);
   </script>
-
+</body>
+</html>
 
 
   <style>

@@ -1,18 +1,166 @@
-<section id="user-program-details">
-    <h2 id="program-name">Program Adı</h2>
-    <p id="program-description">Program Açıklaması</p>
-    <p><strong>Hedef:</strong> <span id="program-goal"></span></p>
-  </section>
-  
-  <section id="daily-schedule">
-    <h3>Günlük Egzersizler</h3>
-    <ul id="schedule-list">
-      <!-- Sessions dynamically added here -->
-    </ul>
-  </section>
-  
-  <section id="coach-notes">
-    <h3>Koç Notları</h3>
-    <p id="coach-notes-content">Notlar burada görünecek.</p>
-  </section>
-  
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Program Genel Bakış</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="dashboard-nav">
+      <h2>Program Genel Bakış</h2>
+      <ul>
+        <li><a href="user_dashboard.html">🏠 Ana Sayfa</a></li>
+        <li><a href="progress_tracking.html">📊 İlerleme</a></li>
+        <li><a href="messages.html">💬 Mesajlar</a></li>
+        <li><a href="logout.html">🚪 Çıkış Yap</a></li>
+      </ul>
+    </nav>
+
+    <main class="dashboard-content">
+      <h2 id="program-name">Program Adı</h2>
+      <p id="program-description">Program açıklaması burada görünecek.</p>
+
+      <!-- 📆 Workout Schedule -->
+      <section id="workout-schedule">
+        <h3>Günlük Antrenmanlar</h3>
+        <ul id="workout-list"></ul>
+      </section>
+
+      <!-- 📜 Coach Notes -->
+      <section id="coach-notes">
+        <h3>Koç Notları</h3>
+        <p id="coach-notes-content">Koçunuzun eklediği notlar burada görünecek.</p>
+      </section>
+
+      <!-- 💪 Strength Progress -->
+      <section id="strength-progress">
+        <h3>Güç Gelişimi</h3>
+        <canvas id="strengthChart"></canvas>
+      </section>
+
+      <!-- 🎥 Embedded Workout Videos -->
+      <section id="workout-videos">
+        <h3>Antrenman Videoları</h3>
+        <div id="video-container"></div>
+      </section>
+
+      <!-- 🌙 Dark Mode Toggle -->
+      <button id="dark-mode-toggle">🌙 Karanlık Mod</button>
+    </main>
+  </div>
+
+  <script>
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+
+    async function fetchProgramDetails() {
+      const params = new URLSearchParams(window.location.search);
+      const programId = params.get("id");
+
+      if (!programId) {
+        document.getElementById("program-name").textContent = "Program Bulunamadı";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const program = await response.json();
+        if (response.ok) {
+          document.getElementById("program-name").textContent = program.name;
+          document.getElementById("program-description").textContent = program.description;
+
+          displayWorkoutSchedule(program);
+          displayCoachNotes(program);
+          loadStrengthProgress(program);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+
+    function displayWorkoutSchedule(program) {
+      const workoutList = document.getElementById("workout-list");
+      workoutList.innerHTML = "";
+
+      program.dailySchedule.forEach(day => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <p><strong>Gün ${day.day}:</strong> ${day.exercises.join(", ")}</p>
+          ${day.videoUrl ? `<iframe width="300" height="200" src="${day.videoUrl}" frameborder="0" allowfullscreen></iframe>` : ""}
+        `;
+        workoutList.appendChild(li);
+      });
+    }
+
+    function displayCoachNotes(program) {
+      const notesContent = document.getElementById("coach-notes-content");
+      notesContent.innerHTML = program.dailySchedule
+        .filter(day => day.notes)
+        .map(day => `<p><strong>Gün ${day.day}:</strong> ${day.notes}</p>`)
+        .join("");
+    }
+
+    function loadStrengthProgress(program) {
+      const ctx = document.getElementById("strengthChart").getContext("2d");
+      const labels = program.progressiveOverload.map(ex => ex.exerciseName);
+      const weightValues = program.progressiveOverload.map(ex => ex.currentWeight);
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{ label: "Şu Anki Ağırlık", data: weightValues, backgroundColor: "green" }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    // 🌙 Dark Mode Toggle
+    document.getElementById("dark-mode-toggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
+    });
+
+    if (localStorage.getItem("darkMode") === "enabled") {
+      document.body.classList.add("dark-mode");
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchProgramDetails);
+  </script>
+
+  <style>
+    body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background-color: #F7F9FA; color: #28363D; }
+    .dashboard-container { display: flex; min-height: 100vh; }
+    .dashboard-nav { width: 250px; background: #2F575D; color: #FFF; padding: 20px; }
+    .dashboard-content { flex: 1; padding: 20px; }
+    section { margin-bottom: 30px; padding: 10px; background-color: #ffffff; border-radius: 8px; }
+    canvas { max-width: 100%; max-height: 400px; }
+    button { background: #658B6F; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #28363D; }
+
+    /* 🎥 Workout Videos */
+    #video-container iframe { width: 100%; max-width: 600px; height: 300px; margin: 10px 0; }
+
+    /* 🌙 Dark Mode */
+    body.dark-mode { background-color: #121212; color: #f5f5f5; }
+    body.dark-mode .dashboard-nav { background: #1E1E1E; }
+    body.dark-mode section { background-color: #2F2F2F; }
+    body.dark-mode button { background: #444; }
+    body.dark-mode button:hover { background: #555; }
+
+    /* 📱 Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .dashboard-container { flex-direction: column; }
+      .dashboard-nav { width: 100%; text-align: center; }
+      #video-container iframe { height: 200px; }
+    }
+  </style>
+</body>
+</html>

@@ -260,3 +260,188 @@ exports.deleteFeedback = async (req, res) => {
     res.status(500).json({ message: "Error deleting feedback", error: error.message });
   }
 };
+// 🟢 Get full analytics for a coach
+exports.getCoachAnalytics = async (req, res) => {
+  try {
+    const coachId = req.user.id;
+
+    const totalClients = await User.countDocuments({ coachId, role: "user" });
+    const totalPrograms = await Program.countDocuments({ coachId });
+
+    // ✅ Get total sessions completed by all clients
+    const totalSessionsCompleted = await Progress.aggregate([
+      { $match: { coachId } },
+      { $unwind: "$sessionTracking" },
+      { $match: { "sessionTracking.completed": true } },
+      { $count: "completedSessions" }
+    ]);
+
+    res.status(200).json({
+      totalClients,
+      totalPrograms,
+      totalSessionsCompleted: totalSessionsCompleted.length > 0 ? totalSessionsCompleted[0].completedSessions : 0
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving coach analytics", error: error.message });
+  }
+};
+// 🟢 Get analytics for users (Total workouts completed, goal progress)
+exports.getUserAnalytics = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const assignedPrograms = await Program.countDocuments({ assignedClients: userId });
+
+    const userProgress = await Progress.find({ clientId: userId });
+
+    // ✅ Calculate total completed sessions
+    const totalCompletedSessions = userProgress.reduce((acc, progress) => {
+      return acc + progress.sessionTracking.filter(session => session.completed).length;
+    }, 0);
+
+    // ✅ Get goal progress percentage
+    const goalTracking = userProgress.map(progress => ({
+      programId: progress.programId,
+      progressPercentage: progress.goalTracking.progressPercentage || 0
+    }));
+
+    res.status(200).json({
+      assignedPrograms,
+      totalCompletedSessions,
+      goalTracking
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving user analytics", error: error.message });
+  }
+};
+// 🟢 Get upcoming workouts for a user
+exports.getUserSchedule = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const programs = await Program.find({ assignedClients: userId });
+
+    if (!programs || programs.length === 0) {
+      return res.status(404).json({ message: "No scheduled workouts found" });
+    }
+
+    // ✅ Get all workouts from assigned programs
+    let schedule = [];
+    programs.forEach(program => {
+      program.dailySchedule.forEach(day => {
+        schedule.push({ 
+          programId: program._id, 
+          programName: program.name,
+          day: day.day,
+          sessions: day.sessions 
+        });
+      });
+    });
+
+    res.status(200).json({ schedule });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching workout schedule", error: error.message });
+  }
+};
+// 🟢 Mark notifications as read
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findByIdAndUpdate(notificationId, { isRead: true }, { new: true });
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    res.status(200).json({ message: "Notification marked as read", notification });
+  } catch (error) {
+    res.status(500).json({ message: "Error marking notification as read", error: error.message });
+  }
+};
+// 🟢 Get feedbacks with coach replies
+exports.getFeedbacks = async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find({ coachId: req.user.id })
+      .populate("clientId", "name email")
+      .populate("replies.coachId", "name email");
+
+    if (!feedbacks || feedbacks.length === 0) {
+      return res.status(404).json({ message: "No feedbacks found" });
+    }
+
+    res.status(200).json({ feedbacks });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching feedbacks", error: error.message });
+  }
+};
+
+// 🟢 Add reply to a feedback
+exports.replyToFeedback = async (req, res) => {
+  try {
+    const { feedbackId, message } = req.body;
+    const coachId = req.user.id;
+
+    const feedback = await Feedback.findByIdAndUpdate(
+      feedbackId,
+      { $push: { replies: { coachId, message, date: new Date() } } },
+      { new: true }
+    );
+
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    res.status(200).json({ message: "Reply added successfully", feedback });
+  } catch (error) {
+    res.status(500).json({ message: "Error replying to feedback", error: error.message });
+  }
+};
+
+
+
+// 🟢 Get full analytics for coaches (Including completed sessions)
+exports.getFullCoachAnalytics = async (req, res) => {
+  try {
+    const totalClients = await User.countDocuments({ coachId: req.user.id, role: "user" });
+    const totalPrograms = await Program.countDocuments({ coachId: req.user.id });
+
+    // ✅ Get total completed sessions
+    const totalSessionsCompleted = await Progress.aggregate([
+      { $match: { coachId: req.user.id } },
+      { $unwind: "$sessionTracking" },
+      { $match: { "sessionTracking.completed": true } },
+      { $count: "completedSessions" }
+    ]);
+
+    res.status(200).json({
+      totalClients,
+      totalPrograms,
+      totalSessionsCompleted: totalSessionsCompleted.length ? totalSessionsCompleted[0].completedSessions : 0,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving analytics", error: error.message });
+  }
+};
+
+// 🟢 Mark notification as read
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    await Notification.findByIdAndUpdate(notificationId, { isRead: true });
+
+    res.status(200).json({ message: "Notification marked as read" });
+  } catch (error) {
+    res.status(500).json({ message: "Error marking notification", error: error.message });
+  }
+};
+
+// 🟢 Coach replies to user feedback
+exports.replyToFeedback = async (req, res) => {
+  try {
+    const { feedbackId, message } = req.body;
+    await Feedback.findByIdAndUpdate(feedbackId, { $push: { replies: { message, date: new Date() } } });
+
+    res.status(200).json({ message: "Reply sent" });
+  } catch (error) {
+    res.status(500).json({ message: "Error sending reply", error: error.message });
+  }
+};

@@ -3,32 +3,31 @@ const mongoose = require("mongoose");
 const ProgramSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
-  duration: { type: Number, required: true }, // Duration in weeks
-  coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Linked coach
-  assignedClients: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Clients assigned to this program
+  duration: { type: Number, required: true }, // **Program süresi (hafta olarak)**
+  coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, 
+  assignedClients: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
   difficulty: { type: String, enum: ["Başlangıç", "Orta Düzey", "İleri Seviye"], default: "Başlangıç" },
 
-  // ✅ NEW: Start Date Per Client (Tracking)
-  startDate: { type: Date, default: Date.now },
-
-  // ✅ NEW: Overall Program Goal (e.g., "Lose 5kg in 12 weeks")
-  targetGoal: { type: String },
+  fitnessGoal: { 
+    type: String, 
+    enum: ["Kilo Kaybı", "Kas Kazanımı", "Dayanıklılık", "Genel Fitness"], 
+    required: true 
+  },
 
   dailySchedule: [
     {
-      day: { type: String, required: true }, // e.g., "Monday"
+      day: { type: String, required: true }, // **Gün adı (Pazartesi, Salı vb.)**
       sessions: [
         {
-          name: { type: String, required: true }, // e.g., "Morning Cardio"
-          completed: { type: Boolean, default: false },
+          name: { type: String, required: true }, // **Antrenman adı**
           exercises: [
             {
-              name: { type: String, required: true }, // e.g., "Squats"
-              sets: { type: Number, default: 0 },
-              reps: { type: Number, default: 0 },
-              duration: { type: Number, default: 0 }, // in minutes
-              videoUrls: [{ type: String }], // Multiple videos per exercise
-              completed: { type: Boolean, default: false }, // Optional
+              name: { type: String, required: true }, // **Egzersiz adı**
+              sets: { type: Number, default: 0 }, // **Set sayısı**
+              reps: { type: Number, default: 0 }, // **Tekrar sayısı**
+              duration: { type: Number, default: 0 }, // **Egzersiz süresi (saniye olarak)**
+              restTime: { type: Number, default: 0 }, // **Setler arası dinlenme süresi (saniye olarak)**
+              videoUrls: [{ url: { type: String }, description: { type: String } }], // **Egzersiz video linkleri**
             },
           ],
         },
@@ -36,101 +35,58 @@ const ProgramSchema = new mongoose.Schema({
     },
   ],
 
-
   nutritionPlan: {
-    tips: [{ type: String }], 
-    meals: [
-      {
-        name: { type: String },
-        description: { type: String },
-        time: { type: String },
-      },
-    ],
+    tips: [{ type: String }], // **Beslenme ipuçları**
+    meals: [{ name: { type: String }, description: { type: String }, time: { type: String } }], // **Öğün bilgileri**
   },
 
-  documents: [
-    {
-      name: { type: String },
-      url: { type: String },
-    },
-  ],
+  documents: [{ name: { type: String }, url: { type: String } }], // **Programla ilgili belgeler**
+
+  announcements: [{ message: { type: String }, date: { type: Date, default: Date.now } }], // **Duyurular**
+
+  progressTracking: {
+    totalSessions: { type: Number, default: 0 }, // **Toplam antrenman sayısı**
+    completedSessions: { type: Number, default: 0 }, // **Tamamlanan antrenman sayısı**
+    completionRate: { type: Number, default: 0 }, // **Tamamlama yüzdesi**
+  },
 
   feedback: [
     {
-      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      feedbackText: { type: String },
-      rating: { type: Number, min: 1, max: 5 },
-      date: { type: Date, default: Date.now },
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // **Geri bildirimi yapan kullanıcı**
+      comment: { type: String }, // **Yorum**
+      rating: { type: Number, min: 1, max: 5 }, // **Puan (1-5)**
+      createdAt: { type: Date, default: Date.now },
     },
   ],
 
-  progressTracking: {
-    metrics: [
-      {
-        name: { type: String, required: true },
-        unit: { type: String },
-        values: [
-          {
-            value: { type: Number, required: true },
-            date: { type: Date, default: Date.now },
-          },
-        ],
-      },
-    ],
-  },
-
-  
-
-  // ✅ NEW: Missed Workouts (Clients Can Reschedule)
-  missedWorkouts: [
+  sessionFeedback: [  // ✅ Store feedback per session
     {
-      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      missedDay: { type: String },
-      rescheduledDay: { type: String },
-    }
-  ],
-
-  visibility: { type: String, enum: ["public", "private"], default: "private" },
-
-  scheduleType: { type: String, enum: ["Fixed", "Custom"], default: "Fixed" },
-  customSchedule: [
-    {
-      day: { type: String },
-      workout: { type: String }
-    }
-  ],
-
-  
-  sessionTracking: [
-    {
-      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      sessionId: { type: String },
-      completed: { type: Boolean, default: false },
+      session: { type: String }, // "Day 1 - Bench Press"
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       feedback: { type: String },
-      dateCompleted: { type: Date },
-    }
-  ],
-
-  privateNotes: [
-    {
-      clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      note: { type: String },
-      createdAt: { type: Date, default: Date.now }
-    }
-  ],
-
-  // ✅ NEW: Program Status (Active, Completed, Paused)
-  status: { type: String, enum: ["Active", "Completed", "Paused"], default: "Active" },
-
-  // ✅ NEW: Coach Announcements
-  announcements: [
-    {
-      message: { type: String },
       date: { type: Date, default: Date.now },
     }
   ],
 
-  createdAt: { type: Date, default: Date.now },
+  missedWorkouts: [  // ✅ Track rescheduled workouts
+    {
+      missedDay: { type: Number, required: true },
+      rescheduledTo: { type: Number, required: false }, // Nullable: Only set if rescheduled
+    }
+  ],
+
+  status: { type: String, enum: ["Aktif", "Tamamlandı", "Durduruldu"], default: "Aktif" },
+
+  createdAt: { type: Date, default: Date.now }, // **Oluşturulma tarihi**
+});
+
+// **Tamamlama yüzdesini otomatik hesapla**
+ProgramSchema.pre("save", function (next) {
+  if (this.progressTracking.totalSessions > 0) {
+    this.progressTracking.completionRate =
+      (this.progressTracking.completedSessions / this.progressTracking.totalSessions) * 100;
+  }
+  next();
 });
 
 module.exports = mongoose.model("Program", ProgramSchema);

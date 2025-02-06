@@ -32,5 +32,27 @@ router.get("/clients/:id", protect, roleMiddleware(["coach"]), getClientDetails)
 router.get("/feedbacks", protect, roleMiddleware(["coach"]), getFeedbacks);
 router.post("/feedbacks/read/:id", protect, roleMiddleware(["coach"]), markFeedbackAsRead);
 router.delete("/feedbacks/:id", protect, roleMiddleware(["coach"]), deleteFeedback);
+// ✅ Import new functions
+const { getCoachAnalytics, getUserSchedule, markNotificationAsRead, replyToFeedback } = require("../controllers/dashboardController");
+
+// ✅ Get analytics for coaches (Total completed sessions)
+router.get("/analytics/coach/full", protect, roleMiddleware(["coach"]), getCoachAnalytics);
+
+// ✅ Get user schedule (Upcoming workouts)
+router.get("/schedule", protect, roleMiddleware(["user"]), getUserSchedule);
+
+// ✅ Mark notification as read
+router.post("/notifications/read/:notificationId", protect, markNotificationAsRead);
+
+// ✅ Coach replies to user feedback
+router.post("/feedbacks/reply", protect, roleMiddleware(["coach"]), replyToFeedback);
+const { getFullCoachAnalytics,} = require("../controllers/dashboardController");
+
+// ✅ Get full analytics for coaches (including completed sessions)
+router.get("/analytics/coach/full", protect, roleMiddleware(["coach"]), getFullCoachAnalytics);
+
+
+
+
 
 module.exports = router;
