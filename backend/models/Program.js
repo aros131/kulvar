@@ -27,6 +27,7 @@ const ProgramSchema = new mongoose.Schema({
               sets: { type: Number, default: 0 },
               reps: { type: Number, default: 0 },
               duration: { type: Number, default: 0 }, // in minutes
+              videoUrls: [{ type: String }], // Multiple videos per exercise
               completed: { type: Boolean, default: false }, // Optional
             },
           ],

@@ -117,6 +117,29 @@ exports.getProgressTrend = async (req, res) => {
   }
 };
 
+exports.getProgressTrend = async (req, res) => {
+  try {
+    const { programId } = req.params;
+
+    const progress = await Progress.findOne({
+      programId,
+      clientId: req.user.id,
+    });
+
+    if (!progress) {
+      return res.status(404).json({ message: "No progress found" });
+    }
+
+    const trendData = progress.sessionTracking.map(session => ({
+      date: session.dateCompleted,
+      completed: session.completed,
+    }));
+
+    res.status(200).json({ trendData });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching progress trend", error: error.message });
+  }
+};
 
 exports.getProgressReport = async (req, res) => {
   try {

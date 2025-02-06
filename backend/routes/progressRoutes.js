@@ -12,6 +12,8 @@ const {
   getUserProgress,
   restartProgram,
   getProgressTrend,
+  markSessionCompleted,
+  getProgressTrend
 } = require("../controllers/progressController");
 
 // ✅ Log user progress
@@ -40,5 +42,9 @@ router.post("/restart", protect, restartProgram);
 
 // ✅ Get progress trend
 router.get("/progress-trend/:programId", protect, getProgressTrend);
+// ✅ Complete a session
+router.post("/session/complete", protect, markSessionCompleted);
 
+// ✅ Fetch progress trend
+router.get("/session-trend/:programId", protect, getProgressTrend);
 module.exports = router;
