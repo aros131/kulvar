@@ -37,6 +37,85 @@ exports.getStrengthProgress = async (req, res) => {
     res.status(500).json({ message: "Güç gelişimi verisi alınamadı", error: error.message });
   }
 };
+exports.markSessionCompleted = async (req, res) => {
+  try {
+    const { programId, day, sessionName } = req.body;
+
+    // Find the program
+    const program = await Program.findById(programId);
+    if (!program) {
+      return res.status(404).json({ message: "Program not found" });
+    }
+
+    // Find the session in the daily schedule
+    const daySchedule = program.dailySchedule.find(d => d.day === day);
+    if (!daySchedule) {
+      return res.status(404).json({ message: "Day not found" });
+    }
+
+    const session = daySchedule.sessions.find(s => s.name === sessionName);
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    // Mark session as completed
+    session.completed = true;
+
+    // Save progress for the client
+    const progress = await Progress.findOneAndUpdate(
+      { programId, clientId: req.user.id },
+      { $push: { sessionTracking: { sessionId: sessionName, completed: true, dateCompleted: new Date() } } },
+      { new: true, upsert: true }
+    );
+
+    await program.save();
+    res.status(200).json({ message: "Session marked as completed", progress });
+  } catch (error) {
+    res.status(500).json({ message: "Error marking session as completed", error: error.message });
+  }
+};
+exports.getUserProgress = async (req, res) => {
+  try {
+    const { programId } = req.params;
+
+    const progress = await Progress.findOne({
+      programId,
+      clientId: req.user.id,
+    }).populate("programId");
+
+    if (!progress) {
+      return res.status(404).json({ message: "No progress found for this program" });
+    }
+
+    res.status(200).json(progress);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user progress", error: error.message });
+  }
+};
+exports.getProgressTrend = async (req, res) => {
+  try {
+    const { programId } = req.params;
+
+    const progress = await Progress.findOne({
+      programId,
+      clientId: req.user.id,
+    });
+
+    if (!progress) {
+      return res.status(404).json({ message: "No progress found" });
+    }
+
+    // Generate trend data
+    const trendData = progress.sessionTracking.map(session => ({
+      date: session.dateCompleted,
+      completed: session.completed,
+    }));
+
+    res.status(200).json({ trendData });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching progress trend", error: error.message });
+  }
+};
 
 
 exports.getProgressReport = async (req, res) => {

@@ -17,22 +17,24 @@ const ProgramSchema = new mongoose.Schema({
   dailySchedule: [
     {
       day: { type: String, required: true }, // e.g., "Monday"
-      goals: { type: String },
-      exercises: [
+      sessions: [
         {
-          name: { type: String, required: true },
-          sets: { type: Number, default: 0 },
-          reps: { type: Number, default: 0 },
-          duration: { type: Number, default: 0 }, // In minutes
-          completedSets: { type: Number, default: 0 }, // NEW
-        completedReps: { type: Number, default: 0 }, // NEW
-        completedDuration: { type: Number, default: 0 }, // NEW
-          videoUrls: [{ type: String }], // ✅ NOW MULTIPLE VIDEOS PER EXERCISE
-          notes: { type: String },
+          name: { type: String, required: true }, // e.g., "Morning Cardio"
+          completed: { type: Boolean, default: false },
+          exercises: [
+            {
+              name: { type: String, required: true }, // e.g., "Squats"
+              sets: { type: Number, default: 0 },
+              reps: { type: Number, default: 0 },
+              duration: { type: Number, default: 0 }, // in minutes
+              completed: { type: Boolean, default: false }, // Optional
+            },
+          ],
         },
       ],
     },
   ],
+
 
   nutritionPlan: {
     tips: [{ type: String }], 

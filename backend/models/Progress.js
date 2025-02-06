@@ -108,5 +108,14 @@ const ProgressSchema = new mongoose.Schema({
   },
   
 });
+sessionTracking: [
+  {
+    sessionId: { type: String }, // Unique session identifier
+    clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    completed: { type: Boolean, default: false },
+    feedback: { type: String }, // Optional feedback for the session
+    dateCompleted: { type: Date },
+  },
+],
 
 module.exports = mongoose.model("Progress", ProgressSchema);

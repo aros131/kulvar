@@ -77,7 +77,16 @@
         <canvas id="trendChart"></canvas>
       </section>
       
-
+      <ul id="daily-progress-list">
+        <li>
+          <strong>Pazartesi</strong>
+          <ul>
+            <li>Morning Cardio - Tamamlandı <input type="checkbox"></li>
+            <li>Evening Strength - Tamamlandı <input type="checkbox"></li>
+          </ul>
+        </li>
+      </ul>
+      
       <!-- 💬 Feedback for Each Session -->
       <section id="feedback-section">
         <h3>Geri Bildirim</h3>
@@ -281,6 +290,27 @@ async function rescheduleWorkout(programId, missedDay) {
       fetchProgress();
     } else {
       console.error("Gün değiştirme hatası:", await response.json());
+    }
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+}
+async function markSessionCompleted(programId, day, sessionName) {
+  try {
+    const response = await fetch(`${BASE_URL}/progress/session/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ programId, day, sessionName }),
+    });
+
+    if (response.ok) {
+      alert("Session marked as completed!");
+      fetchProgress();
+    } else {
+      console.error("Error:", await response.json());
     }
   } catch (error) {
     console.error("Hata:", error);
