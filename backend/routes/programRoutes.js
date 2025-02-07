@@ -2,55 +2,65 @@ const express = require("express");
 const router = express.Router();
 const protect = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
-const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
 
 // ✅ Import necessary controllers
 const {
-  createProgram,
-  getPrograms,
-  getProgramById,
-  updateProgram,
-  deleteProgram,
-  assignProgramToClients,
-  trackSessionCompletion,
+  logProgress,
+  getClientProgress,
+  getProgressReport,
+  markWorkoutCompleted,
+  rescheduleWorkout,
   submitFeedback,
-  getProgramDocuments,
-  updateProgramDocuments,
-  updateWorkoutVideo,
-  getSessionCompletionData,
-  getProgramVideos,
-  submitSessionFeedback,
-  rescheduleWorkout
-} = require("../controllers/programController");
+  getUserProgress,
+  restartProgram,
+  getProgressTrend,
+  markSessionCompleted,
+  updateGoalProgress,
+  getUserStreaks,
+  getAdaptiveGoalProgress,
+  getStrengthProgress
+} = require("../controllers/progressController");
 
+// ✅ Log user progress
+router.post("/", protect, roleMiddleware(["user"]), logProgress);
 
-// 🟢 Program Management Routes
-router.post("/", protect, upload.array("documents"), createProgram);
-router.get("/", protect, getPrograms);
-router.get("/:id", protect, getProgramById);
-router.put("/:id", protect, roleMiddleware(["coach"]), updateProgram);
-router.delete("/:id", protect, roleMiddleware(["coach"]), deleteProgram);
+// ✅ Get progress for all clients (Coach Only)
+router.get("/", protect, roleMiddleware(["coach"]), getClientProgress);
 
-// 🟢 Assign & Clone Programs
-router.post("/:programId/assign", protect, assignProgramToClients);
-router.post("/:programId/clone", protect, cloneProgram);
+// ✅ Get detailed report for a client
+router.get("/:id/report", protect, roleMiddleware(["coach"]), getProgressReport);
 
-// 🟢 Track Session Completion
-router.post("/:programId/track-session", protect, trackSessionCompletion);
+// ✅ Complete a workout
+router.post("/complete", protect, markWorkoutCompleted);
 
-// 🟢 User Feedback
-router.post("/:programId/feedback", protect, submitFeedback);
-router.post("/session-feedback", protect, submitSessionFeedback);
+// ✅ Reschedule a missed workout
+router.post("/reschedule", protect, rescheduleWorkout);
 
-// 🟢 Update & Retrieve Program Data
-router.post("/:id/update-documents", protect, roleMiddleware(["coach"]), updateProgramDocuments);
-router.post("/:id/update-video", protect, roleMiddleware(["coach"]), updateWorkoutVideo);
-router.get("/:id/session-completion", protect, roleMiddleware(["coach"]), getSessionCompletionData);
-router.get("/:id/documents", protect, getProgramDocuments);
-router.get("/:id/videos", protect, getProgramVideos);
+// ✅ Submit workout feedback
+router.post("/feedback", protect, submitFeedback);
 
-// 🟢 Reschedule Missed Workouts
-router.post("/reschedule-workout", protect, rescheduleWorkout);
+// ✅ Fetch user progress for a program
+router.get("/user/:programId", protect, getUserProgress);
+
+// ✅ Restart a program
+router.post("/restart", protect, restartProgram);
+
+// ✅ Get progress trend
+router.get("/progress-trend/:programId", protect, getProgressTrend);
+
+// ✅ Complete a session
+router.post("/session/complete", protect, markSessionCompleted);
+
+// ✅ Update Goal Tracking Automatically
+router.post("/goal-progress", protect, updateGoalProgress);
+
+// ✅ Get User Streaks
+router.get("/streaks/:userId", protect, getUserStreaks);
+
+// ✅ Fetch goal progress for adaptive tracking
+router.get("/goal-progress/:userId", protect, getAdaptiveGoalProgress);
+
+// ✅ Get Strength Progress Chart
+router.get("/strength-chart/:programId", protect, getStrengthProgress);
 
 module.exports = router;

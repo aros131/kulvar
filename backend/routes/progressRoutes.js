@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const protect = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
+
+// ✅ Import necessary controllers
 const {
   logProgress,
   getClientProgress,
@@ -13,7 +15,10 @@ const {
   restartProgram,
   getProgressTrend,
   markSessionCompleted,
-  getProgressTrend
+  updateGoalProgress,
+  getUserStreaks,
+  getAdaptiveGoalProgress,
+  getStrengthProgress
 } = require("../controllers/progressController");
 
 // ✅ Log user progress
@@ -34,35 +39,41 @@ router.post("/reschedule", protect, rescheduleWorkout);
 // ✅ Submit workout feedback
 router.post("/feedback", protect, submitFeedback);
 
-// ✅ Fetch user progress for a program
+// ✅ Fetch user progress for a specific program
 router.get("/user/:programId", protect, getUserProgress);
 
 // ✅ Restart a program
 router.post("/restart", protect, restartProgram);
 
-// ✅ Get progress trend
+// ✅ Get progress trend for a program
 router.get("/progress-trend/:programId", protect, getProgressTrend);
+
 // ✅ Complete a session
 router.post("/session/complete", protect, markSessionCompleted);
-// ✅ Import new functions
-const { updateGoalProgress, getUserStreaks } = require("../controllers/progressController");
 
 // ✅ Update Goal Tracking Automatically
 router.post("/goal-progress", protect, updateGoalProgress);
 
 // ✅ Get User Streaks
 router.get("/streaks/:userId", protect, getUserStreaks);
-const { getUserStreaks, rescheduleWorkout, getAdaptiveGoalProgress } = require("../controllers/progressController");
-
-// ✅ Get workout streaks
-router.get("/streaks/:userId", protect, getUserStreaks);
-
-// ✅ Reschedule missed workouts
-router.post("/reschedule", protect, rescheduleWorkout);
 
 // ✅ Fetch goal progress for adaptive tracking
 router.get("/goal-progress/:userId", protect, getAdaptiveGoalProgress);
+
+// ✅ Get strength progress for a program
 router.get("/strength-chart/:programId", protect, getStrengthProgress);
+
+// ✅ Fetch user progress for a program
+router.get("/user/:programId", protect, getUserProgress);
+
+// ✅ Get progress trend
+router.get("/progress-trend/:programId", protect, getProgressTrend);
+
+// ✅ Mark a session as completed
+router.post("/session/complete", protect, markSessionCompleted);
+
+// ✅ Update Goal Progress
+router.post("/goal-progress", protect, updateGoalProgress);
 
 
 module.exports = router;
