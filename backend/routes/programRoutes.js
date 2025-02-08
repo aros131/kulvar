@@ -9,11 +9,13 @@ const upload = multer({ dest: "uploads/" });
 const {
   createProgram,
   getPrograms,
+  
   getProgramById,
   updateProgram,
   deleteProgram,
   assignProgramToClients,
   cloneProgram,
+  getUserPrograms,
   trackSessionCompletion,
   submitFeedback,
   getProgramDocuments,
@@ -27,6 +29,9 @@ const {
 
 // 🟢 Program Management Routes
 router.post("/", protect, roleMiddleware(["coach"]), upload.array("documents"), createProgram); // Create a program
+router.get("/user-programs", protect, getUserPrograms);
+
+
 router.get("/", protect, getPrograms); // Get all programs
 router.get("/:id", protect, getProgramById); // Get a specific program by ID
 router.put("/:id", protect, roleMiddleware(["coach"]), updateProgram); // Update program

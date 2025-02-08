@@ -71,6 +71,21 @@ const getPrograms = async (req, res) => {
     res.status(500).json({ message: "Error fetching programs", error: error.message });
   }
 };
+// 🟢 Get all programs assigned to a user
+const getUserPrograms = async (req, res) => {
+  try {
+    const userId = req.user.id; // Ensure `req.user.id` is populated by the `protect` middleware.
+    const programs = await Program.find({ assignedClients: userId }); // Check assigned programs
+
+    if (!programs || programs.length === 0) {
+      return res.status(404).json({ message: "Kullanıcıya atanmış bir program bulunamadı." });
+    }
+
+    res.status(200).json({ programs });
+  } catch (error) {
+    res.status(500).json({ message: "Kullanıcının programlarını getirirken hata oluştu.", error: error.message });
+  }
+};
 
 // 🟢 Get a single program by ID
 const getProgramById = async (req, res) => {
@@ -322,6 +337,7 @@ const submitFeedback = async (req, res) => {
 module.exports = {
   createProgram,
   getPrograms,
+  getUserPrograms, 
   getProgramById,
   updateProgram,
   deleteProgram,
