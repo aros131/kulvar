@@ -332,6 +332,61 @@ const submitFeedback = async (req, res) => {
     res.status(500).json({ message: "Error submitting feedback", error: error.message });
   }
 };
+const getAssignedClients = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const program = await Program.findById(programId).populate("assignedClients", "name email");
+
+    if (!program) {
+      return res.status(404).json({ message: "Program not found" });
+    }
+
+    res.status(200).json({ assignedClients: program.assignedClients });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching assigned clients", error: error.message });
+  }
+};
+const resetProgress = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.user.id;
+
+    const progress = await Progress.findOneAndUpdate(
+      { programId, userId },
+      { completedSessions: [] },
+      { new: true }
+    );
+
+    if (!progress) {
+      return res.status(404).json({ message: "Progress not found for this program." });
+    }
+
+    res.status(200).json({ message: "Progress reset successfully", progress });
+  } catch (error) {
+    res.status(500).json({ message: "Error resetting progress", error: error.message });
+  }
+};
+const updateAdaptiveAdjustments = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const { fatigueLevel, notes } = req.body;
+    const userId = req.user.id;
+
+    let progress = await Progress.findOne({ programId, userId });
+
+    if (!progress) {
+      progress = new Progress({ programId, userId, fatigueAdjustments: [] });
+    }
+
+    progress.fatigueAdjustments.push({ fatigueLevel, notes, date: new Date() });
+
+    await progress.save();
+
+    res.status(200).json({ message: "Fatigue adjustments updated", progress });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating fatigue adjustments", error: error.message });
+  }
+};
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
 module.exports = {
@@ -351,7 +406,10 @@ module.exports = {
   getSessionCompletionData,
   getProgramVideos,  // ✅ Added
   submitSessionFeedback, // ✅ Added
-  rescheduleWorkout  // ✅ Added
+  rescheduleWorkout,
+  getAssignedClients,
+  resetProgress,
+  updateAdaptiveAdjustments
 };
 
 

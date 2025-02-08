@@ -25,6 +25,14 @@ const {
   getProgramVideos,
   submitSessionFeedback,
   rescheduleWorkout,
+  getSessionCompletionData,
+  getAssignedClients,
+  resetProgress,
+  updateAdaptiveAdjustments
+ 
+  
+ 
+  
 } = require("../controllers/programController");
 
 // 🟢 Program Management Routes
@@ -57,5 +65,13 @@ router.get("/:id/videos", protect, getProgramVideos); // Get program videos
 
 // 🟢 Reschedule Missed Workouts
 router.post("/reschedule-workout", protect, roleMiddleware(["user"]), rescheduleWorkout); // Reschedule a workout
+// 🟢 Program Completion Data
+router.get("/:id/completion", protect, roleMiddleware(["coach", "user"]), getSessionCompletionData); // Get program completion data
+// 🟢 Get Assigned Clients
+router.get("/:programId/assigned-clients", protect, roleMiddleware(["coach"]), getAssignedClients); // Fetch assigned clients for a program
+// 🟢 Reset Progress
+router.post("/:programId/reset-progress", protect, roleMiddleware(["user"]), resetProgress); // Reset user progress for a program
+// 🟢 Adaptive Adjustments
+router.post("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), updateAdaptiveAdjustments); // Add fatigue-based adjustments
 
 module.exports = router;
