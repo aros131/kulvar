@@ -88,9 +88,9 @@
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
     const token = localStorage.getItem("token");
-    let currentProgramId = null; // ✅ Global variable to store program ID
+    let currentProgramId = null; // ✅ Store program ID globally
   
-    // ✅ Fetch user's assigned programs for dropdown
+    // ✅ Fetch user's assigned programs
     async function fetchUserPrograms() {
       try {
         const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
@@ -127,7 +127,7 @@
       }
   
       console.log("✅ Program ID from URL:", programId);
-      currentProgramId = programId; // ✅ Store it globally
+      currentProgramId = programId;
   
       try {
         const response = await fetch(`${BASE_URL}/programs/${programId}`, {
@@ -221,8 +221,6 @@
     async function fetchUserProgress(programId) {
       if (!programId) return console.error("🚨 Missing programId in fetchUserProgress().");
   
-      console.log(`Fetching user progress for program ID: ${programId}`);
-  
       try {
         const response = await fetch(`${BASE_URL}/progress/${programId}/user-progress`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -231,8 +229,6 @@
         if (!response.ok) throw new Error("Error fetching user progress.");
   
         const data = await response.json();
-        console.log("User Progress Data:", data);
-  
         document.getElementById("progress-percentage").textContent = `${data.progressPercentage || 0}%`;
         document.getElementById("progress-bar").value = data.progressPercentage || 0;
       } catch (error) {
@@ -284,33 +280,23 @@
       }
     }
   
-    // ✅ Fetch program feedback
-    async function fetchProgramFeedback(programId) {
-      if (!programId) return console.error("🚨 Missing programId in fetchProgramFeedback().");
-  
-      try {
-        const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-  
-        if (!response.ok) throw new Error("❌ Error fetching feedback.");
-  
-        const feedback = await response.json();
-        const feedbackList = document.getElementById("feedback-list");
-        feedbackList.innerHTML = feedback.map(fb => `
-          <li><strong>${fb.userName || "Kullanıcı"}:</strong> ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>
-        `).join("") || "Geri bildirim bulunamadı.";
-      } catch (error) {
-        console.error("❌ Error fetching feedback:", error.message);
+    // ✅ Add event listener for dropdown selection
+    document.getElementById("view-program-btn").addEventListener("click", () => {
+      const programId = document.getElementById("program-select").value;
+      if (!programId) {
+        alert("Lütfen bir program seçin!");
+        return;
       }
-    }
+      window.location.href = `program_overview.html?id=${programId}`;
+    });
   
-    // ✅ Initialize
+    // ✅ Initialize the page
     document.addEventListener("DOMContentLoaded", () => {
       fetchUserPrograms();
       fetchProgramDetails();
     });
   </script>
+  
   
     <style>
       /* 🌟 General Layout */
