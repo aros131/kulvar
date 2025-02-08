@@ -29,12 +29,28 @@
         <option value="">Program Seç</option>
       </select>
       <button id="restart-program" onclick="restartProgram()">🔄 Programı Yeniden Başlat</button>
+      <button onclick="markSessionCompleted()">✅ Seansı Tamamla</button>
+
 
       <!-- 📊 Overall Progress Chart -->
       <section id="progress-summary">
         <h3>Genel Program İlerlemesi</h3>
         <canvas id="progressChart"></canvas>
       </section>
+      <section id="strength-progress">
+        <h3>Güç Gelişimi</h3>
+        <canvas id="strengthChart"></canvas>
+      </section>
+      <section id="streaks">
+        <h3>Devam Serisi</h3>
+        <p id="streak-info">Seri bilgisi yükleniyor...</p>
+      </section>
+      <section id="goal-progress">
+        <h3>Hedef Takibi</h3>
+        <p id="goal-progress-info">Hedef bilgisi yükleniyor...</p>
+      </section>
+      
+
 
       <!-- 🏆 Achievement Badges -->
       <section id="achievements">
@@ -68,129 +84,229 @@
   </div>
 
   <script>
-    const BASE_URL = "https://kulvar.onrender.com";
-    const token = localStorage.getItem("token");
+    
+  const BASE_URL = "https://kulvar.onrender.com";
+  const token = localStorage.getItem("token");
 
-    async function fetchUserPrograms() {
-      try {
-        const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  // ✅ Function to get user ID from URL
+  function getUserIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
+  }
 
-        const data = await response.json();
-        if (response.ok) {
-          const programSelect = document.getElementById("program-select");
-          data.programs.forEach(program => {
-            const option = document.createElement("option");
-            option.value = program._id;
-            option.textContent = program.name;
-            programSelect.appendChild(option);
-          });
-        }
-      } catch (error) {
-        console.error("Hata:", error);
-      }
-    }
-
-    async function fetchProgress() {
-      const programId = document.getElementById("program-select").value;
-      if (!programId) return;
-
-      try {
-        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const program = await response.json();
-        if (response.ok) {
-          loadProgressCharts(program);
-          displayCoachNotes(program);
-        }
-      } catch (error) {
-        console.error("Hata:", error);
-      }
-    }
-
-    async function restartProgram() {
-      const programId = document.getElementById("program-select").value;
-      if (!programId) return alert("Lütfen bir program seçin!");
-
-      try {
-        const response = await fetch(`${BASE_URL}/progress/restart`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ programId }),
-        });
-
-        if (response.ok) {
-          alert("Program sıfırlandı!");
-          fetchProgress();
-        }
-      } catch (error) {
-        console.error("Hata:", error);
-      }
-    }
-
-    function loadProgressCharts(program) {
-      localStorage.setItem("progressData", JSON.stringify(program));
-      const ctx = document.getElementById("progressChart").getContext("2d");
-      const completedDays = program.completedDays.length;
-      const remainingDays = program.duration - completedDays;
-
-      new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          labels: ["Tamamlanan Günler", "Kalan Günler"],
-          datasets: [{ data: [completedDays, remainingDays], backgroundColor: ["#4CAF50", "#FFC107"] }],
-        },
-        options: { responsive: true, maintainAspectRatio: false },
+  // ✅ Fetch and Populate User Programs in Dropdown
+  async function fetchUserPrograms() {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const savedData = JSON.parse(localStorage.getItem("progressData"));
-      if (savedData) loadProgressCharts(savedData);
-    }
+      const data = await response.json();
+      if (response.ok) {
+        const programSelect = document.getElementById("program-select");
+        programSelect.innerHTML = '<option value="">Program Seç</option>'; // Reset options
 
-    function displayCoachNotes(program) {
-      const notesContent = document.getElementById("coach-notes-content");
-      notesContent.innerHTML = program.dailySchedule
-        .filter(day => day.notes)
-        .map(day => `<p><strong>Gün ${day.day}:</strong> ${day.notes}</p>`)
-        .join("");
-    }
-
-    async function submitSessionFeedback() {
-      const programId = document.getElementById("program-select").value;
-      const session = document.getElementById("session-select").value;
-      const feedback = document.getElementById("feedback-input").value;
-
-      if (!session || !feedback) return alert("Lütfen bir seans seçin ve geri bildiriminizi yazın!");
-
-      try {
-        const response = await fetch(`${BASE_URL}/programs/session-feedback`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ programId, session, feedback }),
+        data.programs.forEach(program => {
+          const option = document.createElement("option");
+          option.value = program._id;
+          option.textContent = program.name;
+          programSelect.appendChild(option);
         });
-
-        if (response.ok) {
-          alert("Geri bildirim gönderildi!");
-          document.getElementById("feedback-input").value = "";
-        }
-      } catch (error) {
-        console.error("Hata:", error);
       }
+    } catch (error) {
+      console.error("Hata:", error);
     }
+  }
 
-    document.addEventListener("DOMContentLoaded", fetchUserPrograms);
+  // ✅ Fetch User Progress for the Selected Program
+  async function fetchProgress() {
+    const programId = document.getElementById("program-select").value;
+    if (!programId) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}/progress/user/${programId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const progressData = await response.json();
+      if (response.ok) {
+        loadProgressCharts(progressData);
+        fetchStrengthProgress();
+        fetchUserStreaks();
+        fetchGoalProgress();
+        populateSessionSelect(programId);
+      }
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  }
+
+  // ✅ Restart User Program
+  async function restartProgram() {
+    const programId = document.getElementById("program-select").value;
+    if (!programId) return alert("Lütfen bir program seçin!");
+
+    try {
+      const response = await fetch(`${BASE_URL}/progress/restart`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ programId }),
+      });
+
+      if (response.ok) {
+        alert("Program sıfırlandı!");
+        fetchProgress();
+      }
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  }
+
+  // ✅ Populate Sessions for Feedback Selection
+  async function populateSessionSelect(programId) {
+    try {
+      const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const program = await response.json();
+      if (response.ok) {
+        const sessionSelect = document.getElementById("session-select");
+        sessionSelect.innerHTML = '<option value="">Seans Seç</option>'; // Reset
+
+        program.dailySchedule.forEach(day => {
+          day.sessions.forEach(session => {
+            const option = document.createElement("option");
+            option.value = session.name;
+            option.textContent = `${day.day} - ${session.name}`;
+            sessionSelect.appendChild(option);
+          });
+        });
+      }
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  }
+
+  // ✅ Mark Session as Completed
+  async function markSessionCompleted() {
+    const programId = document.getElementById("program-select").value;
+    const session = document.getElementById("session-select").value;
+
+    if (!programId || !session) return alert("Lütfen bir program ve seans seçin!");
+
+    try {
+      const response = await fetch(`${BASE_URL}/progress/session/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ programId, session }),
+      });
+
+      if (response.ok) {
+        alert("Seans başarıyla tamamlandı!");
+        fetchProgress();
+      }
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  }
+
+  // ✅ Fetch and Display Strength Progress
+  async function fetchStrengthProgress() {
+    const programId = document.getElementById("program-select").value;
+    if (!programId) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}/progress/strength-chart/${programId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        loadStrengthChart(data);
+      }
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  }
+
+  function loadStrengthChart(data) {
+    const ctx = document.getElementById("strengthChart").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.strengthProgress.map(entry => entry.date),
+        datasets: [{
+          label: "Kaldırılan Ağırlık (kg)",
+          data: data.strengthProgress.map(entry => entry.weight),
+          backgroundColor: "blue",
+          borderColor: "blue",
+          fill: false
+        }]
+      }
+    });
+  }
+
+  // ✅ Fetch User Streaks
+  async function fetchUserStreaks() {
+    const userId = getUserIdFromUrl();
+    if (!userId) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}/progress/streaks/${userId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        document.getElementById("streak-info").textContent = `Şu Anki Seri: ${data.currentStreak} gün, En Uzun Seri: ${data.maxStreak} gün`;
+      }
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  }
+
+  // ✅ Fetch Goal Progress
+  async function fetchGoalProgress() {
+    const programId = document.getElementById("program-select").value;
+    if (!programId) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}/progress/goal-progress`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: getUserIdFromUrl(), programId }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        document.getElementById("goal-progress-info").textContent = `Şu Anki Hedef: ${data.currentMetric} / ${data.targetMetric}`;
+      }
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  }
+
+  // ✅ Fetch Data on Page Load
+  document.addEventListener("DOMContentLoaded", fetchUserPrograms);
+
+
   </script>
+ 
 
   <style>
     .dashboard-container { display: flex; min-height: 100vh; }
