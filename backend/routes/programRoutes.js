@@ -27,7 +27,8 @@ const {
   rescheduleWorkout,
   getAssignedClients,
   resetProgress,
-  updateAdaptiveAdjustments
+  updateAdaptiveAdjustments,
+  getProgramFeedback
  
   
  
