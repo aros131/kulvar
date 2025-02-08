@@ -30,6 +30,19 @@
   </select>
   <button id="view-program-btn">Programı Görüntüle</button>
 </section>
+<section id="progress-tracker">
+  <h3>İlerleme Takibi</h3>
+  <p>Şu anki ilerleme: <span id="progress-percentage">0%</span></p>
+  <progress id="progress-bar" value="0" max="100"></progress>
+  <br><br>
+  
+  <label for="session-select">Tamamlanan Seansı Seç:</label>
+  <select id="session-select">
+    <option value="">Seans Seç</option>
+  </select>
+  
+  <button onclick="markSessionCompleted()">✅ Seansı Tamamla</button>
+</section>
 
 
       <!-- 📆 Workout Schedule -->
@@ -107,33 +120,36 @@
   
     // ✅ Fetch Program Details on Page Load
     async function fetchProgramDetails() {
-      const params = new URLSearchParams(window.location.search);
-      const programId = params.get("id");
-  
-      if (!programId) {
-        document.getElementById("program-name").textContent = "Program Bulunamadı";
-        return;
-      }
-  
-      try {
-        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-  
-        if (!response.ok) {
-          console.error("Program detayları alınamadı.");
-          return;
-        }
-  
-        const program = await response.json();
-        displayProgramDetails(program);
-        fetchUserProgress();
-        populateSessionSelect(program);
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
+  const params = new URLSearchParams(window.location.search);
+  const programId = params.get("id");
+
+  if (!programId) {
+    console.error("Program ID is missing from URL.");
+    document.getElementById("program-name").textContent = "Program Bulunamadı";
+    return;
+  }
+
+  console.log("Program ID from URL:", programId); // Debugging
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error("Program details could not be retrieved.");
+      return;
     }
+
+    const program = await response.json();
+    console.log("Program Details:", program); // Debugging
+    displayProgramDetails(program);
+  } catch (error) {
+    console.error("Hata:", error.message);
+  }
+}
+
   
     // ✅ Display Program Details
     function displayProgramDetails(program) {
@@ -209,75 +225,89 @@ function displayCoachNotes(dailySchedule = []) {
   
     // ✅ Fetch and Display User Progress
     async function fetchUserProgress() {
-      const programId = new URLSearchParams(window.location.search).get("id");
-      if (!programId) return;
-  
-      try {
-        const response = await fetch(`${BASE_URL}/progress/${programId}/user-progress`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-  
-        if (!response.ok) {
-          console.error("İlerleme bilgisi alınamadı.");
-          return;
-        }
-  
-        const data = await response.json();
-        document.getElementById("progress-percentage").textContent = `${data.progressPercentage}%`;
-        document.getElementById("progress-bar").value = data.progressPercentage;
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
+  const params = new URLSearchParams(window.location.search);
+  const programId = params.get("id");
+
+  if (!programId) {
+    console.error("Program ID is missing. Cannot fetch progress.");
+    return;
+  }
+
+  console.log(`Fetching user progress for program ID: ${programId}`); // Debugging
+
+  try {
+    const response = await fetch(`${BASE_URL}/progress/${programId}/user-progress`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error("Error fetching user progress.");
+      return;
     }
+
+    const data = await response.json();
+    console.log("User Progress Data:", data); // Debugging
+
+    document.getElementById("progress-percentage").textContent = `${data.progressPercentage || 0}%`;
+    document.getElementById("progress-bar").value = data.progressPercentage || 0;
+  } catch (error) {
+    console.error("Error fetching user progress:", error.message);
+  }
+}
+
   
     // ✅ Mark a Session as Completed
     async function markSessionCompleted() {
-      const programId = new URLSearchParams(window.location.search).get("id");
-      const session = document.getElementById("session-select").value;
-      if (!session) return alert("Lütfen bir seans seçin!");
-  
-      try {
-        const response = await fetch(`${BASE_URL}/progress/${programId}/complete-session`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ sessionName: session })
-        });
-  
-        if (response.ok) {
-          alert("Seans tamamlandı!");
-          fetchUserProgress();
-        }
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
+  const programId = new URLSearchParams(window.location.search).get("id");
+  const session = document.getElementById("session-select").value;
+  if (!session) return alert("Lütfen bir seans seçin!");
+
+  try {
+    const response = await fetch(`${BASE_URL}/progress/${programId}/complete-session`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ sessionName: session })
+    });
+
+    if (response.ok) {
+      alert("Seans tamamlandı!");
+      fetchUserProgress(); // ✅ Refresh Progress
     }
-  
+  } catch (error) {
+    console.error("Hata:", error.message);
+  }
+}
+
     // ✅ Fetch Program Completion Data
     async function fetchProgramCompletion(programId) {
-  try {
-    console.log(`Fetching completion data for program ID: ${programId}`); // Debugging
+  if (!programId) {
+    console.error("Program ID is missing. Cannot fetch completion data.");
+    return;
+  }
 
+  console.log(`Fetching completion data for program ID: ${programId}`); // Debugging
+
+  try {
     const response = await fetch(`${BASE_URL}/programs/${programId}/completion`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const data = await response.json();
-    console.log("Completion Data Response:", data); // Debugging
-
     if (!response.ok) {
-      console.error("Error fetching completion data:", data.message || "Unknown error");
+      console.error("Error fetching completion data.");
       return;
     }
+
+    const data = await response.json();
+    console.log("Completion Data Response:", data); // Debugging
 
     document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${data.rate || 0}`;
   } catch (error) {
     console.error("Error fetching completion data:", error.message);
   }
 }
-
   
   
     // ✅ Fetch Program Feedback
