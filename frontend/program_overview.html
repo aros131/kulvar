@@ -82,7 +82,11 @@
         <button onclick="submitFeedback()">Geri Bildirim Gönder</button>
       </section>
       
-
+      <section id="program-feedback">
+        <h3>Program Geri Bildirimleri</h3>
+        <ul id="feedback-list"></ul>
+      </section>
+      
       <!-- 🌙 Dark Mode Toggle -->
       <button id="dark-mode-toggle">🌙 Karanlık Mod</button>
     </main>
@@ -280,7 +284,7 @@ async function fetchProgramFeedback(programId) {
     console.log(`📡 Fetching user progress for program ID: ${programId}`);
 
     try {
-        const response = await fetch(`${BASE_URL}/progress/${programId}/user-progress`, {
+        const response = await fetch(`${BASE_URL}/programs/${programId}/user-progress`, {
             headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -321,7 +325,7 @@ async function fetchProgramFeedback(programId) {
       if (!session) return alert("Lütfen bir seans seçin!");
   
       try {
-        const response = await fetch(`${BASE_URL}/progress/${currentProgramId}/complete-session`, {
+        const response = await fetch(`${BASE_URL}/programs/${currentProgramId}/complete-session`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",

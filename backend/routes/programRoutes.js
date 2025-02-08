@@ -28,7 +28,9 @@ const {
   getAssignedClients,
   resetProgress,
   updateAdaptiveAdjustments,
-  getProgramFeedback
+  getProgramFeedback,
+  getUserProgress,
+  completeSession
  
   
  
@@ -74,6 +76,8 @@ router.post("/:programId/reset-progress", protect, roleMiddleware(["user"]), res
 router.post("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), updateAdaptiveAdjustments); // Add fatigue-based adjustments
 // Fetch feedback for a specific program
 router.get("/:programId/feedback", protect, getProgramFeedback);
+router.get("/:programId/user-progress", protect, getUserProgress);
+router.post("/:programId/complete-session", protect, completeSession);
 
 
 

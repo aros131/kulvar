@@ -430,6 +430,82 @@ const getProgramFeedback = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+const getUserProgress = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.user._id;
+
+    if (!programId) {
+      return res.status(400).json({ message: "Program ID is required." });
+    }
+
+    const program = await Program.findById(programId);
+
+    if (!program) {
+      return res.status(404).json({ message: "Program not found." });
+    }
+
+    const userProgress = program.progressTracking.find(
+      (progress) => progress.userId.toString() === userId.toString()
+    );
+
+    if (!userProgress) {
+      return res.status(404).json({ message: "No progress found for this user." });
+    }
+
+    const progressPercentage =
+      (userProgress.completedSessions / program.dailySchedule.length) * 100;
+
+    res.status(200).json({
+      completedSessions: userProgress.completedSessions,
+      totalSessions: program.dailySchedule.length,
+      progressPercentage: Math.round(progressPercentage),
+    });
+  } catch (error) {
+    console.error("Error fetching user progress:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+const completeSession = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const { sessionName } = req.body;
+    const userId = req.user._id;
+
+    if (!programId || !sessionName) {
+      return res.status(400).json({ message: "Program ID and session name are required." });
+    }
+
+    const program = await Program.findById(programId);
+
+    if (!program) {
+      return res.status(404).json({ message: "Program not found." });
+    }
+
+    const userProgress = program.progressTracking.find(
+      (progress) => progress.userId.toString() === userId.toString()
+    );
+
+    if (!userProgress) {
+      program.progressTracking.push({
+        userId: userId,
+        completedSessions: 1,
+      });
+    } else {
+      userProgress.completedSessions += 1;
+    }
+
+    // Save the updated progress
+    await program.save();
+
+    res.status(200).json({
+      message: "Session marked as completed successfully!",
+    });
+  } catch (error) {
+    console.error("Error marking session as completed:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
@@ -454,7 +530,10 @@ module.exports = {
   getAssignedClients,
   resetProgress,
   updateAdaptiveAdjustments,
-  getProgramFeedback
+  getProgramFeedback,
+getUserProgress,
+  completeSession
+
 };
 
 
