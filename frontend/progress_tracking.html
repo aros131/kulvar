@@ -82,357 +82,458 @@
       </section>
     </main>
   </div>
-
   <script>
-    
-  const BASE_URL = "https://kulvar.onrender.com";
-  const token = localStorage.getItem("token");
-
-  // ✅ Function to get user ID from URL
-  function getUserIdFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("id");
-  }
-
-  // ✅ Fetch and Populate User Programs in Dropdown
-  async function fetchUserPrograms() {
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        const programSelect = document.getElementById("program-select");
-        programSelect.innerHTML = '<option value="">Program Seç</option>'; // Reset options
-
-        data.programs.forEach(program => {
-          const option = document.createElement("option");
-          option.value = program._id;
-          option.textContent = program.name;
-          programSelect.appendChild(option);
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+  
+    // ✅ Fetch and Populate User Programs
+    async function fetchUserPrograms() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
         });
-      }
-    } catch (error) {
-      console.error("Hata:", error);
-    }
-  }
-
-  // ✅ Fetch User Progress for the Selected Program
-  async function fetchProgress() {
-    const programId = document.getElementById("program-select").value;
-    if (!programId) return;
-
-    try {
-      const response = await fetch(`${BASE_URL}/progress/user/${programId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const progressData = await response.json();
-      if (response.ok) {
-        loadProgressCharts(progressData);
-        fetchStrengthProgress();
-        fetchUserStreaks();
-        fetchGoalProgress();
-        populateSessionSelect(programId);
-      }
-    } catch (error) {
-      console.error("Hata:", error);
-    }
-  }
-
-  // ✅ Restart User Program
-  async function restartProgram() {
-    const programId = document.getElementById("program-select").value;
-    if (!programId) return alert("Lütfen bir program seçin!");
-
-    try {
-      const response = await fetch(`${BASE_URL}/progress/restart`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ programId }),
-      });
-
-      if (response.ok) {
-        alert("Program sıfırlandı!");
-        fetchProgress();
-      }
-    } catch (error) {
-      console.error("Hata:", error);
-    }
-  }
-
-  // ✅ Populate Sessions for Feedback Selection
-  async function populateSessionSelect(programId) {
-    try {
-      const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const program = await response.json();
-      if (response.ok) {
-        const sessionSelect = document.getElementById("session-select");
-        sessionSelect.innerHTML = '<option value="">Seans Seç</option>'; // Reset
-
-        program.dailySchedule.forEach(day => {
-          day.sessions.forEach(session => {
+  
+        const data = await response.json();
+        if (response.ok) {
+          const programSelect = document.getElementById("program-select");
+          programSelect.innerHTML = '<option value="">Program Seç</option>'; // Reset dropdown options
+  
+          data.programs.forEach(program => {
             const option = document.createElement("option");
-            option.value = session.name;
-            option.textContent = `${day.day} - ${session.name}`;
-            sessionSelect.appendChild(option);
+            option.value = program._id; // Program ID
+            option.textContent = program.name; // Program Name
+            programSelect.appendChild(option);
           });
+        } else {
+          console.error("Programlar yüklenemedi:", data.message);
+        }
+      } catch (error) {
+        console.error("Program fetch hatası:", error.message);
+      }
+    }
+  
+    // ✅ Fetch Progress Data for Selected Program
+    async function fetchProgress() {
+      const programId = document.getElementById("program-select").value;
+      if (!programId) {
+        alert("Lütfen bir program seçin!");
+        return;
+      }
+  
+      try {
+        const response = await fetch(`${BASE_URL}/progress/user/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
         });
+  
+        const progressData = await response.json();
+        if (response.ok) {
+          console.log("İlerleme Verisi:", progressData);
+          loadProgressCharts(progressData);
+          fetchStrengthProgress(programId);
+          fetchUserStreaks();
+          fetchGoalProgress(programId);
+          populateSessionSelect(programId);
+        } else {
+          console.error("İlerleme verisi alınamadı:", progressData.message);
+        }
+      } catch (error) {
+        console.error("İlerleme fetch hatası:", error.message);
       }
-    } catch (error) {
-      console.error("Hata:", error);
     }
-  }
-
-  // ✅ Mark Session as Completed
-  async function markSessionCompleted() {
-    const programId = document.getElementById("program-select").value;
-    const session = document.getElementById("session-select").value;
-
-    if (!programId || !session) return alert("Lütfen bir program ve seans seçin!");
-
-    try {
-      const response = await fetch(`${BASE_URL}/progress/session/complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+  
+    // ✅ Restart User Program
+    async function restartProgram() {
+      const programId = document.getElementById("program-select").value;
+      if (!programId) {
+        alert("Lütfen bir program seçin!");
+        return;
+      }
+  
+      try {
+        const response = await fetch(`${BASE_URL}/progress/restart`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ programId }),
+        });
+  
+        if (response.ok) {
+          alert("Program sıfırlandı!");
+          fetchProgress();
+        } else {
+          console.error("Program sıfırlama hatası.");
+        }
+      } catch (error) {
+        console.error("Program sıfırlama hatası:", error.message);
+      }
+    }
+  
+    // ✅ Populate Sessions for Feedback Selection
+    async function populateSessionSelect(programId) {
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        const program = await response.json();
+        if (response.ok) {
+          const sessionSelect = document.getElementById("session-select");
+          sessionSelect.innerHTML = '<option value="">Seans Seç</option>'; // Reset dropdown options
+  
+          program.dailySchedule.forEach(day => {
+            day.sessions.forEach(session => {
+              const option = document.createElement("option");
+              option.value = session.name;
+              option.textContent = `${day.day} - ${session.name}`;
+              sessionSelect.appendChild(option);
+            });
+          });
+        } else {
+          console.error("Program seansları alınamadı:", program.message);
+        }
+      } catch (error) {
+        console.error("Seans seçimi hatası:", error.message);
+      }
+    }
+  
+    // ✅ Mark Session as Completed
+    async function markSessionCompleted() {
+      const programId = document.getElementById("program-select").value;
+      const session = document.getElementById("session-select").value;
+  
+      if (!programId || !session) {
+        alert("Lütfen bir program ve seans seçin!");
+        return;
+      }
+  
+      try {
+        const response = await fetch(`${BASE_URL}/progress/session/complete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ programId, session }),
+        });
+  
+        if (response.ok) {
+          alert("Seans başarıyla tamamlandı!");
+          fetchProgress();
+        } else {
+          console.error("Seans tamamlama hatası.");
+        }
+      } catch (error) {
+        console.error("Seans tamamlama hatası:", error.message);
+      }
+    }
+  
+    // ✅ Fetch and Display Strength Progress
+    async function fetchStrengthProgress(programId) {
+      try {
+        const response = await fetch(`${BASE_URL}/progress/strength-chart/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          loadStrengthChart(data);
+        } else {
+          console.error("Güç gelişimi alınamadı:", data.message);
+        }
+      } catch (error) {
+        console.error("Güç gelişimi hatası:", error.message);
+      }
+    }
+  
+    function loadStrengthChart(data) {
+      const ctx = document.getElementById("strengthChart").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: data.strengthProgress.map(entry => entry.date),
+          datasets: [{
+            label: "Kaldırılan Ağırlık (kg)",
+            data: data.strengthProgress.map(entry => entry.weight),
+            backgroundColor: "blue",
+            borderColor: "blue",
+            fill: false
+          }]
         },
-        body: JSON.stringify({ programId, session }),
       });
-
-      if (response.ok) {
-        alert("Seans başarıyla tamamlandı!");
-        fetchProgress();
-      }
-    } catch (error) {
-      console.error("Hata:", error);
     }
-  }
-
-  // ✅ Fetch and Display Strength Progress
-  async function fetchStrengthProgress() {
-    const programId = document.getElementById("program-select").value;
-    if (!programId) return;
-
-    try {
-      const response = await fetch(`${BASE_URL}/progress/strength-chart/${programId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        loadStrengthChart(data);
+  
+    // ✅ Fetch User Streaks
+    async function fetchUserStreaks() {
+      const userId = getUserIdFromUrl();
+      if (!userId) return;
+  
+      try {
+        const response = await fetch(`${BASE_URL}/progress/streaks/${userId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          document.getElementById("streak-info").textContent = `Şu Anki Seri: ${data.currentStreak} gün, En Uzun Seri: ${data.maxStreak} gün`;
+        } else {
+          console.error("Seri bilgisi alınamadı:", data.message);
+        }
+      } catch (error) {
+        console.error("Seri bilgisi hatası:", error.message);
       }
-    } catch (error) {
-      console.error("Hata:", error);
     }
-  }
-
-  function loadStrengthChart(data) {
-    const ctx = document.getElementById("strengthChart").getContext("2d");
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: data.strengthProgress.map(entry => entry.date),
-        datasets: [{
-          label: "Kaldırılan Ağırlık (kg)",
-          data: data.strengthProgress.map(entry => entry.weight),
-          backgroundColor: "blue",
-          borderColor: "blue",
-          fill: false
-        }]
+  
+    // ✅ Fetch Goal Progress
+    async function fetchGoalProgress(programId) {
+      try {
+        const response = await fetch(`${BASE_URL}/progress/goal-progress`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ programId }),
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          document.getElementById("goal-progress-info").textContent = `Şu Anki Hedef: ${data.currentMetric} / ${data.targetMetric}`;
+        } else {
+          console.error("Hedef bilgisi alınamadı:", data.message);
+        }
+      } catch (error) {
+        console.error("Hedef bilgisi hatası:", error.message);
       }
-    });
-  }
-
-  // ✅ Fetch User Streaks
-  async function fetchUserStreaks() {
-    const userId = getUserIdFromUrl();
-    if (!userId) return;
-
-    try {
-      const response = await fetch(`${BASE_URL}/progress/streaks/${userId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        document.getElementById("streak-info").textContent = `Şu Anki Seri: ${data.currentStreak} gün, En Uzun Seri: ${data.maxStreak} gün`;
-      }
-    } catch (error) {
-      console.error("Hata:", error);
     }
-  }
-
-  // ✅ Fetch Goal Progress
-  async function fetchGoalProgress() {
-    const programId = document.getElementById("program-select").value;
-    if (!programId) return;
-
-    try {
-      const response = await fetch(`${BASE_URL}/progress/goal-progress`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+  
+    // ✅ Load Progress Charts
+    function loadProgressCharts(data) {
+      const ctx = document.getElementById("progressChart").getContext("2d");
+      const completed = data.completedSessions || 0;
+      const total = data.totalSessions || 1; // Prevent divide by zero
+      const remaining = total - completed;
+  
+      new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["Tamamlanan", "Kalan"],
+          datasets: [{
+            data: [completed, remaining],
+            backgroundColor: ["#4CAF50", "#FFC107"],
+          }]
         },
-        body: JSON.stringify({ userId: getUserIdFromUrl(), programId }),
       });
-
-      const data = await response.json();
-      if (response.ok) {
-        document.getElementById("goal-progress-info").textContent = `Şu Anki Hedef: ${data.currentMetric} / ${data.targetMetric}`;
-      }
-    } catch (error) {
-      console.error("Hata:", error);
     }
-  }
-
-  // ✅ Fetch Data on Page Load
-  document.addEventListener("DOMContentLoaded", fetchUserPrograms);
-
-
+  
+    // ✅ Fetch Programs on Page Load
+    document.addEventListener("DOMContentLoaded", fetchUserPrograms);
+  
   </script>
+  
+
  
 
   <style>
-    .dashboard-container { display: flex; min-height: 100vh; }
-    .dashboard-nav { width: 250px; background: #2F575D; color: #FFF; padding: 20px; }
-    .dashboard-content { flex: 1; padding: 20px; }
-    button { background: #658B6F; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #28363D; }
-    section { margin-bottom: 30px; padding: 10px; background-color: #ffffff; border-radius: 8px; }
-    canvas { max-width: 100%; max-height: 400px; }
+    /* 🌟 General Layout */
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+  
+    .dashboard-nav {
+      width: 250px;
+      background: #2F575D;
+      color: #FFF;
+      padding: 20px;
+    }
+  
+    .dashboard-content {
+      flex: 1;
+      padding: 20px;
+      background-color: #F7F9FA;
+    }
+  
+    /* 🌟 Sidebar Navigation */
+    .dashboard-nav h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+  
+    .dashboard-nav ul {
+      list-style: none;
+      padding: 0;
+    }
+  
+    .dashboard-nav a {
+      display: block;
+      color: #FFF;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+  
+    .dashboard-nav a:hover, .dashboard-nav a.active {
+      background-color: #658B6F;
+      color: #FFF;
+    }
+  
+    /* 🌟 Content Sections */
+    section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: #FFFFFF;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  
+    section h3 {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+  
+    section p, section ul {
+      line-height: 1.6;
+    }
+  
+    canvas {
+      max-width: 100%;
+      max-height: 400px;
+      margin-top: 20px;
+      display: block;
+      border-radius: 8px;
+    }
+  
+    /* 🌟 Buttons */
+    button {
+      background: linear-gradient(135deg, #4CAF50, #81C784);
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+  
+    button:hover {
+      background: linear-gradient(135deg, #388E3C, #66BB6A);
+      transform: translateY(-2px);
+    }
+  
+    /* 🌟 Dropdowns */
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      border: 1px solid #CCC;
+      border-radius: 5px;
+      transition: border-color 0.3s ease;
+    }
+  
+    select:focus {
+      border-color: #4CAF50;
+      outline: none;
+    }
+  
+    /* 🌟 Progress Bars */
+    .progress-bar-container {
+      background: #ddd;
+      border-radius: 25px;
+      margin: 15px 0;
+      padding: 5px;
+      width: 100%;
+    }
+  
+    .progress-bar {
+      height: 20px;
+      border-radius: 25px;
+      background: linear-gradient(135deg, #4CAF50, #81C784);
+      width: 0%;
+      transition: width 0.5s ease-in-out;
+    }
+  
+    /* 🌟 Dark Mode */
+    body.dark-mode {
+      background-color: #121212;
+      color: #F5F5F5;
+    }
+  
+    body.dark-mode .dashboard-nav {
+      background: linear-gradient(135deg, #2B3940, #1E262B);
+    }
+  
+    body.dark-mode section {
+      background-color: #1F1F1F;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    }
+  
+    body.dark-mode button {
+      background: linear-gradient(135deg, #81C784, #4CAF50);
+    }
+  
+    body.dark-mode button:hover {
+      background: linear-gradient(135deg, #66BB6A, #388E3C);
+    }
+  
+    body.dark-mode select {
+      background-color: #333;
+      color: #FFF;
+      border-color: #555;
+    }
+  
+    body.dark-mode select:focus {
+      border-color: #81C784;
+    }
+  
+    /* 🌟 Achievements Badges */
+    #badges-container {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+  
+    #badges-container div {
+      padding: 10px;
+      background: #FFD700;
+      color: #FFF;
+      font-weight: bold;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  
+    body.dark-mode #badges-container div {
+      background: #FFAA00;
+      color: #000;
+    }
+  
+    /* 🌟 Loader Animation */
+    .loader {
+      display: none;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #4CAF50;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+  
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
-</body>
-</html>
-
-  <style>
-.dashboard-nav a {
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-h3 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  line-height: 1.4;
-}
-p {
-  margin-bottom: 15px;
-  line-height: 1.6;
-}
-
-
-/* 🌟 Progress Bars */
-.progress-bar-container {
-  background: #ddd;
-  border-radius: 25px;
-  padding: 5px;
-  margin: 15px 0;
-  width: 100%;
-}
-
-.progress-bar {
-  height: 20px;
-  border-radius: 25px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  width: 0%;
-  transition: width 0.5s ease-in-out;
-}
-section {
-  margin-bottom: 30px;
-  padding: 10px;
-  border-radius: 8px;
-  background-color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* 🌟 Charts */
-canvas {
-  max-width: 100% !important;
-  max-height: 400px !important;
-  display: block;
-  border-radius: 12px;
-}
-
-/* 🌟 Buttons */
-button {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-button:hover {
-  background: linear-gradient(135deg, var(--primary-hover), var(--secondary-hover));
-}
-
-/* 🌙 Dark Mode */
-body.dark-mode {
-  background-color: #121212;
-  color: #f5f5f5;
-}
-
-body.dark-mode .dashboard-nav {
-  background: linear-gradient(135deg, var(--dark-primary), var(--dark-secondary));
-}
-
-body.dark-mode .progress-bar-container {
-  background: #333;
-}
-
-body.dark-mode .progress-bar {
-  background: linear-gradient(135deg, var(--dark-primary), var(--dark-secondary));
-}
-
-/* 🌙 Dark Mode Button */
-#dark-mode-toggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: var(--primary-color);
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 50%;
-  font-size: 18px;
-  cursor: pointer;
-}
-:root {
-  --bg-light: #DEE1DD;
-  --text-light: #28363D;
-  --primary-light: #658B6F;
-  --bg-dark: #2F575D;
-  --text-dark: #DEE1DD;
-  --primary-dark: #99AEAD;
-}
-
-body.light-mode {
-  background-color: var(--bg-light);
-  color: var(--text-light);
-}
-
-body.dark-mode {
-  background-color: var(--bg-dark);
-  color: var(--text-dark);
-}
-
-  </style>
+  
 </body>
 </html>

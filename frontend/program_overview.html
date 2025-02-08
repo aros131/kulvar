@@ -22,6 +22,15 @@
     <main class="dashboard-content">
       <h2 id="program-name">Program Adı</h2>
       <p id="program-description">Program açıklaması burada görünecek.</p>
+      <!-- Dropdown to Select Program -->
+<section>
+  <label for="program-select">Program Seç:</label>
+  <select id="program-select">
+    <option value="">Bir Program Seçin</option>
+  </select>
+  <button id="view-program-btn">Programı Görüntüle</button>
+</section>
+
 
       <!-- 📆 Workout Schedule -->
       <section id="workout-schedule">
@@ -63,159 +72,444 @@
       <button id="dark-mode-toggle">🌙 Karanlık Mod</button>
     </main>
   </div>
+  
   <script>
-
-  const BASE_URL = "https://kulvar.onrender.com";
-  const token = localStorage.getItem("token");
-  
-  async function fetchProgramDetails() {
-    const params = new URLSearchParams(window.location.search);
-    const programId = params.get("id");
-  
-    if (!programId) {
-      document.getElementById("program-name").textContent = "Program Bulunamadı";
-      return;
-    }
-  
-    try {
-      const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-  
-      const program = await response.json();
-      if (response.ok) {
-        displayProgramDetails(program);
-      } else {
-        console.error("Error fetching program details:", program.message);
-      }
-    } catch (error) {
-      console.error("Hata:", error.message);
-    }
-  }
-  
-  function displayProgramDetails(program) {
-    // Program Details
-    document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
-    document.getElementById("program-description").textContent = program.description || "Program açıklaması mevcut değil.";
-  
-    // Display other sections
-    displayWorkoutSchedule(program.dailySchedule || []);
-    displayCoachNotes(program.dailySchedule || []);
-    loadStrengthProgress(program.progressiveOverload || []);
-    fetchProgramCompletion(program._id);
-    fetchProgramFeedback(program._id);
-  }
-  
-  function displayWorkoutSchedule(dailySchedule) {
-    const workoutList = document.getElementById("workout-list");
-    workoutList.innerHTML = "";
-  
-    if (dailySchedule.length === 0) {
-      workoutList.textContent = "Antrenman programı bulunamadı.";
-      return;
-    }
-  
-    dailySchedule.forEach(day => {
-      const li = document.createElement("li");
-      li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
-  
-      day.sessions.forEach(session => {
-        li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
-          ${session.exercises.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
-  
-        // Embed videos if available
-        session.exercises.forEach(ex => {
-          if (ex.videoUrls && ex.videoUrls.length) {
-            ex.videoUrls.forEach(video => {
-              li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
-            });
-          }
+    const BASE_URL = "https://kulvar.onrender.com";
+    const token = localStorage.getItem("token");
+    
+    // 🟢 Fetch all programs for the dropdown menu
+    async function fetchUserPrograms() {
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
         });
-      });
-  
-      workoutList.appendChild(li);
-    });
-  }
-  
-  function displayCoachNotes(dailySchedule) {
-    const notesContent = document.getElementById("coach-notes-content");
-    notesContent.innerHTML = dailySchedule
-      .filter(day => day.notes)
-      .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
-      .join("") || "Koç notu bulunamadı.";
-  }
-  
-  function loadStrengthProgress(progressiveOverload) {
-    if (progressiveOverload.length === 0) {
-      document.getElementById("strengthChart").textContent = "Güç gelişimi verisi bulunamadı.";
-      return;
-    }
-  
-    const ctx = document.getElementById("strengthChart").getContext("2d");
-    const labels = progressiveOverload.map(ex => ex.exerciseName);
-    const weightValues = progressiveOverload.map(ex => ex.currentWeight);
-  
-    new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: labels,
-        datasets: [{ label: "Şu Anki Ağırlık", data: weightValues, backgroundColor: "green" }],
-      },
-      options: { responsive: true, maintainAspectRatio: false },
-    });
-  }
-  
-  async function fetchProgramCompletion(programId) {
-    try {
-      const response = await fetch(`${BASE_URL}/programs/${programId}/completion`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-  
-      const completion = await response.json();
-      if (response.ok) {
-        document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${completion.rate || 0}`;
-      } else {
-        console.error("Error fetching completion data:", completion.message);
+    
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error fetching user programs:", errorData.message);
+          return;
+        }
+    
+        const data = await response.json();
+        const programSelect = document.getElementById("program-select");
+        programSelect.innerHTML = `<option value="">Bir Program Seçin</option>`; // Reset dropdown
+    
+        data.programs.forEach(program => {
+          const option = document.createElement("option");
+          option.value = program._id; // Program ID
+          option.textContent = program.name; // Program Name
+          programSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error("Hata:", error.message);
       }
-    } catch (error) {
-      console.error("Error fetching completion data:", error.message);
     }
-  }
-  
-  async function fetchProgramFeedback(programId) {
-    try {
-      const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
-        headers: { Authorization: `Bearer ${token}` },
+    
+    // 🟢 Fetch program details when the page is loaded
+    async function fetchProgramDetails() {
+      const params = new URLSearchParams(window.location.search);
+      const programId = params.get("id");
+    
+      if (!programId) {
+        document.getElementById("program-name").textContent = "Program Bulunamadı";
+        return;
+      }
+    
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+    
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error fetching program details:", errorData.message);
+          document.getElementById("program-name").textContent = "Program Detayları Yüklenemedi";
+          return;
+        }
+    
+        const program = await response.json();
+        displayProgramDetails(program);
+      } catch (error) {
+        console.error("Hata:", error.message);
+        document.getElementById("program-name").textContent = "Bir hata oluştu.";
+      }
+    }
+    
+    // 🟢 Display program details
+    function displayProgramDetails(program) {
+      document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
+      document.getElementById("program-description").textContent = program.description || "Program açıklaması mevcut değil.";
+    
+      // Display other sections
+      displayWorkoutSchedule(program.dailySchedule || []);
+      displayCoachNotes(program.dailySchedule || []);
+      loadStrengthProgress(program.progressiveOverload || []);
+      fetchProgramCompletion(program._id);
+      fetchProgramFeedback(program._id);
+    }
+    
+    // 🟢 Display workout schedule
+    function displayWorkoutSchedule(dailySchedule = []) {
+      const workoutList = document.getElementById("workout-list");
+      workoutList.innerHTML = "";
+    
+      if (!dailySchedule.length) {
+        workoutList.textContent = "Antrenman programı bulunamadı.";
+        return;
+      }
+    
+      dailySchedule.forEach(day => {
+        const li = document.createElement("li");
+        li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
+    
+        day.sessions?.forEach(session => {
+          li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
+            ${session.exercises?.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
+    
+          session.exercises?.forEach(ex => {
+            if (ex.videoUrls?.length) {
+              ex.videoUrls.forEach(video => {
+                li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
+              });
+            }
+          });
+        });
+    
+        workoutList.appendChild(li);
       });
-  
-      const feedback = await response.json();
-      if (response.ok) {
+    }
+    
+    // 🟢 Display coach notes
+    function displayCoachNotes(dailySchedule = []) {
+      const notesContent = document.getElementById("coach-notes-content");
+      notesContent.innerHTML = dailySchedule
+        .filter(day => day.notes)
+        .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
+        .join("") || "Koç notu bulunamadı.";
+    }
+    
+    // 🟢 Load strength progress into a chart
+    function loadStrengthProgress(progressiveOverload = []) {
+      const ctx = document.getElementById("strengthChart").getContext("2d");
+    
+      if (!progressiveOverload.length) {
+        document.getElementById("strengthChart").textContent = "Güç gelişimi verisi bulunamadı.";
+        return;
+      }
+    
+      const labels = progressiveOverload.map(ex => ex.exerciseName);
+      const weightValues = progressiveOverload.map(ex => ex.currentWeight);
+    
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{ label: "Şu Anki Ağırlık", data: weightValues, backgroundColor: "green" }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+    
+    // 🟢 Fetch program completion data
+    async function fetchProgramCompletion(programId) {
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}/completion`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+    
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error fetching completion data:", errorData.message);
+          return;
+        }
+    
+        const completion = await response.json();
+        document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${completion.rate || 0}`;
+      } catch (error) {
+        console.error("Error fetching completion data:", error.message);
+      }
+    }
+    
+    // 🟢 Fetch program feedback
+    async function fetchProgramFeedback(programId) {
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+    
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error fetching feedback:", errorData.message);
+          return;
+        }
+    
+        const feedback = await response.json();
         const feedbackList = document.getElementById("feedback-list");
         feedbackList.innerHTML = feedback.map(fb => `
           <li><strong>${fb.userName || "Kullanıcı"}:</strong> ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>
         `).join("") || "Geri bildirim bulunamadı.";
-      } else {
-        console.error("Error fetching feedback:", feedback.message);
+      } catch (error) {
+        console.error("Error fetching feedback:", error.message);
       }
-    } catch (error) {
-      console.error("Error fetching feedback:", error.message);
     }
-  }
-  
-  // Dark Mode Toggle
-  document.getElementById("dark-mode-toggle").addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
-    localStorage.setItem("darkMode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
-  });
-  
-  // Enable Dark Mode if Previously Selected
-  if (localStorage.getItem("darkMode") === "enabled") {
-    document.body.classList.add("dark-mode");
-  }
-  
-  // Initialize the Dashboard
-  document.addEventListener("DOMContentLoaded", fetchProgramDetails);
-</script>
+    
+    // 🟢 Dark Mode Toggle
+    document.getElementById("dark-mode-toggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
+    });
+    
+    // 🟢 Initialize dark mode on page load
+    if (localStorage.getItem("darkMode") === "enabled") {
+      document.body.classList.add("dark-mode");
+    }
+    
+    // 🟢 Add event listener for dropdown and fetch details
+    document.getElementById("view-program-btn").addEventListener("click", () => {
+      const programId = document.getElementById("program-select").value;
+      if (!programId) {
+        alert("Lütfen bir program seçin!");
+        return;
+      }
+      window.location.href = `program_overview.html?id=${programId}`;
+    });
+    
+    // 🟢 Initialize on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchUserPrograms();
+      fetchProgramDetails();
+    });
+    </script>
+    <style>
+      /* 🌟 General Layout */
+      .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+      }
+    
+      .dashboard-nav {
+        width: 250px;
+        background: #2F575D;
+        color: #FFF;
+        padding: 20px;
+      }
+    
+      .dashboard-content {
+        flex: 1;
+        padding: 20px;
+        background-color: #F7F9FA;
+      }
+    
+      /* 🌟 Sidebar Navigation */
+      .dashboard-nav h2 {
+        font-size: 22px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+    
+      .dashboard-nav ul {
+        list-style: none;
+        padding: 0;
+      }
+    
+      .dashboard-nav a {
+        display: block;
+        color: #FFF;
+        text-decoration: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+    
+      .dashboard-nav a:hover, .dashboard-nav a.active {
+        background-color: #658B6F;
+        color: #FFF;
+      }
+    
+      /* 🌟 Content Sections */
+      section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+    
+      section h3 {
+        margin-bottom: 15px;
+        font-size: 20px;
+        border-left: 5px solid #658B6F;
+        padding-left: 10px;
+      }
+    
+      section p, section ul {
+        line-height: 1.6;
+        font-size: 16px;
+      }
+    
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+    
+      li {
+        margin-bottom: 10px;
+      }
+    
+      canvas {
+        max-width: 100%;
+        max-height: 400px;
+        margin-top: 20px;
+        display: block;
+        border-radius: 8px;
+      }
+    
+      /* 🌟 Buttons */
+      button {
+        background: linear-gradient(135deg, #4CAF50, #81C784);
+        color: white;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+    
+      button:hover {
+        background: linear-gradient(135deg, #388E3C, #66BB6A);
+        transform: translateY(-2px);
+      }
+    
+      /* 🌟 Dropdowns */
+      select {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        margin-bottom: 15px;
+        border: 1px solid #CCC;
+        border-radius: 5px;
+        transition: border-color 0.3s ease;
+      }
+    
+      select:focus {
+        border-color: #4CAF50;
+        outline: none;
+      }
+    
+      /* 🌟 Badges and Progress Bars */
+      .badge {
+        display: inline-block;
+        padding: 10px 15px;
+        margin: 5px;
+        background: #FFD700;
+        color: #000;
+        font-weight: bold;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+    
+      .progress-bar-container {
+        background: #ddd;
+        border-radius: 25px;
+        margin: 15px 0;
+        padding: 5px;
+        width: 100%;
+      }
+    
+      .progress-bar {
+        height: 20px;
+        border-radius: 25px;
+        background: linear-gradient(135deg, #4CAF50, #81C784);
+        width: 0%;
+        transition: width 0.5s ease-in-out;
+      }
+    
+      /* 🌟 Workout Videos */
+      #video-container iframe {
+        margin: 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+    
+      #video-container iframe:hover {
+        transform: scale(1.05);
+        transition: transform 0.3s ease;
+      }
+    
+      /* 🌟 Dark Mode */
+      body.dark-mode {
+        background-color: #121212;
+        color: #F5F5F5;
+      }
+    
+      body.dark-mode .dashboard-nav {
+        background: linear-gradient(135deg, #2B3940, #1E262B);
+      }
+    
+      body.dark-mode section {
+        background-color: #1F1F1F;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+      }
+    
+      body.dark-mode button {
+        background: linear-gradient(135deg, #81C784, #4CAF50);
+      }
+    
+      body.dark-mode button:hover {
+        background: linear-gradient(135deg, #66BB6A, #388E3C);
+      }
+    
+      body.dark-mode select {
+        background-color: #333;
+        color: #FFF;
+        border-color: #555;
+      }
+    
+      body.dark-mode select:focus {
+        border-color: #81C784;
+      }
+    
+      /* 🌟 Loader Animation */
+      .loader {
+        display: none;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4CAF50;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+    
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    
+      /* 🌟 Responsive Design */
+      @media (max-width: 768px) {
+        .dashboard-nav {
+          width: 200px;
+        }
+    
+        section {
+          padding: 15px;
+        }
+    
+        button {
+          padding: 8px 12px;
+          font-size: 14px;
+        }
+    
+        select {
+          font-size: 14px;
+        }
+      }
+    </style>
+    
 </body>
 </html>
