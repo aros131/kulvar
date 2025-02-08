@@ -76,98 +76,94 @@
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
     const token = localStorage.getItem("token");
-    
-    // 🟢 Fetch all programs for the dropdown menu
+  
+    // ✅ Function to Fetch User Programs
     async function fetchUserPrograms() {
       try {
         const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         });
-    
+  
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Error fetching user programs:", errorData.message);
+          console.error("Program listesi alınamadı.");
           return;
         }
-    
+  
         const data = await response.json();
         const programSelect = document.getElementById("program-select");
-        programSelect.innerHTML = `<option value="">Bir Program Seçin</option>`; // Reset dropdown
-    
+        programSelect.innerHTML = `<option value="">Bir Program Seçin</option>`;
+  
         data.programs.forEach(program => {
           const option = document.createElement("option");
-          option.value = program._id; // Program ID
-          option.textContent = program.name; // Program Name
+          option.value = program._id;
+          option.textContent = program.name;
           programSelect.appendChild(option);
         });
       } catch (error) {
         console.error("Hata:", error.message);
       }
     }
-    
-    // 🟢 Fetch program details when the page is loaded
+  
+    // ✅ Fetch Program Details on Page Load
     async function fetchProgramDetails() {
       const params = new URLSearchParams(window.location.search);
       const programId = params.get("id");
-    
+  
       if (!programId) {
         document.getElementById("program-name").textContent = "Program Bulunamadı";
         return;
       }
-    
+  
       try {
         const response = await fetch(`${BASE_URL}/programs/${programId}`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         });
-    
+  
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Error fetching program details:", errorData.message);
-          document.getElementById("program-name").textContent = "Program Detayları Yüklenemedi";
+          console.error("Program detayları alınamadı.");
           return;
         }
-    
+  
         const program = await response.json();
         displayProgramDetails(program);
+        fetchUserProgress();
+        populateSessionSelect(program);
       } catch (error) {
         console.error("Hata:", error.message);
-        document.getElementById("program-name").textContent = "Bir hata oluştu.";
       }
     }
-    
-    // 🟢 Display program details
+  
+    // ✅ Display Program Details
     function displayProgramDetails(program) {
       document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
-      document.getElementById("program-description").textContent = program.description || "Program açıklaması mevcut değil.";
-    
-      // Display other sections
+      document.getElementById("program-description").textContent = program.description || "Açıklama mevcut değil.";
+  
       displayWorkoutSchedule(program.dailySchedule || []);
       displayCoachNotes(program.dailySchedule || []);
-      loadStrengthProgress(program.progressiveOverload || []);
       fetchProgramCompletion(program._id);
       fetchProgramFeedback(program._id);
     }
-    
-    // 🟢 Display workout schedule
+  
+    // ✅ Display Workout Schedule
     function displayWorkoutSchedule(dailySchedule = []) {
       const workoutList = document.getElementById("workout-list");
       workoutList.innerHTML = "";
-    
+  
       if (!dailySchedule.length) {
         workoutList.textContent = "Antrenman programı bulunamadı.";
         return;
       }
-    
+  
       dailySchedule.forEach(day => {
         const li = document.createElement("li");
         li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
-    
+  
         day.sessions?.forEach(session => {
           li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
             ${session.exercises?.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
-    
+  
           session.exercises?.forEach(ex => {
             if (ex.videoUrls?.length) {
               ex.videoUrls.forEach(video => {
@@ -176,97 +172,116 @@
             }
           });
         });
-    
+  
         workoutList.appendChild(li);
       });
     }
-    
-    // 🟢 Display coach notes
-    function displayCoachNotes(dailySchedule = []) {
-      const notesContent = document.getElementById("coach-notes-content");
-      notesContent.innerHTML = dailySchedule
-        .filter(day => day.notes)
-        .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
-        .join("") || "Koç notu bulunamadı.";
-    }
-    
-    // 🟢 Load strength progress into a chart
-    function loadStrengthProgress(progressiveOverload = []) {
-      const ctx = document.getElementById("strengthChart").getContext("2d");
-    
-      if (!progressiveOverload.length) {
-        document.getElementById("strengthChart").textContent = "Güç gelişimi verisi bulunamadı.";
-        return;
-      }
-    
-      const labels = progressiveOverload.map(ex => ex.exerciseName);
-      const weightValues = progressiveOverload.map(ex => ex.currentWeight);
-    
-      new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [{ label: "Şu Anki Ağırlık", data: weightValues, backgroundColor: "green" }],
-        },
-        options: { responsive: true, maintainAspectRatio: false },
+  
+    // ✅ Populate Session Select Dropdown
+    function populateSessionSelect(program) {
+      const sessionSelect = document.getElementById("session-select");
+      sessionSelect.innerHTML = `<option value="">Seans Seç</option>`;
+  
+      program.dailySchedule.forEach(day => {
+        day.sessions.forEach(session => {
+          const option = document.createElement("option");
+          option.value = session.name;
+          option.textContent = `${day.day} - ${session.name}`;
+          sessionSelect.appendChild(option);
+        });
       });
     }
-    
-    // 🟢 Fetch program completion data
+  
+    // ✅ Fetch and Display User Progress
+    async function fetchUserProgress() {
+      const programId = new URLSearchParams(window.location.search).get("id");
+      if (!programId) return;
+  
+      try {
+        const response = await fetch(`${BASE_URL}/progress/${programId}/user-progress`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+  
+        if (!response.ok) {
+          console.error("İlerleme bilgisi alınamadı.");
+          return;
+        }
+  
+        const data = await response.json();
+        document.getElementById("progress-percentage").textContent = `${data.progressPercentage}%`;
+        document.getElementById("progress-bar").value = data.progressPercentage;
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+  
+    // ✅ Mark a Session as Completed
+    async function markSessionCompleted() {
+      const programId = new URLSearchParams(window.location.search).get("id");
+      const session = document.getElementById("session-select").value;
+      if (!session) return alert("Lütfen bir seans seçin!");
+  
+      try {
+        const response = await fetch(`${BASE_URL}/progress/${programId}/complete-session`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ sessionName: session })
+        });
+  
+        if (response.ok) {
+          alert("Seans tamamlandı!");
+          fetchUserProgress();
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+  
+    // ✅ Fetch Program Completion Data
     async function fetchProgramCompletion(programId) {
       try {
         const response = await fetch(`${BASE_URL}/programs/${programId}/completion`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-    
+  
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Error fetching completion data:", errorData.message);
+          console.error("Tamamlama oranı alınamadı.");
           return;
         }
-    
+  
         const completion = await response.json();
         document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${completion.rate || 0}`;
       } catch (error) {
-        console.error("Error fetching completion data:", error.message);
+        console.error("Hata:", error.message);
       }
     }
-    
-    // 🟢 Fetch program feedback
+  
+    // ✅ Fetch Program Feedback
     async function fetchProgramFeedback(programId) {
       try {
         const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-    
+  
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Error fetching feedback:", errorData.message);
+          console.error("Geri bildirim alınamadı.");
           return;
         }
-    
+  
         const feedback = await response.json();
         const feedbackList = document.getElementById("feedback-list");
         feedbackList.innerHTML = feedback.map(fb => `
           <li><strong>${fb.userName || "Kullanıcı"}:</strong> ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>
         `).join("") || "Geri bildirim bulunamadı.";
       } catch (error) {
-        console.error("Error fetching feedback:", error.message);
+        console.error("Hata:", error.message);
       }
     }
-    
-    // 🟢 Dark Mode Toggle
-    document.getElementById("dark-mode-toggle").addEventListener("click", () => {
-      document.body.classList.toggle("dark-mode");
-      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
-    });
-    
-    // 🟢 Initialize dark mode on page load
-    if (localStorage.getItem("darkMode") === "enabled") {
-      document.body.classList.add("dark-mode");
-    }
-    
-    // 🟢 Add event listener for dropdown and fetch details
+  
+    // ✅ Event Listeners
     document.getElementById("view-program-btn").addEventListener("click", () => {
       const programId = document.getElementById("program-select").value;
       if (!programId) {
@@ -275,12 +290,13 @@
       }
       window.location.href = `program_overview.html?id=${programId}`;
     });
-    
-    // 🟢 Initialize on page load
+  
     document.addEventListener("DOMContentLoaded", () => {
       fetchUserPrograms();
       fetchProgramDetails();
     });
+  </script>
+  
     </script>
     <style>
       /* 🌟 General Layout */

@@ -10,7 +10,14 @@ const ProgramSchema = new mongoose.Schema({
 
   fitnessGoal: { 
     type: String, 
-    enum: ["Kilo Kaybı", "Kas Kazanımı", "Dayanıklılık", "Genel Fitness"], 
+    enum: [
+      "Kilo Kaybı", 
+      "Kas Kazanımı", 
+      "Dayanıklılık", 
+      "Genel Fitness",
+      "Genel Fitness ve Güç Geliştirme", // ✅ Eklenen değer
+      "Hedefe Özel Gelişim"
+    ], 
     required: true 
   },
 
@@ -25,14 +32,25 @@ const ProgramSchema = new mongoose.Schema({
               name: { type: String, required: true }, // **Egzersiz adı**
               sets: { type: Number, default: 0 }, // **Set sayısı**
               reps: { type: Number, default: 0 }, // **Tekrar sayısı**
-              duration: { type: Number, default: 0 }, // **Egzersiz süresi (saniye olarak)**
+              duration: { type: String, default: "0 dakika" }, // **Süre (Örn: "30 dakika")**
               restTime: { type: Number, default: 0 }, // **Setler arası dinlenme süresi (saniye olarak)**
               videoUrls: [{ url: { type: String }, description: { type: String } }], // **Egzersiz video linkleri**
             },
           ],
         },
       ],
+      notes: { type: String, default: "" } // **Koç Notları**
     },
+  ],
+
+  exercises: [
+    {
+      name: { type: String, required: true },
+      sets: { type: Number },
+      reps: { type: Number },
+      duration: { type: String, default: "0 dakika" }, // **Süre metin olarak girilebilir**
+      videoUrls: [{ url: { type: String }, description: { type: String } }] // **Egzersiz videoları**
+    }
   ],
 
   nutritionPlan: {
@@ -79,6 +97,8 @@ const ProgramSchema = new mongoose.Schema({
 
   createdAt: { type: Date, default: Date.now }, // **Oluşturulma tarihi**
 });
+
+
 
 // **Tamamlama yüzdesini otomatik hesapla**
 ProgramSchema.pre("save", function (next) {
