@@ -115,40 +115,47 @@
       }
     }
   
-    // ✅ Fetch program details when the page loads
-    async function fetchProgramDetails() {
-      const params = new URLSearchParams(window.location.search);
-      const programId = params.get("id");
-  
-      if (!programId) {
+  // ✅ Fetch Program Details on Page Load
+async function fetchProgramDetails() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const programId = urlParams.get("id");
+
+    if (!programId) {
         console.error("🚨 Program ID is missing from URL.");
         document.getElementById("program-name").textContent = "Program Bulunamadı";
         return;
-      }
-  
-      console.log("✅ Program ID from URL:", programId);
-      currentProgramId = programId;
-  
-      try {
+    }
+
+    console.log("✅ Program ID from URL:", programId);
+    currentProgramId = programId;  // ✅ Store globally
+
+    try {
         const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
         });
-  
-        if (!response.ok) throw new Error("❌ Program details could not be retrieved.");
-  
+
+        if (!response.ok) {
+            console.error("❌ Program details could not be retrieved.");
+            return;
+        }
+
         const program = await response.json();
         console.log("✅ Program Details:", program);
-  
+
+        // ✅ Update UI
         displayProgramDetails(program);
+
+        // ✅ Fetch related data after program details load
         fetchProgramCompletion(programId);
         fetchProgramFeedback(programId);
         fetchUserProgress(programId);
         populateSessionSelect(program);
-      } catch (error) {
+    } catch (error) {
         console.error("Hata:", error.message);
-      }
     }
+}
+
   
     // ✅ Display program details
     function displayProgramDetails(program) {
