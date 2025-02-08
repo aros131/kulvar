@@ -445,20 +445,28 @@ const getUserProgress = async (req, res) => {
       return res.status(404).json({ message: "Program not found" });
     }
 
-    console.log("Fetched Program:", program); // Debugging
+    console.log("Fetched Program Progress Tracking:", program.progressTracking); // Debugging
 
     // Ensure progressTracking exists and is an array
     if (!Array.isArray(program.progressTracking)) {
       program.progressTracking = [];
     }
 
-    // Safely find user's progress
-    const userProgress = program.progressTracking.find(
-      (entry) => entry.user && entry.user.toString() === req.user._id.toString()
+    // Find or initialize the user's progress
+    let userProgress = program.progressTracking.find(
+      (entry) => entry.userId?.toString() === req.user._id.toString()
     );
 
     if (!userProgress) {
-      return res.status(404).json({ message: "User progress not found" });
+      // If no progress entry exists, initialize it
+      userProgress = {
+        userId: req.user._id,
+        completedSessions: 0,
+        progressPercentage: 0,
+      };
+
+      program.progressTracking.push(userProgress);
+      await program.save();
     }
 
     // Safely calculate total sessions
@@ -474,7 +482,7 @@ const getUserProgress = async (req, res) => {
       totalSessions,
     });
   } catch (error) {
-    console.error("Error fetching user progress:", error); // Debugging
+    console.error("Error fetching user progress:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
