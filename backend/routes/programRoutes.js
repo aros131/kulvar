@@ -72,23 +72,8 @@ router.post("/:programId/reset-progress", protect, roleMiddleware(["user"]), res
 // 🟢 Adaptive Adjustments
 router.post("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), updateAdaptiveAdjustments); // Add fatigue-based adjustments
 // Fetch feedback for a specific program
-router.get('/:programId/feedback', protect, async (req, res) => {
-  try {
-    const programId = req.params.programId;
+router.get("/:programId/feedback", protect, getProgramFeedback);
 
-    // Fetch program by ID and populate feedback
-    const program = await Program.findById(programId).populate('feedback.userId', 'name'); // Assuming feedback.userId exists in the schema
 
-    if (!program) {
-      return res.status(404).json({ message: 'Program not found' });
-    }
-
-    // Send feedback data
-    res.json(program.feedback);
-  } catch (error) {
-    console.error('Error fetching feedback:', error.message);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
 
 module.exports = router;

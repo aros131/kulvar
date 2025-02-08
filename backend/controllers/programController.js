@@ -316,22 +316,42 @@ const trackSessionCompletion = async (req, res) => {
 };
 const submitFeedback = async (req, res) => {
   try {
-    const { programId, message, rating } = req.body;
-    const userId = req.user.id;
+    const { programId } = req.params;
+    const { comment, rating } = req.body;
 
-    if (rating < 1 || rating > 5) return res.status(400).json({ message: "Invalid rating (1-5)" });
+    if (!programId) {
+      return res.status(400).json({ message: "Program ID is required." });
+    }
 
-    const program = await Program.findByIdAndUpdate(
-      programId,
-      { $push: { feedback: { userId, comment: message, rating, createdAt: new Date() } } },
-      { new: true }
-    );
+    // Find the program
+    const program = await Program.findById(programId);
 
-    res.status(201).json({ message: "Feedback submitted successfully!", program });
+    if (!program) {
+      return res.status(404).json({ message: "Program not found." });
+    }
+
+    // Add feedback to the program
+    program.feedback.push({
+      userId: req.user._id,
+      comment,
+      rating,
+    });
+
+    // Save the updated program
+    await program.save();
+
+    // Return success message with updated program
+    const updatedProgram = await Program.findById(programId).populate("feedback.userId", "name email");
+    return res.status(201).json({
+      message: "Feedback submitted successfully!",
+      program: updatedProgram, // Include the updated program here
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error submitting feedback", error: error.message });
+    console.error("Error submitting feedback:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 const getAssignedClients = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -387,6 +407,30 @@ const updateAdaptiveAdjustments = async (req, res) => {
     res.status(500).json({ message: "Error updating fatigue adjustments", error: error.message });
   }
 };
+const getProgramFeedback = async (req, res) => {
+  try {
+    const { programId } = req.params;
+
+    // Ensure programId exists
+    if (!programId) {
+      return res.status(400).json({ message: "Program ID is required" });
+    }
+
+    // Fetch the program
+    const program = await Program.findById(programId).populate("feedback.userId", "name email"); // Adjust population fields as needed
+
+    if (!program) {
+      return res.status(404).json({ message: "Program not found" });
+    }
+
+    // Return the feedback array
+    return res.status(200).json(program.feedback || []);
+  } catch (error) {
+    console.error("Error fetching program feedback:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
 module.exports = {
@@ -409,7 +453,8 @@ module.exports = {
   rescheduleWorkout,
   getAssignedClients,
   resetProgress,
-  updateAdaptiveAdjustments
+  updateAdaptiveAdjustments,
+  getProgramFeedback
 };
 
 
