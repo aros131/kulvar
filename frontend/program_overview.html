@@ -75,11 +75,13 @@
         <p id="completion-rate">Tamamlama Oranı: %0</p>
       </section>
 
-      <!-- ⭐ Feedback Section -->
-      <section id="program-feedback">
-        <h3>Program Geri Bildirimleri</h3>
-        <ul id="feedback-list"></ul>
+      <section id="submit-feedback">
+        <h3>Geri Bildirim Gönder</h3>
+        <textarea id="feedback-comment" placeholder="Yorumunuzu yazın"></textarea>
+        <input id="feedback-rating" type="number" min="1" max="5" placeholder="Puan (1-5)">
+        <button onclick="submitFeedback()">Geri Bildirim Gönder</button>
       </section>
+      
 
       <!-- 🌙 Dark Mode Toggle -->
       <button id="dark-mode-toggle">🌙 Karanlık Mod</button>
@@ -338,41 +340,72 @@ async function fetchProgramFeedback(programId) {
     }
   
     // ✅ Fetch program completion data
-    async function fetchProgramCompletion(programId) {
-    if (!programId) {
-        console.error("🚨 `programId` is missing in fetchProgramCompletion().");
-        return;
+   // ✅ Fetch Program Completion Data
+async function fetchProgramCompletion(programId) {
+  if (!programId) {
+    console.error("🚨 `programId` is missing in fetchProgramCompletion().");
+    return;
+  }
+
+  console.log(`📡 Fetching session completion data for program ID: ${programId}`);
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${programId}/session-completion`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error("❌ Error fetching session completion data.");
+      return;
     }
 
-    console.log(`📡 Fetching completion data for program ID: ${programId}`);
+    const data = await response.json();
+    console.log("📊 Session Completion Data Response:", data);
 
-    try {
-        const response = await fetch(`${BASE_URL}/programs/${programId}/completion`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+    // Calculate and display completion rate
+    const completionRate = data.totalSessions
+      ? ((data.completedSessions / data.totalSessions) * 100).toFixed(2)
+      : 0;
 
-        if (!response.ok) {
-            console.error("❌ Error fetching completion data. API responded with:", response.status);
-            document.getElementById("completion-rate").textContent = "Tamamlama Oranı: Veri bulunamadı.";
-            return;
-        }
-
-        const data = await response.json();
-        console.log("📊 Completion Data:", data);
-
-        // 🛑 Fix: Ensure data is valid
-        if (!data || typeof data.rate === "undefined") {
-            console.error("🚨 Invalid completion data format:", data);
-            document.getElementById("completion-rate").textContent = "Tamamlama Oranı: Veri bulunamadı.";
-            return;
-        }
-
-        document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${data.rate}`;
-    } catch (error) {
-        console.error("❌ Error fetching completion data:", error.message);
-        document.getElementById("completion-rate").textContent = "Tamamlama Oranı: Hata oluştu.";
-    }
+    document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${completionRate}`;
+  } catch (error) {
+    console.error("❌ Error fetching session completion data:", error.message);
+  }
 }
+async function submitFeedback() {
+  const programId = new URLSearchParams(window.location.search).get("id");
+  const comment = document.getElementById("feedback-comment").value;
+  const rating = document.getElementById("feedback-rating").value;
+
+  if (!comment || !rating) {
+    alert("Lütfen yorum ve puan girin!");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ comment, rating })
+    });
+
+    if (response.ok) {
+      alert("Geri bildiriminiz başarıyla gönderildi!");
+      document.getElementById("feedback-comment").value = "";
+      document.getElementById("feedback-rating").value = "";
+    } else {
+      const errorData = await response.json();
+      alert(`Hata: ${errorData.message || "Geri bildirim gönderilemedi."}`);
+    }
+  } catch (error) {
+    console.error("❌ Error submitting feedback:", error.message);
+    alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+  }
+}
+
 
     // ✅ Add event listener for dropdown selection
     document.getElementById("view-program-btn").addEventListener("click", () => {
