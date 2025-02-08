@@ -58,7 +58,7 @@ router.post("/session-feedback", protect, roleMiddleware(["user"]), submitSessio
 // 🟢 Update & Retrieve Program Data
 router.post("/:id/update-documents", protect, roleMiddleware(["coach"]), updateProgramDocuments); // Update program documents
 router.post("/:id/update-video", protect, roleMiddleware(["coach"]), updateWorkoutVideo); // Update workout videos
-router.get("/:id/session-completion", protect, roleMiddleware(["coach"]), getSessionCompletionData); // Get session completion data
+router.get("/:id/session-completion", protect, roleMiddleware(["coach","user"]), getSessionCompletionData); // Get session completion data
 router.get("/:id/documents", protect, getProgramDocuments); // Get program documents
 router.get("/:id/videos", protect, getProgramVideos); // Get program videos
 
