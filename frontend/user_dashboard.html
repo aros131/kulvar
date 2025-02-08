@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kulvar Kullanıcı Paneli</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="dashboard-container">
@@ -15,13 +14,11 @@
       <ul>
         <li><a href="#profile" class="active">Profil</a></li>
         <li><a href="#my-programs">Programlarım</a></li>
-        <li><a href="#progress">İlerleme</a></li>
+        <li><a href="#progress">İlerleme Takibi</a></li>
         <li><a href="#workout-calendar">Takvim</a></li>
         <li><a href="#achievements">Başarılar</a></li>
-        <li><a href="#messages">Mesajlar</a></li>
         <li><a href="#notifications">Bildirimler</a></li>
         <li><a href="#settings">Ayarlar</a></li>
-        <li><a href="user_profile.html">Profilim</a></li>
       </ul>
     </nav>
 
@@ -30,46 +27,49 @@
       <!-- Profil Bölümü -->
       <section id="profile">
         <h2>Profilim</h2>
-        <p>Ad Soyad: <span id="user-name"></span></p>
-        <p>E-posta: <span id="user-email"></span></p>
+        <p><strong>Ad Soyad:</strong> <span id="user-name"></span></p>
+        <p><strong>E-posta:</strong> <span id="user-email"></span></p>
+        <button onclick="location.href='user_profile.html'">Profil Detayları</button>
       </section>
 
       <!-- Programlarım -->
       <section id="my-programs">
         <h2>Programlarım</h2>
+        <p>Atanan programlarınızı görüntüleyin ve detaylarını inceleyin.</p>
         <ul id="program-list"></ul>
+        <button onclick="location.href='program_overview.html'">Program Detayları</button>
       </section>
 
-      <!-- İlerleme -->
+      <!-- İlerleme Takibi -->
       <section id="progress">
-        <h2>İlerleme</h2>
+        <h2>İlerleme Takibi</h2>
+        <p>Egzersiz ilerlemenizi görüntüleyin ve analiz edin.</p>
         <canvas id="progressChart"></canvas>
+        <button onclick="location.href='progress_tracking.html'">İlerleme Detayları</button>
       </section>
 
       <!-- Takvim -->
       <section id="workout-calendar">
         <h2>Takvim</h2>
+        <p>Günlük antrenman programınızı görüntüleyin.</p>
         <div id="calendar"></div>
+        <button onclick="location.href='calendar.html'">Takvimi Görüntüle</button>
       </section>
 
       <!-- Başarılar -->
       <section id="achievements">
         <h2>Başarılar</h2>
+        <p>Egzersiz başarılarınızı inceleyin.</p>
         <ul id="badges-list"></ul>
-      </section>
-
-      <!-- Mesajlar -->
-      <section id="messages">
-        <h2>Mesajlar</h2>
-        <div id="chat-box"></div>
-        <input type="text" id="chat-input" placeholder="Mesajınızı yazın...">
-        <button onclick="sendMessage()">Gönder</button>
+        <button onclick="location.href='achievements.html'">Başarı Detayları</button>
       </section>
 
       <!-- Bildirimler -->
       <section id="notifications">
         <h2>Bildirimler</h2>
+        <p>Son bildirimlerinizi inceleyin.</p>
         <ul id="notification-list"></ul>
+        <button onclick="location.href='notifications.html'">Bildirim Detayları</button>
       </section>
     </main>
   </div>
@@ -78,21 +78,9 @@
     const BASE_URL = "https://kulvar.onrender.com";
     const token = localStorage.getItem("token");
 
-    function getUserIdFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("id");
-    }
-
     async function fetchUserData() {
-      const userId = getUserIdFromUrl();
-      if (!userId || !token) {
-        alert("User not authorized");
-        window.location.href = "/login.html";
-        return;
-      }
-
       try {
-        const response = await fetch(`${BASE_URL}/auth/${userId}`, {
+        const response = await fetch(`${BASE_URL}/auth/me`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -107,7 +95,7 @@
       }
     }
 
-    async function fetchUserProgramsForCalendar() {
+    async function fetchUserPrograms() {
       try {
         const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
           method: "GET",
@@ -116,139 +104,216 @@
 
         const data = await response.json();
         if (response.ok) {
-          let calendarHTML = "";
-          data.programs.forEach(program => {
-            program.dailySchedule.forEach(day => {
-              calendarHTML += `<div class="calendar-day"><strong>Gün ${day.day}:</strong> ${day.exercises.join(", ")}</div>`;
-            });
-          });
-          document.getElementById("calendar").innerHTML = calendarHTML;
+          document.getElementById("program-list").innerHTML = data.programs.map(
+            (program) => `<li>${program.name}</li>`
+          ).join("");
         }
       } catch (error) {
         console.error("Error fetching programs:", error.message);
       }
     }
 
-    async function fetchUserStreaks() {
-      const userId = getUserIdFromUrl();
+    async function fetchProgressData() {
       try {
-        const response = await fetch(`${BASE_URL}/progress/streaks/${userId}`, {
+        const response = await fetch(`${BASE_URL}/progress/user-data`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const data = await response.json();
         if (response.ok) {
-          let badgesHTML = "";
-          if (data.currentStreak >= 7) badgesHTML += `<li>🔥 7 Günlük Streak</li>`;
-          if (data.currentStreak >= 14) badgesHTML += `<li>🏆 14 Günlük Streak</li>`;
-          if (data.maxStreak >= 30) badgesHTML += `<li>🎖 30 Günlük Streak</li>`;
-          document.getElementById("badges-list").innerHTML = badgesHTML;
+          const ctx = document.getElementById("progressChart").getContext("2d");
+          new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  label: "Tamamlanan Egzersizler",
+                  data: data.progressData,
+                  backgroundColor: "rgba(75, 192, 192, 0.2)",
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+          });
         }
       } catch (error) {
-        console.error("Error fetching streaks:", error.message);
+        console.error("Error fetching progress data:", error.message);
       }
     }
 
-    async function fetchNotifications() {
-      try {
-        const response = await fetch(`${BASE_URL}/dashboard/notifications/user`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          document.getElementById("notification-list").innerHTML = data.notifications.map(n => `
-            <li>${n.message} <button onclick="markNotificationAsRead('${n._id}')">✓</button></li>
-          `).join("");
-        }
-      } catch (error) {
-        console.error("Error fetching notifications:", error.message);
-      }
-    }
-
-    function markNotificationAsRead(notificationId) {
-      fetch(`${BASE_URL}/dashboard/notifications/read/${notificationId}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(() => fetchNotifications());
-    }
-
-    function initializeDashboard() {
+    document.addEventListener("DOMContentLoaded", () => {
       fetchUserData();
-      fetchUserProgramsForCalendar();
-      fetchUserStreaks();
-      fetchNotifications();
-    }
-
-    document.addEventListener("DOMContentLoaded", initializeDashboard);
+      fetchUserPrograms();
+      fetchProgressData();
+    });
   </script>
 
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #F7F9FA;
-      color: #28363D;
-    }
+<style>
+  /* Global Styles */
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #F9FAFB;
+    color: #333;
+  }
 
+  .dashboard-container {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* Sidebar Styles */
+  .dashboard-nav {
+    width: 250px;
+    background-color: #2F4858;
+    color: #FFF;
+    padding: 20px;
+  }
+
+  .dashboard-nav h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .dashboard-nav li {
+    margin-bottom: 10px;
+  }
+
+  .dashboard-nav a {
+    text-decoration: none;
+    color: #FFF;
+    display: block;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #3E6077;
+    transition: background-color 0.3s;
+  }
+
+  .dashboard-nav a:hover,
+  .dashboard-nav a.active {
+    background-color: #536E88;
+  }
+
+  /* Main Content Styles */
+  .dashboard-content {
+    flex: 1;
+    padding: 30px;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #E3E4E6;
+    border-radius: 10px;
+    background-color: #FAFBFC;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+
+  section h2 {
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: #2F4858;
+  }
+
+  section p {
+    margin: 10px 0;
+  }
+
+  /* Button Styles */
+  button {
+    display: inline-block;
+    margin-top: 15px;
+    background-color: #2F4858;
+    color: #FFF;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+  }
+
+  button:hover {
+    background-color: #3E6077;
+  }
+
+  /* Calendar and Progress Chart */
+  #calendar {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .calendar-day {
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #DDE1E4;
+    border-radius: 5px;
+    background-color: #F5F6F8;
+    width: calc(33.33% - 10px);
+    box-sizing: border-box;
+  }
+
+  canvas {
+    max-width: 100%;
+    margin: 20px 0;
+  }
+
+  /* Achievements and Notifications */
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  ul li {
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #E3E4E6;
+    border-radius: 5px;
+    background-color: #F7F9FA;
+  }
+
+  ul li button {
+    float: right;
+    background-color: #658B6F;
+  }
+
+  /* Media Queries */
+  @media (max-width: 768px) {
     .dashboard-container {
-      display: flex;
-      min-height: 100vh;
+      flex-direction: column;
     }
 
     .dashboard-nav {
-      width: 250px;
-      background-color: #2F575D;
-      color: #FFF;
-      padding: 20px;
-    }
-
-    .dashboard-nav h2 {
-      font-size: 22px;
-      margin-bottom: 20px;
-    }
-
-    .dashboard-nav ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .dashboard-nav a {
-      text-decoration: none;
-      color: #FFF;
-      display: block;
-      padding: 10px;
-      border-radius: 5px;
+      width: 100%;
+      text-align: center;
     }
 
     .dashboard-content {
-      flex: 1;
       padding: 20px;
     }
 
-    button {
-      background: #658B6F;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    #calendar {
-      display: flex;
-      flex-wrap: wrap;
-    }
-
     .calendar-day {
-      padding: 10px;
-      margin: 5px;
-      background: #C4CDC1;
-      border-radius: 5px;
+      width: calc(50% - 10px);
     }
-  </style>
+  }
+
+  @media (max-width: 480px) {
+    .calendar-day {
+      width: calc(100% - 10px);
+    }
+  }
+</style>
 </body>
 </html>
