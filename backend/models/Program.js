@@ -62,11 +62,13 @@ const ProgramSchema = new mongoose.Schema({
 
   announcements: [{ message: { type: String }, date: { type: Date, default: Date.now } }], // **Duyurular**
 
-  progressTracking: {
-    totalSessions: { type: Number, default: 0 }, // **Toplam antrenman sayısı**
-    completedSessions: { type: Number, default: 0 }, // **Tamamlanan antrenman sayısı**
-    completionRate: { type: Number, default: 0 }, // **Tamamlama yüzdesi**
-  },
+  progressTracking: [
+    {
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      progressPercentage: { type: Number, default: 0 },
+      completedSessions: { type: Number, default: 0 },
+    },
+  ],
 
   feedback: [
     {

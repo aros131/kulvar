@@ -274,49 +274,52 @@ async function fetchProgramFeedback(programId) {
   
     // ✅ Fetch user's progress
     async function fetchUserProgress() {
-    const programId = new URLSearchParams(window.location.search).get("id");
+  const programId = new URLSearchParams(window.location.search).get("id");
 
-    if (!programId) {
-        console.error("🚨 Program ID is missing. Cannot fetch progress.");
-        return;
+  if (!programId) {
+    console.error("🚨 Program ID is missing. Cannot fetch progress.");
+    return;
+  }
+
+  console.log(`📡 Fetching user progress for program ID: ${programId}`);
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${programId}/user-progress`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error(`❌ Error fetching user progress. API responded with: ${response.status}`);
+      document.getElementById("progress-percentage").textContent = "0%";
+      document.getElementById("progress-bar").value = 0;
+      return;
     }
 
-    console.log(`📡 Fetching user progress for program ID: ${programId}`);
+    const data = await response.json();
+    console.log("📊 User Progress Data:", data);
 
-    try {
-        const response = await fetch(`${BASE_URL}/programs/${programId}/user-progress`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-            console.error("❌ Error fetching user progress. API responded with:", response.status);
-            document.getElementById("progress-percentage").textContent = "0%";
-            document.getElementById("progress-bar").value = 0;
-            return;
-        }
-
-        const data = await response.json();
-        console.log("📊 User Progress Data:", data);
-
-        // 🛑 Fix: Ensure data is valid
-        if (!data || typeof data.progressPercentage === "undefined") {
-            console.error("🚨 Invalid progress data format:", data);
-            document.getElementById("progress-percentage").textContent = "0%";
-            document.getElementById("progress-bar").value = 0;
-            return;
-        }
-
-        document.getElementById("progress-percentage").textContent = `${data.progressPercentage || 0}%`;
-        document.getElementById("progress-bar").value = data.progressPercentage || 0;
-
-    } catch (error) {
-        console.error("❌ Error fetching user progress:", error.message);
-        document.getElementById("progress-percentage").textContent = "0%";
-        document.getElementById("progress-bar").value = 0;
+    // Ensure valid progress data
+    if (
+      typeof data.progressPercentage === "undefined" ||
+      typeof data.completedSessions === "undefined" ||
+      typeof data.totalSessions === "undefined"
+    ) {
+      console.error("🚨 Invalid progress data format:", data);
+      document.getElementById("progress-percentage").textContent = "0%";
+      document.getElementById("progress-bar").value = 0;
+      return;
     }
+
+    // Update progress UI
+    document.getElementById("progress-percentage").textContent = `${data.progressPercentage || 0}%`;
+    document.getElementById("progress-bar").value = data.progressPercentage || 0;
+  } catch (error) {
+    console.error("❌ Error fetching user progress:", error.message);
+    document.getElementById("progress-percentage").textContent = "0%";
+    document.getElementById("progress-bar").value = 0;
+  }
 }
 
-  
     // ✅ Mark session as completed
     async function markSessionCompleted() {
       if (!currentProgramId) return console.error("🚨 Missing programId in markSessionCompleted().");

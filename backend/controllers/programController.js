@@ -431,41 +431,48 @@ const getProgramFeedback = async (req, res) => {
   }
 };
 const getUserProgress = async (req, res) => {
-  try {
-    const { programId } = req.params;
-    const userId = req.user._id;
+  const { programId } = req.params;
 
+  try {
+    // Validate programId
     if (!programId) {
-      return res.status(400).json({ message: "Program ID is required." });
+      return res.status(400).json({ message: "Program ID is required" });
     }
 
     const program = await Program.findById(programId);
 
     if (!program) {
-      return res.status(404).json({ message: "Program not found." });
+      return res.status(404).json({ message: "Program not found" });
     }
 
+    console.log("Fetched Program:", program); // Debugging
+
+    // Ensure progressTracking exists and is an array
+    if (!Array.isArray(program.progressTracking)) {
+      program.progressTracking = [];
+    }
+
+    // Find the user's progress
     const userProgress = program.progressTracking.find(
-      (progress) => progress.userId.toString() === userId.toString()
+      (entry) => entry.user.toString() === req.user._id.toString()
     );
 
     if (!userProgress) {
-      return res.status(404).json({ message: "No progress found for this user." });
+      return res.status(404).json({ message: "User progress not found" });
     }
 
-    const progressPercentage =
-      (userProgress.completedSessions / program.dailySchedule.length) * 100;
-
+    // Return progress data
     res.status(200).json({
-      completedSessions: userProgress.completedSessions,
-      totalSessions: program.dailySchedule.length,
-      progressPercentage: Math.round(progressPercentage),
+      progressPercentage: userProgress.progressPercentage || 0,
+      completedSessions: userProgress.completedSessions || 0,
+      totalSessions: program.dailySchedule?.reduce((total, day) => total + day.sessions.length, 0) || 0,
     });
   } catch (error) {
-    console.error("Error fetching user progress:", error.message);
+    console.error("Error fetching user progress:", error); // Debugging
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 const completeSession = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -531,7 +538,7 @@ module.exports = {
   resetProgress,
   updateAdaptiveAdjustments,
   getProgramFeedback,
-getUserProgress,
+  getUserProgress,
   completeSession
 
 };
