@@ -85,12 +85,12 @@
       <button id="dark-mode-toggle">🌙 Karanlık Mod</button>
     </main>
   </div>
-  
   <script>
     const BASE_URL = "https://kulvar.onrender.com";
     const token = localStorage.getItem("token");
+    let currentProgramId = null; // ✅ Global variable to store program ID
   
-    // ✅ Function to Fetch User Programs
+    // ✅ Fetch user's assigned programs for dropdown
     async function fetchUserPrograms() {
       try {
         const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
@@ -98,10 +98,7 @@
           headers: { Authorization: `Bearer ${token}` },
         });
   
-        if (!response.ok) {
-          console.error("Program listesi alınamadı.");
-          return;
-        }
+        if (!response.ok) throw new Error("Program listesi alınamadı.");
   
         const data = await response.json();
         const programSelect = document.getElementById("program-select");
@@ -118,75 +115,63 @@
       }
     }
   
-    // ✅ Fetch Program Details on Page Load
+    // ✅ Fetch program details when the page loads
     async function fetchProgramDetails() {
-  const params = new URLSearchParams(window.location.search);
-  const programId = params.get("id");
-
-  if (!programId) {
-    console.error("Program ID is missing from URL.");
-    document.getElementById("program-name").textContent = "Program Bulunamadı";
-    return;
-  }
-
-  console.log("Program ID from URL:", programId); // ✅ Debugging
-
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      console.error("Program details could not be retrieved.");
-      return;
-    }
-
-    const program = await response.json();
-    console.log("Program Details:", program); // ✅ Debugging
-
-    displayProgramDetails(program);
-    
-    // ✅ Fix: Call fetchProgramCompletion() with programId
-    fetchProgramCompletion(programId);
-    
-    // ✅ Fix: Call fetchProgramFeedback() with programId
-    fetchProgramFeedback(programId);
-
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
-
-
+      const params = new URLSearchParams(window.location.search);
+      const programId = params.get("id");
   
-    // ✅ Display Program Details
+      if (!programId) {
+        console.error("🚨 Program ID is missing from URL.");
+        document.getElementById("program-name").textContent = "Program Bulunamadı";
+        return;
+      }
+  
+      console.log("✅ Program ID from URL:", programId);
+      currentProgramId = programId; // ✅ Store it globally
+  
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        if (!response.ok) throw new Error("❌ Program details could not be retrieved.");
+  
+        const program = await response.json();
+        console.log("✅ Program Details:", program);
+  
+        displayProgramDetails(program);
+        fetchProgramCompletion(programId);
+        fetchProgramFeedback(programId);
+        fetchUserProgress(programId);
+        populateSessionSelect(program);
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+  
+    // ✅ Display program details
     function displayProgramDetails(program) {
       document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
       document.getElementById("program-description").textContent = program.description || "Açıklama mevcut değil.";
-  
       displayWorkoutSchedule(program.dailySchedule || []);
       displayCoachNotes(program.dailySchedule || []);
-      fetchProgramCompletion(program._id);
-      fetchProgramFeedback(program._id);
     }
-    // ✅ Display Coach Notes
-function displayCoachNotes(dailySchedule = []) {
-  const notesContent = document.getElementById("coach-notes-content");
   
-  if (!dailySchedule.length) {
-    notesContent.innerHTML = "Koç notu bulunamadı.";
-    return;
-  }
-
-  notesContent.innerHTML = dailySchedule
-    .filter(day => day.notes)  // Only take days that have notes
-    .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
-    .join("") || "Koç notu bulunamadı.";
-}
-
+    // ✅ Display coach notes
+    function displayCoachNotes(dailySchedule = []) {
+      const notesContent = document.getElementById("coach-notes-content");
+      if (!dailySchedule.length) {
+        notesContent.innerHTML = "Koç notu bulunamadı.";
+        return;
+      }
+      notesContent.innerHTML = dailySchedule
+        .filter(day => day.notes)
+        .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
+        .join("") || "Koç notu bulunamadı.";
+    }
   
-    // ✅ Display Workout Schedule
+    // ✅ Display workout schedule
     function displayWorkoutSchedule(dailySchedule = []) {
       const workoutList = document.getElementById("workout-list");
       workoutList.innerHTML = "";
@@ -217,7 +202,7 @@ function displayCoachNotes(dailySchedule = []) {
       });
     }
   
-    // ✅ Populate Session Select Dropdown
+    // ✅ Populate session dropdown
     function populateSessionSelect(program) {
       const sessionSelect = document.getElementById("session-select");
       sessionSelect.innerHTML = `<option value="">Seans Seç</option>`;
@@ -232,143 +217,101 @@ function displayCoachNotes(dailySchedule = []) {
       });
     }
   
-    // ✅ Fetch and Display User Progress
-    async function fetchUserProgress() {
-  const params = new URLSearchParams(window.location.search);
-  const programId = params.get("id");
-
-  if (!programId) {
-    console.error("Program ID is missing. Cannot fetch progress.");
-    return;
-  }
-
-  console.log(`Fetching user progress for program ID: ${programId}`); // Debugging
-
-  try {
-    const response = await fetch(`${BASE_URL}/progress/${programId}/user-progress`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      console.error("Error fetching user progress.");
-      return;
-    }
-
-    const data = await response.json();
-    console.log("User Progress Data:", data); // Debugging
-
-    document.getElementById("progress-percentage").textContent = `${data.progressPercentage || 0}%`;
-    document.getElementById("progress-bar").value = data.progressPercentage || 0;
-  } catch (error) {
-    console.error("Error fetching user progress:", error.message);
-  }
-}
-
+    // ✅ Fetch user's progress
+    async function fetchUserProgress(programId) {
+      if (!programId) return console.error("🚨 Missing programId in fetchUserProgress().");
   
-    // ✅ Mark a Session as Completed
-    async function markSessionCompleted() {
-  const programId = new URLSearchParams(window.location.search).get("id");
-  const session = document.getElementById("session-select").value;
-  if (!session) return alert("Lütfen bir seans seçin!");
-
-  try {
-    const response = await fetch(`${BASE_URL}/progress/${programId}/complete-session`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ sessionName: session })
-    });
-
-    if (response.ok) {
-      alert("Seans tamamlandı!");
-      fetchUserProgress(); // ✅ Refresh Progress
-    }
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
-
-    // ✅ Fetch Program Completion Data
-    async function fetchProgramCompletion(programId) {
-  if (!programId) {
-    console.error("Program ID is missing. Cannot fetch completion data.");
-    return;
-  }
-
-  console.log(`Fetching completion data for program ID: ${programId}`); // ✅ Debugging
-
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}/completion`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      console.error("Error fetching completion data.");
-      return;
-    }
-
-    const data = await response.json();
-    console.log("Completion Data Response:", data); // ✅ Debugging
-
-    document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${data.rate || 0}`;
-  } catch (error) {
-    console.error("Error fetching completion data:", error.message);
-  }
-}
-
+      console.log(`Fetching user progress for program ID: ${programId}`);
   
+      try {
+        const response = await fetch(`${BASE_URL}/progress/${programId}/user-progress`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
   
-    // ✅ Fetch Program Feedback
-    async function fetchProgramFeedback(programId) {
-  if (!programId) {
-    console.error("Program ID is missing. Cannot fetch feedback.");
-    return;
-  }
-
-  console.log(`Fetching feedback for program ID: ${programId}`); // ✅ Debugging
-
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      console.error("Error fetching feedback.");
-      return;
-    }
-
-    const feedback = await response.json();
-    console.log("Feedback Data:", feedback); // ✅ Debugging
-
-    const feedbackList = document.getElementById("feedback-list");
-    feedbackList.innerHTML = feedback.map(fb => `
-      <li><strong>${fb.userName || "Kullanıcı"}:</strong> ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>
-    `).join("") || "Geri bildirim bulunamadı.";
-  } catch (error) {
-    console.error("Hata:", error.message);
-  }
-}
-
+        if (!response.ok) throw new Error("Error fetching user progress.");
   
-    // ✅ Event Listeners
-    document.getElementById("view-program-btn").addEventListener("click", () => {
-      const programId = document.getElementById("program-select").value;
-      if (!programId) {
-        alert("Lütfen bir program seçin!");
-        return;
+        const data = await response.json();
+        console.log("User Progress Data:", data);
+  
+        document.getElementById("progress-percentage").textContent = `${data.progressPercentage || 0}%`;
+        document.getElementById("progress-bar").value = data.progressPercentage || 0;
+      } catch (error) {
+        console.error("Error fetching user progress:", error.message);
       }
-      window.location.href = `program_overview.html?id=${programId}`;
-    });
+    }
   
+    // ✅ Mark session as completed
+    async function markSessionCompleted() {
+      if (!currentProgramId) return console.error("🚨 Missing programId in markSessionCompleted().");
+  
+      const session = document.getElementById("session-select").value;
+      if (!session) return alert("Lütfen bir seans seçin!");
+  
+      try {
+        const response = await fetch(`${BASE_URL}/progress/${currentProgramId}/complete-session`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ sessionName: session })
+        });
+  
+        if (response.ok) {
+          alert("Seans tamamlandı!");
+          fetchUserProgress(currentProgramId);
+        }
+      } catch (error) {
+        console.error("Hata:", error.message);
+      }
+    }
+  
+    // ✅ Fetch program completion data
+    async function fetchProgramCompletion(programId) {
+      if (!programId) return console.error("🚨 Missing programId in fetchProgramCompletion().");
+  
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}/completion`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        if (!response.ok) throw new Error("❌ Error fetching completion data.");
+  
+        const data = await response.json();
+        document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${data.rate || 0}`;
+      } catch (error) {
+        console.error("Error fetching completion data:", error.message);
+      }
+    }
+  
+    // ✅ Fetch program feedback
+    async function fetchProgramFeedback(programId) {
+      if (!programId) return console.error("🚨 Missing programId in fetchProgramFeedback().");
+  
+      try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        if (!response.ok) throw new Error("❌ Error fetching feedback.");
+  
+        const feedback = await response.json();
+        const feedbackList = document.getElementById("feedback-list");
+        feedbackList.innerHTML = feedback.map(fb => `
+          <li><strong>${fb.userName || "Kullanıcı"}:</strong> ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>
+        `).join("") || "Geri bildirim bulunamadı.";
+      } catch (error) {
+        console.error("❌ Error fetching feedback:", error.message);
+      }
+    }
+  
+    // ✅ Initialize
     document.addEventListener("DOMContentLoaded", () => {
       fetchUserPrograms();
       fetchProgramDetails();
     });
   </script>
   
-    </script>
     <style>
       /* 🌟 General Layout */
       .dashboard-container {
