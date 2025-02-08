@@ -145,6 +145,21 @@
       fetchProgramCompletion(program._id);
       fetchProgramFeedback(program._id);
     }
+    // ✅ Display Coach Notes
+function displayCoachNotes(dailySchedule = []) {
+  const notesContent = document.getElementById("coach-notes-content");
+  
+  if (!dailySchedule.length) {
+    notesContent.innerHTML = "Koç notu bulunamadı.";
+    return;
+  }
+
+  notesContent.innerHTML = dailySchedule
+    .filter(day => day.notes)  // Only take days that have notes
+    .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
+    .join("") || "Koç notu bulunamadı.";
+}
+
   
     // ✅ Display Workout Schedule
     function displayWorkoutSchedule(dailySchedule = []) {
