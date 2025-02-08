@@ -156,7 +156,38 @@ async function fetchProgramDetails() {
     }
 }
 
-  
+  // ✅ Fetch Program Feedback
+async function fetchProgramFeedback(programId) {
+    if (!programId) {
+        console.error("🚨 `programId` is missing in fetchProgramFeedback().");
+        return;
+    }
+
+    console.log(`📡 Fetching feedback for program ID: ${programId}`);
+
+    try {
+        const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+            console.error("❌ Error fetching feedback.");
+            return;
+        }
+
+        const feedback = await response.json();
+        console.log("💬 Feedback Data:", feedback);
+
+        const feedbackList = document.getElementById("feedback-list");
+        feedbackList.innerHTML = feedback.map(fb => `
+            <li><strong>${fb.userName || "Kullanıcı"}:</strong> 
+            ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>
+        `).join("") || "Geri bildirim bulunamadı.";
+    } catch (error) {
+        console.error("❌ Error fetching feedback:", error.message);
+    }
+}
+
     // ✅ Display program details
     function displayProgramDetails(program) {
       document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
