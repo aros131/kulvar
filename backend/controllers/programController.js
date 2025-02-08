@@ -452,26 +452,33 @@ const getUserProgress = async (req, res) => {
       program.progressTracking = [];
     }
 
-    // Find the user's progress
+    // Safely find user's progress
     const userProgress = program.progressTracking.find(
-      (entry) => entry.user.toString() === req.user._id.toString()
+      (entry) => entry.user && entry.user.toString() === req.user._id.toString()
     );
 
     if (!userProgress) {
       return res.status(404).json({ message: "User progress not found" });
     }
 
+    // Safely calculate total sessions
+    const totalSessions = program.dailySchedule?.reduce(
+      (total, day) => total + (day.sessions ? day.sessions.length : 0),
+      0
+    ) || 0;
+
     // Return progress data
     res.status(200).json({
       progressPercentage: userProgress.progressPercentage || 0,
       completedSessions: userProgress.completedSessions || 0,
-      totalSessions: program.dailySchedule?.reduce((total, day) => total + day.sessions.length, 0) || 0,
+      totalSessions,
     });
   } catch (error) {
     console.error("Error fetching user progress:", error); // Debugging
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 const completeSession = async (req, res) => {
   try {
