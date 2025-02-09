@@ -239,34 +239,46 @@ async function fetchProgramFeedback(programId) {
   
     // ✅ Display workout schedule
     function displayWorkoutSchedule(dailySchedule = []) {
-      const workoutList = document.getElementById("workout-list");
-      workoutList.innerHTML = "";
-  
-      if (!dailySchedule.length) {
-        workoutList.textContent = "Antrenman programı bulunamadı.";
+  const workoutList = document.getElementById("workout-list");
+  workoutList.innerHTML = "";
+
+  if (!Array.isArray(dailySchedule) || dailySchedule.length === 0) {
+    workoutList.textContent = "Antrenman programı bulunamadı.";
+    return;
+  }
+
+  dailySchedule.forEach(day => {
+    if (!day.sessions || !Array.isArray(day.sessions)) {
+      console.error("🚨 Missing or invalid `sessions` array for day:", day);
+      return;
+    }
+
+    const li = document.createElement("li");
+    li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
+
+    day.sessions.forEach(session => {
+      if (!session.exercises || !Array.isArray(session.exercises)) {
+        console.error("🚨 Missing or invalid `exercises` array for session:", session);
         return;
       }
-  
-      dailySchedule.forEach(day => {
-        const li = document.createElement("li");
-        li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
-  
-        day.sessions?.forEach(session => {
-          li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
-            ${session.exercises?.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
-  
-          session.exercises?.forEach(ex => {
-            if (ex.videoUrls?.length) {
-              ex.videoUrls.forEach(video => {
-                li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
-              });
-            }
+
+      li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
+        ${session.exercises.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
+
+      session.exercises.forEach(ex => {
+        if (ex.videoUrls && Array.isArray(ex.videoUrls)) {
+          ex.videoUrls.forEach(video => {
+            li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
           });
-        });
-  
-        workoutList.appendChild(li);
+        }
       });
-    }
+    });
+
+    workoutList.appendChild(li);
+  });
+}
+
+    
   
     // ✅ Populate session dropdown
     function populateSessionSelect(program) {
@@ -309,27 +321,26 @@ async function fetchProgramFeedback(programId) {
     const data = await response.json();
     console.log("📊 User Progress Data:", data);
 
-    // Ensure valid progress data
-    if (
-      typeof data.progressPercentage === "undefined" ||
-      typeof data.completedSessions === "undefined" ||
-      typeof data.totalSessions === "undefined"
-    ) {
+    if (!data || typeof data !== "object") {
       console.error("🚨 Invalid progress data format:", data);
       document.getElementById("progress-percentage").textContent = "0%";
       document.getElementById("progress-bar").value = 0;
       return;
     }
 
-    // Update progress UI
-    document.getElementById("progress-percentage").textContent = `${data.progressPercentage || 0}%`;
-    document.getElementById("progress-bar").value = data.progressPercentage || 0;
+    // Default to 0 if missing
+    const progressPercentage = data.progressPercentage ?? 0;
+
+    document.getElementById("progress-percentage").textContent = `${progressPercentage}%`;
+    document.getElementById("progress-bar").value = progressPercentage;
   } catch (error) {
     console.error("❌ Error fetching user progress:", error.message);
     document.getElementById("progress-percentage").textContent = "0%";
     document.getElementById("progress-bar").value = 0;
   }
 }
+
+  
 
     // ✅ Mark session as completed
     async function markSessionCompleted() {
@@ -423,6 +434,49 @@ async function submitFeedback() {
     alert("Bir hata oluştu. Lütfen tekrar deneyin.");
   }
 }
+async function getProgramVideos(programId) {
+  if (!programId) {
+    console.error("🚨 Missing programId in getProgramVideos().");
+    return;
+  }
+
+  console.log(`📡 Fetching workout videos for program ID: ${programId}`);
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${programId}/videos`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error("❌ Error fetching videos. API responded with:", response.status);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("🎥 Video Data:", data);
+
+    const videoContainer = document.getElementById("video-container");
+    videoContainer.innerHTML = "";
+
+    if (!data.videos || !Array.isArray(data.videos) || data.videos.length === 0) {
+      videoContainer.innerHTML = "<p>Video bulunamadı.</p>";
+      return;
+    }
+
+    data.videos.forEach(videoUrl => {
+      const iframe = document.createElement("iframe");
+      iframe.src = videoUrl;
+      iframe.width = "300";
+      iframe.height = "200";
+      iframe.frameBorder = "0";
+      iframe.allowFullscreen = true;
+      videoContainer.appendChild(iframe);
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching videos:", error.message);
+  }
+}
 
 
     // ✅ Add event listener for dropdown selection
@@ -440,6 +494,10 @@ async function submitFeedback() {
       fetchUserPrograms();
       fetchProgramDetails();
     });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    Chart.defaults.global.animation = false; // Prevent loading animations
   </script>
   
   
