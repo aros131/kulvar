@@ -72,31 +72,30 @@ const ProgramSchema = new mongoose.Schema({
 
   feedback: [
     {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // **Geri bildirimi yapan kullanıcı**
-      comment: { type: String }, // **Yorum**
-      rating: { type: Number, min: 1, max: 5 }, // **Puan (1-5)**
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      comment: { type: String },
+      rating: { type: Number, min: 1, max: 5 },
+      session: { type: String }, // Optional: Add session details if session-specific.
       createdAt: { type: Date, default: Date.now },
     },
   ],
-
-  sessionFeedback: [  // ✅ Store feedback per session
-    {
-      session: { type: String }, // "Day 1 - Bench Press"
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      feedback: { type: String },
-      date: { type: Date, default: Date.now },
-    }
-  ],
+  
 
   missedWorkouts: [  // ✅ Track rescheduled workouts
     {
       missedDay: { type: Number, required: true },
       rescheduledTo: { type: Number, required: false }, // Nullable: Only set if rescheduled
-    }
+      status: { 
+        type: String, 
+        enum: ["Kaçırıldı", "Yeniden Planlandı"], // Turkish: "Missed", "Rescheduled"
+        default: "Kaçırıldı" // Default to "Missed" in Turkish
+    },
+  },
+      
   ],
 
-  status: { type: String, enum: ["Aktif", "Tamamlandı", "Durduruldu"], default: "Aktif" },
 
+  status: { type: String, enum: ["Aktif", "Tamamlandı", "Durduruldu"], default: "Aktif"},
   createdAt: { type: Date, default: Date.now }, // **Oluşturulma tarihi**
 });
 
@@ -104,9 +103,12 @@ const ProgramSchema = new mongoose.Schema({
 
 // **Tamamlama yüzdesini otomatik hesapla**
 ProgramSchema.pre("save", function (next) {
-  if (this.progressTracking.totalSessions > 0) {
-    this.progressTracking.completionRate =
-      (this.progressTracking.completedSessions / this.progressTracking.totalSessions) * 100;
+  if (Array.isArray(this.progressTracking)) {
+    this.progressTracking.forEach((entry) => {
+      if (entry.totalSessions > 0) {
+        entry.completionRate = (entry.completedSessions / entry.totalSessions) * 100;
+      }
+    });
   }
   next();
 });

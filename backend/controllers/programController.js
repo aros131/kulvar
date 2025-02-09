@@ -25,40 +25,13 @@ const createProgram = async (req, res) => {
       dailySchedule,
       nutritionPlan,
       documents,
-      progressTracking: {
-        totalSessions: dailySchedule.length,
-        completedSessions: 0,
-        completionRate: 0
-      },
+      progressTracking: [],
       feedback: [],
     });
 
     res.status(201).json({ message: "Program created successfully", program: newProgram });
   } catch (error) {
     res.status(500).json({ message: "Program creation failed", error: error.message });
-  }
-};
-const getProgramVideos = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const program = await Program.findById(id);
-
-    if (!program) {
-      return res.status(404).json({ message: "Program not found." });
-    }
-
-    // Extract all video URLs from daily schedule
-    const videoUrls = program.dailySchedule.flatMap(day =>
-      day.sessions.flatMap(session =>
-        session.exercises.flatMap(exercise =>
-          exercise.videoUrls ? exercise.videoUrls.map(video => video.url) : []
-        )
-      )
-    );
-
-    res.status(200).json({ videos: videoUrls });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching videos", error: error.message });
   }
 };
 
@@ -71,13 +44,14 @@ const getPrograms = async (req, res) => {
     res.status(500).json({ message: "Error fetching programs", error: error.message });
   }
 };
+
 // 🟢 Get all programs assigned to a user
 const getUserPrograms = async (req, res) => {
   try {
-    const userId = req.user.id; // Ensure `req.user.id` is populated by the `protect` middleware.
-    const programs = await Program.find({ assignedClients: userId }); // Check assigned programs
+    const userId = req.user.id;
+    const programs = await Program.find({ assignedClients: userId });
 
-    if (!programs || programs.length === 0) {
+    if (!programs.length) {
       return res.status(404).json({ message: "Kullanıcıya atanmış bir program bulunamadı." });
     }
 
@@ -123,8 +97,8 @@ const updateProgram = async (req, res) => {
 const deleteProgram = async (req, res) => {
   try {
     const { id } = req.params;
-
     const deletedProgram = await Program.findByIdAndDelete(id);
+
     if (!deletedProgram) {
       return res.status(404).json({ message: "Program not found" });
     }
@@ -134,7 +108,6 @@ const deleteProgram = async (req, res) => {
     res.status(500).json({ message: "Error deleting program", error: error.message });
   }
 };
-
 // 🟢 Update program documents
 const updateProgramDocuments = async (req, res) => {
   try {
@@ -173,6 +146,13 @@ const updateWorkoutVideo = async (req, res) => {
 
     workoutDay.videoUrl = videoUrl;
     await program.save();
+    workoutDay.sessions.forEach(session => {
+      session.exercises.forEach(exercise => {
+        if (!exercise.videoUrls) exercise.videoUrls = [];
+        exercise.videoUrls.push({ url: videoUrl, description: "New Video" });
+      });
+    });
+    
 
     res.status(200).json({ message: "Video link updated", program });
   } catch (error) {
@@ -232,6 +212,7 @@ const getProgramDocuments = async (req, res) => {
     res.status(500).json({ message: "Error fetching program documents", error: error.message });
   }
 };
+// 🟢 Reschedule missed workout
 const rescheduleWorkout = async (req, res) => {
   try {
     const { programId, missedDay, newDay } = req.body;
@@ -239,15 +220,12 @@ const rescheduleWorkout = async (req, res) => {
 
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    if (!program.missedWorkouts) {
-      program.missedWorkouts = [];
-    }
-
     const missedIndex = program.missedWorkouts.findIndex(w => w.missedDay === missedDay);
     if (missedIndex === -1) {
-      program.missedWorkouts.push({ missedDay, rescheduledTo: newDay });
+      program.missedWorkouts.push({ missedDay, rescheduledTo: newDay, status: "Yeniden Planlandı" });
     } else {
       program.missedWorkouts[missedIndex].rescheduledTo = newDay;
+      program.missedWorkouts[missedIndex].status = "Yeniden Planlandı";
     }
 
     await program.save();
@@ -256,6 +234,7 @@ const rescheduleWorkout = async (req, res) => {
     res.status(500).json({ message: "Error rescheduling workout", error: error.message });
   }
 };
+
 const assignProgramToClients = async (req, res) => {
   try {
     const { programId, clientIds } = req.body;
@@ -277,6 +256,7 @@ const assignProgramToClients = async (req, res) => {
     res.status(500).json({ message: "Program assignment error", error: error.message });
   }
 };
+// 🟢 Clone a program
 const cloneProgram = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -289,6 +269,7 @@ const cloneProgram = async (req, res) => {
       _id: undefined,
       name: `${originalProgram.name} (Copy)`,
       createdAt: new Date(),
+      assignedClients: [] // Remove clients when cloning
     });
 
     res.status(201).json({ message: "Program cloned successfully!", program: clonedProgram });
@@ -296,24 +277,43 @@ const cloneProgram = async (req, res) => {
     res.status(500).json({ message: "Error cloning program", error: error.message });
   }
 };
-const trackSessionCompletion = async (req, res) => {
+// 🟢 Track session completion for a user
+const completeSession = async (req, res) => {
   try {
-    const { programId, session } = req.body;
-    const userId = req.user.id;
+    const { programId } = req.params;
+    const { sessionName } = req.body;
+    const userId = req.user._id;
+
+    if (!programId || !sessionName) {
+      return res.status(400).json({ message: "Program ID and session name are required." });
+    }
 
     const program = await Program.findById(programId);
-    if (!program) return res.status(404).json({ message: "Program not found" });
+    if (!program) return res.status(404).json({ message: "Program not found." });
 
-    program.progressTracking.completedSessions += 1;
-    program.progressTracking.completionRate =
-      (program.progressTracking.completedSessions / program.progressTracking.totalSessions) * 100;
+    let userProgress = program.progressTracking.find(entry => entry.user.toString() === userId.toString());
+
+    if (!userProgress) {
+      userProgress = { user: userId, completedSessions: 1, progressPercentage: 0 };
+      program.progressTracking.push(userProgress);
+    } else {
+      userProgress.completedSessions += 1;
+    }
+
+    const totalSessions = program.dailySchedule?.reduce(
+      (total, day) => total + (day.sessions?.length || 0),
+      0
+    ) || 0;
+
+    userProgress.progressPercentage = (userProgress.completedSessions / totalSessions) * 100;
 
     await program.save();
-    res.status(200).json({ message: "Session completion tracked", program });
+    res.status(200).json({ message: "Session marked as completed successfully!" });
   } catch (error) {
-    res.status(500).json({ message: "Error tracking session completion", error: error.message });
+    res.status(500).json({ message: "Error marking session as completed", error: error.message });
   }
 };
+
 const submitFeedback = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -352,6 +352,7 @@ const submitFeedback = async (req, res) => {
   }
 };
 
+// 🟢 Get assigned clients
 const getAssignedClients = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -366,6 +367,7 @@ const getAssignedClients = async (req, res) => {
     res.status(500).json({ message: "Error fetching assigned clients", error: error.message });
   }
 };
+
 const resetProgress = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -376,6 +378,13 @@ const resetProgress = async (req, res) => {
       { completedSessions: [] },
       { new: true }
     );
+    program.progressTracking = program.progressTracking.map(entry => 
+      entry.user.toString() === userId.toString()
+        ? { ...entry, completedSessions: 0, progressPercentage: 0 }
+        : entry
+    );
+    await program.save();
+    
 
     if (!progress) {
       return res.status(404).json({ message: "Progress not found for this program." });
@@ -430,35 +439,31 @@ const getProgramFeedback = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// 🟢 Get program progress for a user
 const getUserProgress = async (req, res) => {
   const { programId } = req.params;
 
   try {
-    // Validate programId
     if (!programId) {
-      return res.status(400).json({ message: "Program ID is required" });
+      return res.status(400).json({ message: "Program ID is required." });
     }
 
     const program = await Program.findById(programId);
 
     if (!program) {
-      return res.status(404).json({ message: "Program not found" });
+      return res.status(404).json({ message: "Program not found." });
     }
 
-    console.log("Fetched Program Progress Tracking:", program.progressTracking); // Debugging
-
-    // Ensure progressTracking exists and is an array
     if (!Array.isArray(program.progressTracking)) {
       program.progressTracking = [];
     }
 
-    // Find or initialize the user's progress
     let userProgress = program.progressTracking.find(
       (entry) => entry.userId?.toString() === req.user._id.toString()
     );
 
     if (!userProgress) {
-      // If no progress entry exists, initialize it
       userProgress = {
         userId: req.user._id,
         completedSessions: 0,
@@ -469,63 +474,63 @@ const getUserProgress = async (req, res) => {
       await program.save();
     }
 
-    // Safely calculate total sessions
     const totalSessions = program.dailySchedule?.reduce(
-      (total, day) => total + (day.sessions ? day.sessions.length : 0),
+      (total, day) => total + (day.sessions?.length || 0),
       0
     ) || 0;
-
-    // Return progress data
-    res.status(200).json({
-      progressPercentage: userProgress.progressPercentage || 0,
-      completedSessions: userProgress.completedSessions || 0,
-      totalSessions,
-    });
+    
+    const completedSessions = program.progressTracking.reduce(
+      (total, entry) => total + (entry.completedSessions || 0),
+      0
+    );
+    
+    res.status(200).json({ completedSessions, totalSessions });
+    
   } catch (error) {
-    console.error("Error fetching user progress:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Error fetching user progress", error: error.message });
   }
 };
 
-
-const completeSession = async (req, res) => {
+const getProgramVideos = async (req, res) => {
   try {
-    const { programId } = req.params;
-    const { sessionName } = req.body;
-    const userId = req.user._id;
-
-    if (!programId || !sessionName) {
-      return res.status(400).json({ message: "Program ID and session name are required." });
-    }
-
-    const program = await Program.findById(programId);
+    const { id } = req.params;
+    const program = await Program.findById(id);
 
     if (!program) {
       return res.status(404).json({ message: "Program not found." });
     }
 
-    const userProgress = program.progressTracking.find(
-      (progress) => progress.userId.toString() === userId.toString()
+    // Extract all video URLs from daily schedule
+    const videoUrls = program.dailySchedule.flatMap(day =>
+      day.sessions.flatMap(session =>
+        session.exercises.flatMap(exercise =>
+          exercise.videoUrls ? exercise.videoUrls.map(video => video.url) : []
+        )
+      )
     );
 
-    if (!userProgress) {
-      program.progressTracking.push({
-        userId: userId,
-        completedSessions: 1,
-      });
-    } else {
-      userProgress.completedSessions += 1;
-    }
-
-    // Save the updated progress
-    await program.save();
-
-    res.status(200).json({
-      message: "Session marked as completed successfully!",
-    });
+    res.status(200).json({ videos: videoUrls });
   } catch (error) {
-    console.error("Error marking session as completed:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Error fetching videos", error: error.message });
+  }
+};
+
+const trackSessionCompletion = async (req, res) => {
+  try {
+    const { programId, session } = req.body;
+    const userId = req.user.id;
+
+    const program = await Program.findById(programId);
+    if (!program) return res.status(404).json({ message: "Program not found" });
+
+    program.progressTracking.completedSessions += 1;
+    program.progressTracking.completionRate =
+      (program.progressTracking.completedSessions / program.progressTracking.totalSessions) * 100;
+
+    await program.save();
+    res.status(200).json({ message: "Session completion tracked", program });
+  } catch (error) {
+    res.status(500).json({ message: "Error tracking session completion", error: error.message });
   }
 };
 
@@ -540,13 +545,12 @@ module.exports = {
   deleteProgram,
   assignProgramToClients,
   cloneProgram,
-  trackSessionCompletion,
   submitFeedback,
   getProgramDocuments,
   updateProgramDocuments,
   updateWorkoutVideo,
   getSessionCompletionData,
-  getProgramVideos,  // ✅ Added
+  getProgramVideos, // ✅ Ensure this is included
   submitSessionFeedback, // ✅ Added
   rescheduleWorkout,
   getAssignedClients,
@@ -554,7 +558,8 @@ module.exports = {
   updateAdaptiveAdjustments,
   getProgramFeedback,
   getUserProgress,
-  completeSession
+  completeSession,
+  trackSessionCompletion
 
 };
 

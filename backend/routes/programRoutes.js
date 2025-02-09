@@ -79,6 +79,7 @@ router.get("/:programId/feedback", protect, getProgramFeedback);
 router.get("/:programId/user-progress", protect, getUserProgress);
 router.post("/:programId/complete-session", protect, completeSession);
 
-
+// ✅ Add this route to track session completion
+router.post("/programs/:programId/track-session", trackSessionCompletion);
 
 module.exports = router;
