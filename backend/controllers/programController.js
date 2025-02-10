@@ -284,35 +284,37 @@ const completeSession = async (req, res) => {
     const { sessionName } = req.body;
     const userId = req.user?._id;
 
-    if (!programId || !sessionName) {
-      return res.status(400).json({ message: "Program ID and session name are required." });
+    if (!programId || !sessionName || !userId) {
+      return res.status(400).json({ message: "Program ID, session name, and user ID are required." });
     }
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found." });
 
     if (!Array.isArray(program.progressTracking)) {
-      program.progressTracking = []; // Initialize if missing
+      program.progressTracking = []; // Ensure progressTracking is initialized
     }
 
     let userProgress = program.progressTracking.find(entry => entry.user?.toString() === userId?.toString());
 
     if (!userProgress) {
-      userProgress = { user: userId, completedSessions: 1, progressPercentage: 0 };
+      userProgress = { user: userId, completedSessions: 0, progressPercentage: 0 };
       program.progressTracking.push(userProgress);
-    } else {
-      userProgress.completedSessions += 1;
     }
+
+    // Increment completed sessions
+    userProgress.completedSessions += 1;
 
     const totalSessions = program.dailySchedule?.reduce(
       (total, day) => total + (day.sessions?.length || 0),
       0
     ) || 0;
 
+    // Calculate progress percentage
     userProgress.progressPercentage = (userProgress.completedSessions / totalSessions) * 100;
 
     await program.save();
-    res.status(200).json({ message: "Session marked as completed successfully!" });
+    res.status(200).json({ message: "Session marked as completed successfully!", progress: userProgress });
   } catch (error) {
     res.status(500).json({ message: "Error marking session as completed", error: error.message });
   }
