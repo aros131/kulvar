@@ -282,7 +282,7 @@ const completeSession = async (req, res) => {
   try {
     const { programId } = req.params;
     const { sessionName } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     if (!programId || !sessionName) {
       return res.status(400).json({ message: "Program ID and session name are required." });
@@ -291,7 +291,11 @@ const completeSession = async (req, res) => {
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found." });
 
-    let userProgress = program.progressTracking.find(entry => entry.user.toString() === userId.toString());
+    if (!Array.isArray(program.progressTracking)) {
+      program.progressTracking = []; // Initialize if missing
+    }
+
+    let userProgress = program.progressTracking.find(entry => entry.user?.toString() === userId?.toString());
 
     if (!userProgress) {
       userProgress = { user: userId, completedSessions: 1, progressPercentage: 0 };
