@@ -198,11 +198,29 @@ const getUserProgress = async (req, res) => {
       return res.status(404).json({ message: "No progress found for this program." });
     }
 
-    res.status(200).json({ progress });
+    // ✅ Calculate progress percentage
+    const totalSessions = progress.sessionTracking.length;
+    const completedSessions = progress.sessionTracking.filter(s => s.completed).length;
+    const progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
+
+    res.status(200).json({
+      progressPercentage,
+      completedSessions,
+      totalSessions,
+      streakTracking: progress.streakTracking,
+      achievementBadges: progress.achievementBadges,
+      goalTracking: progress.goalTracking,
+      missedWorkouts: progress.missedWorkouts,
+      strengthProgress: progress.progressiveOverload.map(entry => ({
+        exerciseName: entry.exerciseName,
+        currentWeight: entry.currentWeight,
+      })),
+    });
   } catch (error) {
     res.status(500).json({ message: "Error fetching progress", error: error.message });
   }
 };
+
 
 // 🟢 Fetch progress trend over time
 const getProgressTrend = async (req, res) => {
@@ -225,25 +243,55 @@ const getProgressTrend = async (req, res) => {
 // 🟢 Mark a session as completed
 const markSessionCompleted = async (req, res) => {
   try {
-    const { programId, sessionName } = req.body;
+    const { programId, sessionName, fatigueLevel } = req.body;
     const userId = req.user.id;
 
     let progress = await Progress.findOne({ programId, userId });
 
     if (!progress) {
-      progress = new Progress({ programId, userId, completedSessions: [] });
+      progress = new Progress({ programId, userId, sessionTracking: [] });
     }
 
-    if (!progress.completedSessions.includes(sessionName)) {
-      progress.completedSessions.push(sessionName);
+    // ✅ Check if the session is already completed
+    const session = progress.sessionTracking.find(s => s.sessionName === sessionName);
+    if (session && session.completed) {
+      return res.status(400).json({ message: "Session already completed." });
     }
+
+    // ✅ Mark session as completed
+    if (session) {
+      session.completed = true;
+      session.fatigueLevel = fatigueLevel || "Normal";
+      session.dateCompleted = new Date();
+    } else {
+      progress.sessionTracking.push({ sessionName, completed: true, fatigueLevel, dateCompleted: new Date() });
+    }
+
+    // ✅ Update streak tracking
+    progress.streakTracking.currentStreak += 1;
+    if (progress.streakTracking.currentStreak > progress.streakTracking.longestStreak) {
+      progress.streakTracking.longestStreak = progress.streakTracking.currentStreak;
+    }
+
+    // ✅ Recalculate progress percentage
+    const completedSessions = progress.sessionTracking.filter(s => s.completed).length;
+    const totalSessions = progress.sessionTracking.length;
+    progress.progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
 
     await progress.save();
-    res.status(200).json({ message: "Session marked as completed", progress });
+
+    res.status(200).json({
+      message: "Session completed successfully!",
+      progressPercentage: progress.progressPercentage,
+      completedSessions,
+      totalSessions,
+      streakTracking: progress.streakTracking,
+    });
   } catch (error) {
     res.status(500).json({ message: "Error marking session as completed", error: error.message });
   }
 };
+
 
 // 🟢 Update user goal progress
 const updateGoalProgress = async (req, res) => {

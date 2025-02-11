@@ -43,6 +43,23 @@
   
   <button onclick="markSessionCompleted()">✅ Seansı Tamamla</button>
 </section>
+<section id="streak-tracker">
+  <h3>Antrenman Serileri</h3>
+  <p id="current-streak">Günlük Seri: 0 gün</p>
+  <p id="longest-streak">En Uzun Seri: 0 gün</p>
+</section>
+
+<section id="badges">
+  <h3>Kazandığınız Başarılar</h3>
+  <ul id="badges-list"></ul>
+</section>
+
+<label for="fatigue-level">Yorgunluk Seviyesi:</label>
+<select id="fatigue-level">
+  <option value="Düşük">Düşük</option>
+  <option value="Normal" selected>Normal</option>
+  <option value="Yüksek">Yüksek</option>
+</select>
 
 
       <!-- 📆 Workout Schedule -->
@@ -80,12 +97,7 @@
         <div id="video-container"></div>
       </section>
 
-      <!-- ✅ Completion Summary -->
-      <section id="program-completion">
-        <h3>Program Tamamlama Oranı</h3>
-        <p id="completion-rate">Tamamlama Oranı: %0</p>
-      </section>
-
+     
       <section id="submit-feedback">
         <h3>Geri Bildirim Gönder</h3>
         <textarea id="feedback-comment" placeholder="Yorumunuzu yazın"></textarea>
@@ -317,94 +329,88 @@ console.log("🔍 Checking program.program.dailySchedule:", program.program?.dai
 
   // ✅ Fetch user's progress
   async function fetchUserProgress(programId) {
-    if (!programId) {
-      console.error("🚨 Program ID is missing. Cannot fetch progress.");
+  if (!programId) {
+    console.error("🚨 Missing program ID. Cannot fetch progress.");
+    return;
+  }
+
+  console.log(`📡 Fetching progress for program ID: ${programId}`);
+
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${programId}/user-progress`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error(`❌ Error fetching progress. API responded with: ${response.status}`);
       return;
     }
 
-    console.log(`📡 Fetching user progress for program ID: ${programId}`);
+    const data = await response.json();
+    console.log("📊 User Progress Data:", data);
 
-    try {
-      const response = await fetch(`${BASE_URL}/programs/${programId}/user-progress`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    // ✅ Update progress bar
+    document.getElementById("progress-percentage").textContent = `${data.progressPercentage}%`;
+    document.getElementById("progress-bar").value = data.progressPercentage;
 
-      if (!response.ok) {
-        console.error(`❌ Error fetching user progress. API responded with: ${response.status}`);
-        return;
-      }
-
-      const data = await response.json();
-      console.log("📊 User Progress Data:", data);
-
-      const progressPercentage = data.progressPercentage ?? 0;
-      document.getElementById("progress-percentage").textContent = `${progressPercentage}%`;
-      document.getElementById("progress-bar").value = progressPercentage;
-    } catch (error) {
-      console.error("❌ Error fetching user progress:", error.message);
+    // ✅ Update streaks
+    if (data.streakTracking) {
+      document.getElementById("current-streak").textContent = `Günlük Seri: ${data.streakTracking.currentStreak} gün`;
+      document.getElementById("longest-streak").textContent = `En Uzun Seri: ${data.streakTracking.longestStreak} gün`;
     }
+
+    // ✅ Update achievements
+    const badgesList = document.getElementById("badges-list");
+    badgesList.innerHTML = "";
+    if (Array.isArray(data.achievementBadges)) {
+      data.achievementBadges.forEach(badge => {
+        const li = document.createElement("li");
+        li.textContent = `${badge.badge} - Kazanıldı: ${new Date(badge.dateEarned).toLocaleDateString()}`;
+        badgesList.appendChild(li);
+      });
+    }
+  } catch (error) {
+    console.error("❌ Error fetching progress:", error.message);
   }
+}
 
   // ✅ Mark session as completed
   async function markSessionCompleted() {
-    if (!currentProgramId) return console.error("🚨 Missing programId in markSessionCompleted().");
-
-    const session = document.getElementById("session-select").value;
-    if (!session) return alert("Lütfen bir seans seçin!");
-
-    try {
-      const response = await fetch(`${BASE_URL}/programs/${currentProgramId}/complete-session`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ sessionName: session }),
-      });
-
-      if (response.ok) {
-        alert("Seans tamamlandı!");
-        fetchUserProgress(currentProgramId);
-      } else {
-        console.error("❌ Error marking session as completed:", await response.json());
-      }
-    } catch (error) {
-      console.error("Hata:", error.message);
-    }
+  if (!currentProgramId) {
+    console.error("🚨 Missing program ID in markSessionCompleted().");
+    return;
   }
 
-  // ✅ Fetch program completion data
-  async function fetchProgramCompletion(programId) {
-    if (!programId) {
-      console.error("🚨 `programId` is missing in fetchProgramCompletion().");
-      return;
-    }
+  const session = document.getElementById("session-select").value;
+  const fatigueLevel = document.getElementById("fatigue-level").value; // ✅ Track fatigue
 
-    console.log(`📡 Fetching session completion data for program ID: ${programId}`);
-
-    try {
-      const response = await fetch(`${BASE_URL}/programs/${programId}/session-completion`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        console.error("❌ Error fetching session completion data.");
-        return;
-      }
-
-      const data = await response.json();
-      console.log("📊 Session Completion Data Response:", data);
-
-      const completionRate = data.totalSessions
-        ? ((data.completedSessions / data.totalSessions) * 100).toFixed(2)
-        : 0;
-
-      document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${completionRate}`;
-    } catch (error) {
-      console.error("❌ Error fetching session completion data:", error.message);
-    }
+  if (!session) {
+    alert("Lütfen bir seans seçin!");
+    return;
   }
 
+  try {
+    const response = await fetch(`${BASE_URL}/programs/${currentProgramId}/complete-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ sessionName: session, fatigueLevel }),
+    });
+
+    if (response.ok) {
+      alert("Seans tamamlandı!");
+      fetchUserProgress(currentProgramId); // ✅ Refresh progress data
+    } else {
+      console.error("❌ Error marking session as completed:", await response.json());
+    }
+  } catch (error) {
+    console.error("Hata:", error.message);
+  }
+}
+
+  
   // ✅ Submit feedback
   async function submitFeedback() {
     const programId = new URLSearchParams(window.location.search).get("id");

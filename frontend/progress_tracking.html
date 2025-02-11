@@ -115,34 +115,70 @@
   
     // ✅ Fetch Progress Data for Selected Program
     async function fetchProgress() {
-      const programId = document.getElementById("program-select").value;
-      if (!programId) {
-        alert("Lütfen bir program seçin!");
-        return;
+  const programId = document.getElementById("program-select").value;
+  if (!programId) {
+    alert("Lütfen bir program seçin!");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/progress/user/${programId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const progressData = await response.json();
+    if (response.ok) {
+      console.log("📊 İlerleme Verisi:", progressData);
+
+      // ✅ Update Progress Bar
+      document.getElementById("progress-percentage").textContent = `${progressData.progressPercentage}%`;
+      document.getElementById("progress-bar").value = progressData.progressPercentage;
+
+      // ✅ Update Streaks
+      if (progressData.streakTracking) {
+        document.getElementById("streak-info").textContent =
+          `Şu Anki Seri: ${progressData.streakTracking.currentStreak} gün, En Uzun Seri: ${progressData.streakTracking.longestStreak} gün`;
       }
-  
-      try {
-        const response = await fetch(`${BASE_URL}/progress/user/${programId}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-  
-        const progressData = await response.json();
-        if (response.ok) {
-          console.log("İlerleme Verisi:", progressData);
-          loadProgressCharts(progressData);
-          fetchStrengthProgress(programId);
-          fetchUserStreaks();
-          fetchGoalProgress(programId);
-          populateSessionSelect(programId);
-        } else {
-          console.error("İlerleme verisi alınamadı:", progressData.message);
-        }
-      } catch (error) {
-        console.error("İlerleme fetch hatası:", error.message);
+
+      // ✅ Update Goal Tracking
+      if (progressData.goalTracking) {
+        document.getElementById("goal-progress-info").textContent =
+          `Hedef: ${progressData.goalTracking.currentMetric} / ${progressData.goalTracking.targetMetric}`;
       }
+
+      // ✅ Load Strength Progress Chart
+      loadStrengthChart(progressData.strengthProgress);
+
+      // ✅ Display Missed Workouts
+      displayMissedWorkouts(progressData.missedWorkouts);
+
+      // ✅ Update Achievement Badges
+      displayAchievements(progressData.achievementBadges);
+    } else {
+      console.error("❌ İlerleme verisi alınamadı:", progressData.message);
     }
-  
+  } catch (error) {
+    console.error("❌ İlerleme fetch hatası:", error.message);
+  }
+}function displayMissedWorkouts(missedWorkouts) {
+  const missedList = document.getElementById("missed-list");
+  missedList.innerHTML = "";
+
+  if (!missedWorkouts || missedWorkouts.length === 0) {
+    missedList.innerHTML = "<li>Kaçırılan antrenman yok.</li>";
+    return;
+  }
+
+  missedWorkouts.forEach(workout => {
+    const li = document.createElement("li");
+    li.textContent = `Kaçırılan Gün: ${new Date(workout.missedDay).toLocaleDateString()}, 
+                      Yeniden Planlanan Gün: ${workout.rescheduledTo ? new Date(workout.rescheduledTo).toLocaleDateString() : "Planlanmadı"}`;
+    missedList.appendChild(li);
+  });
+}
+
+
     // ✅ Restart User Program
     async function restartProgram() {
       const programId = document.getElementById("program-select").value;
@@ -251,22 +287,42 @@
       }
     }
   
-    function loadStrengthChart(data) {
-      const ctx = document.getElementById("strengthChart").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: data.strengthProgress.map(entry => entry.date),
-          datasets: [{
-            label: "Kaldırılan Ağırlık (kg)",
-            data: data.strengthProgress.map(entry => entry.weight),
-            backgroundColor: "blue",
-            borderColor: "blue",
-            fill: false
-          }]
-        },
-      });
-    }
+    function loadStrengthChart(strengthProgress) {
+  const ctx = document.getElementById("strengthChart").getContext("2d");
+
+  const labels = strengthProgress.map(entry => entry.exerciseName);
+  const data = strengthProgress.map(entry => entry.currentWeight);
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Kaldırılan Ağırlık (kg)",
+        data: data,
+        backgroundColor: "blue",
+        borderColor: "blue",
+        fill: false
+      }]
+    },
+  });
+}
+function displayAchievements(achievements) {
+  const badgesContainer = document.getElementById("badges-container");
+  badgesContainer.innerHTML = "";
+
+  if (!achievements || achievements.length === 0) {
+    badgesContainer.innerHTML = "<p>Henüz başarı kazanılmadı.</p>";
+    return;
+  }
+
+  achievements.forEach(badge => {
+    const badgeDiv = document.createElement("div");
+    badgeDiv.textContent = `${badge.badge} - Kazanıldı: ${new Date(badge.dateEarned).toLocaleDateString()}`;
+    badgesContainer.appendChild(badgeDiv);
+  });
+}
+
   
     // ✅ Fetch User Streaks
     async function fetchUserStreaks() {
