@@ -22,7 +22,7 @@ const createProgram = async (req, res) => {
       difficulty,
       fitnessGoal,
       coachId,
-      dailySchedule,
+      dailySchedule: Array.isArray(dailySchedule) ? dailySchedule : [], // ✅ Ensure dailySchedule is always an array
       nutritionPlan,
       documents,
       progressTracking: [],
@@ -61,7 +61,7 @@ const getUserPrograms = async (req, res) => {
   }
 };
 
-// 🟢 Get a single program by ID
+// 🟢 Get a single program by ID (FIXED)
 const getProgramById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -71,28 +71,41 @@ const getProgramById = async (req, res) => {
       return res.status(404).json({ message: "Program not found" });
     }
 
+    // ✅ Debugging: Check if dailySchedule exists
+    if (!program.dailySchedule || !Array.isArray(program.dailySchedule)) {
+      console.error("🚨 dailySchedule is missing or not an array:", program.dailySchedule);
+    }
+
     res.status(200).json({ program });
   } catch (error) {
     res.status(500).json({ message: "Error fetching program details", error: error.message });
   }
 };
 
-// 🟢 Update a program
+// 🟢 Update a program (Prevent Overwriting dailySchedule)
 const updateProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedProgram = await Program.findByIdAndUpdate(id, req.body, { new: true });
+    const existingProgram = await Program.findById(id);
 
-    if (!updatedProgram) {
+    if (!existingProgram) {
       return res.status(404).json({ message: "Program not found" });
     }
+
+    const updatedProgram = await Program.findByIdAndUpdate(
+      id,
+      {
+        ...req.body,
+        dailySchedule: req.body.dailySchedule ?? existingProgram.dailySchedule, // ✅ Keep existing dailySchedule if not provided
+      },
+      { new: true }
+    );
 
     res.status(200).json({ message: "Program updated successfully", program: updatedProgram });
   } catch (error) {
     res.status(500).json({ message: "Error updating program", error: error.message });
   }
 };
-
 // 🟢 Delete a program
 const deleteProgram = async (req, res) => {
   try {
@@ -131,6 +144,37 @@ const updateProgramDocuments = async (req, res) => {
     res.status(500).json({ message: "Error updating documents", error: error.message });
   }
 };
+// 🟢 Get program videos (FIXED)
+const getProgramVideos = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const program = await Program.findById(id);
+
+    if (!program) {
+      return res.status(404).json({ message: "Program not found." });
+    }
+
+    // ✅ Ensure dailySchedule exists before using flatMap
+    const videoUrls = (program.dailySchedule || []).flatMap(day =>
+      (day.sessions || []).flatMap(session =>
+        (session.exercises || []).flatMap(exercise =>
+          Array.isArray(exercise.videoUrls) ? exercise.videoUrls.map(video => video.url) : []
+        )
+      )
+    );
+
+    res.status(200).json({ videos: videoUrls });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching videos", error: error.message });
+  }
+};
+
+
+
+
+
+// ✅ DEBUG LOG TO VERIFY EXPORTS
+console.log("✅ programController.js loaded! Exported functions:", module.exports);
 
 // 🟢 Update workout video links
 const updateWorkoutVideo = async (req, res) => {
@@ -160,15 +204,20 @@ const updateWorkoutVideo = async (req, res) => {
   }
 };
 
-// 🟢 Get session completion data
+// 🟢 Get session completion data (FIXED)
 const getSessionCompletionData = async (req, res) => {
   try {
     const { id } = req.params;
     const program = await Program.findById(id);
+
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const completedSessions = program.progressTracking.completedSessions;
-    const totalSessions = program.progressTracking.totalSessions;
+    const userProgress = program.progressTracking.find(entry => entry.user?.toString() === req.user.id);
+    const completedSessions = userProgress?.completedSessions || 0;
+    const totalSessions = program.dailySchedule?.reduce(
+      (total, day) => total + (day.sessions?.length || 0),
+      0
+    ) || 0;
 
     res.status(200).json({ completedSessions, totalSessions });
   } catch (error) {
@@ -277,7 +326,7 @@ const cloneProgram = async (req, res) => {
     res.status(500).json({ message: "Error cloning program", error: error.message });
   }
 };
-// 🟢 Track session completion for a user
+// 🟢 Track session completion for a user (FIXED)
 const completeSession = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -302,15 +351,15 @@ const completeSession = async (req, res) => {
       program.progressTracking.push(userProgress);
     }
 
-    // Increment completed sessions
+    // ✅ Increment completed sessions
     userProgress.completedSessions += 1;
 
+    // ✅ Calculate total sessions dynamically
     const totalSessions = program.dailySchedule?.reduce(
       (total, day) => total + (day.sessions?.length || 0),
       0
     ) || 0;
 
-    // Calculate progress percentage
     userProgress.progressPercentage = (userProgress.completedSessions / totalSessions) * 100;
 
     await program.save();
@@ -497,29 +546,6 @@ const getUserProgress = async (req, res) => {
   }
 };
 
-const getProgramVideos = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const program = await Program.findById(id);
-
-    if (!program) {
-      return res.status(404).json({ message: "Program not found." });
-    }
-
-    // Extract all video URLs from daily schedule
-    const videoUrls = program.dailySchedule.flatMap(day =>
-      day.sessions.flatMap(session =>
-        session.exercises.flatMap(exercise =>
-          exercise.videoUrls ? exercise.videoUrls.map(video => video.url) : []
-        )
-      )
-    );
-
-    res.status(200).json({ videos: videoUrls });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching videos", error: error.message });
-  }
-};
 
 const trackSessionCompletion = async (req, res) => {
   try {

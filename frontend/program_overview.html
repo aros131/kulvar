@@ -131,47 +131,53 @@
       console.error("Hata:", error.message);
     }
   }
+// fetch details
 
-  // ✅ Fetch Program Details on Page Load
   async function fetchProgramDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const programId = urlParams.get("id");
 
     if (!programId) {
-      console.error("🚨 Program ID is missing from URL.");
-      document.getElementById("program-name").textContent = "Program Bulunamadı";
-      return;
+        console.error("🚨 Program ID is missing from URL.");
+        document.getElementById("program-name").textContent = "Program Bulunamadı";
+        return;
     }
 
     console.log("✅ Program ID from URL:", programId);
-    currentProgramId = programId; // ✅ Store globally
+    currentProgramId = programId;
 
     try {
-      const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+        });
 
-      if (!response.ok) {
-        console.error("❌ Program details could not be retrieved.");
-        return;
-      }
+        if (!response.ok) {
+            console.error("❌ Program details could not be retrieved.");
+            return;
+        }
 
-      const program = await response.json();
-      console.log("✅ Program Details:", program);
+        const program = await response.json();
+        console.log("📆 Full Program Data:", program); // 🔥 Log the full program object
 
-      // ✅ Update UI
-      displayProgramDetails(program);
+        // 🔥 Debug dailySchedule
+        if (!program.dailySchedule || !Array.isArray(program.dailySchedule)) {
+            console.error("🚨 `dailySchedule` is missing or not an array:", program.dailySchedule);
+        } else {
+            console.log("✅ dailySchedule found:", program.dailySchedule);
+        }
 
-      // ✅ Fetch related data after program details load
-      fetchProgramCompletion(programId);
-      fetchProgramFeedback(programId);
-      fetchUserProgress(programId);
-      populateSessionSelect(program);
+        // ✅ Update UI
+        displayProgramDetails(program);
+        fetchProgramCompletion(programId);
+        fetchProgramFeedback(programId);
+        fetchUserProgress(programId);
+        populateSessionSelect(program);
     } catch (error) {
-      console.error("Hata:", error.message);
+        console.error("Hata:", error.message);
     }
-  }
+}
+
 
   // ✅ Fetch Program Feedback
   async function fetchProgramFeedback(programId) {
@@ -233,65 +239,67 @@
     workoutList.innerHTML = "";
 
     if (!Array.isArray(dailySchedule) || dailySchedule.length === 0) {
-      workoutList.textContent = "Antrenman programı bulunamadı.";
-      return;
+        console.warn("🚨 No workout schedule found:", dailySchedule);
+        workoutList.textContent = "Antrenman programı bulunamadı.";
+        return;
     }
 
     dailySchedule.forEach(day => {
-      if (!Array.isArray(day.sessions)) {
-        console.error("🚨 Missing or invalid `sessions` array for day:", day);
-        return;
-      }
-
-      const li = document.createElement("li");
-      li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
-
-      day.sessions.forEach(session => {
-        if (!Array.isArray(session.exercises)) {
-          console.error("🚨 Missing or invalid `exercises` array for session:", session);
-          return;
+        if (!Array.isArray(day.sessions)) {
+            console.warn(`⚠️ No sessions found for ${day.day}`);
+            return;
         }
 
-        li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
-          ${session.exercises.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
+        const li = document.createElement("li");
+        li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
 
-        session.exercises.forEach(ex => {
-          if (Array.isArray(ex.videoUrls)) {
-            ex.videoUrls.forEach(video => {
-              li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
+        day.sessions.forEach(session => {
+            if (!Array.isArray(session.exercises)) {
+                console.warn(`⚠️ No exercises found for session ${session.name}`);
+                return;
+            }
+
+            li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
+                ${session.exercises.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
+
+            session.exercises.forEach(ex => {
+                if (Array.isArray(ex.videoUrls)) {
+                    ex.videoUrls.forEach(video => {
+                        li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
+                    });
+                }
             });
-          }
         });
-      });
 
-      workoutList.appendChild(li);
+        workoutList.appendChild(li);
     });
-  }
+}
 
   // ✅ Populate session dropdown
   function populateSessionSelect(program) {
     const sessionSelect = document.getElementById("session-select");
     sessionSelect.innerHTML = `<option value="">Seans Seç</option>`;
 
-    if (!Array.isArray(program.dailySchedule)) {
-      console.error("🚨 `dailySchedule` is missing or not an array:", program.dailySchedule);
-      return;
+    if (!program.dailySchedule || !Array.isArray(program.dailySchedule)) {
+        console.error("🚨 `dailySchedule` is missing or not an array:", program.dailySchedule);
+        return;
     }
 
     program.dailySchedule.forEach(day => {
-      if (!Array.isArray(day.sessions)) {
-        console.error("🚨 Missing or invalid `sessions` array for day:", day);
-        return;
-      }
+        if (!day.sessions || !Array.isArray(day.sessions)) {
+            console.warn(`⚠️ No sessions found for ${day.day}`);
+            return;
+        }
 
-      day.sessions.forEach(session => {
-        const option = document.createElement("option");
-        option.value = session.name;
-        option.textContent = `${day.day} - ${session.name}`;
-        sessionSelect.appendChild(option);
-      });
+        day.sessions.forEach(session => {
+            const option = document.createElement("option");
+            option.value = session.name;
+            option.textContent = `${day.day} - ${session.name}`;
+            sessionSelect.appendChild(option);
+        });
     });
-  }
+}
+
 
   // ✅ Fetch user's progress
   async function fetchUserProgress(programId) {
