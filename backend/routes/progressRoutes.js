@@ -8,72 +8,55 @@ const {
   logProgress,
   getClientProgress,
   getProgressReport,
-  markWorkoutCompleted,
+  markSessionCompleted,
   rescheduleWorkout,
   submitFeedback,
   getUserProgress,
   restartProgram,
   getProgressTrend,
-  markSessionCompleted,
   updateGoalProgress,
   getUserStreaks,
   getAdaptiveGoalProgress,
   getStrengthProgress
 } = require("../controllers/progressController");
 
-// ✅ Log user progress
+// ✅ Log user progress (User Only)
 router.post("/", protect, roleMiddleware(["user"]), logProgress);
 
 // ✅ Get progress for all clients (Coach Only)
 router.get("/", protect, roleMiddleware(["coach"]), getClientProgress);
 
-// ✅ Get detailed report for a client
+// ✅ Get detailed report for a client (Coach Only)
 router.get("/:id/report", protect, roleMiddleware(["coach"]), getProgressReport);
 
-// ✅ Complete a workout
-router.post("/complete", protect, markWorkoutCompleted);
+// ✅ Mark a session as completed (User Only)
+router.post("/session/complete", protect, roleMiddleware(["user"]), markSessionCompleted);
 
-// ✅ Reschedule a missed workout
-router.post("/reschedule", protect, rescheduleWorkout);
+// ✅ Reschedule a missed workout (User Only)
+router.post("/reschedule", protect, roleMiddleware(["user"]), rescheduleWorkout);
 
-// ✅ Submit workout feedback
-router.post("/feedback", protect, submitFeedback);
+// ✅ Submit workout feedback (User Only)
+router.post("/feedback", protect, roleMiddleware(["user"]), submitFeedback);
 
-// ✅ Fetch user progress for a specific program
-router.get("/user/:programId", protect, getUserProgress);
+// ✅ Fetch user progress for a specific program (User Only)
+router.get("/user/:programId", protect, roleMiddleware(["user"]), getUserProgress);
 
-// ✅ Restart a program
-router.post("/restart", protect, restartProgram);
+// ✅ Restart a program (User Only)
+router.post("/restart", protect, roleMiddleware(["user"]), restartProgram);
 
 // ✅ Get progress trend for a program
 router.get("/progress-trend/:programId", protect, getProgressTrend);
 
-// ✅ Complete a session
-router.post("/session/complete", protect, markSessionCompleted);
+// ✅ Update Goal Tracking Automatically (User Only)
+router.post("/goal-progress", protect, roleMiddleware(["user"]), updateGoalProgress);
 
-// ✅ Update Goal Tracking Automatically
-router.post("/goal-progress", protect, updateGoalProgress);
+// ✅ Get User Streaks (User Only)
+router.get("/streaks/:userId", protect, roleMiddleware(["user"]), getUserStreaks);
 
-// ✅ Get User Streaks
-router.get("/streaks/:userId", protect, getUserStreaks);
-
-// ✅ Fetch goal progress for adaptive tracking
-router.get("/goal-progress/:userId", protect, getAdaptiveGoalProgress);
+// ✅ Fetch goal progress for adaptive tracking (User Only)
+router.get("/goal-progress/:userId", protect, roleMiddleware(["user"]), getAdaptiveGoalProgress);
 
 // ✅ Get strength progress for a program
 router.get("/strength-chart/:programId", protect, getStrengthProgress);
-
-// ✅ Fetch user progress for a program
-router.get("/user/:programId", protect, getUserProgress);
-
-// ✅ Get progress trend
-router.get("/progress-trend/:programId", protect, getProgressTrend);
-
-// ✅ Mark a session as completed
-router.post("/session/complete", protect, markSessionCompleted);
-
-// ✅ Update Goal Progress
-router.post("/goal-progress", protect, updateGoalProgress);
-
 
 module.exports = router;
