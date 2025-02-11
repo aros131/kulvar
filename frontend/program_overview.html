@@ -158,7 +158,11 @@
         }
 
         const program = await response.json();
-        console.log("📆 Full Program Data:", program); // 🔥 Log the full program object
+console.log("📆 Full Program Data:", program);
+console.log("🔍 Checking dailySchedule:", program.dailySchedule);
+console.log("🔍 Checking program.program:", program.program);
+console.log("🔍 Checking program.program.dailySchedule:", program.program?.dailySchedule);
+
 
         // 🔥 Debug dailySchedule
         if (!program.dailySchedule || !Array.isArray(program.dailySchedule)) {
@@ -214,11 +218,19 @@
 
   // ✅ Display program details
   function displayProgramDetails(program) {
-    document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
-    document.getElementById("program-description").textContent = program.description || "Açıklama mevcut değil.";
-    displayWorkoutSchedule(program.dailySchedule || []);
-    displayCoachNotes(program.dailySchedule || []);
+  const dailySchedule = program.dailySchedule || program.program?.dailySchedule;
+  if (!Array.isArray(dailySchedule) || dailySchedule.length === 0) {
+    console.error("🚨 `dailySchedule` is missing or empty:", dailySchedule);
+    return;
   }
+
+  document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
+  document.getElementById("program-description").textContent = program.description || "Açıklama mevcut değil.";
+
+  displayWorkoutSchedule(dailySchedule);
+  displayCoachNotes(dailySchedule);
+}
+
 
   // ✅ Display coach notes
   function displayCoachNotes(dailySchedule = []) {
@@ -277,28 +289,30 @@
 
   // ✅ Populate session dropdown
   function populateSessionSelect(program) {
-    const sessionSelect = document.getElementById("session-select");
-    sessionSelect.innerHTML = `<option value="">Seans Seç</option>`;
+  const sessionSelect = document.getElementById("session-select");
+  sessionSelect.innerHTML = `<option value="">Seans Seç</option>`;
 
-    if (!program.dailySchedule || !Array.isArray(program.dailySchedule)) {
-        console.error("🚨 `dailySchedule` is missing or not an array:", program.dailySchedule);
-        return;
+  const dailySchedule = program.dailySchedule || program.program?.dailySchedule;
+  if (!Array.isArray(dailySchedule)) {
+    console.error("🚨 `dailySchedule` is missing or not an array:", dailySchedule);
+    return;
+  }
+
+  dailySchedule.forEach(day => {
+    if (!Array.isArray(day.sessions)) {
+      console.error("🚨 Missing or invalid `sessions` array for day:", day);
+      return;
     }
 
-    program.dailySchedule.forEach(day => {
-        if (!day.sessions || !Array.isArray(day.sessions)) {
-            console.warn(`⚠️ No sessions found for ${day.day}`);
-            return;
-        }
-
-        day.sessions.forEach(session => {
-            const option = document.createElement("option");
-            option.value = session.name;
-            option.textContent = `${day.day} - ${session.name}`;
-            sessionSelect.appendChild(option);
-        });
+    day.sessions.forEach(session => {
+      const option = document.createElement("option");
+      option.value = session.name;
+      option.textContent = `${day.day} - ${session.name}`;
+      sessionSelect.appendChild(option);
     });
+  });
 }
+
 
 
   // ✅ Fetch user's progress
