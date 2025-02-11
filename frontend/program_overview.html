@@ -102,404 +102,383 @@
       <button id="dark-mode-toggle">🌙 Karanlık Mod</button>
     </main>
   </div>
-  <script>
-    const BASE_URL = "https://kulvar.onrender.com";
-    const token = localStorage.getItem("token");
-    let currentProgramId = null; // ✅ Store program ID globally
-  
-    // ✅ Fetch user's assigned programs
-    async function fetchUserPrograms() {
-      try {
-        const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-  
-        if (!response.ok) throw new Error("Program listesi alınamadı.");
-  
-        const data = await response.json();
-        const programSelect = document.getElementById("program-select");
-        programSelect.innerHTML = `<option value="">Bir Program Seçin</option>`;
-  
-        data.programs.forEach(program => {
-          const option = document.createElement("option");
-          option.value = program._id;
-          option.textContent = program.name;
-          programSelect.appendChild(option);
-        });
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
+ <script>
+  const BASE_URL = "https://kulvar.onrender.com";
+  const token = localStorage.getItem("token");
+  let currentProgramId = null; // ✅ Store program ID globally
+
+  // ✅ Fetch user's assigned programs
+  async function fetchUserPrograms() {
+    try {
+      const response = await fetch(`${BASE_URL}/dashboard/user-programs`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Program listesi alınamadı.");
+
+      const data = await response.json();
+      const programSelect = document.getElementById("program-select");
+      programSelect.innerHTML = `<option value="">Bir Program Seçin</option>`;
+
+      data.programs.forEach(program => {
+        const option = document.createElement("option");
+        option.value = program._id;
+        option.textContent = program.name;
+        programSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Hata:", error.message);
     }
-  
+  }
+
   // ✅ Fetch Program Details on Page Load
-async function fetchProgramDetails() {
+  async function fetchProgramDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const programId = urlParams.get("id");
 
     if (!programId) {
-        console.error("🚨 Program ID is missing from URL.");
-        document.getElementById("program-name").textContent = "Program Bulunamadı";
-        return;
+      console.error("🚨 Program ID is missing from URL.");
+      document.getElementById("program-name").textContent = "Program Bulunamadı";
+      return;
     }
 
     console.log("✅ Program ID from URL:", programId);
-    currentProgramId = programId;  // ✅ Store globally
+    currentProgramId = programId; // ✅ Store globally
 
     try {
-        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-        });
+      const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        if (!response.ok) {
-            console.error("❌ Program details could not be retrieved.");
-            return;
-        }
-
-        const program = await response.json();
-        console.log("✅ Program Details:", program);
-
-        // ✅ Update UI
-        displayProgramDetails(program);
-
-        // ✅ Fetch related data after program details load
-        fetchProgramCompletion(programId);
-        fetchProgramFeedback(programId);
-        fetchUserProgress(programId);
-        populateSessionSelect(program);
-    } catch (error) {
-        console.error("Hata:", error.message);
-    }
-}
-
-  // ✅ Fetch Program Feedback (With Error Handling)
-async function fetchProgramFeedback(programId) {
-    if (!programId) {
-        console.error("🚨 `programId` is missing in fetchProgramFeedback().");
+      if (!response.ok) {
+        console.error("❌ Program details could not be retrieved.");
         return;
+      }
+
+      const program = await response.json();
+      console.log("✅ Program Details:", program);
+
+      // ✅ Update UI
+      displayProgramDetails(program);
+
+      // ✅ Fetch related data after program details load
+      fetchProgramCompletion(programId);
+      fetchProgramFeedback(programId);
+      fetchUserProgress(programId);
+      populateSessionSelect(program);
+    } catch (error) {
+      console.error("Hata:", error.message);
+    }
+  }
+
+  // ✅ Fetch Program Feedback
+  async function fetchProgramFeedback(programId) {
+    if (!programId) {
+      console.error("🚨 `programId` is missing in fetchProgramFeedback().");
+      return;
     }
 
     console.log(`📡 Fetching feedback for program ID: ${programId}`);
 
     try {
-        const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+      const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        if (!response.ok) {
-            console.error("❌ Error fetching feedback. API responded with:", response.status);
-            return;
-        }
+      if (!response.ok) {
+        console.error("❌ Error fetching feedback. API responded with:", response.status);
+        return;
+      }
 
-        const feedback = await response.json();
-        console.log("💬 Feedback Data:", feedback);
+      const feedback = await response.json();
+      console.log("💬 Feedback Data:", feedback);
 
-        // 🛑 Fix: Ensure feedback is an array before using `forEach`
-        if (!Array.isArray(feedback)) {
-            console.error("🚨 Invalid feedback data format:", feedback);
-            document.getElementById("feedback-list").innerHTML = "Geri bildirim bulunamadı.";
-            return;
-        }
-
-        // ✅ Populate feedback list
-        const feedbackList = document.getElementById("feedback-list");
-        feedbackList.innerHTML = feedback.length
-            ? feedback.map(fb => `<li><strong>${fb.userName || "Kullanıcı"}:</strong> ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>`).join("")
-            : "Geri bildirim bulunamadı.";
+      const feedbackList = document.getElementById("feedback-list");
+      feedbackList.innerHTML = feedback.length
+        ? feedback.map(fb => `<li><strong>${fb.userName || "Kullanıcı"}:</strong> ${fb.comment || "Yorum Yok"} (${fb.rating || 0}/5)</li>`).join("")
+        : "Geri bildirim bulunamadı.";
 
     } catch (error) {
-        console.error("❌ Error fetching feedback:", error.message);
-        document.getElementById("feedback-list").innerHTML = "Geri bildirim yüklenirken hata oluştu.";
+      console.error("❌ Error fetching feedback:", error.message);
+      document.getElementById("feedback-list").innerHTML = "Geri bildirim yüklenirken hata oluştu.";
     }
-}
-
-
-
-    // ✅ Display program details
-    function displayProgramDetails(program) {
-      document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
-      document.getElementById("program-description").textContent = program.description || "Açıklama mevcut değil.";
-      displayWorkoutSchedule(program.dailySchedule || []);
-      displayCoachNotes(program.dailySchedule || []);
-    }
-  
-    // ✅ Display coach notes
-    function displayCoachNotes(dailySchedule = []) {
-      const notesContent = document.getElementById("coach-notes-content");
-      if (!dailySchedule.length) {
-        notesContent.innerHTML = "Koç notu bulunamadı.";
-        return;
-      }
-      notesContent.innerHTML = dailySchedule
-        .filter(day => day.notes)
-        .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
-        .join("") || "Koç notu bulunamadı.";
-    }
-  
-    // ✅ Display workout schedule
-    function displayWorkoutSchedule(dailySchedule = []) {
-  const workoutList = document.getElementById("workout-list");
-  workoutList.innerHTML = "";
-
-  if (!Array.isArray(dailySchedule) || dailySchedule.length === 0) {
-    workoutList.textContent = "Antrenman programı bulunamadı.";
-    return;
   }
 
-  dailySchedule.forEach(day => {
-    if (!day.sessions || !Array.isArray(day.sessions)) {
-      console.error("🚨 Missing or invalid `sessions` array for day:", day);
+  // ✅ Display program details
+  function displayProgramDetails(program) {
+    document.getElementById("program-name").textContent = program.name || "Program Adı Bulunamadı";
+    document.getElementById("program-description").textContent = program.description || "Açıklama mevcut değil.";
+    displayWorkoutSchedule(program.dailySchedule || []);
+    displayCoachNotes(program.dailySchedule || []);
+  }
+
+  // ✅ Display coach notes
+  function displayCoachNotes(dailySchedule = []) {
+    const notesContent = document.getElementById("coach-notes-content");
+    if (!Array.isArray(dailySchedule) || dailySchedule.length === 0) {
+      notesContent.innerHTML = "Koç notu bulunamadı.";
+      return;
+    }
+    notesContent.innerHTML = dailySchedule
+      .filter(day => day.notes)
+      .map(day => `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong> ${day.notes}</p>`)
+      .join("") || "Koç notu bulunamadı.";
+  }
+
+  // ✅ Display workout schedule
+  function displayWorkoutSchedule(dailySchedule = []) {
+    const workoutList = document.getElementById("workout-list");
+    workoutList.innerHTML = "";
+
+    if (!Array.isArray(dailySchedule) || dailySchedule.length === 0) {
+      workoutList.textContent = "Antrenman programı bulunamadı.";
       return;
     }
 
-    const li = document.createElement("li");
-    li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
-
-    day.sessions.forEach(session => {
-      if (!session.exercises || !Array.isArray(session.exercises)) {
-        console.error("🚨 Missing or invalid `exercises` array for session:", session);
+    dailySchedule.forEach(day => {
+      if (!Array.isArray(day.sessions)) {
+        console.error("🚨 Missing or invalid `sessions` array for day:", day);
         return;
       }
 
-      li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
-        ${session.exercises.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
+      const li = document.createElement("li");
+      li.innerHTML = `<p><strong>${day.day || "Gün Bilinmiyor"}:</strong></p>`;
 
-      session.exercises.forEach(ex => {
-        if (ex.videoUrls && Array.isArray(ex.videoUrls)) {
-          ex.videoUrls.forEach(video => {
-            li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
-          });
+      day.sessions.forEach(session => {
+        if (!Array.isArray(session.exercises)) {
+          console.error("🚨 Missing or invalid `exercises` array for session:", session);
+          return;
         }
+
+        li.innerHTML += `<p><strong>${session.name || "Antrenman Adı Yok"}:</strong> 
+          ${session.exercises.map(ex => ex.name || "Egzersiz Adı Yok").join(", ")}</p>`;
+
+        session.exercises.forEach(ex => {
+          if (Array.isArray(ex.videoUrls)) {
+            ex.videoUrls.forEach(video => {
+              li.innerHTML += `<iframe width="300" height="200" src="${video.url}" frameborder="0" allowfullscreen></iframe>`;
+            });
+          }
+        });
+      });
+
+      workoutList.appendChild(li);
+    });
+  }
+
+  // ✅ Populate session dropdown
+  function populateSessionSelect(program) {
+    const sessionSelect = document.getElementById("session-select");
+    sessionSelect.innerHTML = `<option value="">Seans Seç</option>`;
+
+    if (!Array.isArray(program.dailySchedule)) {
+      console.error("🚨 `dailySchedule` is missing or not an array:", program.dailySchedule);
+      return;
+    }
+
+    program.dailySchedule.forEach(day => {
+      if (!Array.isArray(day.sessions)) {
+        console.error("🚨 Missing or invalid `sessions` array for day:", day);
+        return;
+      }
+
+      day.sessions.forEach(session => {
+        const option = document.createElement("option");
+        option.value = session.name;
+        option.textContent = `${day.day} - ${session.name}`;
+        sessionSelect.appendChild(option);
       });
     });
+  }
 
-    workoutList.appendChild(li);
+  // ✅ Fetch user's progress
+  async function fetchUserProgress(programId) {
+    if (!programId) {
+      console.error("🚨 Program ID is missing. Cannot fetch progress.");
+      return;
+    }
+
+    console.log(`📡 Fetching user progress for program ID: ${programId}`);
+
+    try {
+      const response = await fetch(`${BASE_URL}/programs/${programId}/user-progress`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        console.error(`❌ Error fetching user progress. API responded with: ${response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("📊 User Progress Data:", data);
+
+      const progressPercentage = data.progressPercentage ?? 0;
+      document.getElementById("progress-percentage").textContent = `${progressPercentage}%`;
+      document.getElementById("progress-bar").value = progressPercentage;
+    } catch (error) {
+      console.error("❌ Error fetching user progress:", error.message);
+    }
+  }
+
+  // ✅ Mark session as completed
+  async function markSessionCompleted() {
+    if (!currentProgramId) return console.error("🚨 Missing programId in markSessionCompleted().");
+
+    const session = document.getElementById("session-select").value;
+    if (!session) return alert("Lütfen bir seans seçin!");
+
+    try {
+      const response = await fetch(`${BASE_URL}/programs/${currentProgramId}/complete-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ sessionName: session }),
+      });
+
+      if (response.ok) {
+        alert("Seans tamamlandı!");
+        fetchUserProgress(currentProgramId);
+      } else {
+        console.error("❌ Error marking session as completed:", await response.json());
+      }
+    } catch (error) {
+      console.error("Hata:", error.message);
+    }
+  }
+
+  // ✅ Fetch program completion data
+  async function fetchProgramCompletion(programId) {
+    if (!programId) {
+      console.error("🚨 `programId` is missing in fetchProgramCompletion().");
+      return;
+    }
+
+    console.log(`📡 Fetching session completion data for program ID: ${programId}`);
+
+    try {
+      const response = await fetch(`${BASE_URL}/programs/${programId}/session-completion`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        console.error("❌ Error fetching session completion data.");
+        return;
+      }
+
+      const data = await response.json();
+      console.log("📊 Session Completion Data Response:", data);
+
+      const completionRate = data.totalSessions
+        ? ((data.completedSessions / data.totalSessions) * 100).toFixed(2)
+        : 0;
+
+      document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${completionRate}`;
+    } catch (error) {
+      console.error("❌ Error fetching session completion data:", error.message);
+    }
+  }
+
+  // ✅ Submit feedback
+  async function submitFeedback() {
+    const programId = new URLSearchParams(window.location.search).get("id");
+    const comment = document.getElementById("feedback-comment").value;
+    const rating = document.getElementById("feedback-rating").value;
+
+    if (!comment || !rating) {
+      alert("Lütfen yorum ve puan girin!");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ comment, rating }),
+      });
+
+      if (response.ok) {
+        alert("Geri bildiriminiz başarıyla gönderildi!");
+        document.getElementById("feedback-comment").value = "";
+        document.getElementById("feedback-rating").value = "";
+      } else {
+        const errorData = await response.json();
+        alert(`Hata: ${errorData.message || "Geri bildirim gönderilemedi."}`);
+      }
+    } catch (error) {
+      console.error("❌ Error submitting feedback:", error.message);
+      alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+    }
+  }
+
+  // ✅ Fetch program videos
+  async function getProgramVideos(programId) {
+    if (!programId) {
+      console.error("🚨 Missing programId in getProgramVideos().");
+      return;
+    }
+
+    console.log(`📡 Fetching workout videos for program ID: ${programId}`);
+
+    try {
+      const response = await fetch(`${BASE_URL}/programs/${programId}/videos`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        console.error("❌ Error fetching videos. API responded with:", response.status);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("🎥 Video Data:", data);
+
+      const videoContainer = document.getElementById("video-container");
+      videoContainer.innerHTML = "";
+
+      if (!Array.isArray(data.videos) || data.videos.length === 0) {
+        videoContainer.innerHTML = "<p>Video bulunamadı.</p>";
+        return;
+      }
+
+      data.videos.forEach(videoUrl => {
+        const iframe = document.createElement("iframe");
+        iframe.src = videoUrl;
+        iframe.width = "300";
+        iframe.height = "200";
+        iframe.frameBorder = "0";
+        iframe.allowFullscreen = true;
+        videoContainer.appendChild(iframe);
+      });
+    } catch (error) {
+      console.error("❌ Error fetching videos:", error.message);
+    }
+  }
+
+  // ✅ Add event listener for dropdown selection
+  document.getElementById("view-program-btn").addEventListener("click", () => {
+    const programId = document.getElementById("program-select").value;
+    if (!programId) {
+      alert("Lütfen bir program seçin!");
+      return;
+    }
+    window.location.href = `program_overview.html?id=${programId}`;
   });
-}
 
-    
-  
-    // ✅ Populate session dropdown
-    function populateSessionSelect(program) {
-      const sessionSelect = document.getElementById("session-select");
-      sessionSelect.innerHTML = `<option value="">Seans Seç</option>`;
-  
-      program.dailySchedule.forEach(day => {
-        day.sessions.forEach(session => {
-          const option = document.createElement("option");
-          option.value = session.name;
-          option.textContent = `${day.day} - ${session.name}`;
-          sessionSelect.appendChild(option);
-        });
-      });
-    }
-  
-    // ✅ Fetch user's progress
-    async function fetchUserProgress() {
-  const programId = new URLSearchParams(window.location.search).get("id");
+  // ✅ Initialize the page
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchUserPrograms();
+    fetchProgramDetails();
+  });
+</script>
 
-  if (!programId) {
-    console.error("🚨 Program ID is missing. Cannot fetch progress.");
-    return;
-  }
-
-  console.log(`📡 Fetching user progress for program ID: ${programId}`);
-
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}/user-progress`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      console.error(`❌ Error fetching user progress. API responded with: ${response.status}`);
-      document.getElementById("progress-percentage").textContent = "0%";
-      document.getElementById("progress-bar").value = 0;
-      return;
-    }
-
-    const data = await response.json();
-    console.log("📊 User Progress Data:", data);
-
-    if (!data || typeof data !== "object") {
-      console.error("🚨 Invalid progress data format:", data);
-      document.getElementById("progress-percentage").textContent = "0%";
-      document.getElementById("progress-bar").value = 0;
-      return;
-    }
-
-    // Default to 0 if missing
-    const progressPercentage = data.progressPercentage ?? 0;
-
-    document.getElementById("progress-percentage").textContent = `${progressPercentage}%`;
-    document.getElementById("progress-bar").value = progressPercentage;
-  } catch (error) {
-    console.error("❌ Error fetching user progress:", error.message);
-    document.getElementById("progress-percentage").textContent = "0%";
-    document.getElementById("progress-bar").value = 0;
-  }
-}
-
-  
-
-    // ✅ Mark session as completed
-    async function markSessionCompleted() {
-      if (!currentProgramId) return console.error("🚨 Missing programId in markSessionCompleted().");
-  
-      const session = document.getElementById("session-select").value;
-      if (!session) return alert("Lütfen bir seans seçin!");
-  
-      try {
-        const response = await fetch(`${BASE_URL}/programs/${currentProgramId}/complete-session`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ sessionName: session })
-        });
-  
-        if (response.ok) {
-          alert("Seans tamamlandı!");
-          fetchUserProgress(currentProgramId);
-        }
-      } catch (error) {
-        console.error("Hata:", error.message);
-      }
-    }
-  
-    // ✅ Fetch program completion data
-   // ✅ Fetch Program Completion Data
-async function fetchProgramCompletion(programId) {
-  if (!programId) {
-    console.error("🚨 `programId` is missing in fetchProgramCompletion().");
-    return;
-  }
-
-  console.log(`📡 Fetching session completion data for program ID: ${programId}`);
-
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}/session-completion`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      console.error("❌ Error fetching session completion data.");
-      return;
-    }
-
-    const data = await response.json();
-    console.log("📊 Session Completion Data Response:", data);
-
-    // Calculate and display completion rate
-    const completionRate = data.totalSessions
-      ? ((data.completedSessions / data.totalSessions) * 100).toFixed(2)
-      : 0;
-
-    document.getElementById("completion-rate").textContent = `Tamamlama Oranı: %${completionRate}`;
-  } catch (error) {
-    console.error("❌ Error fetching session completion data:", error.message);
-  }
-}
-async function submitFeedback() {
-  const programId = new URLSearchParams(window.location.search).get("id");
-  const comment = document.getElementById("feedback-comment").value;
-  const rating = document.getElementById("feedback-rating").value;
-
-  if (!comment || !rating) {
-    alert("Lütfen yorum ve puan girin!");
-    return;
-  }
-
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}/feedback`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ comment, rating })
-    });
-
-    if (response.ok) {
-      alert("Geri bildiriminiz başarıyla gönderildi!");
-      document.getElementById("feedback-comment").value = "";
-      document.getElementById("feedback-rating").value = "";
-    } else {
-      const errorData = await response.json();
-      alert(`Hata: ${errorData.message || "Geri bildirim gönderilemedi."}`);
-    }
-  } catch (error) {
-    console.error("❌ Error submitting feedback:", error.message);
-    alert("Bir hata oluştu. Lütfen tekrar deneyin.");
-  }
-}
-async function getProgramVideos(programId) {
-  if (!programId) {
-    console.error("🚨 Missing programId in getProgramVideos().");
-    return;
-  }
-
-  console.log(`📡 Fetching workout videos for program ID: ${programId}`);
-
-  try {
-    const response = await fetch(`${BASE_URL}/programs/${programId}/videos`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      console.error("❌ Error fetching videos. API responded with:", response.status);
-      return;
-    }
-
-    const data = await response.json();
-    console.log("🎥 Video Data:", data);
-
-    const videoContainer = document.getElementById("video-container");
-    videoContainer.innerHTML = "";
-
-    if (!data.videos || !Array.isArray(data.videos) || data.videos.length === 0) {
-      videoContainer.innerHTML = "<p>Video bulunamadı.</p>";
-      return;
-    }
-
-    data.videos.forEach(videoUrl => {
-      const iframe = document.createElement("iframe");
-      iframe.src = videoUrl;
-      iframe.width = "300";
-      iframe.height = "200";
-      iframe.frameBorder = "0";
-      iframe.allowFullscreen = true;
-      videoContainer.appendChild(iframe);
-    });
-
-  } catch (error) {
-    console.error("❌ Error fetching videos:", error.message);
-  }
-}
-
-
-    // ✅ Add event listener for dropdown selection
-    document.getElementById("view-program-btn").addEventListener("click", () => {
-      const programId = document.getElementById("program-select").value;
-      if (!programId) {
-        alert("Lütfen bir program seçin!");
-        return;
-      }
-      window.location.href = `program_overview.html?id=${programId}`;
-    });
-  
-    // ✅ Initialize the page
-    document.addEventListener("DOMContentLoaded", () => {
-      fetchUserPrograms();
-      fetchProgramDetails();
-    });
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    Chart.defaults.animation = false;
-
-  </script>
   
   
     <style>
