@@ -163,7 +163,7 @@ if (chatButton && chatPopup) {
 }
 
 
-const BASE_URL = 'https://kulvar.onrender.com';
+const BASE_URL = 'https://kulvar-qb7t.onrender.com';
 
 async function loginUser(email, password) {
     try {
