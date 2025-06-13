@@ -1,21 +1,20 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-app.use(cors({
-  origin: 'https://aros131.github.io',
-  credentials: true
-}));
-
-
+const cors = require('cors');
 
 // Load environment variables
 dotenv.config();
 
-const app = express();
+const app = express(); // ✅ Now app is defined
+
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://aros131.github.io',
+  credentials: true
+}));
 app.use(express.json());
 
 // MongoDB Connection
@@ -33,7 +32,8 @@ const exerciseTemplateRoutes = require("./routes/exerciseTemplateRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const clientGroupRoutes = require("./routes/clientGroupRoutes");
 const profileRoutes = require("./routes/profileRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");const programRoutes = require("./routes/programRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const programRoutes = require("./routes/programRoutes");
 
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
@@ -45,6 +45,7 @@ app.use("/groups", clientGroupRoutes);
 app.use("/profile", profileRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/programs", programRoutes);
+
 // Default Route
 app.get('/', (req, res) => {
   res.send('Welcome to the backend API!');
