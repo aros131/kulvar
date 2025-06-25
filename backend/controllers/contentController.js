@@ -1,5 +1,5 @@
 const Content = require('../models/Content');
-const BASE_URL = "https://kulvar.onrender.com";
+const BASE_URL = "https://kulvar-qb7t.onrender.com";
 
 async function getContent() {
   const token = localStorage.getItem("token");

@@ -167,7 +167,7 @@ const BASE_URL = 'https://kulvar-qb7t.onrender.com';
 
 async function loginUser(email, password) {
     try {
-      const response = await fetch('https://kulvar.onrender.com/auth/login', {
+      const response = await fetch('https://kulvar-qb7t.onrender.com/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -206,7 +206,7 @@ async function loginUser(email, password) {
     const role = document.getElementById('role').value;
 
     try {
-        const response = await fetch('https://kulvar.onrender.com/auth/register', {
+        const response = await fetch('https://kulvar-qb7t.onrender.com/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password, role }),
