@@ -8,7 +8,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('user');
+  const [role, setRole] = useState('user'); // veya 'coach'
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -28,10 +28,17 @@ export default function SignupPage() {
         return;
       }
 
-      alert('Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.');
-      router.push('/login');
-    } catch (err) {
-      setErrorMsg('Sunucu hatası. Lütfen tekrar deneyin.');
+      localStorage.setItem('token', data.token);
+
+      if (data.user.role === 'user') {
+        router.push(`/user?id=${data.user.id}`);
+      } else if (data.user.role === 'coach') {
+        router.push(`/coach?id=${data.user.id}`);
+      }
+
+    } catch (err: unknown) {
+      console.error('Signup error:', err);
+      setErrorMsg('Sunucu hatası oluştu. Lütfen tekrar deneyin.');
     }
   };
 
@@ -42,7 +49,7 @@ export default function SignupPage() {
         {errorMsg && <div className="text-red-500 text-sm">{errorMsg}</div>}
         <input
           type="text"
-          placeholder="Ad Soyad"
+          placeholder="İsim"
           required
           value={name}
           onChange={e => setName(e.target.value)}
@@ -72,7 +79,7 @@ export default function SignupPage() {
           <option value="user">Kullanıcı</option>
           <option value="coach">Koç</option>
         </select>
-        <button type="submit" className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded hover:bg-indigo-700">
+        <button type="submit" className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded">
           Kayıt Ol
         </button>
         <p className="text-center text-sm text-zinc-600 dark:text-zinc-300">

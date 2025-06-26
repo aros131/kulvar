@@ -33,8 +33,10 @@ export default function LoginPage() {
       } else if (data.user.role === 'coach') {
         router.push(`/coach?id=${data.user.id}`);
       }
-    } catch (err) {
-      setErrorMsg('Sunucu hatası. Lütfen tekrar deneyin.');
+
+    } catch (err: unknown) {
+      console.error('Login error:', err);
+      setErrorMsg('Sunucu hatası oluştu. Lütfen tekrar deneyin.');
     }
   };
 
@@ -59,7 +61,7 @@ export default function LoginPage() {
           onChange={e => setPassword(e.target.value)}
           className="w-full p-3 rounded border dark:bg-zinc-700 dark:text-white"
         />
-        <button type="submit" className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded hover:bg-indigo-700">
+        <button type="submit" className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded">
           Giriş Yap
         </button>
         <p className="text-center text-sm text-zinc-600 dark:text-zinc-300">
