@@ -25,8 +25,8 @@ export default function CoachesPage() {
     fetch('https://kulvar-qb7t.onrender.com/users?role=coach')
       .then(res => res.json())
       .then(data => {
-        const formatted = data.map((coach: any) => ({
-          id: coach._id,
+        const formatted = data.map((coach: Coach) => ({
+          id: coach.id,
           name: coach.name,
           email: coach.email,
           role: coach.role,
@@ -35,7 +35,7 @@ export default function CoachesPage() {
         }));
         setCoaches(formatted);
       })
-      .catch(err => console.error('Coach fetch error:', err));
+      
   }, []);
 
   const filteredCoaches = coaches.filter(coach => {
