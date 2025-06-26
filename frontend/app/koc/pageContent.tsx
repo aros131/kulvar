@@ -24,17 +24,18 @@ export default function CoachesPageContent() {
   useEffect(() => {
     fetch('https://kulvar-qb7t.onrender.com/users?role=coach')
       .then(res => res.json())
-      .then(data => {
-        const formatted = data.map((coach: any) => ({
-          id: coach._id,
-          name: coach.name,
-          email: coach.email,
-          role: coach.role,
-          specialization: coach.specialization,
-          profilePicture: coach.profilePicture,
-        }));
-        setCoaches(formatted);
-      });
+      .then((data: Coach[]) => {
+  const formatted = data.map((coach: Coach) => ({
+    id: coach.id,
+    name: coach.name,
+    email: coach.email,
+    role: coach.role,
+    specialization: coach.specialization,
+    profilePicture: coach.profilePicture,
+  }));
+  setCoaches(formatted);
+})
+;
   }, []);
 
   const filteredCoaches = coaches.filter(coach => {
