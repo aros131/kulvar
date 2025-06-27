@@ -11,10 +11,11 @@ router.get('/', async (req, res) => {
 
     const query = {
       role: 'coach',
-      specialization: { $in: allowedSpecializations }, // 🔥 show only allowed specializations
+      specialization: { $in: allowedSpecializations },
     };
 
     if (specialization && specialization !== 'all') {
+      // Filter for the specific specialization only
       query.specialization = specialization;
     }
 
@@ -25,4 +26,6 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
 
