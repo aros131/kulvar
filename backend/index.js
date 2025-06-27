@@ -34,6 +34,7 @@ const clientGroupRoutes = require("./routes/clientGroupRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const programRoutes = require("./routes/programRoutes");
+const coachRoutes = require('./routes/coachRoutes');
 
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
@@ -45,7 +46,7 @@ app.use("/groups", clientGroupRoutes);
 app.use("/profile", profileRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/programs", programRoutes);
-
+app.use('/coaches', coachRoutes);
 // Default Route
 app.get('/', (req, res) => {
   res.send('Welcome to the backend API!');
