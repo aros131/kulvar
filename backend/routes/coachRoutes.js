@@ -5,9 +5,16 @@ const User = require('../models/User');
 // GET /coaches - returns only users with role 'coach'
 router.get('/', async (req, res) => {
   const specialization = req.query.specialization;
+
   try {
-    const query = { role: 'coach' };
-    if (specialization) {
+    const allowedSpecializations = ['beslenme', 'yoga', 'fitness', 'pilates'];
+
+    const query = {
+      role: 'coach',
+      specialization: { $in: allowedSpecializations }, // 🔥 show only allowed specializations
+    };
+
+    if (specialization && specialization !== 'all') {
       query.specialization = specialization;
     }
 
@@ -18,3 +25,4 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+

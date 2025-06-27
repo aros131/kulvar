@@ -21,26 +21,25 @@ export default function CoachesPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState(categoryQuery);
 
-useEffect(() => {
-  const specializationQuery = filter === 'all' ? '' : `?specialization=${filter}`;
+  useEffect(() => {
+    const specializationQuery = filter === 'all' ? '' : `?specialization=${filter}`;
 
-  fetch(`https://kulvar-qb7t.onrender.com/coaches${specializationQuery}`)
-    .then(res => res.json())
-    .then((data) => {
-      console.log('Fetched coaches:', data);
-      const formatted = data.map((coach: Coach & { _id: string }) => ({
-        id: coach._id, // Mapping backend _id to frontend id
-        name: coach.name,
-        email: coach.email,
-        role: coach.role,
-        specialization: coach.specialization,
-        profilePicture: coach.profilePicture,
-      }));
-      setCoaches(formatted);
-    })
-    .catch(err => console.error('Coach fetch error:', err));
-}, [filter]);
-
+    fetch(`https://kulvar-qb7t.onrender.com/coaches${specializationQuery}`)
+      .then(res => res.json())
+      .then((data) => {
+        console.log('Fetched coaches:', data);
+        const formatted = data.map((coach: Coach & { _id: string }) => ({
+          id: coach._id, // Mapping backend _id to frontend id
+          name: coach.name,
+          email: coach.email,
+          role: coach.role,
+          specialization: coach.specialization,
+          profilePicture: coach.profilePicture,
+        }));
+        setCoaches(formatted);
+      })
+      .catch(err => console.error('Coach fetch error:', err));
+  }, [filter]);
 
   const filteredCoaches = coaches.filter(coach =>
     coach.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -71,7 +70,8 @@ useEffect(() => {
           <option value="all">Tümü</option>
           <option value="fitness">Fitness</option>
           <option value="yoga">Yoga</option>
-          <option value="nutrition">Beslenme</option>
+          <option value="beslenme">Beslenme</option>
+          <option value="pilates">Pilates</option>
         </select>
       </div>
 
