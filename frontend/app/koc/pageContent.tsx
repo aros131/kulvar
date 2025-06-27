@@ -22,7 +22,7 @@ export default function CoachesPageContent() {
   const [filter, setFilter] = useState(categoryQuery);
 
   useEffect(() => {
-    fetch('https://kulvar-qb7t.onrender.com/users?role=coach')
+    fetch('https://kulvar-qb7t.onrender.com/coaches')
       .then(res => res.json())
       .then((data: Coach[]) => {
   const formatted = data.map((coach: Coach) => ({
