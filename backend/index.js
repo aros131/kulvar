@@ -12,9 +12,14 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: 'https://aros131.github.io',
+  origin: [
+    'https://aros131.github.io',
+    'https://kulvar-iwqi-2kslsx509-aros131s-projects.vercel.app',
+    'http://localhost:3000'
+  ],
   credentials: true
 }));
+
 app.use(express.json());
 
 // MongoDB Connection
