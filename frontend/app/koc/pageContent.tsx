@@ -21,25 +21,26 @@ export default function CoachesPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState(categoryQuery);
 
-  useEffect(() => {
-    const specializationQuery = filter === 'all' ? '' : `?specialization=${filter}`;
+useEffect(() => {
+  const specializationQuery = filter === 'all' ? '' : `?specialization=${filter}`;
 
-    fetch(`https://kulvar-qb7t.onrender.com/coaches${specializationQuery}`)
-      .then(res => res.json())
-      .then((data) => {
-        console.log('Fetched coaches:', data);
-        const formatted = data.map((coach: any) => ({
-          id: coach._id, // Mapping backend _id to frontend id
-          name: coach.name,
-          email: coach.email,
-          role: coach.role,
-          specialization: coach.specialization,
-          profilePicture: coach.profilePicture,
-        }));
-        setCoaches(formatted);
-      })
-      .catch(err => console.error('Coach fetch error:', err));
-  }, [filter]);
+  fetch(`https://kulvar-qb7t.onrender.com/coaches${specializationQuery}`)
+    .then(res => res.json())
+    .then((data) => {
+      console.log('Fetched coaches:', data);
+      const formatted = data.map((coach: Coach & { _id: string }) => ({
+        id: coach._id, // Mapping backend _id to frontend id
+        name: coach.name,
+        email: coach.email,
+        role: coach.role,
+        specialization: coach.specialization,
+        profilePicture: coach.profilePicture,
+      }));
+      setCoaches(formatted);
+    })
+    .catch(err => console.error('Coach fetch error:', err));
+}, [filter]);
+
 
   const filteredCoaches = coaches.filter(coach =>
     coach.name.toLowerCase().includes(searchTerm.toLowerCase())
