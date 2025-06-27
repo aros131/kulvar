@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CoachCard from '@/components/CoachCard';
-
 interface Coach {
   id: string;
   name: string;
@@ -12,6 +11,13 @@ interface Coach {
   specialization?: string;
   profilePicture?: string;
 }
+
+interface CoachFromAPI extends Omit<Coach, 'id'> {
+  _id: string;
+}
+
+
+
 
 export default function CoachesPageContent() {
   const searchParams = useSearchParams();
@@ -25,41 +31,34 @@ export default function CoachesPageContent() {
   const filteredCoaches = coaches.filter(coach =>
     coach.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-useEffect(() => {
+  useEffect(() => {
   const specializationQuery = filter === 'all' ? '' : `?specialization=${filter}`;
   const url = `https://kulvar-qb7t.onrender.com/coaches${specializationQuery}`;
-  console.log('Fetching from:', url);
+
+  console.log("Fetching coaches from URL:", url);
 
   fetch(url)
-    .then(async (res) => {
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('Response not OK. Status:', res.status, 'Body:', text);
-        throw new Error(`Failed with status ${res.status}`);
-      }
+    .then(res => {
+      console.log("Fetch status:", res.status);
       return res.json();
     })
     .then((data) => {
       console.log('Fetched coaches:', data);
-
-      if (!Array.isArray(data)) {
-        console.error('Fetched data is not an array:', data);
-        return;
-      }
-
-      const formatted = data.map((coach) => ({
-        id: coach._id || coach.id, // handle both cases
-        name: coach.name || 'No name',
-        email: coach.email,
-        role: coach.role,
-        specialization: coach.specialization,
-        profilePicture: coach.profilePicture,
-      }));
-
+      
+const formatted = data.map((coach: CoachFromAPI) => ({
+  id: coach._id,
+  name: coach.name,
+  email: coach.email,
+  role: coach.role,
+  specialization: coach.specialization,
+  profilePicture: coach.profilePicture,
+}));
       setCoaches(formatted);
     })
     .catch(err => console.error('Coach fetch error:', err));
 }, [filter]);
+
+
 
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
