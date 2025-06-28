@@ -21,11 +21,12 @@ interface CoachFromAPI extends Omit<Coach, 'id'> {
 
 export default function CoachesPageContent() {
   const searchParams = useSearchParams();
-  const categoryQuery = searchParams.get('category') || 'all';
+  const specializationQuery = searchParams.get('specialization') || 'all';
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState(categoryQuery);
+  const [filter, setFilter] = useState(specializationQuery);
+
 
   
   const filteredCoaches = coaches.filter(coach =>
