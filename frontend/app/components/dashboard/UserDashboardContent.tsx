@@ -8,5 +8,10 @@ export default function UserDashboardContent() {
   const params = useSearchParams();
   const id = params.get("id");
 
-  return <div>User ID: {id}</div>;
+  return (
+    <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
+      <h2 className="text-xl font-semibold mb-2">Kullanıcı Paneli</h2>
+      <p>Kullanıcı ID: {id}</p>
+    </div>
+  );
 }
