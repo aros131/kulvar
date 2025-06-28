@@ -21,6 +21,7 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+       profilePicture,
     };
 
     // Add role-specific fields
