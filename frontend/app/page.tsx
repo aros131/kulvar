@@ -12,27 +12,28 @@ const products = [
     title: 'Fitness',
     description: 'Güçlü bir vücut için kişiselleştirilmiş planlar.',
     image: '/images/fitness.png',
-    link: '/koc?category=fitness',
+    link: '/koc?specialization=fitness',
   },
   {
     title: 'Yoga',
     description: 'Esneklik ve mindfulness için uzman rehberliği.',
     image: '/images/yoga.png',
-    link: '/koc?category=yoga',
+    link: '/koc?specialization=yoga',
   },
   {
     title: 'Pilates',
     description: 'Denge, esneklik ve güç için pilates programları.',
     image: '/images/pilates.png',
-    link: '/koc?category=pilates',
+    link: '/koc?specialization=pilates',
   },
   {
     title: 'Beslenme',
     description: 'Sağlıklı bir yaşam için kişisel diyet planları.',
     image: '/images/beslenme.png',
-    link: '/koc?category=beslenme',
+    link: '/koc?specialization=beslenme',
   },
 ];
+
 
 export default function HomePage() {
   const [darkMode, setDarkMode] = useState(false);
