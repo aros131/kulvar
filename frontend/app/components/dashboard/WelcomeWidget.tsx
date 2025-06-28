@@ -14,13 +14,24 @@ export default function WelcomeWidget() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    fetch("https://kulvar-qb7t.onrender.com/auth/profile", {
-      credentials: "include", // adjust if using tokens
-    })
-      .then((res) => res.json())
-      .then((data) => setProfile(data))
-      .catch((err) => console.error("Profile fetch error:", err));
-  }, []);
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.error("No token found");
+    return;
+  }
+
+  fetch("https://kulvar-qb7t.onrender.com/auth/profile", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => setProfile(data))
+    .catch((err) => console.error("Profile fetch error:", err));
+}, []);
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-md p-6 flex items-center gap-6">
