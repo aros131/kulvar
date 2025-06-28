@@ -4,12 +4,9 @@ import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
 
+
+
 export default function UserDashboardPage() {
-  const searchParams = useSearchParams();
-  const userId = searchParams.get("id");
-
-  console.log("User Dashboard loaded for user ID:", userId);
-
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900">
       <Navbar />
