@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+
 import Navbar from "@/components/Navbar";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
 
