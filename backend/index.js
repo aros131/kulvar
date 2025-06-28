@@ -15,6 +15,7 @@ app.use(cors({
   origin: [
     'https://aros131.github.io',
     'https://kulvar-iwqi-2kslsx509-aros131s-projects.vercel.app',
+    'https://kulvar-iwqi-4l4jnnox7-aros131s-projects.vercel.app',
     'http://localhost:3000'
   ],
   credentials: true
