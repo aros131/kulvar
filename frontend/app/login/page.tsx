@@ -36,10 +36,11 @@ export default function LoginPage() {
       // ✅ Role-based redirect
       const userId = data.user.id;
       if (data.user.role === 'user') {
-        router.push(`/dashboard/user?id=${userId}`);
-      } else if (data.user.role === 'coach') {
-        router.push(`/dashboard/coach?id=${userId}`);
-      } else {
+  router.push(`/dashboard/user?id=${data.user.id}`);
+} else if (data.user.role === 'coach') {
+  router.push(`/dashboard/coach?id=${data.user.id}`);
+}
+else {
         setErrorMsg('Tanımlanamayan rol.');
       }
 
