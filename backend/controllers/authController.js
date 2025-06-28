@@ -4,7 +4,7 @@ const User = require("../models/User");
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role, fitnessGoals, specialization } = req.body;
+    const { name, email, password, role, fitnessGoals, specialization, profilePicture } = req.body;
 
     // Validate role
     if (!["user", "coach"].includes(role)) {
