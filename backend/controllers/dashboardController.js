@@ -131,18 +131,18 @@ exports.getAnalyticsForUser = async (req, res) => {
 // Send a notification to a client (Coaches only)
 exports.sendNotification = async (req, res) => {
   try {
-    const { clientId, message } = req.body;
+    const { clientId, message, type } = req.body;
 
     // Validate input
-    if (!clientId || !message) {
-      return res.status(400).json({ message: "Client ID and message are required" });
+    if (!clientId || !message || !type) {
+      return res.status(400).json({ message: "Client ID, message, and type are required" });
     }
 
-    // Create the notification
+    // Create the notification using correct schema fields
     const notification = await Notification.create({
-      clientId,
-      coachId: req.user.id, // Coach ID is extracted from the logged-in user
+      recipientId: clientId,  // ✅ correct field name
       message,
+      type,
     });
 
     res.status(201).json(notification);
@@ -151,6 +151,7 @@ exports.sendNotification = async (req, res) => {
     res.status(500).json({ message: "Error sending notification", error: error.message });
   }
 };
+
 
 // Get notifications for a coach (Coaches only)
 exports.getNotificationsForCoach = async (req, res) => {
