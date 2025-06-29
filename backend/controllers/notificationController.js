@@ -2,17 +2,27 @@ const Notification = require("../models/Notification");
 
 exports.sendNotification = async (req, res) => {
   try {
-    const { userId, message } = req.body;
+    const { clientId, message, type } = req.body;
+
+    // ✅ Validate required fields
+    if (!clientId || !message || !type) {
+      return res.status(400).json({ message: "Client ID, message, and type are required" });
+    }
+
+    // ✅ Create the notification with recipientId mapped
     const notification = await Notification.create({
-      userId,
+      recipientId: clientId, // 🔁 maps clientId to recipientId in schema
       message,
-      date: new Date(),
+      type,
     });
-    res.status(201).json({ message: "Notification sent successfully", notification });
+
+    res.status(201).json(notification);
   } catch (error) {
+    console.error("Error sending notification:", error.message);
     res.status(500).json({ message: "Error sending notification", error: error.message });
   }
 };
+
 
 exports.getNotifications = async (req, res) => {
   try {

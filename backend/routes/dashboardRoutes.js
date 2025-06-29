@@ -24,7 +24,7 @@ router.get("/analytics/user", protect, roleMiddleware(["user"]), getAnalyticsFor
 // Routes for notifications (coaches only)
 router.post("/notifications", protect, roleMiddleware(["coach"]), sendNotification); // Send notification (coach only)
 router.get("/notifications/coach", protect, roleMiddleware(["coach"]), getNotificationsForCoach); // Get notifications sent by a coach
-router.get("/notifications/user", protect, roleMiddleware(["user"]), getNotificationsForUser); // Get notifications for a user
+
 
 router.get("/clients", protect, roleMiddleware(["coach"]), getClients);
 router.get("/clients/:id", protect, roleMiddleware(["coach"]), getClientDetails);
@@ -51,6 +51,7 @@ const { getFullCoachAnalytics,} = require("../controllers/dashboardController");
 // ✅ Get full analytics for coaches (including completed sessions)
 router.get("/analytics/coach/full", protect, roleMiddleware(["coach"]), getFullCoachAnalytics);
 
+router.get("/notifications/user", protect, roleMiddleware(["user"]), getNotificationsForUser);
 
 
 

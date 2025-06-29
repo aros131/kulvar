@@ -36,7 +36,7 @@ export default function WelcomeWidget() {
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-md p-6 flex items-center gap-6">
       <Image
-        src={profile?.profilePicture || "/images/default-avatar.jpg"}
+        src={profile?.profilePicture || "/images/default.jpg"}
         alt={profile?.name || "Kullanıcı"}
         width={80}
         height={80}

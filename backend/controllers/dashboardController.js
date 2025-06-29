@@ -169,20 +169,6 @@ exports.getNotificationsForCoach = async (req, res) => {
 };
 
 // Get notifications for a user (Users only)
-exports.getNotificationsForUser = async (req, res) => {
-  try {
-    const notifications = await Notification.find({ clientId: req.user.id });
-
-    if (!notifications || notifications.length === 0) {
-      return res.status(404).json({ message: "No notifications found" });
-    }
-
-    res.status(200).json({ notifications });
-  } catch (error) {
-    console.error("Error retrieving user notifications:", error.message);
-    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
-  }
-};
 
 
 exports.getUserPrograms = async (req, res) => {
@@ -443,5 +429,19 @@ exports.replyToFeedback = async (req, res) => {
     res.status(200).json({ message: "Reply sent" });
   } catch (error) {
     res.status(500).json({ message: "Error sending reply", error: error.message });
+  }
+};
+exports.getNotificationsForUser = async (req, res) => {
+  try {
+    const notifications = await Notification.find({ clientId: req.user.id });
+
+    if (!notifications || notifications.length === 0) {
+      return res.status(404).json({ message: "No notifications found" });
+    }
+
+    res.status(200).json({ notifications });
+  } catch (error) {
+    console.error("Error retrieving user notifications:", error.message);
+    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
 };
