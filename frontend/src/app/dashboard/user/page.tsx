@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-import Image from "next/image";
+
 import ProgramCard from "@/components/dashboard/ProgramCard";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
 interface UserProgram {
@@ -65,6 +65,8 @@ export default function UserDashboardPage() {
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900">
       <Navbar />
+      <WelcomeWidget />
+
 
       <section className="max-w-6xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-4">Hoş Geldin!</h1>
