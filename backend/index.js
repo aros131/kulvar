@@ -12,15 +12,10 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: [
-    'https://aros131.github.io',
-    'https://kulvar-iwqi-2kslsx509-aros131s-projects.vercel.app',
-    'https://kulvar-iwqi-4l4jnnox7-aros131s-projects.vercel.app',
-    'https://kulvar-iwqi-4ea9e8ggg-aros131s-projects.vercel.app',
-    'http://localhost:3000'
-  ],
-  credentials: true
+  origin: '*', // ✅ allows all origins
+  credentials: true // ⚠️ note: credentials:true + origin:'*' are incompatible
 }));
+
 
 app.use(express.json());
 
