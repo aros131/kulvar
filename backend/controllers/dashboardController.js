@@ -105,7 +105,8 @@ exports.getAnalyticsForCoach = async (req, res) => {
 // Get analytics for a user (programs assigned, progress made)
 exports.getAnalyticsForUser = async (req, res) => {
   try {
-    const assignedPrograms = await Program.countDocuments({ userId: req.user.id });
+    const assignedPrograms = await Program.countDocuments({ assignedClients: req.user.id });
+
 
     // Calculate progress (assuming there's a "Progress" model that tracks user progress per program)
     const totalProgress = await Progress.aggregate([
@@ -156,7 +157,8 @@ exports.sendNotification = async (req, res) => {
 // Get notifications for a coach (Coaches only)
 exports.getNotificationsForCoach = async (req, res) => {
   try {
-    const notifications = await Notification.find({ coachId: req.user.id });
+    const notifications = await Notification.find({ recipientId: req.user.id });
+
 
     if (!notifications || notifications.length === 0) {
       return res.status(404).json({ message: "No notifications found" });
@@ -277,7 +279,8 @@ exports.getUserAnalytics = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const assignedPrograms = await Program.countDocuments({ assignedClients: userId });
+    const assignedPrograms = await Program.countDocuments({ assignedClients: req.user.id });
+
 
     const userProgress = await Progress.find({ clientId: userId });
 
@@ -344,22 +347,12 @@ exports.markNotificationAsRead = async (req, res) => {
     res.status(500).json({ message: "Error marking notification as read", error: error.message });
   }
 };
-// 🟢 Get feedbacks with coach replies
-exports.getFeedbacks = async (req, res) => {
-  try {
-    const feedbacks = await Feedback.find({ coachId: req.user.id })
-      .populate("clientId", "name email")
-      .populate("replies.coachId", "name email");
 
-    if (!feedbacks || feedbacks.length === 0) {
-      return res.status(404).json({ message: "No feedbacks found" });
-    }
-
-    res.status(200).json({ feedbacks });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching feedbacks", error: error.message });
-  }
-};
+await Progress.findOneAndUpdate(
+  { clientId, programId },
+  { $inc: { daysCompleted: 1 } },
+  { new: true }
+);
 
 // 🟢 Add reply to a feedback
 exports.replyToFeedback = async (req, res) => {
@@ -409,32 +402,11 @@ exports.getFullCoachAnalytics = async (req, res) => {
   }
 };
 
-// 🟢 Mark notification as read
-exports.markNotificationAsRead = async (req, res) => {
-  try {
-    const { notificationId } = req.params;
-    await Notification.findByIdAndUpdate(notificationId, { isRead: true });
 
-    res.status(200).json({ message: "Notification marked as read" });
-  } catch (error) {
-    res.status(500).json({ message: "Error marking notification", error: error.message });
-  }
-};
 
-// 🟢 Coach replies to user feedback
-exports.replyToFeedback = async (req, res) => {
-  try {
-    const { feedbackId, message } = req.body;
-    await Feedback.findByIdAndUpdate(feedbackId, { $push: { replies: { message, date: new Date() } } });
-
-    res.status(200).json({ message: "Reply sent" });
-  } catch (error) {
-    res.status(500).json({ message: "Error sending reply", error: error.message });
-  }
-};
 exports.getNotificationsForUser = async (req, res) => {
   try {
-    const notifications = await Notification.find({ clientId: req.user.id });
+    const notifications = await Notification.find({ recipientId: req.user.id });
 
     if (!notifications || notifications.length === 0) {
       return res.status(404).json({ message: "No notifications found" });
@@ -446,3 +418,4 @@ exports.getNotificationsForUser = async (req, res) => {
     res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
 };
+

@@ -1,99 +1,84 @@
 const mongoose = require("mongoose");
 
 const ProgressSchema = new mongoose.Schema({
-  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // **Kullanıcı ID'si**
-  programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true }, // **Bağlı olunan program**
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Kullanıcı ID'si
+  programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true }, // Program ID
+
+  // ✅ NEW FIELD: total days completed
+  daysCompleted: { type: Number, default: 0 }, // Tracks total completed days
 
   completedSessions: [
     {
-      sessionId: { type: String }, // **Antrenman ID'si veya adı**
-      completed: { type: Boolean, default: false }, // **Antrenman tamamlandı mı?**
-      dateCompleted: { type: Date }, // **Tamamlanma tarihi**
-      fatigueLevel: { type: String, enum: ["Düşük", "Normal", "Yüksek"], default: "Normal" }, // **Yorgunluk seviyesi**
+      sessionId: { type: String },
+      completed: { type: Boolean, default: false },
+      dateCompleted: { type: Date },
+      fatigueLevel: { type: String, enum: ["Düşük", "Normal", "Yüksek"], default: "Normal" },
     },
   ],
 
   progressMetrics: [
     {
-      metricName: { type: String }, // **Ölçüm adı (Örn: "Kaldırılan Ağırlık")**
-      unit: { type: String }, // **Ölçü birimi (Örn: "kg")**
-      values: [{ value: { type: Number }, date: { type: Date, default: Date.now } }], // **Değerler ve tarihleri**
+      metricName: { type: String },
+      unit: { type: String },
+      values: [{ value: { type: Number }, date: { type: Date, default: Date.now } }],
     },
   ],
 
   progressiveOverload: [
     {
-      exerciseName: { type: String }, // **Egzersiz adı**
-      initialWeight: { type: Number }, // **Başlangıç ağırlığı**
-      currentWeight: { type: Number }, // **Güncel ağırlık**
-      improvement: { type: Number }, // **Gelişim oranı**
+      exerciseName: { type: String },
+      initialWeight: { type: Number },
+      currentWeight: { type: Number },
+      improvement: { type: Number },
+      repsCompleted: { type: Number },
+      date: { type: Date, default: Date.now },
     },
   ],
 
   missedWorkouts: [
     {
-      missedDay: { type: Date }, // **Kaçırılan antrenman günü**
-      rescheduledDay: { type: Date }, // **Yeni planlanan gün**
-    }
+      missedDay: { type: Date },
+      rescheduledDay: { type: Date },
+    },
   ],
 
   adaptiveAdjustments: [
     {
-      exerciseName: { type: String }, // **Egzersiz adı**
-      fatigueLevel: { type: String, enum: ["Düşük", "Normal", "Yüksek"] }, // **Yorgunluk seviyesi**
-      suggestedWeightIncrease: { type: Number, default: 0 }, // **Önerilen ağırlık artışı**
-      suggestedRepsIncrease: { type: Number, default: 0 }, // **Önerilen tekrar artışı**
-    }
+      exerciseName: { type: String },
+      fatigueLevel: { type: String, enum: ["Düşük", "Normal", "Yüksek"] },
+      suggestedWeightIncrease: { type: Number, default: 0 },
+      suggestedRepsIncrease: { type: Number, default: 0 },
+    },
   ],
 
   goalTracking: {
-    initialMetric: { type: Number }, // **Başlangıç değeri**
-    targetMetric: { type: Number }, // **Hedeflenen değer**
-    currentMetric: { type: Number, default: 0 }, // **Mevcut durum**
-    progressPercentage: { type: Number, default: 0 }, // **İlerleme yüzdesi**
+    initialMetric: { type: Number },
+    targetMetric: { type: Number },
+    currentMetric: { type: Number, default: 0 },
+    progressPercentage: { type: Number, default: 0 },
   },
 
   achievementBadges: [
     {
-      badge: { type: String }, // **Başarı rozeti adı**
-      dateEarned: { type: Date, default: Date.now }, // **Alınma tarihi**
-    }
+      badge: { type: String },
+      dateEarned: { type: Date, default: Date.now },
+    },
   ],
 
   sessionNotes: [
     {
-      sessionId: { type: String }, // **Antrenman ID'si**
-      note: { type: String }, // **Antrenman notu**
-      createdAt: { type: Date, default: Date.now }, // **Notun eklenme tarihi**
-    }
+      sessionId: { type: String },
+      note: { type: String },
+      createdAt: { type: Date, default: Date.now },
+    },
   ],
 
   streakTracking: {
-    currentStreak: { type: Number, default: 0 }, // **Şu anki kesintisiz antrenman serisi**
-    longestStreak: { type: Number, default: 0 }, // **En uzun antrenman serisi**
+    currentStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
   },
 
-  lastUpdated: { type: Date, default: Date.now }, // **Son güncelleme tarihi**
-  completedDays: [{ type: Number }],  // ✅ Tracks completed days
-
-  progressiveOverload: [  // ✅ NEW: Track strength progression
-    {
-      exerciseName: String,
-      initialWeight: Number,
-      currentWeight: Number,
-      repsCompleted: Number,
-      date: { type: Date, default: Date.now },
-    }
-  ],
-
-  sessionTracking: [  // ✅ Tracks which workouts are completed
-    {
-      sessionName: String,
-      completed: Boolean,
-      fatigueLevel: Number,
-      dateCompleted: Date,
-    }
-  ],
+  lastUpdated: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("Progress", ProgressSchema);
