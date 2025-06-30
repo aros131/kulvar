@@ -32,6 +32,7 @@ export default function UserDashboardPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    console.log("Token being sent:", token);
 
     const fetchPrograms = async () => {
       const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/user-programs", {
