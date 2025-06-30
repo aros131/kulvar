@@ -1,54 +1,54 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const cors = require('cors');
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import cors from 'cors';
+
+import authRoutes from './routes/authRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import contentRoutes from './routes/contentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import exerciseTemplateRoutes from "./routes/exerciseTemplateRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+import clientGroupRoutes from "./routes/clientGroupRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import programRoutes from "./routes/programRoutes.js";
+import coachRoutes from './routes/coachRoutes.js';
 
 // Load environment variables
 dotenv.config();
 
-const app = express(); // ✅ Now app is defined
-
+const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
   origin: '*', // ✅ allows all origins
-  credentials: true // ⚠️ note: credentials:true + origin:'*' are incompatible
+  credentials: true
 }));
-
-
 app.use(express.json());
 
 // MongoDB Connection
-mongoose
-  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
-const authRoutes = require('./routes/authRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const contentRoutes = require('./routes/contentRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const exerciseTemplateRoutes = require("./routes/exerciseTemplateRoutes");
-const feedbackRoutes = require("./routes/feedbackRoutes");
-const clientGroupRoutes = require("./routes/clientGroupRoutes");
-const profileRoutes = require("./routes/profileRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
-const programRoutes = require("./routes/programRoutes");
-const coachRoutes = require('./routes/coachRoutes');
-
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/content', contentRoutes);
 app.use('/notifications', notificationRoutes);
-app.use("/exercise-templates", exerciseTemplateRoutes); 
+app.use("/exercise-templates", exerciseTemplateRoutes);
 app.use("/feedback", feedbackRoutes);
 app.use("/groups", clientGroupRoutes);
 app.use("/profile", profileRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/programs", programRoutes);
 app.use('/coaches', coachRoutes);
+
 // Default Route
 app.get('/', (req, res) => {
   res.send('Welcome to the backend API!');
