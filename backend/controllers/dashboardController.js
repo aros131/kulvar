@@ -1,17 +1,14 @@
-import Program from "../models/Program.js";
-import User from "../models/User.js";
-import Notification from "../models/Notification.js";
-import Progress from "../models/Progress.js";
-import Feedback from "../models/Feedback.js";
+const Program = require("../models/Program");
+const User = require("../models/User");
+const Notification = require("../models/Notification");
+const Progress = require("../models/Progress");
+const Feedback = require("../models/Feedback");
 
-// Fetch Profile
+// ✅ Fetch Profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json({
       name: user.name,
@@ -25,24 +22,23 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ message: "Error fetching profile", error: error.message });
   }
 };
-// Get all clients for the coach
+
+// ✅ Get all clients for the coach
 exports.getClients = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
     const coachId = req.user.id;
 
-    // Filter clients by search keyword (if provided)
     const query = {
       coachId,
       role: "user",
-      name: { $regex: search, $options: "i" }, // Case-insensitive search
+      name: { $regex: search, $options: "i" },
     };
 
     const clients = await User.find(query)
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .select("-password");
-
     const totalClients = await User.countDocuments(query);
 
     res.status(200).json({ clients, totalClients });
@@ -51,34 +47,46 @@ exports.getClients = async (req, res) => {
   }
 };
 
-// Get details of a specific client
+// ✅ Get details of a specific client
 exports.getClientDetails = async (req, res) => {
   try {
     const client = await User.findById(req.params.id).select("-password");
-    if (!client) {
-      return res.status(404).json({ message: "Client not found" });
-    }
+    if (!client) return res.status(404).json({ message: "Client not found" });
+
     res.status(200).json(client);
   } catch (error) {
     res.status(500).json({ message: "Error fetching client details", error: error.message });
   }
 };
-// Get progress for a specific client
+
+// ✅ Get user programs
+exports.getUserPrograms = async (req, res) => {
+  try {
+    const programs = await Program.find({ assignedClients: req.user.id });
+    if (!programs || programs.length === 0) {
+      return res.status(404).json({ message: "No programs found for this user" });
+    }
+    res.status(200).json({ programs });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user programs", error: error.message });
+  }
+};
+
+// ✅ Get progress for a specific client
 exports.getClientProgress = async (req, res) => {
   try {
-    const { id } = req.params; // Client ID
+    const { id } = req.params;
     const progress = await Progress.find({ clientId: id });
     res.status(200).json({ progress });
   } catch (error) {
-    console.error("Error retrieving client progress:", error.message);
     res.status(500).json({ message: "Error retrieving client progress", error: error.message });
   }
 };
 
-// Save progress for a user
+// ✅ Save progress for a user
 exports.saveProgress = async (req, res) => {
   try {
-    const { programId, data } = req.body; // Data may include details like days completed
+    const { programId, data } = req.body;
     const newProgress = await Progress.create({
       programId,
       clientId: req.user.id,
@@ -86,37 +94,31 @@ exports.saveProgress = async (req, res) => {
     });
     res.status(201).json(newProgress);
   } catch (error) {
-    console.error("Error saving progress:", error.message);
     res.status(500).json({ message: "Error saving progress", error: error.message });
   }
 };
 
-
+// ✅ Get analytics for coach
 exports.getAnalyticsForCoach = async (req, res) => {
   try {
     const totalClients = await User.countDocuments({ coachId: req.user.id, role: "user" });
     const totalPrograms = await Program.countDocuments({ coachId: req.user.id });
-
     res.status(200).json({ totalClients, totalPrograms });
   } catch (error) {
-    console.error("Error retrieving coach analytics:", error.message);
     res.status(500).json({ message: "Error retrieving analytics", error: error.message });
   }
 };
 
-// Get analytics for a user (programs assigned, progress made)
+// ✅ Get analytics for user
 exports.getAnalyticsForUser = async (req, res) => {
   try {
     const assignedPrograms = await Program.countDocuments({ assignedClients: req.user.id });
-
-
-    // Calculate progress (assuming there's a "Progress" model that tracks user progress per program)
     const totalProgress = await Progress.aggregate([
       { $match: { clientId: req.user.id } },
       {
         $group: {
           _id: null,
-          totalDaysCompleted: { $sum: "$data.daysCompleted" }, // Assuming progress data tracks `daysCompleted`
+          totalDaysCompleted: { $sum: "$data.daysCompleted" },
         },
       },
     ]);
@@ -126,110 +128,110 @@ exports.getAnalyticsForUser = async (req, res) => {
       totalDaysCompleted: totalProgress.length > 0 ? totalProgress[0].totalDaysCompleted : 0,
     });
   } catch (error) {
-    console.error("Error retrieving user analytics:", error.message);
     res.status(500).json({ message: "Error retrieving analytics", error: error.message });
   }
 };
 
-// Send a notification to a client (Coaches only)
+// ✅ Send notification to user
 exports.sendNotification = async (req, res) => {
   try {
     const { clientId, message, type } = req.body;
-
-    // Validate input
     if (!clientId || !message || !type) {
       return res.status(400).json({ message: "Client ID, message, and type are required" });
     }
-
-    // Create the notification using correct schema fields
     const notification = await Notification.create({
-      recipientId: clientId,  // ✅ correct field name
+      recipientId: clientId,
       message,
       type,
     });
-
     res.status(201).json(notification);
   } catch (error) {
-    console.error("Error sending notification:", error.message);
     res.status(500).json({ message: "Error sending notification", error: error.message });
   }
 };
 
-
-// Get notifications for a coach (Coaches only)
+// ✅ Get notifications for coach
 exports.getNotificationsForCoach = async (req, res) => {
   try {
     const notifications = await Notification.find({ recipientId: req.user.id });
-
-
     if (!notifications || notifications.length === 0) {
       return res.status(404).json({ message: "No notifications found" });
     }
-
     res.status(200).json({ notifications });
   } catch (error) {
-    console.error("Error retrieving coach notifications:", error.message);
     res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
 };
 
-// Get notifications for a user (Users only)
-
-
-exports.getUserPrograms = async (req, res) => {
+// ✅ Get notifications for user
+exports.getNotificationsForUser = async (req, res) => {
   try {
-    console.log("Fetching programs for user:", req.user.id); // Debugging log
-
-    const programs = await Program.find({ assignedClients: req.user.id });
-
-    console.log("Programs Found:", programs); // Debugging log
-
-    if (!programs || programs.length === 0) {
-      return res.status(404).json({ message: "No programs found for this user" });
+    const notifications = await Notification.find({ recipientId: req.user.id });
+    if (!notifications || notifications.length === 0) {
+      return res.status(404).json({ message: "No notifications found" });
     }
-
-    res.status(200).json({ programs });
+    res.status(200).json({ notifications });
   } catch (error) {
-    console.error("Error fetching user programs:", error.message);
-    res.status(500).json({ message: "Error fetching user programs", error: error.message });
+    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
 };
 
-
-// Get groups for a coach (Optional, if needed)
-exports.getGroups = async (req, res) => {
+// ✅ Mark notification as read
+exports.markNotificationAsRead = async (req, res) => {
   try {
-    const groups = await Group.find({ coachId: req.user.id });
-    res.status(200).json({ groups });
+    const { notificationId } = req.params;
+    const notification = await Notification.findByIdAndUpdate(notificationId, { isRead: true }, { new: true });
+    if (!notification) return res.status(404).json({ message: "Notification not found" });
+
+    res.status(200).json({ message: "Notification marked as read", notification });
   } catch (error) {
-    console.error("Error retrieving groups:", error.message);
-    res.status(500).json({ message: "Error retrieving groups", error: error.message });
+    res.status(500).json({ message: "Error marking notification", error: error.message });
   }
 };
-const Feedback = require("../models/Feedback");
 
+// ✅ Get user schedule
+exports.getUserSchedule = async (req, res) => {
+  try {
+    const programs = await Program.find({ assignedClients: req.user.id });
+    if (!programs || programs.length === 0) {
+      return res.status(404).json({ message: "No scheduled workouts found" });
+    }
+    let schedule = [];
+    programs.forEach(program => {
+      program.dailySchedule.forEach(day => {
+        schedule.push({
+          programId: program._id,
+          programName: program.name,
+          day: day.day,
+          sessions: day.sessions
+        });
+      });
+    });
+    res.status(200).json({ schedule });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching workout schedule", error: error.message });
+  }
+};
+
+// ✅ Get feedbacks
 exports.getFeedbacks = async (req, res) => {
   try {
     const feedbacks = await Feedback.find({ coachId: req.user.id }).populate("clientId", "name email");
-
     if (!feedbacks || feedbacks.length === 0) {
       return res.status(404).json({ message: "No feedbacks found" });
     }
-
     res.status(200).json({ feedbacks });
   } catch (error) {
     res.status(500).json({ message: "Error fetching feedbacks", error: error.message });
   }
 };
 
+// ✅ Mark feedback as read
 exports.markFeedbackAsRead = async (req, res) => {
   try {
     const feedbackId = req.params.id;
     const feedback = await Feedback.findByIdAndUpdate(feedbackId, { isRead: true }, { new: true });
-
-    if (!feedback) {
-      return res.status(404).json({ message: "Feedback not found" });
-    }
+    if (!feedback) return res.status(404).json({ message: "Feedback not found" });
 
     res.status(200).json({ feedback });
   } catch (error) {
@@ -237,187 +239,33 @@ exports.markFeedbackAsRead = async (req, res) => {
   }
 };
 
+// ✅ Delete feedback
 exports.deleteFeedback = async (req, res) => {
   try {
     const feedbackId = req.params.id;
     const feedback = await Feedback.findByIdAndDelete(feedbackId);
-
-    if (!feedback) {
-      return res.status(404).json({ message: "Feedback not found" });
-    }
+    if (!feedback) return res.status(404).json({ message: "Feedback not found" });
 
     res.status(200).json({ message: "Feedback deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting feedback", error: error.message });
   }
 };
-// 🟢 Get full analytics for a coach
-exports.getCoachAnalytics = async (req, res) => {
-  try {
-    const coachId = req.user.id;
 
-    const totalClients = await User.countDocuments({ coachId, role: "user" });
-    const totalPrograms = await Program.countDocuments({ coachId });
-
-    // ✅ Get total sessions completed by all clients
-    const totalSessionsCompleted = await Progress.aggregate([
-      { $match: { coachId } },
-      { $unwind: "$sessionTracking" },
-      { $match: { "sessionTracking.completed": true } },
-      { $count: "completedSessions" }
-    ]);
-
-    res.status(200).json({
-      totalClients,
-      totalPrograms,
-      totalSessionsCompleted: totalSessionsCompleted.length > 0 ? totalSessionsCompleted[0].completedSessions : 0
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving coach analytics", error: error.message });
-  }
-};
-// 🟢 Get analytics for users (Total workouts completed, goal progress)
-exports.getUserAnalytics = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const assignedPrograms = await Program.countDocuments({ assignedClients: req.user.id });
-
-
-    const userProgress = await Progress.find({ clientId: userId });
-
-    // ✅ Calculate total completed sessions
-    const totalCompletedSessions = userProgress.reduce((acc, progress) => {
-      return acc + progress.sessionTracking.filter(session => session.completed).length;
-    }, 0);
-
-    // ✅ Get goal progress percentage
-    const goalTracking = userProgress.map(progress => ({
-      programId: progress.programId,
-      progressPercentage: progress.goalTracking.progressPercentage || 0
-    }));
-
-    res.status(200).json({
-      assignedPrograms,
-      totalCompletedSessions,
-      goalTracking
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving user analytics", error: error.message });
-  }
-};
-// 🟢 Get upcoming workouts for a user
-exports.getUserSchedule = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const programs = await Program.find({ assignedClients: userId });
-
-    if (!programs || programs.length === 0) {
-      return res.status(404).json({ message: "No scheduled workouts found" });
-    }
-
-    // ✅ Get all workouts from assigned programs
-    let schedule = [];
-    programs.forEach(program => {
-      program.dailySchedule.forEach(day => {
-        schedule.push({ 
-          programId: program._id, 
-          programName: program.name,
-          day: day.day,
-          sessions: day.sessions 
-        });
-      });
-    });
-
-    res.status(200).json({ schedule });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching workout schedule", error: error.message });
-  }
-};
-// 🟢 Mark notifications as read
-exports.markNotificationAsRead = async (req, res) => {
-  try {
-    const { notificationId } = req.params;
-    const notification = await Notification.findByIdAndUpdate(notificationId, { isRead: true }, { new: true });
-
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
-
-    res.status(200).json({ message: "Notification marked as read", notification });
-  } catch (error) {
-    res.status(500).json({ message: "Error marking notification as read", error: error.message });
-  }
-};
-
-await Progress.findOneAndUpdate(
-  { clientId, programId },
-  { $inc: { daysCompleted: 1 } },
-  { new: true }
-);
-
-// 🟢 Add reply to a feedback
+// ✅ Reply to feedback
 exports.replyToFeedback = async (req, res) => {
   try {
     const { feedbackId, message } = req.body;
     const coachId = req.user.id;
-
     const feedback = await Feedback.findByIdAndUpdate(
       feedbackId,
       { $push: { replies: { coachId, message, date: new Date() } } },
       { new: true }
     );
-
-    if (!feedback) {
-      return res.status(404).json({ message: "Feedback not found" });
-    }
+    if (!feedback) return res.status(404).json({ message: "Feedback not found" });
 
     res.status(200).json({ message: "Reply added successfully", feedback });
   } catch (error) {
     res.status(500).json({ message: "Error replying to feedback", error: error.message });
   }
 };
-
-
-
-// 🟢 Get full analytics for coaches (Including completed sessions)
-exports.getFullCoachAnalytics = async (req, res) => {
-  try {
-    const totalClients = await User.countDocuments({ coachId: req.user.id, role: "user" });
-    const totalPrograms = await Program.countDocuments({ coachId: req.user.id });
-
-    // ✅ Get total completed sessions
-    const totalSessionsCompleted = await Progress.aggregate([
-      { $match: { coachId: req.user.id } },
-      { $unwind: "$sessionTracking" },
-      { $match: { "sessionTracking.completed": true } },
-      { $count: "completedSessions" }
-    ]);
-
-    res.status(200).json({
-      totalClients,
-      totalPrograms,
-      totalSessionsCompleted: totalSessionsCompleted.length ? totalSessionsCompleted[0].completedSessions : 0,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving analytics", error: error.message });
-  }
-};
-
-
-
-exports.getNotificationsForUser = async (req, res) => {
-  try {
-    const notifications = await Notification.find({ recipientId: req.user.id });
-
-    if (!notifications || notifications.length === 0) {
-      return res.status(404).json({ message: "No notifications found" });
-    }
-
-    res.status(200).json({ notifications });
-  } catch (error) {
-    console.error("Error retrieving user notifications:", error.message);
-    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
-  }
-};
-
