@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
   fitnessGoals: { type: String }, // Optional field for users
   profilePicture: {
     type: String,
-    default: "http://example.com/default-profile-picture.jpg",
+   default: "/images/default-user.jpg",
   },
   createdAt: { type: Date, default: Date.now },
 });
