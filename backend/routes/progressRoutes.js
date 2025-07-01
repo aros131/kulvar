@@ -60,5 +60,7 @@ router.get("/goal-progress/:userId", protect, roleMiddleware(["user"]), getAdapt
 // ✅ Get strength progress for a program
 router.get("/strength-chart/:programId", protect, getStrengthProgress);
 
-outer.get("/all-program-progress", protect, getAllProgramProgress);
+// ✅ Get all program progress (User Only or Coach depending on implementation)
+router.get("/all-program-progress", protect, getAllProgramProgress);
+
 module.exports = router;
