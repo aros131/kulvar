@@ -15,7 +15,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const programRoutes = require('./routes/programRoutes');
 const coachRoutes = require('./routes/coachRoutes');
-
+const progressRoutes = require('./routes/progressRoutes')
 // Load environment variables
 dotenv.config();
 
@@ -49,6 +49,8 @@ app.use('/profile', profileRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/programs', programRoutes);
 app.use('/coaches', coachRoutes);
+app.use("/progress", progressRoutes);
+
 
 // Default Route
 app.get('/', (req, res) => {
