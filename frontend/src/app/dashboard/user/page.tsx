@@ -43,12 +43,17 @@ export default function UserDashboardPage() {
     };
 
     const fetchProgress = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/analytics/user", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProgress(data);
-    };
+  const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/analytics/user", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  setProgress({
+    totalCompletedSessions: data.totalCompletedSessions || 0,
+    assignedPrograms: data.assignedPrograms || 0,
+    goalTracking: data.goalTracking || [],
+  });
+};
+
 
     const fetchNotifications = async () => {
       const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
@@ -99,21 +104,25 @@ export default function UserDashboardPage() {
                 <p>Toplam Tamamlanan Seans: <strong>{progress.totalCompletedSessions}</strong></p>
                 <p>Atanmış Programlar: <strong>{progress.assignedPrograms}</strong></p>
                 <div className="mt-4">
-                  <h3 className="font-medium mb-2">Hedef Takibi:</h3>
-                  {progress.goalTracking.length > 0 ? (
-                    progress.goalTracking.map((g) => (
-                      <div key={g.programId} className="mb-2">
-                        <p>Program ID: {g.programId}</p>
-                        <div className="w-full bg-gray-300 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{ width: `${g.progressPercentage}%` }}></div>
-                        </div>
-                        <p className="text-sm">{g.progressPercentage}% tamamlandı</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p>Hedef bulunamadı.</p>
-                  )}
-                </div>
+  <h3 className="font-medium mb-2">Hedef Takibi:</h3>
+  {progress && progress.goalTracking && progress.goalTracking.length > 0 ? (
+    progress.goalTracking.map((g) => (
+      <div key={g.programId} className="mb-2">
+        <p>Program ID: {g.programId}</p>
+        <div className="w-full bg-gray-300 rounded-full h-2">
+          <div
+            className="bg-green-500 h-2 rounded-full"
+            style={{ width: `${g.progressPercentage}%` }}
+          ></div>
+        </div>
+        <p className="text-sm">{g.progressPercentage}% tamamlandı</p>
+      </div>
+    ))
+  ) : (
+    <p>Hedef bulunamadı.</p>
+  )}
+</div>
+
               </div>
             ) : (
               <p>İlerleme verisi yükleniyor...</p>
