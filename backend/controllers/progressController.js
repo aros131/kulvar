@@ -314,6 +314,35 @@ const updateGoalProgress = async (req, res) => {
     res.status(500).json({ message: "Error updating goal progress", error: error.message });
   }
 };
+// 🟢 Get progress percentages for all assigned programs
+const getAllProgramProgress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all assigned programs for this user
+    const assignedPrograms = await Program.find({ assignedClients: userId });
+
+    // For each program, get its progress
+    const programProgress = await Promise.all(assignedPrograms.map(async (program) => {
+      const progress = await Progress.findOne({ programId: program._id, userId });
+      const percentage = progress ? progress.progressPercentage : 0;
+
+      return {
+        programId: program._id,
+        name: program.name,
+        description: program.description,
+        duration: program.duration,
+        progressPercentage: percentage,
+      };
+    }));
+
+    res.status(200).json({ programProgress });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching program progress", error: error.message });
+  }
+};
+
+
 
 // ✅ Export all functions
 module.exports = {
@@ -331,4 +360,5 @@ module.exports = {
   getProgressTrend,
   markSessionCompleted,
   updateGoalProgress,
+  getAllProgramProgress,
 };

@@ -17,7 +17,8 @@ const {
   updateGoalProgress,
   getUserStreaks,
   getAdaptiveGoalProgress,
-  getStrengthProgress
+  getStrengthProgress,
+  getAllProgramProgress
 } = require("../controllers/progressController");
 
 // ✅ Log user progress (User Only)
@@ -59,4 +60,5 @@ router.get("/goal-progress/:userId", protect, roleMiddleware(["user"]), getAdapt
 // ✅ Get strength progress for a program
 router.get("/strength-chart/:programId", protect, getStrengthProgress);
 
+outer.get("/all-program-progress", protect, getAllProgramProgress);
 module.exports = router;

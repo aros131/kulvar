@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-
 import ProgramCard from "@/components/dashboard/ProgramCard";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
+
 interface UserProgram {
-  _id: string;
+  programId: string;
   name: string;
   description: string;
   duration?: string;
   image?: string;
+  progressPercentage: number;
 }
 
 interface UserProgress {
@@ -35,25 +36,24 @@ export default function UserDashboardPage() {
     console.log("Token being sent:", token);
 
     const fetchPrograms = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/user-programs", {
+      const res = await fetch("https://kulvar-qb7t.onrender.com/progress/all-program-progress", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setPrograms(data.programs || []);
+      setPrograms(data.programProgress || []);
     };
 
     const fetchProgress = async () => {
-  const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/analytics/user", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  setProgress({
-    totalCompletedSessions: data.totalCompletedSessions || 0,
-    assignedPrograms: data.assignedPrograms || 0,
-    goalTracking: data.goalTracking || [],
-  });
-};
-
+      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/analytics/user", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setProgress({
+        totalCompletedSessions: data.totalCompletedSessions || 0,
+        assignedPrograms: data.assignedPrograms || 0,
+        goalTracking: data.goalTracking || [],
+      });
+    };
 
     const fetchNotifications = async () => {
       const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
@@ -73,7 +73,6 @@ export default function UserDashboardPage() {
       <Navbar />
       <WelcomeWidget />
 
-
       <section className="max-w-6xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-4">Hoş Geldin!</h1>
         <p className="text-zinc-600 dark:text-zinc-300 mb-8">Bugün de hedeflerine ulaşmak için harika bir gün.</p>
@@ -83,11 +82,12 @@ export default function UserDashboardPage() {
           {programs.length > 0 ? (
             programs.map((program) => (
               <ProgramCard
-                key={program._id}
+                key={program.programId}
                 name={program.name}
                 description={program.description}
                 duration={program.duration || "Bilinmiyor"}
-                image={program.image || "/images/default-program.jpg"}
+                progressPercentage={program.progressPercentage}
+                
               />
             ))
           ) : (
@@ -104,25 +104,24 @@ export default function UserDashboardPage() {
                 <p>Toplam Tamamlanan Seans: <strong>{progress.totalCompletedSessions}</strong></p>
                 <p>Atanmış Programlar: <strong>{progress.assignedPrograms}</strong></p>
                 <div className="mt-4">
-  <h3 className="font-medium mb-2">Hedef Takibi:</h3>
-  {progress && progress.goalTracking && progress.goalTracking.length > 0 ? (
-    progress.goalTracking.map((g) => (
-      <div key={g.programId} className="mb-2">
-        <p>Program ID: {g.programId}</p>
-        <div className="w-full bg-gray-300 rounded-full h-2">
-          <div
-            className="bg-green-500 h-2 rounded-full"
-            style={{ width: `${g.progressPercentage}%` }}
-          ></div>
-        </div>
-        <p className="text-sm">{g.progressPercentage}% tamamlandı</p>
-      </div>
-    ))
-  ) : (
-    <p>Hedef bulunamadı.</p>
-  )}
-</div>
-
+                  <h3 className="font-medium mb-2">Hedef Takibi:</h3>
+                  {progress.goalTracking.length > 0 ? (
+                    progress.goalTracking.map((g) => (
+                      <div key={g.programId} className="mb-2">
+                        <p>Program ID: {g.programId}</p>
+                        <div className="w-full bg-gray-300 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{ width: `${g.progressPercentage}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm">{g.progressPercentage}% tamamlandı</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>Hedef bulunamadı.</p>
+                  )}
+                </div>
               </div>
             ) : (
               <p>İlerleme verisi yükleniyor...</p>

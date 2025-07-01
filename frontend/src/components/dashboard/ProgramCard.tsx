@@ -1,34 +1,50 @@
-// components/dashboard/ProgramCard.tsx
-
 "use client";
 
-import Image from "next/image";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface ProgramCardProps {
   name: string;
   description: string;
   duration: string;
-  image?: string; // Optional program thumbnail
+  progressPercentage: number;
 }
 
-export default function ProgramCard({ name, description, duration, image }: ProgramCardProps) {
+export default function ProgramCard({
+  name,
+  description,
+  duration,
+  progressPercentage,
+}: ProgramCardProps) {
+  const data = {
+    labels: ["Tamamlanan", "Kalan"],
+    datasets: [
+      {
+        data: [progressPercentage, 100 - progressPercentage],
+        backgroundColor: ["#22c55e", "#e5e7eb"], // green and gray
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const options = {
+    cutout: "70%", // thinner donut ring
+  };
+
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-xl shadow p-4 flex flex-col gap-3 hover:shadow-md transition">
-      {image && (
-        <Image
-          src={image}
-          alt={name}
-          width={400}
-          height={200}
-          className="rounded-lg object-cover"
-        />
-      )}
-      <h3 className="text-lg font-bold">{name}</h3>
-      <p className="text-sm text-zinc-600 dark:text-zinc-300">{description}</p>
+    <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow text-center">
+      <h3 className="text-lg font-semibold mb-2">{name}</h3>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">{description}</p>
+
+      {/* ✅ Donut Progress Chart */}
+      <div className="w-40 mx-auto mb-4">
+        <Doughnut data={data} options={options} />
+      </div>
+
       <p className="text-xs text-zinc-500 dark:text-zinc-400">Süre: {duration}</p>
-      <button className="bg-zinc-700 hover:bg-zinc-800 text-white py-1 rounded mt-auto">
-        Programı Gör
-      </button>
+      <p className="text-xs mt-1">{progressPercentage}% tamamlandı</p>
     </div>
   );
 }
