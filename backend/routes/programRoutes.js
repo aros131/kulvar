@@ -30,7 +30,9 @@ const {
   updateAdaptiveAdjustments,
   getProgramFeedback,
   getUserProgress,
-  completeSession
+  completeSession,
+  getAdaptiveAdjustments,
+  getProgramMedia
  
   
  
