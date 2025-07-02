@@ -82,4 +82,7 @@ router.post("/:programId/complete-session", protect, completeSession);
 // ✅ Add this route to track session completion
 router.post("/programs/:programId/track-session", trackSessionCompletion);
 
+router.get("/:id/media", protect, getProgramMedia);
+router.get("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), getAdaptiveAdjustments);
+
 module.exports = router;

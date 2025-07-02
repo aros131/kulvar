@@ -14,7 +14,7 @@ const createProgram = async (req, res) => {
         url: `/uploads/${file.filename}`,
       }));
     }
-
+   
     const newProgram = await Program.create({
       name,
       description,
@@ -565,6 +565,45 @@ const trackSessionCompletion = async (req, res) => {
     res.status(500).json({ message: "Error tracking session completion", error: error.message });
   }
 };
+// 🟢 Get combined program media (documents + video URLs)
+const getProgramMedia = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const program = await Program.findById(id);
+    if (!program) return res.status(404).json({ message: "Program not found" });
+
+    const documents = program.documents || [];
+    const videoUrls = (program.dailySchedule || []).flatMap(day =>
+      (day.sessions || []).flatMap(session =>
+        (session.exercises || []).flatMap(exercise =>
+          Array.isArray(exercise.videoUrls) ? exercise.videoUrls.map(video => video.url) : []
+        )
+      )
+    );
+
+    res.status(200).json({ documents, videos: videoUrls });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching program media", error: error.message });
+  }
+};
+
+// 🟢 Get adaptive adjustments for a user in a program
+const getAdaptiveAdjustments = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.user.id;
+
+    const progress = await require("../models/Progress").findOne({ programId, userId });
+
+    if (!progress) {
+      return res.status(404).json({ message: "No adaptive data found" });
+    }
+
+    res.status(200).json({ fatigueAdjustments: progress.fatigueAdjustments || [] });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching adaptive adjustments", error: error.message });
+  }
+};
 
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
@@ -591,7 +630,9 @@ module.exports = {
   getProgramFeedback,
   getUserProgress,
   completeSession,
-  trackSessionCompletion
+  trackSessionCompletion,
+  getAdaptiveAdjustments,
+  getProgramMedia
 
 };
 
