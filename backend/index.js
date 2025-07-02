@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
-
+const path = require("path");
 // Route imports
 const authRoutes = require('./routes/authRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -50,7 +50,7 @@ app.use('/analytics', analyticsRoutes);
 app.use('/programs', programRoutes);
 app.use('/coaches', coachRoutes);
 app.use("/progress", progressRoutes);
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Default Route
 app.get('/', (req, res) => {
