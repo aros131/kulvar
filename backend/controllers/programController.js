@@ -569,21 +569,19 @@ const trackSessionCompletion = async (req, res) => {
 const getProgramMedia = async (req, res) => {
   try {
     const { id } = req.params;
+
     const program = await Program.findById(id);
-    if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const documents = program.documents || [];
-    const videoUrls = (program.dailySchedule || []).flatMap(day =>
-      (day.sessions || []).flatMap(session =>
-        (session.exercises || []).flatMap(exercise =>
-          Array.isArray(exercise.videoUrls) ? exercise.videoUrls.map(video => video.url) : []
-        )
-      )
-    );
+    if (!program) {
+      return res.status(404).json({ message: "Program bulunamadı." });
+    }
 
-    res.status(200).json({ documents, videos: videoUrls });
+    const videos = program.videos || [];
+    const pdfs = program.pdfs || [];
+
+    res.status(200).json({ videos, pdfs });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching program media", error: error.message });
+    res.status(500).json({ message: "Program medyası alınırken hata oluştu.", error: error.message });
   }
 };
 

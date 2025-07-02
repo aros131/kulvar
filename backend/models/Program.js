@@ -53,12 +53,30 @@ const ProgramSchema = new mongoose.Schema({
     }
   ],
 
-  nutritionPlan: {
-    tips: [{ type: String }], // **Beslenme ipuçları**
-    meals: [{ name: { type: String }, description: { type: String }, time: { type: String } }], // **Öğün bilgileri**
-  },
+  // 💡 Nutrition and media content
+nutritionPlan: {
+  tips: [{ type: String }],
+  meals: [
+    { name: { type: String }, description: { type: String }, time: { type: String } }
+  ],
+},
 
-  documents: [{ name: { type: String }, url: { type: String } }], // **Programla ilgili belgeler**
+videos: [
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    description: { type: String }
+  }
+],
+
+pdfs: [
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    description: { type: String }
+  }
+],
+
 
   announcements: [{ message: { type: String }, date: { type: Date, default: Date.now } }], // **Duyurular**
 
