@@ -4,15 +4,17 @@ import SessionList from "@/components/program/SessionList";
 import RestartButton from "@/components/program/RestartButton";
 import ProgramMedia from "@/components/program/ProgramMedia";
 import { cookies } from "next/headers";
-import { Program } from "@/types/program"; // ✅ using imported type
+import { Program } from "@/types/program";
 
-export default async function ProgramContentPage({ params }: { params: { programId: string } }) {
+export default async function ProgramContentPage({
+  params,
+}: {
+  params: { programId: string };
+}) {
   const { programId } = params;
-  const cookieStore = await cookies();
-const token = cookieStore.get("token")?.value;
 
-
-
+  const cookieStore = await cookies(); // ✅ use await if your setup requires it
+  const token = cookieStore.get("token")?.value;
 
   const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
     headers: {
