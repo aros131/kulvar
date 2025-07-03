@@ -6,15 +6,12 @@ import ProgramMedia from "@/components/program/ProgramMedia";
 import { cookies } from "next/headers";
 import { Program } from "@/types/program"; // ✅ using imported type
 
-export default async function ProgramContentPage({
-  params,
-}: {
-  params: { programId: string };
-}) {
+export default async function ProgramContentPage({ params }: { params: { programId: string } }) {
   const { programId } = params;
-
   const cookieStore = await cookies();
 const token = cookieStore.get("token")?.value;
+
+
 
 
   const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
