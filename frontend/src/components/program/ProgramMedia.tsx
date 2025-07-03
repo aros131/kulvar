@@ -62,7 +62,8 @@ const ProgramMedia: React.FC<ProgramMediaProps> = ({ videos, pdfs }) => {
                 rel="noopener noreferrer"
                 className="text-blue-500 underline"
               >
-                PDF'yi Görüntüle
+                PDF&apos;yi Görüntüle
+
               </a>
             </div>
           ))
