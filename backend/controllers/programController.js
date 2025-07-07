@@ -287,24 +287,35 @@ const rescheduleWorkout = async (req, res) => {
 const assignProgramToClients = async (req, res) => {
   try {
     const { programId, clientIds } = req.body;
-    const program = await Program.findById(programId);
 
-    if (!program) return res.status(404).json({ message: "Program not found" });
-
-    // ✅ Check if all client IDs exist
-    const validClients = await User.find({ _id: { $in: clientIds }, role: "user" });
-    if (validClients.length !== clientIds.length) {
-      return res.status(400).json({ message: "Invalid client IDs found" });
+    // 🔴 Validate required fields
+    if (!programId || !clientIds || !Array.isArray(clientIds)) {
+      return res.status(400).json({ message: "programId and clientIds (array) are required" });
     }
 
-    program.assignedClients = [...new Set([...program.assignedClients, ...clientIds])];
+    const program = await Program.findById(programId);
+    if (!program) {
+      return res.status(404).json({ message: "Program not found" });
+    }
+
+    // ✅ Check that all client IDs exist and are users (not coaches)
+    const validClients = await User.find({ _id: { $in: clientIds }, role: "user" });
+    if (validClients.length !== clientIds.length) {
+      return res.status(400).json({ message: "Some client IDs are invalid" });
+    }
+
+    // 🟢 Assign clients without duplicates
+    program.assignedClients = Array.from(new Set([...program.assignedClients.map(id => id.toString()), ...clientIds]));
+
     await program.save();
 
     res.status(200).json({ message: "Program successfully assigned!", program });
   } catch (error) {
+    console.error("Assign Program Error:", error);
     res.status(500).json({ message: "Program assignment error", error: error.message });
   }
 };
+
 // 🟢 Clone a program
 const cloneProgram = async (req, res) => {
   try {
