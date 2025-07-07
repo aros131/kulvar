@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProgramCard from "@/components/dashboard/ProgramCard";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
+import Link from "next/link";
 
 interface UserProgram {
   programId: string;
@@ -80,19 +81,24 @@ export default function UserDashboardPage() {
         {/* 🔥 Programs Section */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           {programs.length > 0 ? (
-            programs.map((program) => (
-              <ProgramCard
-                key={program.programId}
-                name={program.name}
-                description={program.description}
-                duration={program.duration || "Bilinmiyor"}
-                progressPercentage={program.progressPercentage}
-                
-              />
-            ))
-          ) : (
-            <p>Atanmış programın yok.</p>
-          )}
+  programs.map((program) => (
+    <div key={program.programId} className="program-card">
+      <ProgramCard
+        name={program.name}
+        description={program.description}
+        duration={program.duration || "Bilinmiyor"}
+        progressPercentage={program.progressPercentage}
+      />
+      <Link href={`/programs/${program.programId}`}>
+        <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+          Programa Bak
+        </button>
+      </Link>
+    </div>
+  ))
+) : (
+  <p>Atanmış programın yok.</p>
+)}
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
