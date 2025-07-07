@@ -19,16 +19,14 @@ interface ProgramMediaProps {
   pdfs: PDF[];
 }
 
-const ProgramMedia: React.FC<ProgramMediaProps> = ({ videos, pdfs }) => {
+const ProgramMedia: React.FC<ProgramMediaProps> = ({ videos = [], pdfs = [] }) => {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-4">
       <h2 className="text-lg font-semibold mb-2">Program Medyası</h2>
 
       <div className="mb-4">
         <h3 className="font-medium">Videolar</h3>
-        {videos.length === 0 ? (
-          <p>Video bulunamadı.</p>
-        ) : (
+        {Array.isArray(videos) && videos.length > 0 ? (
           videos.map((video, index) => (
             <div key={index} className="mb-2">
               <p className="font-bold">{video.name}</p>
@@ -44,14 +42,14 @@ const ProgramMedia: React.FC<ProgramMediaProps> = ({ videos, pdfs }) => {
               )}
             </div>
           ))
+        ) : (
+          <p>Video bulunamadı.</p>
         )}
       </div>
 
       <div>
         <h3 className="font-medium">PDF Dosyaları</h3>
-        {pdfs.length === 0 ? (
-          <p>PDF bulunamadı.</p>
-        ) : (
+        {Array.isArray(pdfs) && pdfs.length > 0 ? (
           pdfs.map((pdf, index) => (
             <div key={index} className="mb-2">
               <p className="font-bold">{pdf.name}</p>
@@ -63,10 +61,11 @@ const ProgramMedia: React.FC<ProgramMediaProps> = ({ videos, pdfs }) => {
                 className="text-blue-500 underline"
               >
                 PDF&apos;yi Görüntüle
-
               </a>
             </div>
           ))
+        ) : (
+          <p>PDF bulunamadı.</p>
         )}
       </div>
     </div>

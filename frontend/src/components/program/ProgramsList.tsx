@@ -7,10 +7,10 @@ interface Program {
 }
 
 interface ProgramsListProps {
-  programs: Program[];
+  programs?: Program[];
 }
 
-export default function ProgramsList({ programs }: ProgramsListProps) {
+export default function ProgramsList({ programs = [] }: ProgramsListProps) {
   return (
     <div className="max-w-3xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Programlar</h1>
