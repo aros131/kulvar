@@ -30,7 +30,7 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ completionPercentage }) =
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-4">
       <h2 className="text-lg font-semibold mb-2">Program İlerleme</h2>
-      <Doughnut data={data} width={200} height={200} />
+      <Doughnut data={data} width={100} height={100} />
 
     </div>
   );
