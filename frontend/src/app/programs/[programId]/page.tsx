@@ -1,13 +1,12 @@
 import ProgramContentClient from "@/components/program/ProgramContentClient";
 
-
 interface PageProps {
-  params: { programId: string };
+  params: Promise<{ programId: string }>;
 }
 
-export default function Page({ params }: PageProps) {
-  const { programId } = params; // ✅ params is plain object
+export default async function Page({ params }: PageProps) {
+  const resolvedParams = await params;
+  const { programId } = resolvedParams;
+
   return <ProgramContentClient programId={programId} />;
 }
-
-
