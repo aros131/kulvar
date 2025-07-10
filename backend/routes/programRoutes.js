@@ -32,7 +32,8 @@ const {
   getUserProgress,
   completeSession,
   getAdaptiveAdjustments,
-  getProgramMedia
+  getProgramMedia,
+  getCoachPrograms
  
   
  
@@ -86,5 +87,6 @@ router.post("/programs/:programId/track-session", trackSessionCompletion);
 
 router.get("/:id/media", protect, getProgramMedia);
 router.get("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), getAdaptiveAdjustments);
+router.get("/coach", protect, roleMiddleware(["coach"]),getCoachPrograms);
 
 module.exports = router;

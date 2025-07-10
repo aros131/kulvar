@@ -609,6 +609,15 @@ const getAdaptiveAdjustments = async (req, res) => {
     res.status(500).json({ message: "Error fetching adaptive adjustments", error: error.message });
   }
 };
+const getCoachPrograms = async (req, res) => {
+  try {
+    const coachId = req.user.id;
+    const programs = await Program.find({ coachId });
+    res.status(200).json({ programs });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching coach programs", error: error.message });
+  }
+};
 
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
@@ -637,7 +646,8 @@ module.exports = {
   completeSession,
   trackSessionCompletion,
   getAdaptiveAdjustments,
-  getProgramMedia
+  getProgramMedia,
+  getCoachProgram
 
 };
 
