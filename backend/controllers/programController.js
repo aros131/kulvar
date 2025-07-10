@@ -647,7 +647,7 @@ module.exports = {
   trackSessionCompletion,
   getAdaptiveAdjustments,
   getProgramMedia,
-  getCoachProgram
+  getCoachPrograms
 
 };
 
