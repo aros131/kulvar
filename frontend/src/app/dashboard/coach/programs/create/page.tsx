@@ -21,7 +21,7 @@ const ProgramCreatePage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/programs`, form, { withCredentials: true });
+      await axios.post(`https://kulvar-qb7t.onrender.com/programs`, form, { withCredentials: true });
       router.push("/dashboard/coach");
     } catch (error) {
       console.error("Program oluşturulurken hata oluştu:", error);

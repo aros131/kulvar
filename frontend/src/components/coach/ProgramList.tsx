@@ -16,7 +16,7 @@ const ProgramList: React.FC = () => {
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/programs/coach`, {
+        const res = await axios.get`https://kulvar-qb7t.onrender.com/programs/coach', {
           withCredentials: true,
         });
         setPrograms(res.data.programs);
