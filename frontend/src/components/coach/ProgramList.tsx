@@ -18,18 +18,20 @@ const ProgramList: React.FC = () => {
       try {
         const token = localStorage.getItem("token");
 
-const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/coach`, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-  withCredentials: true,
-});
+        const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/coach`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        });
 
+        console.log("🟢 Gelen veri:", res.data); // 👈 Konsola yazdır
         setPrograms(res.data.programs);
       } catch (error) {
-        console.error("Programlar yüklenirken hata oluştu:", error);
+        console.error("🔴 Programlar yüklenirken hata oluştu:", error);
       }
     };
+
     fetchPrograms();
   }, []);
 

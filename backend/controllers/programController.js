@@ -612,7 +612,8 @@ const getAdaptiveAdjustments = async (req, res) => {
 const getCoachPrograms = async (req, res) => {
   try {
     const coachId = req.user.id; // ✅ pull from auth middleware
-    const programs = await Program.find({ coach: coachId });
+const programs = await Program.find({ coachId: coachId });
+
     res.json({ programs });
   } catch (error) {
     console.error("Error fetching coach programs:", error);
