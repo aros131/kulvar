@@ -16,9 +16,15 @@ const ProgramList: React.FC = () => {
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
-        const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/coach`, {
-          withCredentials: true,
-        });
+        const token = localStorage.getItem("token");
+
+const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/coach`, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+  withCredentials: true,
+});
+
         setPrograms(res.data.programs);
       } catch (error) {
         console.error("Programlar yüklenirken hata oluştu:", error);
