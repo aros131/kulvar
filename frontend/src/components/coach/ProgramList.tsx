@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import DeleteProgramDialog from "@/components/coach/DeleteProgramDialog";
+import AssignClientsDialog from "@/components/coach/AssignClientsDialog";
+
 
 interface Program {
   _id: string;
@@ -13,25 +16,25 @@ interface Program {
 const ProgramList: React.FC = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
 
+  const fetchPrograms = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/coach`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+
+      console.log("🟢 Gelen veri:", res.data);
+      setPrograms(res.data.programs);
+    } catch (error) {
+      console.error("🔴 Programlar yüklenirken hata oluştu:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchPrograms = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/coach`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        });
-
-        console.log("🟢 Gelen veri:", res.data); // 👈 Konsola yazdır
-        setPrograms(res.data.programs);
-      } catch (error) {
-        console.error("🔴 Programlar yüklenirken hata oluştu:", error);
-      }
-    };
-
     fetchPrograms();
   }, []);
 
@@ -47,10 +50,16 @@ const ProgramList: React.FC = () => {
               <Link href={`/dashboard/coach/programs/${program._id}/edit`}>
                 <button className="bg-blue-500 text-white px-3 py-1 rounded">Düzenle</button>
               </Link>
-              <Link href={`/dashboard/coach/programs/${program._id}/assign`}>
-                <button className="bg-purple-500 text-white px-3 py-1 rounded">Ata</button>
-              </Link>
-              <button className="bg-red-500 text-white px-3 py-1 rounded">Sil</button>
+
+              {/* ATA (Dialog) */}
+              <AssignClientsDialog programId={program._id} />
+
+              {/* SİL (Dialog) */}
+              <DeleteProgramDialog
+                programId={program._id}
+                programName={program.name}
+                onDelete={fetchPrograms}
+              />
             </div>
           </div>
         ))}
