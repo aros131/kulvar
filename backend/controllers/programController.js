@@ -611,13 +611,15 @@ const getAdaptiveAdjustments = async (req, res) => {
 };
 const getCoachPrograms = async (req, res) => {
   try {
-    const coachId = req.user.id;
-    const programs = await Program.find({ coachId });
-    res.status(200).json({ programs });
+    const coachId = req.user.id; // ✅ pull from auth middleware
+    const programs = await Program.find({ coach: coachId });
+    res.json({ programs });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching coach programs", error: error.message });
+    console.error("Error fetching coach programs:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
+
 
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
