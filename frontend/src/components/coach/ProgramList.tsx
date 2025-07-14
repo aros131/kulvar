@@ -28,9 +28,10 @@ const ProgramList: React.FC = () => {
       });
 
       console.log("🟢 Gelen programlar:", res.data.programs);
-res.data.programs.forEach((p: any) => {
+res.data.programs.forEach((p: Program) => {
   console.log(`Program adı: ${p.name}, ID: ${p._id} (${p._id.length} karakter)`);
 });
+
 
       setPrograms(res.data.programs);
     } catch (error) {
