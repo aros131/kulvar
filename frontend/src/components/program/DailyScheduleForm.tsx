@@ -5,45 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-export interface DailyEntry {
-  day: string;
-  sessions: {
-    name: string;
-    exercises: {
-      name: string;
-      sets: number;
-      reps: number;
-      duration: string;
-      restTime: number;
-      videoUrls: {
-        url: string;
-        description: string;
-      }[];
-    }[];
-  }[];
-  notes: string;
-}
 
-interface VideoUrl {
-  url: string;
-  description: string;
-}
-
-interface Exercise {
+export interface Exercise {
   name: string;
   sets: number;
   reps: number;
   duration: string;
   restTime: number;
-  videoUrls: VideoUrl[];
+  videoUrls: {
+    url: string;
+    description: string;
+  }[];
 }
 
-interface Session {
+export interface Session {
   name: string;
   exercises: Exercise[];
 }
 
-
+export interface DailyEntry {
+  day: string;
+  sessions: Session[];
+  notes: string;
+}
 
 interface Props {
   onChange: (dailySchedule: DailyEntry[]) => void;
@@ -87,17 +71,16 @@ export default function DailyScheduleForm({ onChange }: Props) {
   };
 
   const updateExerciseField = <K extends keyof Exercise>(
-  dayIndex: number,
-  sessionIndex: number,
-  exerciseIndex: number,
-  field: K,
-  value: Exercise[K]
-) => {
-  const updated = [...schedule];
-  updated[dayIndex].sessions[sessionIndex].exercises[exerciseIndex][field] = value;
-  updateSchedule(updated);
-};
-
+    dayIndex: number,
+    sessionIndex: number,
+    exerciseIndex: number,
+    field: K,
+    value: Exercise[K]
+  ) => {
+    const updated = [...schedule];
+    updated[dayIndex].sessions[sessionIndex].exercises[exerciseIndex][field] = value;
+    updateSchedule(updated);
+  };
 
   return (
     <ScrollArea className="h-[500px] pr-2">
