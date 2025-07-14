@@ -620,7 +620,14 @@ const programs = await Program.find({ coachId: coachId });
     res.status(500).json({ error: "Server error" });
   }
 };
-
+const getAllClients = async (req, res) => {
+  try {
+    const clients = await User.find({ role: "user" }).select("-password");
+    res.json(clients);
+  } catch (error) {
+    res.status(500).json({ message: "Kullanıcılar alınamadı", error });
+  }
+};
 
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
@@ -650,7 +657,8 @@ module.exports = {
   trackSessionCompletion,
   getAdaptiveAdjustments,
   getProgramMedia,
-  getCoachPrograms
+  getCoachPrograms,
+  getAllClients
 
 };
 

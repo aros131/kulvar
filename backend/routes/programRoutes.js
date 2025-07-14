@@ -33,7 +33,8 @@ const {
   completeSession,
   getAdaptiveAdjustments,
   getProgramMedia,
-  getCoachPrograms
+  getCoachPrograms,
+  getAllClients
  
   
  
