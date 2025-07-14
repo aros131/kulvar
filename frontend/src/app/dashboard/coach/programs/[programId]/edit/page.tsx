@@ -11,6 +11,7 @@ export default async function EditProgramPage({ params }: Props) {
 
   const cookieStore = await cookies(); // ✅ DİKKAT: `await` olmalı
   const token = cookieStore.get("token")?.value;
+console.log("Token →", token); // terminal'de göreceksin
 
   const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
     headers: {
