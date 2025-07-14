@@ -9,13 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Program } from "@/types/program";
 
-export interface EditProgramFormProps {
+interface EditProgramFormProps {
   program: Program;
   mode: "edit" | "create";
-  onSave?: () => void;
+  onSuccess?: () => void; // ✅ Define it here
 }
 
-export default function EditProgramForm({ program: initialProgram, mode, onSave }: EditProgramFormProps) {
+export default function EditProgramForm({
+  program: initialProgram,
+  mode,
+  onSuccess, // ✅ Use correct prop name
+}: EditProgramFormProps) {
   const [program, setProgram] = useState<Program>(initialProgram);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -39,7 +43,7 @@ export default function EditProgramForm({ program: initialProgram, mode, onSave 
 
       if (res.ok) {
         alert("✅ Program kaydedildi!");
-        onSave?.();
+        onSuccess?.(); // ✅ Trigger callback if provided
       } else {
         alert("❌ Kaydetme başarısız.");
       }

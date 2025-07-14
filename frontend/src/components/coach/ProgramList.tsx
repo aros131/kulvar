@@ -47,7 +47,8 @@ const ProgramList: React.FC = () => {
             <h3 className="text-lg font-bold">{program.name}</h3>
             <p>{program.description}</p>
             <div className="mt-2 flex gap-2">
-              <Link href={`/dashboard/coach/programs/${program._id}/edit`}>
+              <Link href={`/dashboard/coach/programs/${program._id}`}>
+
                 <button className="bg-blue-500 text-white px-3 py-1 rounded">Düzenle</button>
               </Link>
 
