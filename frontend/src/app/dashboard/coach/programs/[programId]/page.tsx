@@ -1,36 +1,29 @@
 import { cookies } from "next/headers";
-import { Program } from "@/types/program";
 import EditProgramForm from "@/components/coach/EditProgramForm";
+import { Program } from "@/types/program";
 
 interface PageProps {
-  params: Promise<{
-    programId: string;
-  }>;
+  params: { programId: string };
 }
 
-export default async function ProgramDetailPage({ params }: PageProps) {
-  const { programId } = await params; // ✅ await params and destructure
-  
-  const cookieStore = await cookies(); // ✅ await is required
-  const token = cookieStore.get("token")?.value;
-
-  const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
+export default async function ProgramEditPage({ params }: PageProps) {
+  const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${params.programId}`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${process.env.NEXT_PUBLIC_USER_TOKEN}`,
+      "Content-Type": "application/json",
     },
     cache: "no-store",
   });
 
   if (!res.ok) {
-    return <div className="text-red-600 p-4">Program bulunamadı veya yüklenemedi.</div>;
+    return <div>Program bulunamadı veya yüklenemedi.</div>;
   }
 
-  const data = await res.json();
-  const program: Program = data.program;
+  const program: Program = await res.json();
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Program Detayları</h1>
+    <div className="max-w-xl mx-auto mt-8">
+      <h1 className="text-2xl font-bold mb-4">Programı Düzenle</h1>
       <EditProgramForm program={program} mode="edit" />
     </div>
   );
