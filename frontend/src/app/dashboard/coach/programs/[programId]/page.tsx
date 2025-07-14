@@ -1,13 +1,14 @@
-
 import EditProgramForm from "@/components/coach/EditProgramForm";
 import { Program } from "@/types/program";
 
 interface PageProps {
-  params: { programId: string };
+  params: Promise<{ programId: string }>; // ✅ Changed to Promise
 }
 
 export default async function ProgramEditPage({ params }: PageProps) {
-  const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${params.programId}`, {
+  const { programId } = await params; // ✅ Added await and destructuring
+  
+  const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
     headers: {
       Authorization: `Bearer ${process.env.NEXT_PUBLIC_USER_TOKEN}`,
       "Content-Type": "application/json",
