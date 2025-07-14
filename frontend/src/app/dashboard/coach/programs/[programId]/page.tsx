@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+
 import EditProgramForm from "@/components/coach/EditProgramForm";
 import { Program } from "@/types/program";
 
