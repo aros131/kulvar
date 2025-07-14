@@ -629,6 +629,45 @@ const getAllClients = async (req, res) => {
   }
 };
 
+const assignProgramToGroup = async (req, res) => {
+  try {
+    const { programId, groupId } = req.body;
+
+    const program = await Program.findById(programId);
+    if (!program) return res.status(404).json({ message: "Program not found" });
+
+    const group = await ClientGroup.findById(groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+
+    const validClients = await User.find({ _id: { $in: group.clientIds }, role: "user" });
+
+    program.assignedClients = [...new Set([...program.assignedClients, ...validClients.map(c => c._id)])];
+    await program.save();
+
+    res.status(200).json({ message: "Program assigned to group", program });
+  } catch (err) {
+    res.status(500).json({ message: "Error assigning to group", error: err.message });
+  }
+};
+const unassignClient = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const { clientId } = req.body;
+
+    const program = await Program.findById(programId);
+    if (!program) return res.status(404).json({ message: "Program not found" });
+
+    program.assignedClients = program.assignedClients.filter(
+      id => id.toString() !== clientId
+    );
+    await program.save();
+
+    res.status(200).json({ message: "Client unassigned successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error unassigning client", error: error.message });
+  }
+};
+
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
 module.exports = {
@@ -658,7 +697,10 @@ module.exports = {
   getAdaptiveAdjustments,
   getProgramMedia,
   getCoachPrograms,
-  getAllClients
+  getAllClients,
+  assignProgramToGroup,
+  unassignClient
+
 
 };
 

@@ -26,6 +26,7 @@ const {
   submitSessionFeedback,
   rescheduleWorkout,
   getAssignedClients,
+  unassignClient,
   resetProgress,
   updateAdaptiveAdjustments,
   getProgramFeedback,
@@ -34,7 +35,8 @@ const {
   getAdaptiveAdjustments,
   getProgramMedia,
   getCoachPrograms,
-  getAllClients
+  getAllClients,
+  assignProgramToGroup
  
   
  
@@ -80,6 +82,8 @@ router.get("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"])
 
 // 🟢 Assignments
 router.get("/:programId/assigned-clients", protect, roleMiddleware(["coach"]), getAssignedClients);
+router.post("/:programId/unassign", protect, unassignClient);
+
 // routes/userRoutes.js
 router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
 
@@ -87,7 +91,7 @@ router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
 router.post("/reschedule-workout", protect, roleMiddleware(["user"]), rescheduleWorkout);
 router.post("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), updateAdaptiveAdjustments);
 router.post("/programs/:programId/track-session", trackSessionCompletion); // Redundant with above? Consider removing
-
+router.post("/assign-group", protect, roleMiddleware(["coach"]), assignProgramToGroup);
 module.exports = router;
 
 
