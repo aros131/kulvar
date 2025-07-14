@@ -1,42 +1,22 @@
+// src/components/coach/EditProgramForm.tsx
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Program } from "@/types/program";
 
-interface EditProgramDialogProps {
-  programId: string;
-  onSave?: () => void; // opsiyonel callback
+export interface EditProgramFormProps {
+  program: Program;
+  mode: "edit" | "create";
+  onSave?: () => void;
 }
 
-export default function EditProgramDialog({ programId, onSave }: EditProgramDialogProps) {
-  const [program, setProgram] = useState({
-    name: "",
-    description: "",
-    duration: 0,
-    difficulty: "",
-    fitnessGoal: "",
-  });
-
-  useEffect(() => {
-    const fetchProgram = async () => {
-      try {
-        const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        const data = await res.json();
-        setProgram(data.program);
-      } catch (err) {
-        console.error("🚨 Program detayları alınamadı:", err);
-      }
-    };
-
-    fetchProgram();
-  }, [programId]);
+export default function EditProgramForm({ program: initialProgram, mode, onSave }: EditProgramFormProps) {
+  const [program, setProgram] = useState<Program>(initialProgram);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -44,23 +24,27 @@ export default function EditProgramDialog({ programId, onSave }: EditProgramDial
   };
 
   const handleSave = async () => {
+    const url = `https://kulvar-qb7t.onrender.com/programs/${program._id}`;
+    const method = mode === "edit" ? "PUT" : "POST";
+
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
-        method: "PUT",
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(program),
       });
+
       if (res.ok) {
-        alert("✅ Program güncellendi!");
-        onSave?.(); // callback çağır
+        alert("✅ Program kaydedildi!");
+        onSave?.();
       } else {
-        alert("❌ Güncelleme başarısız.");
+        alert("❌ Kaydetme başarısız.");
       }
     } catch (err) {
-      console.error("🔴 Güncelleme hatası:", err);
+      console.error("🔴 Hata:", err);
     }
   };
 
@@ -78,12 +62,7 @@ export default function EditProgramDialog({ programId, onSave }: EditProgramDial
 
       <div>
         <Label htmlFor="duration">Süre (hafta)</Label>
-        <Input
-          name="duration"
-          type="number"
-          value={program.duration}
-          onChange={handleChange}
-        />
+        <Input name="duration" type="number" value={program.duration} onChange={handleChange} />
       </div>
 
       <div>
@@ -97,7 +76,7 @@ export default function EditProgramDialog({ programId, onSave }: EditProgramDial
       </div>
 
       <Button onClick={handleSave} className="w-full">
-        Kaydet
+        {mode === "edit" ? "Güncelle" : "Oluştur"}
       </Button>
     </div>
   );

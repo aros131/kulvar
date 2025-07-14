@@ -37,8 +37,10 @@ export interface Program {
   name: string;
   description: string;
   duration?: number;
+  difficulty?: string; // ✅ eklendi
+  fitnessGoal?: string; // ✅ eklendi
   coachId?: string;
-   coachName?: string;
+  coachName?: string;
   assignedClients?: string[];
   completionPercentage?: number;
   dailySchedule: Day[];
@@ -46,3 +48,4 @@ export interface Program {
   videos: Video[];
   pdfs: PDF[];
 }
+
