@@ -3,13 +3,11 @@ import EditProgramForm from "@/components/coach/EditProgramForm";
 import { Program } from "@/types/program";
 
 interface Props {
-  params: {
-    programId: string;
-  };
+  params: Promise<{ programId: string }>;
 }
 
 export default async function EditProgramPage({ params }: Props) {
-  const { programId } = params;
+  const { programId } = await params; // ✅ DİKKAT: `await` eklendi
 
   const cookieStore = await cookies(); // ✅ DİKKAT: `await` olmalı
   const token = cookieStore.get("token")?.value;
