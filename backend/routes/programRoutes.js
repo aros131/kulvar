@@ -79,6 +79,8 @@ router.get("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"])
 
 // 🟢 Assignments
 router.get("/:programId/assigned-clients", protect, roleMiddleware(["coach"]), getAssignedClients);
+// routes/userRoutes.js
+router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
 
 // 🟢 Misc
 router.post("/reschedule-workout", protect, roleMiddleware(["user"]), rescheduleWorkout);
