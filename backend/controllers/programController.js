@@ -562,12 +562,29 @@ const trackSessionCompletion = async (req, res) => {
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    program.progressTracking.completedSessions += 1;
-    program.progressTracking.completionRate =
-      (program.progressTracking.completedSessions / program.progressTracking.totalSessions) * 100;
+    if (!Array.isArray(program.progressTracking)) {
+      program.progressTracking = [];
+    }
+
+    let userProgress = program.progressTracking.find((entry) => entry.user?.toString() === userId.toString());
+
+    if (!userProgress) {
+      userProgress = { user: userId, completedSessions: 0, progressPercentage: 0 };
+      program.progressTracking.push(userProgress);
+    }
+
+    userProgress.completedSessions += 1;
+
+    const totalSessions = program.dailySchedule?.reduce(
+      (sum, day) => sum + (day.sessions?.length || 0),
+      0
+    ) || 0;
+
+    userProgress.progressPercentage =
+      totalSessions > 0 ? (userProgress.completedSessions / totalSessions) * 100 : 0;
 
     await program.save();
-    res.status(200).json({ message: "Session completion tracked", program });
+    res.status(200).json({ message: "Session completion tracked", progress: userProgress });
   } catch (error) {
     res.status(500).json({ message: "Error tracking session completion", error: error.message });
   }

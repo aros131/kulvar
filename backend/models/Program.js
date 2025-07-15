@@ -121,11 +121,15 @@ pdfs: [
 
 // **Tamamlama yüzdesini otomatik hesapla**
 ProgramSchema.pre("save", function (next) {
+  const totalSessions = this.dailySchedule?.reduce(
+    (sum, day) => sum + (day.sessions?.length || 0),
+    0
+  ) || 0;
+
   if (Array.isArray(this.progressTracking)) {
     this.progressTracking.forEach((entry) => {
-      if (entry.totalSessions > 0) {
-        entry.completionRate = (entry.completedSessions / entry.totalSessions) * 100;
-      }
+      entry.progressPercentage =
+        totalSessions > 0 ? (entry.completedSessions / totalSessions) * 100 : 0;
     });
   }
   next();
