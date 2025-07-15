@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Link from "next/link";
+
 import DeleteProgramDialog from "@/components/coach/DeleteProgramDialog";
 import AssignClientsDialog from "@/components/coach/AssignClientsDialog";
+import EditProgramDialog from "@/components/coach/EditProgramDialog";
 
 
 interface Program {
@@ -52,10 +53,8 @@ res.data.programs.forEach((p: Program) => {
             <h3 className="text-lg font-bold">{program.name}</h3>
             <p>{program.description}</p>
             <div className="mt-2 flex gap-2">
-              <Link href={`/dashboard/coach/programs/${program._id}`}>
+              <EditProgramDialog programId={program._id} />
 
-                <button className="bg-blue-500 text-white px-3 py-1 rounded">Düzenle</button>
-              </Link>
 
               {/* ATA (Dialog) */}
               <AssignClientsDialog programId={program._id} />
