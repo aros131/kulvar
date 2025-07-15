@@ -52,8 +52,8 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
     const fetchProgram = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`,
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, 
+
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -63,6 +63,8 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
         setProgram(res.data.program);
       } catch (error) {
         console.error("❌ Program verisi alınamadı:", error);
+        console.log("📦 programId being fetched:", programId);
+
         toast.error("Program verisi alınamadı.");
       } finally {
         setLoading(false);

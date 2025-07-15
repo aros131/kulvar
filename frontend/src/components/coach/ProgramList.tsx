@@ -19,22 +19,21 @@ const ProgramList: React.FC = () => {
   const fetchPrograms = async () => {
     try {
       const token = localStorage.getItem("token");
+     const res = await axios.get(
+  `${process.env.NEXT_PUBLIC_API_URL}/programs/coach`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
 
-      const res = await axios.get(
-        "https://kulvar-qb7t.onrender.com/programs/coach",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
+console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+
 
       console.log("🟢 Gelen programlar:", res.data.programs);
       res.data.programs.forEach((p: Program) => {
-        console.log(
-          `Program adı: ${p.name}, ID: ${p._id} (${p._id.length} karakter)`
-        );
+        console.log(`Program adı: ${p.name}, ID: ${p._id} (${p._id.length} karakter)`);
       });
 
       setPrograms(res.data.programs);
@@ -57,12 +56,10 @@ const ProgramList: React.FC = () => {
             <p>{program.description}</p>
 
             <div className="mt-2 flex gap-2 flex-wrap">
-              {program._id && (
-                <EditProgramDialog
-                  programId={program._id}
-                  onUpdated={fetchPrograms} // ✅ Refreshes list after edit
-                />
-              )}
+              <EditProgramDialog
+                programId={program._id}
+                onUpdated={fetchPrograms}
+              />
 
               <AssignClientsDialog programId={program._id} />
 
