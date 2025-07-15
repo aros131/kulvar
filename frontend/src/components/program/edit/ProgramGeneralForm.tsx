@@ -15,6 +15,7 @@ import { Program } from "@/types/program";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "sonner"; // ✅ Using shadcn's toast system
 
 interface ProgramGeneralFormProps {
   programId: string;
@@ -37,9 +38,16 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
 }) => {
   const [program, setProgram] = useState<Program | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-  // Fetch program by ID
+  // ✅ Guard against bad props
+  if (!programId) {
+    console.error("❌ programId is undefined in ProgramGeneralForm");
+    return <p>Program ID geçersiz.</p>;
+  }
+
+  // ✅ Fetch program
   useEffect(() => {
     const fetchProgram = async () => {
       try {
@@ -55,6 +63,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
         setProgram(res.data.program);
       } catch (error) {
         console.error("❌ Program verisi alınamadı:", error);
+        toast.error("Program verisi alınamadı.");
       } finally {
         setLoading(false);
       }
@@ -66,6 +75,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
   if (loading) return <p>Yükleniyor...</p>;
   if (!program) return <p>Program bulunamadı.</p>;
 
+  // ✅ Form state updates
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -77,7 +87,11 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
     setProgram((prev) => prev ? { ...prev, [key]: value } : prev);
   };
 
+  // ✅ Submit handler
   const handleSubmit = async () => {
+    if (!program) return;
+    setSubmitting(true);
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/programs/${program._id}`,
@@ -93,17 +107,18 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
 
       if (!res.ok) throw new Error("Sunucu hatası");
 
-      alert("✅ Program başarıyla güncellendi.");
+      toast.success("✅ Program başarıyla güncellendi.");
 
-      // Trigger callback or go back
       if (onSuccess) {
-        onSuccess();
+        onSuccess(); // 🔄 Close dialog or refetch in parent
       } else {
         router.push("/dashboard/coach");
       }
     } catch (err) {
       console.error("❌ Güncelleme hatası:", err);
-      alert("Program güncellenirken hata oluştu.");
+      toast.error("Program güncellenirken hata oluştu.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -171,8 +186,12 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
         </Select>
       </div>
 
-      <Button className="w-full" onClick={handleSubmit}>
-        Güncelle
+      <Button
+        className="w-full"
+        onClick={handleSubmit}
+        disabled={submitting}
+      >
+        {submitting ? "Güncelleniyor..." : "Güncelle"}
       </Button>
     </div>
   );

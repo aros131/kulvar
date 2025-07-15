@@ -7,7 +7,6 @@ import DeleteProgramDialog from "@/components/coach/DeleteProgramDialog";
 import AssignClientsDialog from "@/components/coach/AssignClientsDialog";
 import EditProgramDialog from "@/components/coach/EditProgramDialog";
 
-
 interface Program {
   _id: string;
   name: string;
@@ -21,18 +20,22 @@ const ProgramList: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/coach`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        "https://kulvar-qb7t.onrender.com/programs/coach",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
 
       console.log("🟢 Gelen programlar:", res.data.programs);
-res.data.programs.forEach((p: Program) => {
-  console.log(`Program adı: ${p.name}, ID: ${p._id} (${p._id.length} karakter)`);
-});
-
+      res.data.programs.forEach((p: Program) => {
+        console.log(
+          `Program adı: ${p.name}, ID: ${p._id} (${p._id.length} karakter)`
+        );
+      });
 
       setPrograms(res.data.programs);
     } catch (error) {
@@ -52,14 +55,17 @@ res.data.programs.forEach((p: Program) => {
           <div key={program._id} className="border rounded p-4 shadow">
             <h3 className="text-lg font-bold">{program.name}</h3>
             <p>{program.description}</p>
-            <div className="mt-2 flex gap-2">
-              <EditProgramDialog programId={program._id} />
 
+            <div className="mt-2 flex gap-2 flex-wrap">
+              {program._id && (
+                <EditProgramDialog
+                  programId={program._id}
+                  onUpdated={fetchPrograms} // ✅ Refreshes list after edit
+                />
+              )}
 
-              {/* ATA (Dialog) */}
               <AssignClientsDialog programId={program._id} />
 
-              {/* SİL (Dialog) */}
               <DeleteProgramDialog
                 programId={program._id}
                 programName={program.name}
