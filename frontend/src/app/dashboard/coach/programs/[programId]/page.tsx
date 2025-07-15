@@ -1,11 +1,11 @@
 import ProgramGeneralForm from "@/components/program/edit/ProgramGeneralForm";
 
-export default async function ProgramEditPage({ 
-  params 
-}: { 
-  params: Promise<{ programId: string }> 
+export default async function ProgramEditPage({
+  params,
+}: {
+  params: { programId: string };
 }) {
-  const { programId } = await params;
+  const { programId } = params;
 
   const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
     headers: {
