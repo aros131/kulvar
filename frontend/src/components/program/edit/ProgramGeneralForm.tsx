@@ -15,7 +15,7 @@ import { Program } from "@/types/program";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { toast } from "sonner"; // ✅ Using shadcn's toast system
+import { toast } from "sonner";
 
 interface ProgramGeneralFormProps {
   programId: string;
@@ -41,14 +41,14 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-  // ✅ Guard against bad props
-  if (!programId) {
-    console.error("❌ programId is undefined in ProgramGeneralForm");
-    return <p>Program ID geçersiz.</p>;
-  }
-
-  // ✅ Fetch program
+  // ✅ useEffect always called
   useEffect(() => {
+    if (!programId) {
+      console.error("❌ programId is undefined in ProgramGeneralForm");
+      setLoading(false);
+      return;
+    }
+
     const fetchProgram = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -72,22 +72,21 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
     fetchProgram();
   }, [programId]);
 
+  if (!programId) return <p>Program ID geçersiz.</p>;
   if (loading) return <p>Yükleniyor...</p>;
   if (!program) return <p>Program bulunamadı.</p>;
 
-  // ✅ Form state updates
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setProgram((prev) => prev ? { ...prev, [name]: value } : prev);
+    setProgram((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
   const handleSelectChange = (key: keyof Program, value: string) => {
-    setProgram((prev) => prev ? { ...prev, [key]: value } : prev);
+    setProgram((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
 
-  // ✅ Submit handler
   const handleSubmit = async () => {
     if (!program) return;
     setSubmitting(true);
@@ -110,7 +109,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
       toast.success("✅ Program başarıyla güncellendi.");
 
       if (onSuccess) {
-        onSuccess(); // 🔄 Close dialog or refetch in parent
+        onSuccess();
       } else {
         router.push("/dashboard/coach");
       }
@@ -186,11 +185,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
         </Select>
       </div>
 
-      <Button
-        className="w-full"
-        onClick={handleSubmit}
-        disabled={submitting}
-      >
+      <Button className="w-full" onClick={handleSubmit} disabled={submitting}>
         {submitting ? "Güncelleniyor..." : "Güncelle"}
       </Button>
     </div>
