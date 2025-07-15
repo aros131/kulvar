@@ -20,7 +20,7 @@ const ProgramList: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
      const res = await axios.get(
-  `${process.env.NEXT_PUBLIC_API_URL}/programs/coach`,
+  `https://kulvar-qb7t.onrender.com/programs/coach`,
   {
     headers: {
       Authorization: `Bearer ${token}`,

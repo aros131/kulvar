@@ -11,7 +11,7 @@ const [programs, setPrograms] = useState<Program[]>([]);
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/programs`, {
+        const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs`, {
           headers: {
             Authorization: `Bearer YOUR_TOKEN_HERE`
           }

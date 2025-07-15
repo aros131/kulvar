@@ -13,7 +13,7 @@ export default async function EditProgramPage({ params }: Props) {
   const token = cookieStore.get("token")?.value;
 console.log("Token →", token); // terminal'de göreceksin
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, {
+  const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

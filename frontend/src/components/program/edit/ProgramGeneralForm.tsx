@@ -52,7 +52,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
     const fetchProgram = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, 
+        const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/${programId}`, 
 
           {
             headers: {
@@ -95,7 +95,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/programs/${program._id}`,
+        `https://kulvar-qb7t.onrender.com/programs/${program._id}`,
         {
           method: "PUT",
           headers: {
