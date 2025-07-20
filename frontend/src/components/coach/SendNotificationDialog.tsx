@@ -12,7 +12,14 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
-import { Select, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+} from "@/components/ui/select";
+
 
 interface Client {
   id: string;
@@ -72,39 +79,54 @@ export default function SendNotificationDialog({ clients }: Props) {
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <Label>Danışan Seç</Label>
-            <Select onValueChange={setSelectedClient}>
-              {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
-                </SelectItem>
-              ))}
-            </Select>
-          </div>
+  <div>
+    <Label>Danışan Seç</Label>
+    <Select onValueChange={setSelectedClient}>
+      <SelectTrigger>
+        <SelectValue placeholder="Danışan seçin" />
+      </SelectTrigger>
+      <SelectContent>
+        {clients.map((client) => (
+          <SelectItem key={client.id} value={client.id}>
+            {client.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
 
-          <div>
-            <Label>Mesaj Şablonu</Label>
-            <Select onValueChange={setSelectedTemplate}>
-              {templates.map((template, idx) => (
-                <SelectItem key={idx} value={template}>
-                  {template}
-                </SelectItem>
-              ))}
-            </Select>
-          </div>
+  <div>
+    <Label>Mesaj Şablonu</Label>
+    <Select onValueChange={setSelectedTemplate}>
+      <SelectTrigger>
+        <SelectValue placeholder="Şablon seçin" />
+      </SelectTrigger>
+      <SelectContent>
+        {templates.map((template, idx) => (
+          <SelectItem key={idx} value={template}>
+            {template}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
 
-          <div>
-            <Label>Bildirim Türü</Label>
-            <Select onValueChange={setSelectedType} defaultValue="reminder">
-              {types.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </Select>
-          </div>
-        </div>
+  <div>
+    <Label>Bildirim Türü</Label>
+    <Select onValueChange={setSelectedType} defaultValue="reminder">
+      <SelectTrigger>
+        <SelectValue placeholder="Tür seçin" />
+      </SelectTrigger>
+      <SelectContent>
+        {types.map((type) => (
+          <SelectItem key={type} value={type}>
+            {type}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+</div>
 
         <DialogFooter>
           <Button
