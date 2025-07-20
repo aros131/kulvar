@@ -85,7 +85,11 @@ export default function CoachNotificationsPage() {
           <SendNotificationDialog clients={clients} />
         </div>
 
-        <ProgramList onClientsFetched={setClients} />
+        <div className="hidden">
+  <ProgramList onClientsFetched={setClients} />
+</div>
+
+
 
         {loading ? (
           <p>Yükleniyor...</p>
