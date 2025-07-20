@@ -24,31 +24,37 @@ exports.sendNotification = async (req, res) => {
 };
 
 
-exports.getNotifications = async (req, res) => {
+exports.getUserNotifications = async (req, res) => {
   try {
-    const notifications = await NNotification.find({ recipientId: req.user.id }).sort({ createdAt: -1 })
-
+    const notifications = await Notification.find({ recipientId: req.user.id }).sort({ createdAt: -1 });
+    res.status(200).json({ notifications });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
 };
+
 exports.markNotificationAsRead = async (req, res) => {
   try {
-    const notificationId = req.params.id;
-
-    const updated = await Notification.findByIdAndUpdate(
-      notificationId,
+    const { id } = req.params;
+    await Notification.findOneAndUpdate(
+      { _id: id, recipientId: req.user.id },
       { isRead: true },
       { new: true }
     );
-
-    if (!updated) {
-      return res.status(404).json({ message: "Bildirim bulunamadı" });
-    }
-
-    res.status(200).json({ message: "Bildirim okundu olarak işaretlendi", notification: updated });
+    res.status(200).json({ message: "Bildirim okundu olarak işaretlendi." });
   } catch (error) {
-    console.error("Bildirim işaretleme hatası:", error.message);
-    res.status(500).json({ message: "Bildirim işaretleme hatası", error: error.message });
+    res.status(500).json({ message: "Hata oluştu", error: error.message });
+  }
+};
+
+exports.markAllAsRead = async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { recipientId: req.user.id, isRead: false },
+      { $set: { isRead: true } }
+    );
+    res.status(200).json({ message: "Tüm bildirimler okundu olarak işaretlendi." });
+  } catch (error) {
+    res.status(500).json({ message: "Hata oluştu", error: error.message });
   }
 };
