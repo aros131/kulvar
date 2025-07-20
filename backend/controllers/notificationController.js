@@ -58,3 +58,14 @@ exports.markAllAsRead = async (req, res) => {
     res.status(500).json({ message: "Hata oluştu", error: error.message });
   }
 };
+// 🔔 Get notifications sent by the logged-in coach
+exports.getCoachSentNotifications = async (req, res) => {
+  const coachId = req.user.id;
+  try {
+    const notifications = await Notification.find({ sender: coachId }).sort({ createdAt: -1 });
+    res.status(200).json({ notifications });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch sent notifications" });
+  }
+};
+

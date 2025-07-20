@@ -7,6 +7,7 @@ const {
   getUserNotifications,
   markNotificationAsRead,
   markAllAsRead,
+  getCoachSentNotifications
 } = require("../controllers/notificationController");
 
 // 📨 Send a notification
@@ -20,5 +21,8 @@ router.patch("/:id/read", protect, markNotificationAsRead);
 
 // ✅ Mark all user notifications as read
 router.patch("/user/mark-all-read", protect, markAllAsRead);
+// 👨‍🏫 Get notifications sent by the coach (admin view)
+router.get("/coach", protect, getCoachSentNotifications);
+
 
 module.exports = router;
