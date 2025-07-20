@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { fetchCoachPrograms } from "@/utils/api";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,37 +9,84 @@ import DeleteProgramDialog from "@/components/coach/DeleteProgramDialog";
 import AssignClientsDialog from "@/components/coach/AssignClientsDialog";
 import EditProgramDialog from "@/components/coach/EditProgramDialog";
 
+// Backend'ten gelen client
+interface Client {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+// SendNotificationDialog'un beklediği client tipi
+interface ClientForNotification {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface Program {
   _id: string;
   name: string;
   description: string;
 }
 
-const ProgramList: React.FC = () => {
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [loading, setLoading] = useState(true); // ✅ loading state
+interface ProgramWithClients extends Program {
+  assignedClients: Client[];
+}
 
-  const fetchPrograms = async () => {
+interface ProgramListProps {
+  onClientsFetched?: (clients: ClientForNotification[]) => void;
+}
+
+const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched }) => {
+  const [programsWithClients, setProgramsWithClients] = useState<ProgramWithClients[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProgramsWithClients = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Token bulunamadı");
 
-      const programs = await fetchCoachPrograms(token);
-      console.log("🟢 Gelen programlar:", programs);
-      programs.forEach((p: Program) => {
-        console.log(`Program adı: ${p.name}, ID: ${p._id}`);
-      });
-      setPrograms(programs);
+      const basePrograms = await fetchCoachPrograms(token);
+
+      const detailedPrograms: ProgramWithClients[] = await Promise.all(
+        basePrograms.map(async (program: Program) => {
+          const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${program._id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          return {
+            ...program,
+            assignedClients: data.program?.assignedClients || [],
+          };
+        })
+      );
+
+      setProgramsWithClients(detailedPrograms);
+
+      if (onClientsFetched) {
+        const uniqueClientsMap = new Map<string, ClientForNotification>();
+        detailedPrograms.forEach((program) => {
+          program.assignedClients.forEach((client) => {
+            uniqueClientsMap.set(client._id, {
+              id: client._id,
+              name: client.name,
+              email: client.email,
+            });
+          });
+        });
+        const uniqueClients = Array.from(uniqueClientsMap.values());
+        onClientsFetched(uniqueClients);
+      }
     } catch (error) {
-      console.error("🔴 Programlar yüklenirken hata oluştu:", error);
+      console.error("🔴 Programlar alınırken hata oluştu:", error);
     } finally {
-      setLoading(false); // ✅ stop skeleton
+      setLoading(false);
     }
-  };
+  }, [onClientsFetched]);
 
   useEffect(() => {
-    fetchPrograms();
-  }, []);
+    fetchProgramsWithClients();
+  }, [fetchProgramsWithClients]);
 
   return (
     <div>
@@ -58,23 +105,23 @@ const ProgramList: React.FC = () => {
                 </div>
               </Card>
             ))
-          : programs.length === 0 ? (
+          : programsWithClients.length === 0 ? (
               <p className="text-gray-500">Hiç program bulunamadı.</p>
             ) : (
-              programs.map((program) => (
+              programsWithClients.map((program) => (
                 <Card key={program._id} className="p-4 shadow space-y-2">
                   <h3 className="text-lg font-bold">{program.name}</h3>
                   <p>{program.description}</p>
                   <div className="mt-2 flex gap-2 flex-wrap">
                     <EditProgramDialog
                       programId={program._id}
-                      onUpdated={fetchPrograms}
+                      onUpdated={fetchProgramsWithClients}
                     />
                     <AssignClientsDialog programId={program._id} />
                     <DeleteProgramDialog
                       programId={program._id}
                       programName={program.name}
-                      onDelete={fetchPrograms}
+                      onDelete={fetchProgramsWithClients}
                     />
                   </div>
                 </Card>

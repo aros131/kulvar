@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
-export default function SidebarNav() {
-  const pathname = usePathname();
+interface SidebarNavProps {
+  unreadCount: number;
+}
 
-  const unreadCount = 3; // Replace with dynamic count if needed
+export default function SidebarNav({ unreadCount }: SidebarNavProps) {
+  const pathname = usePathname();
 
   const navItems = [
     { href: "/dashboard/coach", icon: <Home size={24} />, label: "Home" },
