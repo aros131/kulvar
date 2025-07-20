@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import ProgramCard from "@/components/dashboard/ProgramCard";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
 import Link from "next/link";
+import SidebarNavUser from "@/components/ui/SidebarNavUser";
 
 interface UserProgram {
   programId: string;
@@ -69,8 +70,12 @@ export default function UserDashboardPage() {
     fetchNotifications();
   }, []);
 
-  return (
-    <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900">
+return (
+  <div className="flex">
+    <SidebarNavUser />
+
+    <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
+
       <Navbar />
       <WelcomeWidget />
 
@@ -153,6 +158,10 @@ export default function UserDashboardPage() {
           </div>
         </div>
       </section>
-    </main>
-  );
+      </main>
+  </div>
+);
+
+  
 }
+ 
