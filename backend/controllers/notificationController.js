@@ -26,9 +26,29 @@ exports.sendNotification = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ userId: req.user.id }).sort({ date: -1 });
-    res.status(200).json({ notifications });
+    const notifications = await NNotification.find({ recipientId: req.user.id }).sort({ createdAt: -1 })
+
   } catch (error) {
     res.status(500).json({ message: "Error retrieving notifications", error: error.message });
+  }
+};
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+
+    const updated = await Notification.findByIdAndUpdate(
+      notificationId,
+      { isRead: true },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Bildirim bulunamadı" });
+    }
+
+    res.status(200).json({ message: "Bildirim okundu olarak işaretlendi", notification: updated });
+  } catch (error) {
+    console.error("Bildirim işaretleme hatası:", error.message);
+    res.status(500).json({ message: "Bildirim işaretleme hatası", error: error.message });
   }
 };

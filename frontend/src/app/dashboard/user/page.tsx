@@ -84,29 +84,7 @@ const fetchUnreadNotifications = async () => {
             Bugün de hedeflerine ulaşmak için harika bir gün.
           </p>
 
-          {/* 🔗 Quick Navigation Buttons */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            <Link href="/dashboard/user/profile">
-              <button className="w-full py-3 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 shadow rounded-lg text-sm font-medium">
-                👤 Profilim
-              </button>
-            </Link>
-            <Link href="/dashboard/user/messages">
-              <button className="w-full py-3 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 shadow rounded-lg text-sm font-medium">
-                💬 Mesajlar
-              </button>
-            </Link>
-            <Link href="/dashboard/user/programs">
-              <button className="w-full py-3 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 shadow rounded-lg text-sm font-medium">
-                🏋️ Programlarım
-              </button>
-            </Link>
-            <Link href="/dashboard/user/settings">
-              <button className="w-full py-3 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 shadow rounded-lg text-sm font-medium">
-                ⚙️ Ayarlar
-              </button>
-            </Link>
-          </div>
+          
 
           {/* 🔥 Programs Section */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
