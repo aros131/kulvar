@@ -9,10 +9,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Client {
   id: string;
@@ -23,6 +25,12 @@ interface Props {
   clients: Client[];
 }
 
+interface Notification {
+  message: string;
+  recipientName: string;
+  timestamp: string;
+}
+
 const templates = [
   "Harika gidiyorsun! Bugünkü antrenmanı da unutma 💪",
   "Bugün motivasyonun düşükse bile küçük bir adım at 💫",
@@ -30,28 +38,54 @@ const templates = [
 ];
 
 export default function NotificationTemplatesDialog({ clients }: Props) {
-  const [selectedClient, setSelectedClient] = useState<string>("");
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [customMessage, setCustomMessage] = useState("");
+  const [history, setHistory] = useState<Notification[]>([]);
+
+  const handleToggleClient = (id: string) => {
+    setSelectedClients((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
 
   const handleSend = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        clientId: selectedClient,
-        message: selectedTemplate,
-        type: "coach",
-      }),
+
+    const promises = selectedClients.map(async (clientId) => {
+      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          clientId,
+          message: customMessage,
+          type: "coach",
+        }),
+      });
+
+      if (res.ok) {
+        const clientName = clients.find((c) => c.id === clientId)?.name || "Bilinmeyen";
+        setHistory((prev) => [
+          {
+            message: customMessage,
+            recipientName: clientName,
+            timestamp: new Date().toLocaleString(),
+          },
+          ...prev,
+        ]);
+        return true;
+      }
+      return false;
     });
 
-    if (res.ok) {
-      toast.success("Bildirim gönderildi!");
+    const results = await Promise.all(promises);
+
+    if (results.every((r) => r)) {
+      toast.success("Tüm bildirimler gönderildi!");
     } else {
-      toast.error("Bir hata oluştu.");
+      toast.error("Bazı bildirimler gönderilemedi.");
     }
   };
 
@@ -61,43 +95,77 @@ export default function NotificationTemplatesDialog({ clients }: Props) {
         <Button variant="default">📨 Bildirim Gönder</Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Hızlı Bildirim Gönder</DialogTitle>
+          <DialogTitle>Toplu Bildirim Gönder</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <Label>Danışan Seç</Label>
-            <Select onValueChange={setSelectedClient}>
+            <ScrollArea className="h-40 p-2 border rounded">
               {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
-                </SelectItem>
+                <div key={client.id} className="flex items-center gap-2 py-1">
+                  <Checkbox
+                    checked={selectedClients.includes(client.id)}
+                    onCheckedChange={() => handleToggleClient(client.id)}
+                  />
+                  <span>{client.name}</span>
+                </div>
               ))}
-            </Select>
+            </ScrollArea>
           </div>
 
           <div>
-            <Label>Mesaj Şablonu</Label>
-            <Select onValueChange={setSelectedTemplate}>
+            <Label>Hazır Mesaj Şablonu</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
               {templates.map((template, idx) => (
-                <SelectItem key={idx} value={template}>
+                <Button
+                  key={idx}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomMessage(template)}
+                >
                   {template}
-                </SelectItem>
+                </Button>
               ))}
-            </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label>Mesaj</Label>
+            <Textarea
+              placeholder="Mesajınızı buraya yazın..."
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+            />
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           <Button
             onClick={handleSend}
-            disabled={!selectedClient || !selectedTemplate}
+            disabled={selectedClients.length === 0 || customMessage.trim() === ""}
           >
             Gönder
           </Button>
         </DialogFooter>
+
+        {history.length > 0 && (
+          <div className="mt-6">
+            <h3 className="font-semibold mb-2">📋 Gönderilen Bildirimler</h3>
+            <ScrollArea className="h-40 p-2 border rounded bg-gray-50">
+              {history.map((item, i) => (
+                <div key={i} className="mb-2">
+                  <p className="text-sm text-gray-800">{item.message}</p>
+                  <p className="text-xs text-gray-500">
+                    Alıcı: {item.recipientName} — {item.timestamp}
+                  </p>
+                </div>
+              ))}
+            </ScrollArea>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
