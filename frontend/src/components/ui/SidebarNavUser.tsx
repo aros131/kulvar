@@ -1,17 +1,22 @@
 "use client";
 
-import { Home, Bell, User, Dumbbell } from "lucide-react";
+import { Home, User, Dumbbell, MessageSquare, Settings, Bell } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
-export default function SidebarNavUser() {
+interface SidebarNavUserProps {
+  unreadCount: number;
+}
+
+export default function SidebarNavUser({ unreadCount }: SidebarNavUserProps) {
   const pathname = usePathname();
-  const unreadCount = 2; // You can pass this as a prop if needed
 
   const navItems = [
     { href: "/dashboard/user", icon: <Home size={24} />, label: "Ana Sayfa" },
     { href: "/dashboard/user/profile", icon: <User size={24} />, label: "Profil" },
+    { href: "/dashboard/user/messages", icon: <MessageSquare size={24} />, label: "Mesajlar" },
+    { href: "/dashboard/user/programs", icon: <Dumbbell size={24} />, label: "Programlarım" },
     {
       href: "/dashboard/user/notifications",
       icon: (
@@ -26,7 +31,7 @@ export default function SidebarNavUser() {
       ),
       label: "Bildirimler",
     },
-    { href: "/dashboard/user/programs", icon: <Dumbbell size={24} />, label: "Programlarım" },
+    { href: "/dashboard/user/settings", icon: <Settings size={24} />, label: "Ayarlar" },
   ];
 
   return (
