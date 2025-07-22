@@ -1,3 +1,4 @@
+const Notification = require("../models/Notification"); 
 exports.sendNotification = async (req, res) => {
   try {
     const { clientId, message, type } = req.body;
