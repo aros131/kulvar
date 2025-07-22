@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
+
 const NotificationSchema = new mongoose.Schema({
   recipientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // ✅ Add this
+  senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   message: { type: String, required: true },
   type: {
     type: String,
@@ -11,3 +12,6 @@ const NotificationSchema = new mongoose.Schema({
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
+
+const Notification = mongoose.model("Notification", NotificationSchema);
+module.exports = Notification;
