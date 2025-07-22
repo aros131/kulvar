@@ -45,7 +45,9 @@ mongoose.connect(process.env.MONGO_URI, {
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/content', contentRoutes);
-app.use('/notifications', notificationRoutes);
+app.use("/notifications", notificationRoutes); // 🔁 Eski kullanıcı bildirimleri için
+app.use("/dashboard/notifications", notificationRoutes); // 🔁 Koç paneli için uyumlu
+
 app.use('/exercise-templates', exerciseTemplateRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/groups', clientGroupRoutes);
