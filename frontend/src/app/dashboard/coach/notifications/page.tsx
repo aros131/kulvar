@@ -11,7 +11,7 @@ import { Dot } from "lucide-react";
 import SendNotificationDialog from "@/components/coach/SendNotificationDialog";
 import SidebarNavCoach from "@/components/ui/SidebarNavCoach";
 import ProgramList from "@/components/coach/ProgramList";
-
+import SentNotificationsList from "@/components/coach/SentNotificationsList";
 interface Notification {
   _id: string;
   message: string;
@@ -84,6 +84,8 @@ export default function CoachNotificationsPage() {
           <h1 className="text-2xl font-bold">📨 Bildirimler</h1>
           <SendNotificationDialog clients={clients} />
         </div>
+        
+<SentNotificationsList />
 
         <div className="hidden">
   <ProgramList onClientsFetched={setClients} />

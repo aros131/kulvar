@@ -19,7 +19,8 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
-
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
 
 interface Client {
   id: string;
@@ -34,14 +35,21 @@ const templates = [
   "Harika gidiyorsun! Bugünkü antrenmanı da unutma 💪",
   "Bugün motivasyonun düşükse bile küçük bir adım at 💫",
   "Takıldığın bir yer olursa bana yazabilirsin! 📩",
-  "Serra hayatının aşkı sakın onu bırakma!",
+ 
 ];
 
-const types = ["reminder", "program_update", "feedback"];
+const typeLabels: Record<string, string> = {
+  reminder: "Hatırlatma",
+  program_update: "Program Güncellemesi",
+  feedback: "Geri Bildirim",
+};
+
+const types = Object.keys(typeLabels);
 
 export default function SendNotificationDialog({ clients }: Props) {
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("reminder");
 
   const handleSend = async () => {
@@ -54,7 +62,7 @@ export default function SendNotificationDialog({ clients }: Props) {
       },
       body: JSON.stringify({
         clientId: selectedClient,
-        message: selectedTemplate,
+        message,
         type: selectedType,
       }),
     });
@@ -79,59 +87,88 @@ export default function SendNotificationDialog({ clients }: Props) {
         </DialogHeader>
 
         <div className="space-y-4">
-  <div>
-    <Label>Danışan Seç</Label>
-    <Select onValueChange={setSelectedClient}>
-      <SelectTrigger>
-        <SelectValue placeholder="Danışan seçin" />
-      </SelectTrigger>
-      <SelectContent>
-        {clients.map((client) => (
-          <SelectItem key={client.id} value={client.id}>
-            {client.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
+          {/* Danışan */}
+          <div>
+            <Label>Danışan Seç</Label>
+            <Select onValueChange={setSelectedClient}>
+              <SelectTrigger>
+                <SelectValue placeholder="Danışan seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-  <div>
-    <Label>Mesaj Şablonu</Label>
-    <Select onValueChange={setSelectedTemplate}>
-      <SelectTrigger>
-        <SelectValue placeholder="Şablon seçin" />
-      </SelectTrigger>
-      <SelectContent>
-        {templates.map((template, idx) => (
-          <SelectItem key={idx} value={template}>
-            {template}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
+          {/* Şablon seç */}
+          <div>
+            <Label>Hazır Mesaj Şablonu</Label>
+            <Select
+              onValueChange={(value) => {
+                setSelectedTemplate(value);
+                setMessage(value); // otomatik doldur
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Şablon seçin (opsiyonel)" />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((template, idx) => (
+                  <SelectItem key={idx} value={template}>
+                    {template}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-  <div>
-    <Label>Bildirim Türü</Label>
-    <Select onValueChange={setSelectedType} defaultValue="reminder">
-      <SelectTrigger>
-        <SelectValue placeholder="Tür seçin" />
-      </SelectTrigger>
-      <SelectContent>
-        {types.map((type) => (
-          <SelectItem key={type} value={type}>
-            {type}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-</div>
+          {/* Özel mesaj */}
+          <div>
+            <Label>Mesaj İçeriği</Label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Mesajınızı buraya yazın..."
+            />
+          </div>
+
+          {/* Tür */}
+          <div>
+            <Label>Bildirim Türü</Label>
+            <Select
+              onValueChange={setSelectedType}
+              defaultValue="reminder"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tür seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {types.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {typeLabels[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Önizleme */}
+          {message && (
+            <Card className="p-4 mt-4 border border-gray-300">
+              <p className="text-sm text-muted-foreground mb-1 font-medium">Önizleme:</p>
+              <p className="text-base">{message}</p>
+            </Card>
+          )}
+        </div>
 
         <DialogFooter>
           <Button
             onClick={handleSend}
-            disabled={!selectedClient || !selectedTemplate || !selectedType}
+            disabled={!selectedClient || !message || !selectedType}
           >
             Gönder
           </Button>
