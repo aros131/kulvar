@@ -39,7 +39,7 @@ export default function SentNotificationsList() {
         } else {
           toast.error(data.message);
         }
-      } catch (err) {
+      } catch {
         toast.error("Gönderilen bildirimler alınamadı");
       } finally {
         setLoading(false);
@@ -66,7 +66,9 @@ export default function SentNotificationsList() {
               <Badge>{typeLabels[n.type] || n.type}</Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">{n.message}</p>
-            <p className="text-xs text-gray-500 mt-2">{new Date(n.createdAt).toLocaleString("tr-TR")}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {new Date(n.createdAt).toLocaleString("tr-TR")}
+            </p>
           </Card>
         ))
       )}

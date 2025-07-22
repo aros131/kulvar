@@ -48,7 +48,7 @@ const types = Object.keys(typeLabels);
 
 export default function SendNotificationDialog({ clients }: Props) {
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  
   const [message, setMessage] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("reminder");
 
@@ -109,7 +109,7 @@ export default function SendNotificationDialog({ clients }: Props) {
             <Label>Hazır Mesaj Şablonu</Label>
             <Select
               onValueChange={(value) => {
-                setSelectedTemplate(value);
+                
                 setMessage(value); // otomatik doldur
               }}
             >
