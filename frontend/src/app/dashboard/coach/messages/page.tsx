@@ -1,10 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUserChats } from "@/utils/firestore/getUserChats";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  Timestamp,
+} from "firebase/firestore";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 interface ChatItem {
   id: string;
@@ -20,62 +28,83 @@ export default function CoachMessagesPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setUser(parsed);
+    if (!stored) return;
+    const parsed = JSON.parse(stored);
+    setUser(parsed);
 
-      const loadChats = async () => {
-        const rawChats = await getUserChats(parsed.id);
+    const q = query(collection(db, "chats"), orderBy("updatedAt", "desc"));
 
-        const enrichedChats = await Promise.all(
-          rawChats.map(async (chat) => {
-            const c = chat as ChatItem;
-            const otherUserId = c.participants.find((id: string) => id !== parsed.id);
-            const userDoc = await getDoc(doc(db, "users", otherUserId!));
-            const otherUser = userDoc.data();
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const raw = snapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          if (!Array.isArray(data.participants)) return null;
 
-            return {
-              ...c,
-              otherUserName: otherUser?.name || "Bilinmeyen",
-            };
-          })
-        );
+          return {
+            id: doc.id,
+            participants: data.participants,
+            lastMessage: data.lastMessage || "",
+            updatedAt: data.updatedAt || { seconds: 0 },
+          };
+        })
+        .filter((chat) => chat && chat.participants.includes(parsed.id)) as ChatItem[];
 
-        setChats(enrichedChats);
-      };
+      const enriched = await Promise.all(
+        raw.map(async (chat) => {
+          const otherId = chat.participants.find((id) => id !== parsed.id);
+          const userDoc = await getDoc(doc(db, "users", otherId!));
+          const otherUser = userDoc.data();
+          return {
+            ...chat,
+            otherUserName: otherUser?.name || "Bilinmeyen",
+          };
+        })
+      );
 
-      loadChats();
-    }
+      setChats(enriched);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   if (!user) return <div className="p-4">Yükleniyor...</div>;
 
   return (
     <main className="p-4 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">📨 Mesajlar</h1>
-      <Link
-    href="/dashboard/user/messages/start"
-    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
-  >
-    ➕ Yeni Mesaj
-  </Link>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">📨 Mesajlar</h1>
+        <Link
+          href="/dashboard/coach/messages/start"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition"
+        >
+          ➕ Yeni Mesaj <ArrowRight size={16} />
+        </Link>
+      </div>
 
-      <ul className="space-y-3">
-        {chats.map((chat) => (
-          <li key={chat.id}>
-            <Link
-              href={`/dashboard/${user.role}/messages/${chat.id}`}
-              className="block border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <div className="font-medium">{chat.otherUserName}</div>
-              <div className="text-sm text-zinc-500 truncate">{chat.lastMessage}</div>
-              <div className="text-xs text-zinc-400">
-                {new Date(chat.updatedAt?.seconds * 1000).toLocaleString()}
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {chats.length === 0 ? (
+        <p className="text-zinc-500 text-sm text-center">Hiç mesaj yok.</p>
+      ) : (
+        <ul className="space-y-3">
+          {chats.map((chat) => (
+            <li key={chat.id}>
+              <Link
+                href={`/dashboard/${user.role}/messages/${chat.id}`}
+                className="block border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+              >
+                <div className="font-semibold text-zinc-800 dark:text-zinc-100">
+                  {chat.otherUserName}
+                </div>
+                <div className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
+                  {chat.lastMessage || "Henüz mesaj yok."}
+                </div>
+                <div className="text-xs text-zinc-400 mt-1">
+                  {new Date(chat.updatedAt?.seconds * 1000).toLocaleString()}
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
