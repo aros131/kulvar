@@ -10,6 +10,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -50,7 +51,7 @@ export default function UserMessagesPage() {
             participants: data.participants,
             lastMessage: data.lastMessage || "",
             updatedAt: data.updatedAt || { seconds: 0 },
-            unreadCount: data.unreadCount || 0,
+            unreadCount: data[`unread_${parsed.id}`] || 0,
           };
         })
         .filter(Boolean) as ChatItem[];
@@ -88,6 +89,16 @@ export default function UserMessagesPage() {
     );
   };
 
+  const markAllAsRead = async () => {
+    if (!user) return;
+    for (const chat of chats) {
+      const chatRef = doc(db, "chats", chat.id);
+      await updateDoc(chatRef, {
+        [`unread_${user.id}`]: 0,
+      });
+    }
+  };
+
   if (!user) {
     return (
       <main className="p-4 max-w-xl mx-auto">
@@ -99,14 +110,21 @@ export default function UserMessagesPage() {
   return (
     <main className="p-4 max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">📨 Mesajlar
-        </h1>
-        <Link
-          href="/dashboard/user/messages/start"
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition"
-        >
-          ➕ Yeni Mesaj <ArrowRight size={16} />
-        </Link>
+        <h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">📨 Mesajlar</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={markAllAsRead}
+            className="text-sm text-zinc-600 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Tümünü okundu yap
+          </button>
+          <Link
+            href="/dashboard/user/messages/start"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition"
+          >
+            ➕ Yeni Mesaj <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
 
       <input

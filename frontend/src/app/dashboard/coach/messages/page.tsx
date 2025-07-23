@@ -10,6 +10,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -50,7 +51,7 @@ export default function CoachMessagesPage() {
             participants: data.participants,
             lastMessage: data.lastMessage || "",
             updatedAt: data.updatedAt || { seconds: 0 },
-            unreadCount: data.unreadCount || 0,
+            unreadCount: data[`unread_${parsed.id}`] || 0,
           };
         })
         .filter(Boolean) as ChatItem[];
@@ -88,6 +89,16 @@ export default function CoachMessagesPage() {
     );
   };
 
+  const markAllAsRead = async () => {
+    if (!user) return;
+    for (const chat of chats) {
+      const chatRef = doc(db, "chats", chat.id);
+      await updateDoc(chatRef, {
+        [`unread_${user.id}`]: 0,
+      });
+    }
+  };
+
   if (!user) {
     return (
       <main className="p-4 max-w-xl mx-auto">
@@ -99,13 +110,23 @@ export default function CoachMessagesPage() {
   return (
     <main className="p-4 max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">📨 Mesajlar</h1>
-        <Link
-          href="/dashboard/coach/messages/start"
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition"
-        >
-          ➕ Yeni Mesaj <ArrowRight size={16} />
-        </Link>
+        <h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">
+          📨 Koç Mesajları
+        </h1>
+        <div className="flex gap-2">
+          <button
+            onClick={markAllAsRead}
+            className="text-sm text-zinc-600 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Tümünü okundu yap
+          </button>
+          <Link
+            href="/dashboard/coach/messages/start"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition"
+          >
+            ➕ Yeni Mesaj <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
 
       <input
@@ -136,7 +157,7 @@ export default function CoachMessagesPage() {
                 className="flex items-center gap-3 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 hover:bg-blue-50 dark:hover:bg-zinc-700 transition"
               >
                 <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-semibold">
-                  {chat.otherUserName?.split(" ").map(w => w[0]).join("")}
+                  {chat.otherUserName?.split(" ").map((w) => w[0]).join("")}
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-zinc-800 dark:text-zinc-100 flex items-center justify-between">
