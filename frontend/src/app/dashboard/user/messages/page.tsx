@@ -53,6 +53,12 @@ export default function CoachMessagesPage() {
   return (
     <main className="p-4 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">📨 Mesajlar</h1>
+       <Link
+    href="/dashboard/user/messages/start"
+    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
+  >
+    ➕ Yeni Mesaj
+  </Link>
 
       <ul className="space-y-3">
         {chats.map((chat) => (
