@@ -2,18 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllUsersByRole } from "@/utils/firestore/getAllUsersByRole";
+import { getAllUsers } from "@/utils/firestore/getAllUsers";
 import { db } from "@/lib/firebase";
 import {
   doc,
   getDoc,
   setDoc,
-  
   serverTimestamp,
 } from "firebase/firestore";
 
 export default function StartCoachChatPage() {
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; role: string }[]>([]);
   const [user, setUser] = useState<{ id: string; name: string; role: string } | null>(null);
   const router = useRouter();
 
@@ -22,14 +21,17 @@ export default function StartCoachChatPage() {
     if (stored) {
       const parsed = JSON.parse(stored);
       setUser(parsed);
-      getAllUsersByRole("client").then(setClients);
+      getAllUsers().then((allUsers) => {
+        const filtered = allUsers.filter((u) => u.id !== parsed.id);
+        setUsers(filtered);
+      });
     }
   }, []);
 
-  const startChat = async (clientId: string) => {
+  const startChat = async (otherUserId: string) => {
     if (!user) return;
 
-    const participants = [user.id, clientId].sort();
+    const participants = [user.id, otherUserId].sort();
     const chatId = participants.join("_");
 
     const chatRef = doc(db, "chats", chatId);
@@ -48,15 +50,15 @@ export default function StartCoachChatPage() {
 
   return (
     <main className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">👤 Yeni Mesaj</h1>
+      <h1 className="text-2xl font-bold mb-4">👥 Tüm Kullanıcılar</h1>
       <ul className="space-y-2">
-        {clients.map((client) => (
-          <li key={client.id}>
+        {users.map((u) => (
+          <li key={u.id}>
             <button
-              onClick={() => startChat(client.id)}
+              onClick={() => startChat(u.id)}
               className="w-full text-left p-3 rounded border hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
-              {client.name}
+              {u.name} <span className="text-xs text-zinc-500">({u.role})</span>
             </button>
           </li>
         ))}
