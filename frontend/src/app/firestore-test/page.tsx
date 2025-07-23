@@ -5,7 +5,13 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
 export default function FirestoreTestPage() {
-  const [docs, setDocs] = useState<any[]>([]);
+  type FirestoreTestDoc = {
+  id: string;
+  [key: string]: unknown;
+};
+
+const [docs, setDocs] = useState<FirestoreTestDoc[]>([]);
+
 
   useEffect(() => {
     const loadTestData = async () => {
