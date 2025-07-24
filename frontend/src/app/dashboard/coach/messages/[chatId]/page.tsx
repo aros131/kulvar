@@ -87,16 +87,20 @@ export default function ChatIdPage() {
 
     let imageUrl = "";
     if (image) {
-      const imageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${image.name}`);
-      const snapshot = await uploadBytes(imageRef, image);
-      imageUrl = await getDownloadURL(snapshot.ref);
+      try {
+        const imageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${image.name}`);
+        const snapshot = await uploadBytes(imageRef, image);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      } catch (error) {
+        console.error("Görsel yüklenemedi:", error);
+      }
     }
 
     const newMessage = {
       senderId: user.id,
       text: text.trim(),
       createdAt: serverTimestamp(),
-      imageUrl: imageUrl || undefined,
+      ...(imageUrl && { imageUrl }),
       read: false,
     };
 
