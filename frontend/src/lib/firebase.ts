@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-
+import { getStorage } from "firebase/storage";
 // ✅ Your config (safe to use on client)
 const firebaseConfig = {
   apiKey: "AIzaSyBqblbrETRgYJpX3UDNhRw2ET1SEJl3260",
@@ -16,3 +16,4 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
 export const db = getFirestore(app);
+export const storage = getStorage(app); // 'app' zaten initialize edilmiş olmalı
