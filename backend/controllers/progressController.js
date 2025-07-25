@@ -341,6 +341,42 @@ const getAllProgramProgress = async (req, res) => {
     res.status(500).json({ message: "Error fetching program progress", error: error.message });
   }
 };
+const getCalendarHeatmap = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.user.id;
+
+    const progress = await Progress.findOne({ programId, clientId: userId });
+
+    if (!progress) {
+      return res.status(404).json({ message: "No progress found" });
+    }
+
+    const days = [];
+
+    // ✅ Build last 30 days
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const isoDate = date.toISOString().split("T")[0];
+
+      const entry = progress.completedSessions.find(s => {
+        const entryDate = s.dateCompleted?.toISOString().split("T")[0];
+        return entryDate === isoDate;
+      });
+
+      let status = "none";
+      if (entry?.completed) status = "completed";
+      else if (entry && !entry.completed) status = "missed";
+
+      days.unshift({ date: isoDate, status });
+    }
+
+    res.status(200).json({ days });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching calendar heatmap", error: error.message });
+  }
+};
 
 
 
@@ -361,4 +397,5 @@ module.exports = {
   markSessionCompleted,
   updateGoalProgress,
   getAllProgramProgress,
+  getCalendarHeatmap
 };

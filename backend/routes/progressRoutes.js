@@ -18,7 +18,8 @@ const {
   getUserStreaks,
   getAdaptiveGoalProgress,
   getStrengthProgress,
-  getAllProgramProgress
+  getAllProgramProgress,
+  getCalendarHeatmap
 } = require("../controllers/progressController");
 
 // ✅ Log user progress (User Only)
@@ -62,5 +63,7 @@ router.get("/strength-chart/:programId", protect, getStrengthProgress);
 
 // ✅ Get all program progress (User Only or Coach depending on implementation)
 router.get("/all-program-progress", protect, getAllProgramProgress);
+
+router.get("/calendar/:programId", protect, roleMiddleware(["user"]), getCalendarHeatmap);
 
 module.exports = router;
