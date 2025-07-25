@@ -52,7 +52,10 @@ export default function ChatIdPage() {
 
     const q = query(collection(db, `chats/${chatId}/messages`), orderBy("createdAt"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Message));
+      const msgs = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Message, "id">),
+      }));
       setMessages(msgs);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     });
@@ -155,7 +158,11 @@ export default function ChatIdPage() {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`max-w-[75%] px-4 py-2 rounded-xl text-sm whitespace-pre-line break-words flex flex-col ${msg.senderId === user?.id ? "ml-auto bg-blue-600 text-white" : "bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100"}`}
+            className={`max-w-[75%] px-4 py-2 rounded-xl text-sm whitespace-pre-line break-words flex flex-col ${
+              msg.senderId === user?.id
+                ? "ml-auto bg-blue-600 text-white"
+                : "bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100"
+            }`}
           >
             {msg.imageUrl && (
               <Image
