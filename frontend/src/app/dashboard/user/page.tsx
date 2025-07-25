@@ -97,11 +97,12 @@ const fetchUnreadNotifications = async () => {
                     duration={program.duration || "Bilinmiyor"}
                     progressPercentage={program.progressPercentage}
                   />
-                  <Link href={`/programs/${program.programId}`}>
-                    <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-                      Programa Bak
-                    </button>
-                  </Link>
+                  <Link href={`/dashboard/user/programs/${program.programId}`}>
+  <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+    Programa Git
+  </button>
+</Link>
+
                 </div>
               ))
             ) : (

@@ -138,11 +138,12 @@ export default function UserProgramsPage() {
                   goalTag="Fitness"
                   coachName="Ali Hoca"
                 />
-                <Link href={`/programs/${program.programId}`}>
-                  <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-                    Programa Git
-                  </button>
-                </Link>
+                <Link href={`/dashboard/user/programs/${program.programId}`}>
+  <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+    Programa Git
+  </button>
+</Link>
+
               </div>
             ))
           ) : (
