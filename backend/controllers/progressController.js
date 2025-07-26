@@ -199,8 +199,9 @@ const getUserProgress = async (req, res) => {
     }
 
     // ✅ Calculate progress percentage
-    const totalSessions = progress.sessionTracking.length;
-    const completedSessions = progress.sessionTracking.filter(s => s.completed).length;
+const totalSessions = progress.sessionTracking?.length || 0;
+const completedSessions = progress.sessionTracking?.filter(s => s.completed).length || 0;
+
     const progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
 
     res.status(200).json({
