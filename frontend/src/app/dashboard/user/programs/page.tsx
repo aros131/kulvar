@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ProgramCard from "@/components/dashboard/ProgramCard";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Bar, Doughnut } from "react-chartjs-2";
+import ProgramCard from "@/components/dashboard/ProgramCard";
+
+// Dynamically import charts for SSR compatibility
+const Bar = dynamic(() => import("react-chartjs-2").then((mod) => mod.Bar), { ssr: false });
+const Doughnut = dynamic(() => import("react-chartjs-2").then((mod) => mod.Doughnut), { ssr: false });
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -14,14 +19,7 @@ import {
   LinearScale,
 } from "chart.js";
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale
-);
+ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 interface UserProgram {
   programId: string;
@@ -68,28 +66,6 @@ export default function UserProgramsPage() {
     fetchPrograms();
     fetchProgress();
   }, []);
-
-  const donutData = {
-    labels: programs.map((p) => p.name),
-    datasets: [
-      {
-        data: programs.map((p) => p.progressPercentage),
-        backgroundColor: ["#4ade80", "#facc15", "#60a5fa", "#f87171", "#a78bfa"],
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const barData = {
-    labels: programs.map((p) => p.name),
-    datasets: [
-      {
-        label: "Tamamlanma %",
-        data: programs.map((p) => p.progressPercentage),
-        backgroundColor: "#4ade80",
-      },
-    ],
-  };
 
   return (
     <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
@@ -139,11 +115,10 @@ export default function UserProgramsPage() {
                   coachName="Ali Hoca"
                 />
                 <Link href={`/dashboard/user/programs/${program.programId}`}>
-  <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-    Programa Git
-  </button>
-</Link>
-
+                  <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+                    Programa Git
+                  </button>
+                </Link>
               </div>
             ))
           ) : (
@@ -156,11 +131,37 @@ export default function UserProgramsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow">
               <h2 className="text-lg font-semibold mb-4">Program Tamamlanma Dağılımı</h2>
-              <Doughnut data={donutData} />
+              <Doughnut
+                data={{
+                  labels: programs.map((p, i) => `${p.name} (${i + 1})`),
+                  datasets: [
+                    {
+                      data: programs.map((p) => Number(p.progressPercentage || 0)),
+                      backgroundColor: [
+                        "#4ade80", "#facc15", "#60a5fa", "#f87171", "#a78bfa",
+                        "#f472b6", "#34d399", "#f97316", "#818cf8", "#e879f9"
+                      ],
+                      borderWidth: 1,
+                    },
+                  ],
+                }}
+              />
             </div>
+
             <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow">
               <h2 className="text-lg font-semibold mb-4">Tamamlanma Oranları</h2>
-              <Bar data={barData} />
+              <Bar
+                data={{
+                  labels: programs.map((p, i) => `${p.name} (${i + 1})`),
+                  datasets: [
+                    {
+                      label: "Tamamlanma %",
+                      data: programs.map((p) => Number(p.progressPercentage || 0)),
+                      backgroundColor: "#4ade80",
+                    },
+                  ],
+                }}
+              />
             </div>
           </div>
         )}

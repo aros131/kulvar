@@ -1,11 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import ProgramCard from "@/components/dashboard/ProgramCard";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
+
+// Dynamically import charts for SSR safety
+const Doughnut = dynamic(() => import("react-chartjs-2").then(mod => mod.Doughnut), { ssr: false });
+const Bar = dynamic(() => import("react-chartjs-2").then(mod => mod.Bar), { ssr: false });
+
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+} from "chart.js";
+
+ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 interface UserProgram {
   programId: string;
@@ -31,7 +48,7 @@ interface Notification {
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0); // ✅ new
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -56,23 +73,23 @@ export default function UserDashboardPage() {
       });
     };
 
-const fetchUnreadNotifications = async () => {
-  const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  const unread = (data.notifications as Notification[]).filter((n) => !n.isRead).length;
-  setUnreadCount(unread);
-};
+    const fetchUnreadNotifications = async () => {
+      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const unread = (data.notifications as Notification[]).filter((n) => !n.isRead).length;
+      setUnreadCount(unread);
+    };
 
     fetchPrograms();
     fetchProgress();
-    fetchUnreadNotifications(); // ✅ fetch unread count
+    fetchUnreadNotifications();
   }, []);
 
   return (
     <div className="flex">
-      <SidebarNavUser unreadCount={unreadCount} /> {/* ✅ pass unreadCount */}
+      <SidebarNavUser unreadCount={unreadCount} />
 
       <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
         <Navbar />
@@ -83,8 +100,6 @@ const fetchUnreadNotifications = async () => {
           <p className="text-zinc-600 dark:text-zinc-300 mb-8">
             Bugün de hedeflerine ulaşmak için harika bir gün.
           </p>
-
-          
 
           {/* 🔥 Programs Section */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
@@ -98,11 +113,10 @@ const fetchUnreadNotifications = async () => {
                     progressPercentage={program.progressPercentage}
                   />
                   <Link href={`/dashboard/user/programs/${program.programId}`}>
-  <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-    Programa Git
-  </button>
-</Link>
-
+                    <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+                      Programa Git
+                    </button>
+                  </Link>
                 </div>
               ))
             ) : (
@@ -115,19 +129,14 @@ const fetchUnreadNotifications = async () => {
             <h2 className="text-xl font-semibold mb-4">İlerleme</h2>
             {progress ? (
               <div>
-                <p>
-                  Toplam Tamamlanan Seans:{" "}
-                  <strong>{progress.totalCompletedSessions}</strong>
-                </p>
-                <p>
-                  Atanmış Programlar:{" "}
-                  <strong>{progress.assignedPrograms}</strong>
-                </p>
+                <p>Toplam Tamamlanan Seans: <strong>{progress.totalCompletedSessions}</strong></p>
+                <p>Atanmış Programlar: <strong>{progress.assignedPrograms}</strong></p>
+
                 <div className="mt-4">
                   <h3 className="font-medium mb-2">Hedef Takibi:</h3>
                   {progress.goalTracking.length > 0 ? (
                     progress.goalTracking.map((g) => (
-                      <div key={g.programId} className="mb-2">
+                      <div key={g.programId} className="mb-4">
                         <p>Program ID: {g.programId}</p>
                         <div className="w-full bg-gray-300 rounded-full h-2">
                           <div
@@ -135,15 +144,53 @@ const fetchUnreadNotifications = async () => {
                             style={{ width: `${g.progressPercentage}%` }}
                           ></div>
                         </div>
-                        <p className="text-sm">
-                          {g.progressPercentage}% tamamlandı
-                        </p>
+                        <p className="text-sm">{g.progressPercentage}% tamamlandı</p>
                       </div>
                     ))
                   ) : (
                     <p>Hedef bulunamadı.</p>
                   )}
                 </div>
+
+                {/* 📊 Charts */}
+                {programs.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow">
+                      <h2 className="text-lg font-semibold mb-4">Program Tamamlanma Dağılımı</h2>
+                      <Doughnut
+                        data={{
+                          labels: programs.map((p, i) => `${p.name} (${i + 1})`),
+                          datasets: [
+                            {
+                              data: programs.map((p) => Number(p.progressPercentage || 0)),
+                              backgroundColor: [
+                                "#4ade80", "#facc15", "#60a5fa", "#f87171", "#a78bfa",
+                                "#f472b6", "#34d399", "#f97316", "#818cf8", "#e879f9"
+                              ],
+                              borderWidth: 1,
+                            },
+                          ],
+                        }}
+                      />
+                    </div>
+
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow">
+                      <h2 className="text-lg font-semibold mb-4">Tamamlanma Oranları</h2>
+                      <Bar
+                        data={{
+                          labels: programs.map((p, i) => `${p.name} (${i + 1})`),
+                          datasets: [
+                            {
+                              label: "Tamamlanma %",
+                              data: programs.map((p) => Number(p.progressPercentage || 0)),
+                              backgroundColor: "#4ade80",
+                            },
+                          ],
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p>İlerleme verisi yükleniyor...</p>
