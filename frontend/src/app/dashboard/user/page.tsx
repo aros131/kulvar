@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProgramCard from "@/components/dashboard/ProgramCard";
-import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
+
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
-import ProgressChart from "@/components/program/ProgressChart";
 
 interface UserProgram {
   programId: string;
@@ -78,54 +77,66 @@ export default function UserDashboardPage() {
 
       <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
         <Navbar />
-        <WelcomeWidget />
 
-        <section className="max-w-6xl mx-auto px-4 py-10">
-          <h1 className="text-3xl font-bold mb-4">Hoş Geldin!</h1>
-          <p className="text-zinc-600 dark:text-zinc-300 mb-8">
-            Bugün de hedeflerine ulaşmak için harika bir gün.
-          </p>
-
-          {/* 🔥 Programs Section */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {programs.length > 0 ? (
-              programs.map((program) => (
-                <div key={program.programId} className="program-card">
-                  <ProgramCard
-                    name={program.name}
-                    description={program.description}
-                    duration={program.duration || "Bilinmiyor"}
-                    progressPercentage={program.progressPercentage}
-                  />
-                  <Link href={`/dashboard/user/programs/${program.programId}`}>
-                    <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-                      Programa Git
-                    </button>
-                  </Link>
-                </div>
-              ))
-            ) : (
-              <p>Atanmış programın yok.</p>
-            )}
+        <section className="max-w-6xl mx-auto px-4 py-10 space-y-10">
+          {/* 💬 Welcome */}
+          <div className="bg-gradient-to-r from-green-100 to-green-200 dark:from-zinc-800 dark:to-zinc-700 p-6 rounded-xl shadow flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">👋 Hoş Geldin!</h1>
+              <p className="text-zinc-600 dark:text-zinc-300">
+                Bugün de hedeflerine ulaşmak için harika bir gün.
+              </p>
+            </div>
+            <img src="/images/motivation.png" className="w-24 hidden md:block" alt="Motivasyon" />
           </div>
 
-          {/* 📈 Goal Tracking */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Hedef Takibi</h2>
-            {progress?.goalTracking.length ? (
-              progress.goalTracking.map((goal) => (
-                <div key={goal.programId} className="mb-6">
-                  <p className="mb-1 text-sm font-medium">Program: {goal.programId}</p>
-                  <div className="w-full bg-gray-300 rounded-full h-2 mb-1">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${goal.progressPercentage}%` }}
-                    ></div>
+          {/* 🔥 Programs Section */}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">📋 Programların</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {programs.length > 0 ? (
+                programs.map((program) => (
+                  <div key={program.programId} className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow">
+                    <ProgramCard
+                      name={program.name}
+                      description={program.description}
+                      duration={program.duration || "Bilinmiyor"}
+                      progressPercentage={program.progressPercentage}
+                    />
+                    <Link href={`/dashboard/user/programs/${program.programId}`}>
+                      <button className="mt-3 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition">
+                        Programa Git
+                      </button>
+                    </Link>
                   </div>
-                  <p className="text-sm mb-2">{goal.progressPercentage}% tamamlandı</p>
-                  <ProgressChart completionPercentage={goal.progressPercentage || 0} />
-                </div>
-              ))
+                ))
+              ) : (
+                <p>Atanmış programın yok.</p>
+              )}
+            </div>
+          </div>
+
+          {/* 🎯 Goal Overview Section */}
+          <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
+            <h2 className="text-xl font-semibold mb-4">🎯 Hedef Takibi</h2>
+
+            {progress?.goalTracking.length ? (
+              <div className="space-y-6">
+                {progress.goalTracking.map((goal) => (
+                  <div key={goal.programId}>
+                    <div className="flex justify-between text-sm font-medium mb-1">
+                      <span>Program ID: {goal.programId}</span>
+                      <span>{goal.progressPercentage}%</span>
+                    </div>
+                    <div className="w-full bg-zinc-300 dark:bg-zinc-600 h-3 rounded-full">
+                      <div
+                        className="h-3 rounded-full bg-green-500 transition-all duration-500"
+                        style={{ width: `${goal.progressPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p>Hedef bulunamadı.</p>
             )}
