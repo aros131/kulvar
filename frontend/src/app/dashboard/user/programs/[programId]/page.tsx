@@ -61,8 +61,11 @@ export default function ProgramContentPage() {
   if (!program) return <div className="p-4">Program yükleniyor...</div>;
 
   const completedIds = new Set(
-    userProgress?.completedSessions?.map((s) => s.sessionId)
-  );
+  Array.isArray(userProgress?.completedSessions)
+    ? userProgress.completedSessions.map((s) => s.sessionId)
+    : []
+);
+
 
   const timelineSessions =
     program.dailySchedule?.flatMap((dayEntry, index) =>
