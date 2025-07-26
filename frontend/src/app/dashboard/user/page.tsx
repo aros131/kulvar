@@ -22,6 +22,7 @@ interface UserProgress {
   assignedPrograms: number;
   goalTracking: { programId: string; progressPercentage: number }[];
 }
+
 interface Notification {
   _id: string;
   message: string;
@@ -108,37 +109,25 @@ export default function UserDashboardPage() {
             )}
           </div>
 
-          {/* ✅ Progress Overview */}
+          {/* 📈 Goal Tracking */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">İlerleme</h2>
-            {progress ? (
-              <div>
-                <p>Toplam Tamamlanan Seans: <strong>{progress.totalCompletedSessions}</strong></p>
-                <p>Atanmış Programlar: <strong>{progress.assignedPrograms}</strong></p>
-
-                <div className="mt-4">
-                  <h3 className="font-medium mb-2">Hedef Takibi:</h3>
-                  {progress.goalTracking.length > 0 ? (
-                    progress.goalTracking.map((g) => (
-                      <div key={g.programId} className="mb-4">
-                        <p>Program ID: {g.programId}</p>
-                        <div className="w-full bg-gray-300 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${g.progressPercentage}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-sm">{g.progressPercentage}% tamamlandı</p>
-                        <ProgressChart completionPercentage={g.progressPercentage || 0} />
-                      </div>
-                    ))
-                  ) : (
-                    <p>Hedef bulunamadı.</p>
-                  )}
+            <h2 className="text-xl font-semibold mb-4">Hedef Takibi</h2>
+            {progress?.goalTracking.length ? (
+              progress.goalTracking.map((goal) => (
+                <div key={goal.programId} className="mb-6">
+                  <p className="mb-1 text-sm font-medium">Program: {goal.programId}</p>
+                  <div className="w-full bg-gray-300 rounded-full h-2 mb-1">
+                    <div
+                      className="bg-green-500 h-2 rounded-full"
+                      style={{ width: `${goal.progressPercentage}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm mb-2">{goal.progressPercentage}% tamamlandı</p>
+                  <ProgressChart completionPercentage={goal.progressPercentage || 0} />
                 </div>
-              </div>
+              ))
             ) : (
-              <p>İlerleme verisi yükleniyor...</p>
+              <p>Hedef bulunamadı.</p>
             )}
           </div>
         </section>
