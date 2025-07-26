@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 const ClientGroupSchema = new mongoose.Schema({
     name: { type: String, required: true },
     coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -6,5 +6,5 @@ const ClientGroupSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
   });
   
-  module.exports = mongoose.model('ClientGroup', ClientGroupSchema);
+  export default mongoose.model('ClientGroup', ClientGroupSchema);
   

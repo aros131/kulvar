@@ -1,6 +1,6 @@
-const Calendar = require("../models/Calendar");
+import Calendar from '../models/Calendar.js';
 
-exports.addEvent = async (req, res) => {
+export const addEvent = async (req, res) => {
   try {
     const { title, date, description } = req.body;
     const event = await Calendar.create({ userId: req.user.id, title, date, description });
@@ -10,7 +10,7 @@ exports.addEvent = async (req, res) => {
   }
 };
 
-exports.getEvents = async (req, res) => {
+export const getEvents = async (req, res) => {
   try {
     const events = await Calendar.find({ userId: req.user.id });
     res.status(200).json({ events });
@@ -19,7 +19,7 @@ exports.getEvents = async (req, res) => {
   }
 };
 
-exports.updateEvent = async (req, res) => {
+export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
     const updatedEvent = await Calendar.findByIdAndUpdate(id, req.body, { new: true });
@@ -29,7 +29,7 @@ exports.updateEvent = async (req, res) => {
   }
 };
 
-exports.deleteEvent = async (req, res) => {
+export const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
     await Calendar.findByIdAndDelete(id);

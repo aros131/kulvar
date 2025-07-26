@@ -1,11 +1,11 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
-const { createTemplate, getTemplates, deleteTemplate } = require("../controllers/exerciseTemplateController");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+import { createTemplate, getTemplates, deleteTemplate } from '../controllers/exerciseTemplateController.js';
 
 router.post("/", protect, roleMiddleware(["coach"]), createTemplate); // Create exercise template
 router.get("/", protect, getTemplates); // Get all exercise templates
 router.delete("/:id", protect, roleMiddleware(["coach"]), deleteTemplate); // Delete a template
 
-module.exports = router;
+export default router;

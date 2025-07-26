@@ -1,6 +1,6 @@
-const Report = require("../models/Report");
+import Report from '../models/Report.js';
 
-exports.generateReport = async (req, res) => {
+export const generateReport = async (req, res) => {
   try {
     const { type, filters } = req.body; // Type of report and optional filters
     const report = await Report.create({
@@ -15,7 +15,7 @@ exports.generateReport = async (req, res) => {
   }
 };
 
-exports.getReports = async (req, res) => {
+export const getReports = async (req, res) => {
   try {
     const reports = await Report.find({ coachId: req.user.id });
     res.status(200).json({ reports });

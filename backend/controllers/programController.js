@@ -1,5 +1,6 @@
-const Program = require("../models/Program");
-const User = require("../models/User");
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+import Progress from '../models/Progress.js';
 
 // 🟢 Create a new program
 const createProgram = async (req, res) => {
@@ -174,7 +175,6 @@ const getProgramVideos = async (req, res) => {
 
 
 // ✅ DEBUG LOG TO VERIFY EXPORTS
-console.log("✅ programController.js loaded! Exported functions:", module.exports);
 
 // 🟢 Update workout video links
 const updateWorkoutVideo = async (req, res) => {
@@ -598,7 +598,7 @@ const getAdaptiveAdjustments = async (req, res) => {
     const { programId } = req.params;
     const userId = req.user.id;
 
-    const progress = await require("../models/Progress").findOne({ programId, userId });
+    const progress = await Progress.findOne({ programId, userId });
 
     if (!progress) {
       return res.status(404).json({ message: "No adaptive data found" });
@@ -670,7 +670,7 @@ const unassignClient = async (req, res) => {
 
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
-module.exports = {
+export {
   createProgram,
   getPrograms,
   getUserPrograms, 
@@ -706,4 +706,3 @@ module.exports = {
 
 
 // ✅ DEBUG LOG TO VERIFY EXPORTS
-console.log("✅ programController.js loaded! Exported functions:", module.exports);

@@ -1,11 +1,11 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const { searchClients } = require("../controllers/clientGroupController"); // ya da ayrı controller yazacaksan oradan
+import { searchClients } from '../controllers/clientGroupController.js'; // ya da ayrı controller yazacaksan oradan
 
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
 
 // 🆕 Tüm kullanıcıları (role: user) aramak için route
 router.get("/clients", protect, roleMiddleware(["coach"]), searchClients);
 
-module.exports = router;
+export default router;

@@ -1,6 +1,6 @@
-const Message = require("../models/Message");
+import Message from '../models/Message.js';
 
-exports.sendMessage = async (req, res) => {
+export const sendMessage = async (req, res) => {
   try {
     const { recipientId, content } = req.body;
     const message = await Message.create({
@@ -14,7 +14,7 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-exports.getMessages = async (req, res) => {
+export const getMessages = async (req, res) => {
   try {
     const messages = await Message.find({ $or: [{ senderId: req.user.id }, { recipientId: req.user.id }] });
     res.status(200).json({ messages });

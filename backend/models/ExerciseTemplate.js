@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 const ExerciseTemplateSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String },
@@ -7,5 +7,5 @@ const ExerciseTemplateSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
   });
   
-  module.exports = mongoose.model('ExerciseTemplate', ExerciseTemplateSchema);
+  export default mongoose.model('ExerciseTemplate', ExerciseTemplateSchema);
   

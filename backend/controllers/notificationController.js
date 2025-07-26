@@ -1,5 +1,5 @@
-const Notification = require("../models/Notification"); 
-exports.sendNotification = async (req, res) => {
+import Notification from '../models/Notification.js'; 
+export const sendNotification = async (req, res) => {
   try {
     const { clientId, message, type } = req.body;
 
@@ -25,7 +25,7 @@ exports.sendNotification = async (req, res) => {
 
 
 
-exports.getUserNotifications = async (req, res) => {
+export const getUserNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ recipientId: req.user.id }).sort({ createdAt: -1 });
     res.status(200).json({ notifications });
@@ -34,7 +34,7 @@ exports.getUserNotifications = async (req, res) => {
   }
 };
 
-exports.markNotificationAsRead = async (req, res) => {
+export const markNotificationAsRead = async (req, res) => {
   try {
     const { id } = req.params;
     await Notification.findOneAndUpdate(
@@ -48,7 +48,7 @@ exports.markNotificationAsRead = async (req, res) => {
   }
 };
 
-exports.markAllAsRead = async (req, res) => {
+export const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
       { recipientId: req.user.id, isRead: false },
@@ -61,7 +61,7 @@ exports.markAllAsRead = async (req, res) => {
 };
 
 
-exports.getCoachSentNotifications = async (req, res) => {
+export const getCoachSentNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ senderId: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({ notifications });

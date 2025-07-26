@@ -1,6 +1,6 @@
-const User = require("../models/User");
+import User from '../models/User.js';
 
-exports.getCoaches = async (req, res) => {
+export const getCoaches = async (req, res) => {
   const specialization = req.query.specialization;
 
   try {

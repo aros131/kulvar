@@ -1,5 +1,5 @@
-const Progress = require("../models/Progress");
-const Program = require("../models/Program");
+import Progress from '../models/Progress.js';
+import Program from '../models/Program.js';
 
 // 🟢 Log user progress
 const logProgress = async (req, res) => {
@@ -386,7 +386,7 @@ const getCalendarHeatmap = async (req, res) => {
 
 
 // ✅ Export all functions
-module.exports = {
+export {
   logProgress,
   getClientProgress,
   getProgressReport,

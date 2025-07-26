@@ -1,7 +1,7 @@
-const ExerciseTemplate = require("../models/ExerciseTemplate");
+import ExerciseTemplate from '../models/ExerciseTemplate.js';
 
 // Create a new template
-exports.createTemplate = async (req, res) => {
+export const createTemplate = async (req, res) => {
   try {
     const { name, description, videoUrl } = req.body;
 
@@ -20,7 +20,7 @@ exports.createTemplate = async (req, res) => {
 };
 
 // Get all templates
-exports.getTemplates = async (req, res) => {
+export const getTemplates = async (req, res) => {
   try {
     const templates = await ExerciseTemplate.find({ coachId: req.user.id });
     res.json(templates);
@@ -30,7 +30,7 @@ exports.getTemplates = async (req, res) => {
 };
 
 // Delete a template
-exports.deleteTemplate = async (req, res) => {
+export const deleteTemplate = async (req, res) => {
   try {
     const template = await ExerciseTemplate.findById(req.params.id);
     if (!template) return res.status(404).json({ message: "Template not found." });

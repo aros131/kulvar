@@ -1,5 +1,5 @@
-const ClientGroup = require("../models/ClientGroup");
-const User = require("../models/User");
+import ClientGroup from '../models/ClientGroup.js';
+import User from '../models/User.js';
 
 const getClientDetails = async (req, res) => {
   try {
@@ -154,7 +154,7 @@ const searchClients = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getClientDetails,
   addClientToGroup,
   createGroup,

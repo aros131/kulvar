@@ -1,5 +1,5 @@
-const Feedback = require("../models/Feedback");
-exports.createFeedback = async (req, res) => {
+import Feedback from '../models/Feedback.js';
+export const createFeedback = async (req, res) => {
   try {
       const { content, coachId } = req.body;
       const feedback = await Feedback.create({
@@ -15,7 +15,7 @@ exports.createFeedback = async (req, res) => {
 
 
 // Get feedback (already implemented)
-exports.getFeedbacks = async (req, res) => {
+export const getFeedbacks = async (req, res) => {
   const { programId, coachId } = req.query;
 
   try {

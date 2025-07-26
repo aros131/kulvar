@@ -1,7 +1,7 @@
-const User = require("../models/User");
+import User from '../models/User.js';
 
 // Fetch Profile
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
@@ -23,7 +23,7 @@ exports.getProfile = async (req, res) => {
 };
 
 // Update Profile
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const updates = req.body;
 

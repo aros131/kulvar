@@ -1,14 +1,14 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
+import protect from '../middleware/authMiddleware.js';
 
-const {
+import {
   sendNotification,
   getUserNotifications,
   markNotificationAsRead,
   markAllAsRead,
   getCoachSentNotifications
-} = require("../controllers/notificationController");
+} from '../controllers/notificationController.js';
 
 // 📨 Send a notification
 router.post("/", protect, sendNotification);
@@ -25,4 +25,4 @@ router.patch("/user/mark-all-read", protect, markAllAsRead);
 router.get("/coach", protect, getCoachSentNotifications);
 
 
-module.exports = router;
+export default router;

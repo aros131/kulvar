@@ -1,8 +1,8 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { name, email, password, role, fitnessGoals, specialization, profilePicture } = req.body;
 
@@ -40,7 +40,7 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -76,7 +76,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.getUserProfile = async (req, res) => {
+export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
@@ -97,7 +97,7 @@ exports.getUserProfile = async (req, res) => {
   }
 };
 
-exports.getUserProfileById = async (req, res) => {
+export const getUserProfileById = async (req, res) => {
   try {
     const userId = req.params.id;
     const user = await User.findById(userId).select("-password");
@@ -117,4 +117,3 @@ exports.getUserProfileById = async (req, res) => {
     res.status(500).json({ message: "Error fetching user profile", error: error.message });
   }
 };
-console.log("Exports from authController.js:", module.exports);

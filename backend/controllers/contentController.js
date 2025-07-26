@@ -1,4 +1,4 @@
-const Content = require('../models/Content');
+import Content from '../models/Content.js';
 const BASE_URL = "https://kulvar-qb7t.onrender.com";
 
 async function getContent() {
@@ -15,7 +15,7 @@ async function getContent() {
 }
 
 // Yeni içerik yükle
-exports.uploadContent = async (req, res) => {
+export const uploadContent = async (req, res) => {
   const { title, type, fileUrl } = req.body;
 
   try {
@@ -34,7 +34,7 @@ exports.uploadContent = async (req, res) => {
 };
 
 // İçerikleri getir
-exports.getContents = async (req, res) => {
+export const getContents = async (req, res) => {
   try {
     const contents = await Content.find({ coachId: req.user.id });
     res.json({ contents });
@@ -42,7 +42,7 @@ exports.getContents = async (req, res) => {
     res.status(500).json({ message: 'İçerikler alınamadı.', error: err.message });
   }
 };
-exports.createContent = async (req, res) => {
+export const createContent = async (req, res) => {
   try {
       const { title, description } = req.body;
       const newContent = await Content.create({ title, description });
@@ -51,3 +51,5 @@ exports.createContent = async (req, res) => {
       res.status(500).json({ message: "Error creating content", error: error.message });
   }
 };
+
+export default { uploadContent, getContents, createContent };

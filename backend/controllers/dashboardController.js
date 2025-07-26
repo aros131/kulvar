@@ -1,8 +1,8 @@
-const Program = require("../models/Program");
-const User = require("../models/User");
-const Notification = require("../models/Notification");
-const Progress = require("../models/Progress");
-const Feedback = require("../models/Feedback");
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+import Progress from '../models/Progress.js';
+import Feedback from '../models/Feedback.js';
 
 // ✅ Send notification
 
@@ -252,8 +252,8 @@ const getCoachAnalytics = async (req, res) => {
   }
 };
 
-// ✅ Final module exports
-module.exports = {
+// ✅ Exports
+export {
   
   getProfile,
   getClients,

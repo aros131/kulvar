@@ -1,7 +1,7 @@
-const Program = require("../models/Program");
-const User = require("../models/User");
+import Program from '../models/Program.js';
+import User from '../models/User.js';
 
-exports.getAnalytics = async (req, res) => {
+export const getAnalytics = async (req, res) => {
   try {
     const totalPrograms = await Program.countDocuments({ coachId: req.user.id });
     const totalClients = await User.countDocuments({ assignedCoach: req.user.id });
