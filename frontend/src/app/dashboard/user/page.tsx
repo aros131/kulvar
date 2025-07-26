@@ -1,28 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import ProgramCard from "@/components/dashboard/ProgramCard";
 import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
-
-// Dynamically import charts for SSR safety
-const Doughnut = dynamic(() => import("react-chartjs-2").then(mod => mod.Doughnut), { ssr: false });
-const Bar = dynamic(() => import("react-chartjs-2").then(mod => mod.Bar), { ssr: false });
-
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-} from "chart.js";
-
-ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
+import ProgressChart from "@/components/program/ProgressChart";
 
 interface UserProgram {
   programId: string;
@@ -145,52 +129,13 @@ export default function UserDashboardPage() {
                           ></div>
                         </div>
                         <p className="text-sm">{g.progressPercentage}% tamamlandı</p>
+                        <ProgressChart completionPercentage={g.progressPercentage || 0} />
                       </div>
                     ))
                   ) : (
                     <p>Hedef bulunamadı.</p>
                   )}
                 </div>
-
-                {/* 📊 Charts */}
-                {programs.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow">
-                      <h2 className="text-lg font-semibold mb-4">Program Tamamlanma Dağılımı</h2>
-                      <Doughnut
-                        data={{
-                          labels: programs.map((p, i) => `${p.name} (${i + 1})`),
-                          datasets: [
-                            {
-                              data: programs.map((p) => Number(p.progressPercentage || 0)),
-                              backgroundColor: [
-                                "#4ade80", "#facc15", "#60a5fa", "#f87171", "#a78bfa",
-                                "#f472b6", "#34d399", "#f97316", "#818cf8", "#e879f9"
-                              ],
-                              borderWidth: 1,
-                            },
-                          ],
-                        }}
-                      />
-                    </div>
-
-                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow">
-                      <h2 className="text-lg font-semibold mb-4">Tamamlanma Oranları</h2>
-                      <Bar
-                        data={{
-                          labels: programs.map((p, i) => `${p.name} (${i + 1})`),
-                          datasets: [
-                            {
-                              label: "Tamamlanma %",
-                              data: programs.map((p) => Number(p.progressPercentage || 0)),
-                              backgroundColor: "#4ade80",
-                            },
-                          ],
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <p>İlerleme verisi yükleniyor...</p>
