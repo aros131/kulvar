@@ -1,5 +1,8 @@
 // components/program/SessionTimeline.tsx
+"use client";
+
 import { CheckCircle, XCircle, Clock } from "lucide-react";
+import CompleteSessionDialog from "./CompleteSessionDialog";
 
 interface Session {
   day: number;
@@ -10,13 +13,14 @@ interface Session {
 
 interface SessionTimelineProps {
   sessions: Session[];
+  programId: string;
 }
 
-export default function SessionTimeline({ sessions }: SessionTimelineProps) {
+export default function SessionTimeline({ sessions, programId }: SessionTimelineProps) {
   return (
     <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl shadow">
       <h2 className="text-xl font-semibold mb-4">📅 Günlük Seans Takvimi</h2>
-      <ul className="space-y-3">
+      <ul className="space-y-4">
         {sessions.map((session) => {
           let statusIcon;
           let statusColor = "";
@@ -35,12 +39,20 @@ export default function SessionTimeline({ sessions }: SessionTimelineProps) {
           return (
             <li
               key={session.day}
-              className="flex items-center gap-3 border-b border-zinc-200 pb-2"
+              className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-zinc-200 pb-2"
             >
-              {statusIcon}
-              <span className={`text-sm font-medium ${statusColor}`}>
-                Gün {session.day}: {session.title}
-              </span>
+              <div className="flex items-center gap-3">
+                {statusIcon}
+                <span className={`text-sm font-medium ${statusColor}`}>
+                  Gün {session.day}: {session.title}
+                </span>
+              </div>
+              <CompleteSessionDialog
+  programId={programId}
+  day={session.day}
+  sessionTitle={session.title}
+/>
+
             </li>
           );
         })}

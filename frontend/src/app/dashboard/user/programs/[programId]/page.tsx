@@ -11,14 +11,13 @@ import CalendarHeatmap from "@/components/program/CalendarHeatmap";
 
 interface UserProgress {
   progressPercentage: number;
-  completedSessions: number;
+  completedSessions: { sessionId: string }[];
   totalSessions: number;
   streakTracking?: {
     currentStreak: number;
     longestStreak: number;
   };
 }
-
 
 export default function ProgramContentPage() {
   const { programId } = useParams();
@@ -61,13 +60,18 @@ export default function ProgramContentPage() {
 
   if (!program) return <div className="p-4">Program yükleniyor...</div>;
 
-  const timelineSessions = program.dailySchedule?.flatMap((dayEntry, index) =>
-    (dayEntry.sessions || []).map((s) => ({
-      day: index + 1,
-      title: s.name,
-      completed: false,
-    }))
-  ) || [];
+  const completedIds = new Set(
+    userProgress?.completedSessions?.map((s) => s.sessionId)
+  );
+
+  const timelineSessions =
+    program.dailySchedule?.flatMap((dayEntry, index) =>
+      (dayEntry.sessions || []).map((s) => ({
+        day: index + 1,
+        title: s.name,
+        completed: completedIds.has(`day-${index + 1}`),
+      }))
+    ) || [];
 
   return (
     <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
@@ -79,7 +83,9 @@ export default function ProgramContentPage() {
 
         {/* 🔘 Donut Chart */}
         <div className="mb-8">
-          <ProgressChart completionPercentage={userProgress?.progressPercentage || 0} />
+          <ProgressChart
+            completionPercentage={userProgress?.progressPercentage || 0}
+          />
         </div>
 
         {/* 🔥 Streak */}
@@ -89,7 +95,10 @@ export default function ProgramContentPage() {
 
         {/* 📆 Session Timeline */}
         <div className="mb-8">
-          <SessionTimeline sessions={timelineSessions} />
+          <SessionTimeline
+            sessions={timelineSessions}
+            programId={program._id}
+          />
         </div>
 
         {/* 🗓 Calendar Heatmap */}

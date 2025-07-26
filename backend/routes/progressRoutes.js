@@ -13,7 +13,7 @@ const {
   submitFeedback,
   getUserProgress,
   restartProgram,
-  getProgressTrend,
+  getProgressTrend, 
   updateGoalProgress,
   getUserStreaks,
   getAdaptiveGoalProgress,
