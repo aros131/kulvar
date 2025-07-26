@@ -199,8 +199,10 @@ const getUserProgress = async (req, res) => {
     }
 
     // ✅ Calculate progress percentage
-const totalSessions = progress.sessionTracking?.length || 0;
-const completedSessions = progress.sessionTracking?.filter(s => s.completed).length || 0;
+const program = await Program.findById(programId);
+const totalSessions = program?.dailySchedule?.reduce((acc, day) => acc + (day.sessions?.length || 0), 0) || 0;
+const completedSessions = progress.completedSessions.length;
+
 
     const progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
 
@@ -270,12 +272,14 @@ const markSessionCompleted = async (req, res) => {
     }
 
     progress.completedSessions.push({
-      sessionId,
-      date: new Date(),
-      status: "completed",
-      feedback,
-      rating,
-    });
+  sessionId,
+  dateCompleted: new Date(),
+  completed: true,
+  status: "completed",
+  feedback,
+  rating,
+});
+
 
     const program = await Program.findById(programId);
     const totalDays = program?.dailySchedule?.length || 0;
