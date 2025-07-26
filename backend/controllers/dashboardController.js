@@ -74,7 +74,7 @@ const getUserPrograms = async (req, res) => {
 const getClientProgress = async (req, res) => {
   try {
     const { id } = req.params;
-    const progress = await Progress.find({ clientId: id });
+    const progress = await Progress.find({ userId: id });
     res.status(200).json({ progress });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving client progress", error: error.message });
@@ -87,7 +87,7 @@ const saveProgress = async (req, res) => {
     const { programId, data } = req.body;
     const newProgress = await Progress.create({
       programId,
-      clientId: req.user.id,
+      userId: req.user.id,
       data,
     });
     res.status(201).json(newProgress);
@@ -112,7 +112,7 @@ const getAnalyticsForUser = async (req, res) => {
   try {
     const assignedPrograms = await Program.countDocuments({ assignedClients: req.user.id });
     const totalProgress = await Progress.aggregate([
-      { $match: { clientId: req.user.id } },
+      { $match: { userId: req.user.id } },
       {
         $group: {
           _id: null,
@@ -183,7 +183,7 @@ const getUserSchedule = async (req, res) => {
 // ✅ Get feedbacks
 const getFeedbacks = async (req, res) => {
   try {
-    const feedbacks = await Feedback.find({ coachId: req.user.id }).populate("clientId", "name email");
+    const feedbacks = await Feedback.find({ coachId: req.user.id }).populate("userId", "name email");
     if (!feedbacks || feedbacks.length === 0) {
       return res.status(404).json({ message: "No feedbacks found" });
     }

@@ -351,7 +351,7 @@ const getCalendarHeatmap = async (req, res) => {
     const { programId } = req.params;
     const userId = req.user.id;
 
-    const progress = await Progress.findOne({ programId, clientId: userId });
+    const progress = await Progress.findOne({ programId, userId: userId });
 
     if (!progress) {
       return res.status(404).json({ message: "No progress found" });

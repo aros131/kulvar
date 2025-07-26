@@ -1,16 +1,16 @@
 import Notification from '../models/Notification.js'; 
 export const sendNotification = async (req, res) => {
   try {
-    const { clientId, message, type } = req.body;
+    const { userId, message, type } = req.body;
 
     // ✅ Validate required fields
-    if (!clientId || !message || !type) {
+    if (!userId || !message || !type) {
       return res.status(400).json({ message: "Client ID, message, and type are required" });
     }
 
     // ✅ Create the notification with senderId
     const notification = await Notification.create({
-      recipientId: clientId,
+      recipientId: userId,
       message,
       type,
       senderId: req.user._id, // 🔁 Coach veya sistemden gelen

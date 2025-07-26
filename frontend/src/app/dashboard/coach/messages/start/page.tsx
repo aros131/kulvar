@@ -41,10 +41,10 @@ export default function StartCoachChatPage() {
     }
   }, []);
 
-  const startChat = async (clientId: string) => {
+  const startChat = async (userId: string) => {
     if (!user) return;
 
-    const participants = [user.id, clientId].sort();
+    const participants = [user.id, userId].sort();
     const chatId = participants.join("_");
 
     const chatRef = doc(db, "chats", chatId);
@@ -55,7 +55,7 @@ export default function StartCoachChatPage() {
         participants,
         lastMessage: "",
         updatedAt: serverTimestamp(),
-        [`unread_${clientId}`]: 0,
+        [`unread_${userId}`]: 0,
         [`unread_${user.id}`]: 0,
       });
     }

@@ -2,10 +2,10 @@ import Payment from '../models/Payment.js';
 
 export const createInvoice = async (req, res) => {
   try {
-    const { clientId, amount, description } = req.body;
+    const { userId, amount, description } = req.body;
     const invoice = await Payment.create({
       coachId: req.user.id,
-      clientId,
+      userId,
       amount,
       description,
       status: "Pending",

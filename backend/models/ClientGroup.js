@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 const ClientGroupSchema = new mongoose.Schema({
     name: { type: String, required: true },
     coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    clientIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    userIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createdAt: { type: Date, default: Date.now },
   });
   

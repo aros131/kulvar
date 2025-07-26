@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const ProgressSchema = new mongoose.Schema({
-  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Kullanıcı ID'si
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Kullanıcı ID'si
   programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true }, // Program ID
 
   // ✅ NEW FIELD: total days completed

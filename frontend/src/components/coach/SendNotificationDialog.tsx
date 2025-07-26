@@ -61,7 +61,7 @@ export default function SendNotificationDialog({ clients }: Props) {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        clientId: selectedClient,
+        userId: selectedClient,
         message,
         type: selectedType,
       }),

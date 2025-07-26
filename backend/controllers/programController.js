@@ -287,22 +287,22 @@ const rescheduleWorkout = async (req, res) => {
 const assignProgramToClients = async (req, res) => {
   try {
     const { programId } = req.params; // 🔥 get from URL params
-    const { clientIds } = req.body;   // ✅ keep clientIds in body
+    const { userIds } = req.body;   // ✅ keep userIds in body
 
-    if (!programId || !clientIds || !Array.isArray(clientIds)) {
-      return res.status(400).json({ message: "programId and clientIds (array) are required" });
+    if (!programId || !userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ message: "programId and userIds (array) are required" });
     }
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
     // ✅ Validate all client IDs
-    const validClients = await User.find({ _id: { $in: clientIds }, role: "user" });
-    if (validClients.length !== clientIds.length) {
+    const validClients = await User.find({ _id: { $in: userIds }, role: "user" });
+    if (validClients.length !== userIds.length) {
       return res.status(400).json({ message: "Invalid client IDs found" });
     }
 
-    program.assignedClients = [...new Set([...program.assignedClients, ...clientIds])];
+    program.assignedClients = [...new Set([...program.assignedClients, ...userIds])];
     await program.save();
 
     res.status(200).json({ message: "Program successfully assigned!", program });
@@ -639,7 +639,7 @@ const assignProgramToGroup = async (req, res) => {
     const group = await ClientGroup.findById(groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    const validClients = await User.find({ _id: { $in: group.clientIds }, role: "user" });
+    const validClients = await User.find({ _id: { $in: group.userIds }, role: "user" });
 
     program.assignedClients = [...new Set([...program.assignedClients, ...validClients.map(c => c._id)])];
     await program.save();
@@ -652,13 +652,13 @@ const assignProgramToGroup = async (req, res) => {
 const unassignClient = async (req, res) => {
   try {
     const { programId } = req.params;
-    const { clientId } = req.body;
+    const { userId } = req.body;
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
     program.assignedClients = program.assignedClients.filter(
-      id => id.toString() !== clientId
+      id => id.toString() !== userId
     );
     await program.save();
 

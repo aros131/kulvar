@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
+
 // Route imports
 import authRoutes from './routes/authRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
