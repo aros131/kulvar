@@ -242,7 +242,7 @@ const getProgressTrend = async (req, res) => {
 
 // 🟢 Mark a session as completed
 // POST /progress/session/complete
-exports.markSessionCompleted = async (req, res) => {
+const markSessionCompleted = async (req, res) => {
   try {
     const { programId, sessionId, feedback, rating } = req.body;
     const userId = req.user._id;
