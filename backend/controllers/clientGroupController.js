@@ -40,7 +40,7 @@ const addClientToGroup = async (req, res) => {
 const createGroup = async (req, res) => {
   try {
     const { groupName, members } = req.body;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
 
     const group = await ClientGroup.create({
       name: groupName,
@@ -56,7 +56,7 @@ const createGroup = async (req, res) => {
 
 const getGroups = async (req, res) => {
   try {
-    const groups = await ClientGroup.find({ coachId: req.user.id });
+    const groups = await ClientGroup.find({ coachId: req.user._id });
     res.json(groups);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch groups", error: err.message });
@@ -80,7 +80,7 @@ const deleteGroup = async (req, res) => {
     const group = await ClientGroup.findById(req.params.id);
 
     if (!group) return res.status(404).json({ message: "Group not found" });
-    if (group.coachId.toString() !== req.user.id) {
+    if (group.coachId.toString() !== req.user._id) {
       return res.status(403).json({ message: "Not authorized to delete this group" });
     }
 
@@ -112,7 +112,7 @@ const searchGroupClients = async (req, res) => {
   try {
     const query = req.query.q?.toLowerCase() || "";
 
-    const groups = await ClientGroup.find({ coachId: req.user.id }).populate("userIds", "name email");
+    const groups = await ClientGroup.find({ coachId: req.user._id }).populate("userIds", "name email");
 
     const allClients = groups.flatMap(g => g.userIds);
 
@@ -128,7 +128,7 @@ const searchGroupClients = async (req, res) => {
 
 const getAllGroupClients = async (req, res) => {
   try {
-    const groups = await ClientGroup.find({ coachId: req.user.id }).populate("userIds", "name email");
+    const groups = await ClientGroup.find({ coachId: req.user._id }).populate("userIds", "name email");
     const clients = groups.flatMap(group => group.userIds);
     res.status(200).json({ clients });
   } catch (error) {

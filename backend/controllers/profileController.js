@@ -3,7 +3,7 @@ import User from '../models/User.js';
 // Fetch Profile
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -36,7 +36,7 @@ export const updateProfile = async (req, res) => {
       return acc;
     }, {});
 
-    const user = await User.findByIdAndUpdate(req.user.id, filteredUpdates, { new: true });
+    const user = await User.findByIdAndUpdate(req.user._id, filteredUpdates, { new: true });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

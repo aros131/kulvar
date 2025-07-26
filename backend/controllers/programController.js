@@ -6,7 +6,7 @@ import Progress from '../models/Progress.js';
 const createProgram = async (req, res) => {
   try {
     const { name, description, duration, difficulty, nutritionPlan, dailySchedule, fitnessGoal } = req.body;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
     let documents = [];
 
     if (req.files) {
@@ -49,7 +49,7 @@ const getPrograms = async (req, res) => {
 // 🟢 Get all programs assigned to a user
 const getUserPrograms = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const programs = await Program.find({ assignedClients: userId });
 
     if (!programs.length) {
@@ -212,7 +212,7 @@ const getSessionCompletionData = async (req, res) => {
 
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const userProgress = program.progressTracking.find(entry => entry.user?.toString() === req.user.id);
+    const userProgress = program.progressTracking.find(entry => entry.user?.toString() === req.user._id);
     const completedSessions = userProgress?.completedSessions || 0;
     const totalSessions = program.dailySchedule?.reduce(
       (total, day) => total + (day.sessions?.length || 0),
@@ -229,7 +229,7 @@ const getSessionCompletionData = async (req, res) => {
 const submitSessionFeedback = async (req, res) => {
   try {
     const { programId, session, feedback } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const program = await Program.findByIdAndUpdate(
       programId,
@@ -433,7 +433,7 @@ const getAssignedClients = async (req, res) => {
 const resetProgress = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOneAndUpdate(
       { programId, userId },
@@ -461,7 +461,7 @@ const updateAdaptiveAdjustments = async (req, res) => {
   try {
     const { programId } = req.params;
     const { fatigueLevel, notes } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -557,7 +557,7 @@ const getUserProgress = async (req, res) => {
 const trackSessionCompletion = async (req, res) => {
   try {
     const { programId, session } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
@@ -596,7 +596,7 @@ const getProgramMedia = async (req, res) => {
 const getAdaptiveAdjustments = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
 
@@ -611,7 +611,7 @@ const getAdaptiveAdjustments = async (req, res) => {
 };
 const getCoachPrograms = async (req, res) => {
   try {
-    const coachId = req.user.id; // ✅ pull from auth middleware
+    const coachId = req.user._id; // ✅ pull from auth middleware
 const programs = await Program.find({ coachId: coachId });
 
     res.json({ programs });

@@ -27,7 +27,7 @@ export const sendNotification = async (req, res) => {
 
 export const getUserNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipientId: req.user.id }).sort({ createdAt: -1 });
+    const notifications = await Notification.find({ recipientId: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({ notifications });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving notifications", error: error.message });
@@ -38,7 +38,7 @@ export const markNotificationAsRead = async (req, res) => {
   try {
     const { id } = req.params;
     await Notification.findOneAndUpdate(
-      { _id: id, recipientId: req.user.id },
+      { _id: id, recipientId: req.user._id },
       { isRead: true },
       { new: true }
     );
@@ -51,7 +51,7 @@ export const markNotificationAsRead = async (req, res) => {
 export const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
-      { recipientId: req.user.id, isRead: false },
+      { recipientId: req.user._id, isRead: false },
       { $set: { isRead: true } }
     );
     res.status(200).json({ message: "Tüm bildirimler okundu olarak işaretlendi." });

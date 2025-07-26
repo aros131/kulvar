@@ -5,7 +5,7 @@ export const createFeedback = async (req, res) => {
       const feedback = await Feedback.create({
           content,
           coachId,
-          userId: req.user.id,
+          userId: req.user._id,
       });
       res.status(201).json(feedback);
   } catch (error) {

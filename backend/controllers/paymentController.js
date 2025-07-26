@@ -4,7 +4,7 @@ export const createInvoice = async (req, res) => {
   try {
     const { userId, amount, description } = req.body;
     const invoice = await Payment.create({
-      coachId: req.user.id,
+      coachId: req.user._id,
       userId,
       amount,
       description,
@@ -18,7 +18,7 @@ export const createInvoice = async (req, res) => {
 
 export const getInvoices = async (req, res) => {
   try {
-    const invoices = await Payment.find({ coachId: req.user.id });
+    const invoices = await Payment.find({ coachId: req.user._id });
     res.status(200).json({ invoices });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving invoices", error: error.message });

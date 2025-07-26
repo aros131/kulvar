@@ -3,7 +3,7 @@ import Calendar from '../models/Calendar.js';
 export const addEvent = async (req, res) => {
   try {
     const { title, date, description } = req.body;
-    const event = await Calendar.create({ userId: req.user.id, title, date, description });
+    const event = await Calendar.create({ userId: req.user._id, title, date, description });
     res.status(201).json({ message: "Event added successfully", data: event });
   } catch (error) {
     res.status(500).json({ message: "Error adding event", error: error.message });
@@ -12,7 +12,7 @@ export const addEvent = async (req, res) => {
 
 export const getEvents = async (req, res) => {
   try {
-    const events = await Calendar.find({ userId: req.user.id });
+    const events = await Calendar.find({ userId: req.user._id });
     res.status(200).json({ events });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving events", error: error.message });

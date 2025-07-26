@@ -4,7 +4,7 @@ export const generateReport = async (req, res) => {
   try {
     const { type, filters } = req.body; // Type of report and optional filters
     const report = await Report.create({
-      coachId: req.user.id,
+      coachId: req.user._id,
       type,
       filters,
       data: "Placeholder for generated data",
@@ -17,7 +17,7 @@ export const generateReport = async (req, res) => {
 
 export const getReports = async (req, res) => {
   try {
-    const reports = await Report.find({ coachId: req.user.id });
+    const reports = await Report.find({ coachId: req.user._id });
     res.status(200).json({ reports });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving reports", error: error.message });

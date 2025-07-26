@@ -9,7 +9,7 @@ export const createTemplate = async (req, res) => {
       name,
       description,
       videoUrl,
-      coachId: req.user.id, // Requires `req.user` from protect middleware
+      coachId: req.user._id, // Requires `req.user` from protect middleware
     });
 
     await template.save();
@@ -22,7 +22,7 @@ export const createTemplate = async (req, res) => {
 // Get all templates
 export const getTemplates = async (req, res) => {
   try {
-    const templates = await ExerciseTemplate.find({ coachId: req.user.id });
+    const templates = await ExerciseTemplate.find({ coachId: req.user._id });
     res.json(templates);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch templates.", error: err.message });
@@ -35,7 +35,7 @@ export const deleteTemplate = async (req, res) => {
     const template = await ExerciseTemplate.findById(req.params.id);
     if (!template) return res.status(404).json({ message: "Template not found." });
 
-    if (template.coachId.toString() !== req.user.id) {
+    if (template.coachId.toString() !== req.user._id) {
       return res.status(403).json({ message: "Not authorized to delete this template." });
     }
 

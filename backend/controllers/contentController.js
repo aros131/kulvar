@@ -23,7 +23,7 @@ export const uploadContent = async (req, res) => {
       title,
       type,
       fileUrl,
-      coachId: req.user.id,
+      coachId: req.user._id,
     });
 
     await content.save();
@@ -36,7 +36,7 @@ export const uploadContent = async (req, res) => {
 // İçerikleri getir
 export const getContents = async (req, res) => {
   try {
-    const contents = await Content.find({ coachId: req.user.id });
+    const contents = await Content.find({ coachId: req.user._id });
     res.json({ contents });
   } catch (err) {
     res.status(500).json({ message: 'İçerikler alınamadı.', error: err.message });

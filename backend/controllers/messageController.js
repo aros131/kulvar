@@ -4,7 +4,7 @@ export const sendMessage = async (req, res) => {
   try {
     const { recipientId, content } = req.body;
     const message = await Message.create({
-      senderId: req.user.id,
+      senderId: req.user._id,
       recipientId,
       content,
     });
@@ -16,7 +16,7 @@ export const sendMessage = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
-    const messages = await Message.find({ $or: [{ senderId: req.user.id }, { recipientId: req.user.id }] });
+    const messages = await Message.find({ $or: [{ senderId: req.user._id }, { recipientId: req.user._id }] });
     res.status(200).json({ messages });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving messages", error: error.message });
