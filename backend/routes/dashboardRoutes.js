@@ -1,10 +1,10 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
 
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
 
-const {
+import {
   
 
   getNotificationsForUser,
@@ -21,7 +21,7 @@ const {
   markNotificationAsRead,
   replyToFeedback,
   getFullCoachAnalytics
-} = require("../controllers/dashboardController");
+} from '../controllers/dashboardController.js';
 
 // ✅ User Programs & Schedule
 router.get("/user-programs", protect, getUserPrograms);
@@ -49,4 +49,4 @@ router.post("/feedbacks/reply", protect, roleMiddleware(["coach"]), replyToFeedb
 router.get("/clients", protect, roleMiddleware(["coach"]), getClients);
 router.get("/clients/:id", protect, roleMiddleware(["coach"]), getClientDetails); // leave dynamic last
 
-module.exports = router;
+export default router;

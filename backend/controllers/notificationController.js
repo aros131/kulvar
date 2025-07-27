@@ -1,16 +1,16 @@
-const Notification = require("../models/Notification"); 
-exports.sendNotification = async (req, res) => {
+import Notification from '../models/Notification.js'; 
+export const sendNotification = async (req, res) => {
   try {
-    const { clientId, message, type } = req.body;
+    const { userId, message, type } = req.body;
 
     // ✅ Validate required fields
-    if (!clientId || !message || !type) {
+    if (!userId || !message || !type) {
       return res.status(400).json({ message: "Client ID, message, and type are required" });
     }
 
     // ✅ Create the notification with senderId
     const notification = await Notification.create({
-      recipientId: clientId,
+      recipientId: userId,
       message,
       type,
       senderId: req.user._id, // 🔁 Coach veya sistemden gelen
@@ -25,20 +25,20 @@ exports.sendNotification = async (req, res) => {
 
 
 
-exports.getUserNotifications = async (req, res) => {
+export const getUserNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipientId: req.user.id }).sort({ createdAt: -1 });
+    const notifications = await Notification.find({ recipientId: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({ notifications });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
 };
 
-exports.markNotificationAsRead = async (req, res) => {
+export const markNotificationAsRead = async (req, res) => {
   try {
     const { id } = req.params;
     await Notification.findOneAndUpdate(
-      { _id: id, recipientId: req.user.id },
+      { _id: id, recipientId: req.user._id },
       { isRead: true },
       { new: true }
     );
@@ -48,10 +48,10 @@ exports.markNotificationAsRead = async (req, res) => {
   }
 };
 
-exports.markAllAsRead = async (req, res) => {
+export const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
-      { recipientId: req.user.id, isRead: false },
+      { recipientId: req.user._id, isRead: false },
       { $set: { isRead: true } }
     );
     res.status(200).json({ message: "Tüm bildirimler okundu olarak işaretlendi." });
@@ -61,7 +61,7 @@ exports.markAllAsRead = async (req, res) => {
 };
 
 
-exports.getCoachSentNotifications = async (req, res) => {
+export const getCoachSentNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ senderId: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({ notifications });

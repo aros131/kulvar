@@ -1,5 +1,5 @@
-const ClientGroup = require("../models/ClientGroup");
-const User = require("../models/User");
+import ClientGroup from '../models/ClientGroup.js';
+import User from '../models/User.js';
 
 const getClientDetails = async (req, res) => {
   try {
@@ -16,9 +16,9 @@ const getClientDetails = async (req, res) => {
 const addClientToGroup = async (req, res) => {
   try {
     const groupId = req.params.id;
-    const { clientId } = req.body;
+    const { userId } = req.body;
 
-    const client = await User.findById(clientId);
+    const client = await User.findById(userId);
     if (!client || client.role !== "user") {
       return res.status(404).json({ message: "Client not found or invalid role" });
     }
@@ -28,7 +28,7 @@ const addClientToGroup = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    group.clientIds.push(clientId);
+    group.userIds.push(userId);
     await group.save();
 
     res.status(200).json({ message: "Client added to group successfully", group });
@@ -40,11 +40,11 @@ const addClientToGroup = async (req, res) => {
 const createGroup = async (req, res) => {
   try {
     const { groupName, members } = req.body;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
 
     const group = await ClientGroup.create({
       name: groupName,
-      clientIds: members,
+      userIds: members,
       coachId,
     });
 
@@ -56,7 +56,7 @@ const createGroup = async (req, res) => {
 
 const getGroups = async (req, res) => {
   try {
-    const groups = await ClientGroup.find({ coachId: req.user.id });
+    const groups = await ClientGroup.find({ coachId: req.user._id });
     res.json(groups);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch groups", error: err.message });
@@ -80,7 +80,7 @@ const deleteGroup = async (req, res) => {
     const group = await ClientGroup.findById(req.params.id);
 
     if (!group) return res.status(404).json({ message: "Group not found" });
-    if (group.coachId.toString() !== req.user.id) {
+    if (group.coachId.toString() !== req.user._id) {
       return res.status(403).json({ message: "Not authorized to delete this group" });
     }
 
@@ -94,12 +94,12 @@ const deleteGroup = async (req, res) => {
 const removeClientFromGroup = async (req, res) => {
   try {
     const { id: groupId } = req.params;
-    const { clientId } = req.body;
+    const { userId } = req.body;
 
     const group = await ClientGroup.findById(groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    group.clientIds = group.clientIds.filter(id => id.toString() !== clientId);
+    group.userIds = group.userIds.filter(id => id.toString() !== userId);
     await group.save();
 
     res.status(200).json({ message: "Client removed from group", group });
@@ -112,9 +112,9 @@ const searchGroupClients = async (req, res) => {
   try {
     const query = req.query.q?.toLowerCase() || "";
 
-    const groups = await ClientGroup.find({ coachId: req.user.id }).populate("clientIds", "name email");
+    const groups = await ClientGroup.find({ coachId: req.user._id }).populate("userIds", "name email");
 
-    const allClients = groups.flatMap(g => g.clientIds);
+    const allClients = groups.flatMap(g => g.userIds);
 
     const filtered = allClients.filter(c =>
       c.name.toLowerCase().includes(query) || c.email.toLowerCase().includes(query)
@@ -128,8 +128,8 @@ const searchGroupClients = async (req, res) => {
 
 const getAllGroupClients = async (req, res) => {
   try {
-    const groups = await ClientGroup.find({ coachId: req.user.id }).populate("clientIds", "name email");
-    const clients = groups.flatMap(group => group.clientIds);
+    const groups = await ClientGroup.find({ coachId: req.user._id }).populate("userIds", "name email");
+    const clients = groups.flatMap(group => group.userIds);
     res.status(200).json({ clients });
   } catch (error) {
     res.status(500).json({ message: "Error fetching group clients", error: error.message });
@@ -154,7 +154,7 @@ const searchClients = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getClientDetails,
   addClientToGroup,
   createGroup,

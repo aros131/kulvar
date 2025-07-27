@@ -1,11 +1,11 @@
-const Payment = require("../models/Payment");
+import Payment from '../models/Payment.js';
 
-exports.createInvoice = async (req, res) => {
+export const createInvoice = async (req, res) => {
   try {
-    const { clientId, amount, description } = req.body;
+    const { userId, amount, description } = req.body;
     const invoice = await Payment.create({
-      coachId: req.user.id,
-      clientId,
+      coachId: req.user._id,
+      userId,
       amount,
       description,
       status: "Pending",
@@ -16,16 +16,16 @@ exports.createInvoice = async (req, res) => {
   }
 };
 
-exports.getInvoices = async (req, res) => {
+export const getInvoices = async (req, res) => {
   try {
-    const invoices = await Payment.find({ coachId: req.user.id });
+    const invoices = await Payment.find({ coachId: req.user._id });
     res.status(200).json({ invoices });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving invoices", error: error.message });
   }
 };
 
-exports.processPayment = async (req, res) => {
+export const processPayment = async (req, res) => {
   try {
     const { invoiceId } = req.body;
     const payment = await Payment.findByIdAndUpdate(invoiceId, { status: "Paid" }, { new: true });

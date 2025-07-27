@@ -1,9 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ProgramCard from "@/components/dashboard/ProgramCard";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Bar, Doughnut } from "react-chartjs-2";
+
+import ProgressChart from "@/components/program/ProgressChart";
+
+
+const Bar = dynamic(() => import("react-chartjs-2").then((mod) => mod.Bar), { ssr: false });
+const Doughnut = dynamic(() => import("react-chartjs-2").then((mod) => mod.Doughnut), { ssr: false });
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -14,14 +20,7 @@ import {
   LinearScale,
 } from "chart.js";
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale
-);
+ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 interface UserProgram {
   programId: string;
@@ -30,6 +29,7 @@ interface UserProgram {
   duration?: string;
   image?: string;
   progressPercentage: number;
+  coachName?: string; // ✅ Add this line
 }
 
 interface UserProgress {
@@ -69,28 +69,6 @@ export default function UserProgramsPage() {
     fetchProgress();
   }, []);
 
-  const donutData = {
-    labels: programs.map((p) => p.name),
-    datasets: [
-      {
-        data: programs.map((p) => p.progressPercentage),
-        backgroundColor: ["#4ade80", "#facc15", "#60a5fa", "#f87171", "#a78bfa"],
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const barData = {
-    labels: programs.map((p) => p.name),
-    datasets: [
-      {
-        label: "Tamamlanma %",
-        data: programs.map((p) => p.progressPercentage),
-        backgroundColor: "#4ade80",
-      },
-    ],
-  };
-
   return (
     <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
       <div className="max-w-6xl mx-auto">
@@ -99,7 +77,6 @@ export default function UserProgramsPage() {
           Sana atanmış programları ve hedef ilerlemeni burada takip edebilirsin.
         </p>
 
-        {/* 📦 Summary Cards */}
         {progress && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
             <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow text-center">
@@ -114,53 +91,88 @@ export default function UserProgramsPage() {
               <h3 className="text-lg font-medium">Güncel Ortalama</h3>
               <p className="text-2xl font-bold">
                 {programs.length > 0
-                  ? `${Math.round(
-                      programs.reduce((a, b) => a + b.progressPercentage, 0) /
-                        programs.length
-                    )}%`
+                  ? `${Math.round(programs.reduce((a, b) => a + b.progressPercentage, 0) / programs.length)}%`
                   : "0%"}
               </p>
             </div>
           </div>
         )}
 
-        {/* 🔥 Programs List */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {programs.length > 0 ? (
-            programs.map((program) => (
-              <div key={program.programId} className="program-card">
-                <ProgramCard
-                  name={program.name}
-                  description={program.description}
-                  duration={program.duration || "Bilinmiyor"}
-                  progressPercentage={program.progressPercentage}
-                  image={program.image}
-                  goalTag="Fitness"
-                  coachName="Ali Hoca"
-                />
-                <Link href={`/dashboard/user/programs/${program.programId}`}>
-  <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-    Programa Git
-  </button>
-</Link>
+  {programs.length > 0 ? (
+    programs.map((program) => (
+      <div key={program.programId} className="bg-white dark:bg-zinc-800 rounded-xl shadow p-4 flex flex-col justify-between transition-transform hover:scale-[1.01]">
+        
+        {/* 🏷️ Header + Info */}
+        <div>
+          <h3 className="text-xl font-semibold mb-1">{program.name}</h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{program.description}</p>
 
-              </div>
-            ))
-          ) : (
-            <p>Atanmış programın yok.</p>
-          )}
+          {/* 🧑‍🏫 Coach + Tag */}
+          <div className="flex justify-between items-center mb-4 text-xs text-zinc-400">
+           
+            <span>Koç: {program.coachName || "Ali Hoca"}</span>
+          </div>
         </div>
 
-        {/* 📊 Charts */}
+        {/* 📊 Progress Chart */}
+        <div className="mb-4">
+          <ProgressChart completionPercentage={program.progressPercentage || 0} />
+        </div>
+
+        {/* ⏱ Duration */}
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+          Süre: {program.duration || "Bilinmiyor"}
+        </p>
+
+        {/* 🚀 CTA Button */}
+        <Link href={`/dashboard/user/programs/${program.programId}`}>
+          <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+            Programa Git
+          </button>
+        </Link>
+      </div>
+    ))
+  ) : (
+    <p>Atanmış programın yok.</p>
+  )}
+</div>
+
         {programs.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow">
               <h2 className="text-lg font-semibold mb-4">Program Tamamlanma Dağılımı</h2>
-              <Doughnut data={donutData} />
+              <Doughnut
+                data={{
+                  labels: programs.map((p, i) => `${p.name} (${i + 1})`),
+                  datasets: [
+                    {
+                      data: programs.map((p) => Number(p.progressPercentage || 0)),
+                      backgroundColor: [
+                        "#4ade80", "#facc15", "#60a5fa", "#f87171", "#a78bfa",
+                        "#f472b6", "#34d399", "#f97316", "#818cf8", "#e879f9"
+                      ],
+                      borderWidth: 1,
+                    },
+                  ],
+                }}
+              />
             </div>
+
             <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow">
               <h2 className="text-lg font-semibold mb-4">Tamamlanma Oranları</h2>
-              <Bar data={barData} />
+              <Bar
+                data={{
+                  labels: programs.map((p, i) => `${p.name} (${i + 1})`),
+                  datasets: [
+                    {
+                      label: "Tamamlanma %",
+                      data: programs.map((p) => Number(p.progressPercentage || 0)),
+                      backgroundColor: "#4ade80",
+                    },
+                  ],
+                }}
+              />
             </div>
           </div>
         )}

@@ -5,4 +5,4 @@ const roleMiddleware = (allowedRoles) => (req, res, next) => {
   next();
 };
 
-module.exports = roleMiddleware;
+export default roleMiddleware;

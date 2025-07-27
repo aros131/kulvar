@@ -1,4 +1,4 @@
-exports.searchClients = async (req, res) => {
+export const searchClients = async (req, res) => {
   const query = req.query.q;
   try {
     const users = await User.find({

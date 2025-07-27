@@ -151,7 +151,7 @@
 
           feedbackList.innerHTML = data.feedbacks.map(feedback => `
             <li>
-              ${feedback.clientId.name}: ${feedback.feedbackText}
+              ${feedback.userId.name}: ${feedback.feedbackText}
               <button onclick="replyToFeedback('${feedback._id}')">Yanıtla</button>
             </li>`).join("");
         }

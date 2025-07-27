@@ -1,11 +1,11 @@
-const Progress = require("../models/Progress");
-const Program = require("../models/Program");
+import Progress from '../models/Progress.js';
+import Program from '../models/Program.js';
 
 // 🟢 Log user progress
 const logProgress = async (req, res) => {
   try {
     const { programId, sessionName, fatigueLevel, weightUsed, repsCompleted } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -50,7 +50,7 @@ const getProgressReport = async (req, res) => {
 const markWorkoutCompleted = async (req, res) => {
   try {
     const { programId, sessionName } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -73,7 +73,7 @@ const markWorkoutCompleted = async (req, res) => {
 const rescheduleWorkout = async (req, res) => {
   try {
     const { programId, missedDay, newDay } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -92,7 +92,7 @@ const rescheduleWorkout = async (req, res) => {
 const submitFeedback = async (req, res) => {
   try {
     const { programId, session, feedback } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOneAndUpdate(
       { programId, userId },
@@ -110,7 +110,7 @@ const submitFeedback = async (req, res) => {
 const restartProgram = async (req, res) => {
   try {
     const { programId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -168,7 +168,7 @@ const getAdaptiveGoalProgress = async (req, res) => {
 const getStrengthProgress = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
 
@@ -190,7 +190,7 @@ const getStrengthProgress = async (req, res) => {
 const getUserProgress = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
 
@@ -199,8 +199,11 @@ const getUserProgress = async (req, res) => {
     }
 
     // ✅ Calculate progress percentage
-    const totalSessions = progress.sessionTracking.length;
-    const completedSessions = progress.sessionTracking.filter(s => s.completed).length;
+const program = await Program.findById(programId);
+const totalSessions = program?.dailySchedule?.reduce((acc, day) => acc + (day.sessions?.length || 0), 0) || 0;
+const completedSessions = progress.completedSessions.length;
+
+
     const progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
 
     res.status(200).json({
@@ -226,7 +229,7 @@ const getUserProgress = async (req, res) => {
 const getProgressTrend = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
 
@@ -269,12 +272,14 @@ const markSessionCompleted = async (req, res) => {
     }
 
     progress.completedSessions.push({
-      sessionId,
-      date: new Date(),
-      status: "completed",
-      feedback,
-      rating,
-    });
+  sessionId,
+  dateCompleted: new Date(),
+  completed: true,
+  status: "completed",
+  feedback,
+  rating,
+});
+
 
     const program = await Program.findById(programId);
     const totalDays = program?.dailySchedule?.length || 0;
@@ -302,7 +307,7 @@ const markSessionCompleted = async (req, res) => {
 const updateGoalProgress = async (req, res) => {
   try {
     const { programId, goalMetric, value } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -322,7 +327,7 @@ const updateGoalProgress = async (req, res) => {
 // 🟢 Get progress percentages for all assigned programs
 const getAllProgramProgress = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Get all assigned programs for this user
     const assignedPrograms = await Program.find({ assignedClients: userId });
@@ -349,9 +354,9 @@ const getAllProgramProgress = async (req, res) => {
 const getCalendarHeatmap = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
-    const progress = await Progress.findOne({ programId, clientId: userId });
+    const progress = await Progress.findOne({ programId, userId: userId });
 
     if (!progress) {
       return res.status(404).json({ message: "No progress found" });
@@ -386,7 +391,7 @@ const getCalendarHeatmap = async (req, res) => {
 
 
 // ✅ Export all functions
-module.exports = {
+export {
   logProgress,
   getClientProgress,
   getProgressReport,

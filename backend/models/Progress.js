@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
 const ProgressSchema = new mongoose.Schema({
-  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Kullanıcı ID'si
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Kullanıcı ID'si
   programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true }, // Program ID
 
   // ✅ NEW FIELD: total days completed
@@ -81,4 +81,4 @@ const ProgressSchema = new mongoose.Schema({
   lastUpdated: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("Progress", ProgressSchema);
+export default mongoose.model("Progress", ProgressSchema);

@@ -1,8 +1,8 @@
-const express = require("express");
+import express from 'express';
 
 const router = express.Router();
 
-const {
+import {
    getClientDetails,
   addClientToGroup,
   createGroup,
@@ -13,9 +13,9 @@ const {
   searchGroupClients,
   getAllGroupClients,
   searchClients
-} = require("../controllers/clientGroupController");
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+} from '../controllers/clientGroupController.js';
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
 
 // All routes below require coach authentication
 router.use(protect, roleMiddleware(["coach"]));
@@ -34,4 +34,4 @@ router.post("/:id/add-client", addClientToGroup);         // Add client to group
 router.get("/client/:id", getClientDetails);              // Get client detail (optional)
 router.get("/search", protect, roleMiddleware(["coach"]), searchClients);
 
-module.exports = router;
+export default router;
