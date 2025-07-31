@@ -13,19 +13,38 @@ type UserProfile = {
 
 const UserProfilePage = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-     // Corrected API URL
-    axios.get('https://kulvar-qb7t.onrender.com/profile')
-      .then(response => setProfile(response.data))
-      .catch(() => {
-        console.error('Error fetching profile');
-      });
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');  // Get token from localStorage
+
+        if (!token) {
+          setError('User is not authenticated');
+          return;
+        }
+
+        const response = await axios.get('https://kulvar-qb7t.onrender.com/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,  // Attach token in Authorization header
+          },
+        });
+
+        setProfile(response.data);
+      } catch (err) {
+        setError('Error fetching profile');
+        console.error(err);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   return (
     <div className="profile-container">
       <h2>User Profile</h2>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       {profile ? (
         <div className="profile-details">
           <Image
