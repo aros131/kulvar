@@ -15,11 +15,10 @@ const CoachProfilePage = () => {
   const [profile, setProfile] = useState<CoachProfile | null>(null);
 
   useEffect(() => {
-    // Fetch coach profile data
-    axios.get('/api/profile')
+     // Corrected API URL
+    axios.get('https://kulvar-qb7t.onrender.com/profile')
       .then(response => setProfile(response.data))
       .catch(() => {
-        // Error handling if needed (not using the variable directly)
         console.error('Error fetching profile');
       });
   }, []);

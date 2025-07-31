@@ -15,11 +15,10 @@ const UserProfilePage = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    // Fetch user profile data
-    axios.get('/api/profile')
+     // Corrected API URL
+    axios.get('https://kulvar-qb7t.onrender.com/profile')
       .then(response => setProfile(response.data))
       .catch(() => {
-        // Error handling if needed (not using the variable directly)
         console.error('Error fetching profile');
       });
   }, []);
