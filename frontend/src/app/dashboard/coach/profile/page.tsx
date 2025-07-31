@@ -1,8 +1,52 @@
-export default function CoachProfilePage() {
+'use client';  // Ensure this is a Client Component
+
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Image from 'next/image';  // Import Image for optimization
+
+type CoachProfile = {
+  name: string;
+  email: string;
+  profilePicture: string;
+  specialization?: string;
+};
+
+const CoachProfilePage = () => {
+  const [profile, setProfile] = useState<CoachProfile | null>(null);
+
+  useEffect(() => {
+    // Fetch coach profile data
+    axios.get('/api/profile')
+      .then(response => setProfile(response.data))
+      .catch(() => {
+        // Error handling if needed (not using the variable directly)
+        console.error('Error fetching profile');
+      });
+  }, []);
+
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">Koç Profili</h1>
-      <p>Profil bilgilerinizi buradan yönetin.</p>
+    <div className="profile-container">
+      <h2>Coach Profile</h2>
+      {profile ? (
+        <div className="profile-details">
+          <Image
+            src={profile.profilePicture || '/images/default-user.jpg'}
+            alt="Profile Picture"
+            width={150}
+            height={150}
+            className="profile-img"
+          />
+          <div className="profile-info">
+            <p><strong>Name:</strong> {profile.name}</p>
+            <p><strong>Email:</strong> {profile.email}</p>
+            <p><strong>Specialization:</strong> {profile.specialization || 'Not specified'}</p>
+          </div>
+        </div>
+      ) : (
+        <p>Loading profile...</p>
+      )}
     </div>
   );
-}
+};
+
+export default CoachProfilePage;
