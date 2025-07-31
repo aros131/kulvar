@@ -5,22 +5,7 @@ const Progress = require("../models/Progress");
 const Feedback = require("../models/Feedback");
 
 // ✅ Send notification
-const sendNotification = async (req, res) => {
-  try {
-    const { clientId, message, type } = req.body;
-    if (!clientId || !message || !type) {
-      return res.status(400).json({ message: "Client ID, message, and type are required" });
-    }
-    const notification = await Notification.create({
-      recipientId: clientId,
-      message,
-      type,
-    });
-    res.status(201).json(notification);
-  } catch (error) {
-    res.status(500).json({ message: "Error sending notification", error: error.message });
-  }
-};
+
 
 // ✅ Fetch Profile
 const getProfile = async (req, res) => {
@@ -144,18 +129,7 @@ const getAnalyticsForUser = async (req, res) => {
   }
 };
 
-// ✅ Get notifications for coach
-const getNotificationsForCoach = async (req, res) => {
-  try {
-    const notifications = await Notification.find({ recipientId: req.user.id });
-    if (!notifications || notifications.length === 0) {
-      return res.status(404).json({ message: "No notifications found" });
-    }
-    res.status(200).json({ notifications });
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
-  }
-};
+
 
 // ✅ Get notifications for user
 const getNotificationsForUser = async (req, res) => {
@@ -280,7 +254,7 @@ const getCoachAnalytics = async (req, res) => {
 
 // ✅ Final module exports
 module.exports = {
-  sendNotification,
+  
   getProfile,
   getClients,
   getClientDetails,
@@ -289,7 +263,7 @@ module.exports = {
   saveProgress,
   getAnalyticsForCoach,
   getAnalyticsForUser,
-  getNotificationsForCoach,
+  
   getNotificationsForUser,
   markNotificationAsRead,
   getUserSchedule,

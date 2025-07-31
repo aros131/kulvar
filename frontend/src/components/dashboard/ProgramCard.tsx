@@ -10,7 +10,11 @@ interface ProgramCardProps {
   description: string;
   duration: string;
   progressPercentage: number;
+  image?: string;
+  goalTag?: string;
+  coachName?: string;
 }
+
 
 export default function ProgramCard({
   name,

@@ -5,8 +5,8 @@ const protect = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
 const {
-  sendNotification,
-  getNotificationsForCoach,
+  
+
   getNotificationsForUser,
   getClients,
   getClientDetails,
@@ -34,8 +34,8 @@ router.get("/analytics/coach", protect, roleMiddleware(["coach"]), getAnalyticsF
 router.get("/analytics/user", protect, roleMiddleware(["user"]), getAnalyticsForUser);
 
 // ✅ Notifications
-router.post("/notifications", protect, roleMiddleware(["coach"]), sendNotification);
-router.get("/notifications/coach", protect, roleMiddleware(["coach"]), getNotificationsForCoach);
+
+
 router.get("/notifications/user", protect, roleMiddleware(["user"]), getNotificationsForUser);
 router.post("/notifications/read/:notificationId", protect, markNotificationAsRead);
 

@@ -21,7 +21,7 @@ const progressRoutes = require('./routes/progressRoutes')
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors({
@@ -45,7 +45,9 @@ mongoose.connect(process.env.MONGO_URI, {
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/content', contentRoutes);
-app.use('/notifications', notificationRoutes);
+app.use("/notifications", notificationRoutes); // 🔁 Eski kullanıcı bildirimleri için
+app.use("/dashboard/notifications", notificationRoutes); // 🔁 Koç paneli için uyumlu
+
 app.use('/exercise-templates', exerciseTemplateRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/groups', clientGroupRoutes);

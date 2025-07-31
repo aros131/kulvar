@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import { createUserIfNotExists } from "@/utils/firestore/createUserIfNotExists";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -32,7 +32,11 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('token', data.token);
+// ✅ NEW: Store user in localStorage for access later
+localStorage.setItem('user', JSON.stringify(data.user));
 
+// ✅ 🔥 Create Firestore user (if not exists)
+await createUserIfNotExists(data.user.id, data.user.name, data.user.role);
       // ✅ Role-based redirect
       
       if (data.user.role === 'user') {
