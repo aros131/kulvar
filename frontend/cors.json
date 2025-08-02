@@ -1,6 +1,9 @@
 [
   {
-    "origin": ["https://kulvar-iwqi-iekt4qtig-aros131s-projects.vercel.app"],
+    "origin": [
+  "https://*.vercel.app",
+  "https://kulvar.vercel.app"  
+],
     "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "maxAgeSeconds": 3600,
     "responseHeader": [
