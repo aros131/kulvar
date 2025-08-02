@@ -8,7 +8,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBqblbrETRgYJpX3UDNhRw2ET1SEJl3260",
   authDomain: "persecoaching.firebaseapp.com",
   projectId: "persecoaching",
-  storageBucket: "persecoaching.appspot.com", // ✅ Fix here
+   storageBucket: "persecoaching", // ✅ Fixed here
   messagingSenderId: "697895669524",
   appId: "1:697895669524:web:967cc6821f6fef20a53c01",
 };
