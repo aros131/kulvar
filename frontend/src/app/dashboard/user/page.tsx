@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProgramCard from "@/components/dashboard/ProgramCard";
-import WelcomeWidget from "@/components/dashboard/WelcomeWidget";
+
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import ProgressChart from "@/components/program/ProgressChart";
@@ -95,7 +95,7 @@ export default function UserDashboardPage() {
 
       <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
         <Navbar />
-        <WelcomeWidget />
+       
 
         <section className="max-w-6xl mx-auto px-4 py-10">
           <div className="flex items-center gap-4 mb-6">
