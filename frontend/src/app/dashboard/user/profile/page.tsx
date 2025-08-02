@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase"; // ✅ Make sure this points to your firebase config
+import { storage } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
 
 type UserProfile = {
@@ -56,27 +56,32 @@ const UserProfilePage = () => {
     if (!editData) return;
     setEditData({ ...editData, [field]: value });
   };
-const handleImageUpload = async (file: File) => {
-  if (!file || !editData) return;
-  setUploading(true);
-  try {
-    const email = editData.email.replace(/[@.]/g, "_"); // make safe for path
-    const fileRef = ref(storage, `profile-pictures/${email}/${uuidv4()}-${file.name}`);
-    await uploadBytes(fileRef, file);
-    const downloadURL = await getDownloadURL(fileRef);
-    setEditData(prev => prev ? { ...prev, profilePicture: downloadURL } : null);
-    toast.success("Fotoğraf yüklendi.");
-  } catch (err) {
-    toast.error("Fotoğraf yüklenemedi.");
-    console.error(err);
-  } finally {
-    setUploading(false);
-  }
-};
 
+  const handleImageUpload = async (file: File) => {
+    if (!file || !editData) return;
+    setUploading(true);
+    try {
+      const emailSafe = editData.email.replace(/[@.]/g, "_");
+      const fileRef = ref(storage, `profile-pictures/${emailSafe}/${uuidv4()}-${file.name}`);
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+      setEditData(prev => prev ? { ...prev, profilePicture: downloadURL } : null);
+      toast.success("Fotoğraf yüklendi.");
+    } catch (err) {
+      toast.error("Fotoğraf yüklenemedi.");
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!editData) return;
+    if (!editData.name.trim()) {
+      toast.error("İsim alanı boş bırakılamaz.");
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Token yok');
@@ -119,13 +124,13 @@ const handleImageUpload = async (file: File) => {
               width={120}
               height={120}
               className="rounded-full border shadow"
+              unoptimized // ✅ needed for remote images without next.config domain
             />
             <div className="text-center space-y-2">
               <p className="text-lg"><strong>İsim:</strong> {profile.name}</p>
               <p className="text-gray-700"><strong>Email:</strong> {profile.email}</p>
               <p className="text-gray-700">
-                <strong>Fitness Hedefleri:</strong>{' '}
-                {profile.fitnessGoals ? profile.fitnessGoals : 'Belirtilmemiş'}
+                <strong>Fitness Hedefleri:</strong> {profile.fitnessGoals || 'Belirtilmemiş'}
               </p>
             </div>
 
@@ -153,21 +158,21 @@ const handleImageUpload = async (file: File) => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+                      const file = e.target.files?.[0];
+                      if (!file) return;
 
-  if (!file.type.startsWith("image/")) {
-    toast.error("Lütfen bir resim dosyası seçin.");
-    return;
-  }
+                      if (!file.type.startsWith("image/")) {
+                        toast.error("Lütfen bir resim dosyası seçin.");
+                        return;
+                      }
 
-  if (file.size > 2 * 1024 * 1024) {
-    toast.error("Dosya boyutu 2MB'den küçük olmalı.");
-    return;
-  }
+                      if (file.size > 2 * 1024 * 1024) {
+                        toast.error("Dosya boyutu 2MB'den küçük olmalı.");
+                        return;
+                      }
 
-  handleImageUpload(file);
-}}
+                      handleImageUpload(file);
+                    }}
                     disabled={uploading}
                   />
                   {uploading && <p className="text-sm text-gray-500">Yükleniyor...</p>}
@@ -178,6 +183,7 @@ const handleImageUpload = async (file: File) => {
                       width={80}
                       height={80}
                       className="rounded-full mx-auto"
+                      unoptimized
                     />
                   )}
                 </div>
