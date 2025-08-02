@@ -5,39 +5,44 @@ import { Button } from "@/components/ui/button";
 import {
   Moon,
   Sun,
-  
   Menu,
   X,
 } from "lucide-react";
+import {
+  Gym,
+  Yoga,
+  Stretching,
+  Apple,
+} from "iconoir-react";
 import { motion } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import Footer from "@/components/Footer";
 
 const products = [
   {
     title: "Fitness",
     description: "Güçlü bir vücut için kişiselleştirilmiş planlar.",
-    image: "/images/fitness.png",
+    icon: <Gym width={40} height={40} />,
     link: "/koc?specialization=fitness",
   },
   {
     title: "Yoga",
     description: "Esneklik ve mindfulness için uzman rehberliği.",
-    image: "/images/yoga.png",
+    icon: <Yoga width={40} height={40} />,
     link: "/koc?specialization=yoga",
   },
   {
     title: "Pilates",
     description: "Denge, esneklik ve güç için pilates programları.",
-    image: "/images/pilates.png",
+    icon: <Stretching width={40} height={40} />,
     link: "/koc?specialization=pilates",
   },
   {
     title: "Beslenme",
     description: "Sağlıklı bir yaşam için kişisel diyet planları.",
-    image: "/images/beslenme.png",
+    icon: <Apple width={40} height={40} />,
     link: "/koc?specialization=beslenme",
   },
 ];
@@ -80,7 +85,6 @@ export default function HomePage() {
         return allTags[(currentIndex - 1 + allTags.length) % allTags.length];
       });
     },
-    
     trackTouch: true,
   });
 
@@ -96,23 +100,13 @@ export default function HomePage() {
           />
         </Link>
 
-        {/* Desktop Nav */}
         <ul className="hidden md:flex gap-6">
-          <li>
-            <a href="#hero" className="hover:underline">Anasayfa</a>
-          </li>
-          <li>
-            <Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link>
-          </li>
-          <li>
-            <Link href="/contact" className="hover:underline">İletişim</Link>
-          </li>
-          <li>
-            <Link href="/login" className="hover:underline">Giriş Yap</Link>
-          </li>
+          <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+          <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
+          <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
+          <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
         </ul>
 
-        {/* Toggle & Hamburger */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode">
             {darkMode ? <Sun /> : <Moon />}
@@ -126,7 +120,6 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Mobile Nav */}
         {isMobileMenuOpen && (
           <motion.ul
             initial={{ opacity: 0, y: -10 }}
@@ -169,7 +162,6 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
         <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
 
-        {/* Filter Chips */}
         <div className="flex flex-wrap justify-center gap-3 mb-10">
           {allTags.map((tag) => (
             <button
@@ -186,7 +178,6 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {filteredProducts.map((product) => (
             <motion.div
@@ -195,13 +186,9 @@ export default function HomePage() {
               transition={{ duration: 0.3 }}
               className="bg-white dark:bg-zinc-700 p-5 rounded-xl shadow-md flex flex-col items-center text-center"
             >
-              <Image
-                src={product.image}
-                alt={product.title}
-                width={100}
-                height={80}
-                className="mb-3 rounded"
-              />
+              <div className="text-zinc-800 dark:text-white mb-3">
+                {product.icon}
+              </div>
               <h3 className="text-lg font-semibold">{product.title}</h3>
               <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">
                 {product.description}
