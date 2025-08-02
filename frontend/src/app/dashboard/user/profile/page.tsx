@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
+import ProfileImageUploader from "@/components/ProfileImageUploader";
+
+
 
 type UserProfile = {
   name: string;
@@ -123,8 +126,8 @@ const UserProfilePage = () => {
               alt="Profil Fotoğrafı"
               width={120}
               height={120}
-              className="rounded-full border shadow"
-              unoptimized // ✅ needed for remote images without next.config domain
+              className="rounded-full border shadow object-cover w-[120px] h-[120px]"
+              unoptimized
             />
             <div className="text-center space-y-2">
               <p className="text-lg"><strong>İsim:</strong> {profile.name}</p>
@@ -154,35 +157,18 @@ const UserProfilePage = () => {
                     value={editData?.fitnessGoals || ''}
                     onChange={(e) => handleEditChange("fitnessGoals", e.target.value)}
                   />
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
 
-                      if (!file.type.startsWith("image/")) {
-                        toast.error("Lütfen bir resim dosyası seçin.");
-                        return;
-                      }
+                  <ProfileImageUploader onCropped={handleImageUpload} />
 
-                      if (file.size > 2 * 1024 * 1024) {
-                        toast.error("Dosya boyutu 2MB'den küçük olmalı.");
-                        return;
-                      }
-
-                      handleImageUpload(file);
-                    }}
-                    disabled={uploading}
-                  />
                   {uploading && <p className="text-sm text-gray-500">Yükleniyor...</p>}
+
                   {editData?.profilePicture && (
                     <Image
                       src={editData.profilePicture}
                       alt="Yeni Profil"
-                      width={80}
-                      height={80}
-                      className="rounded-full mx-auto"
+                      width={100}
+                      height={100}
+                      className="rounded-full object-cover w-[100px] h-[100px]"
                       unoptimized
                     />
                   )}
