@@ -24,6 +24,7 @@
     "firebase": "^12.0.0",
     "framer-motion": "^12.19.1",
     "iconoir-react": "^7.11.0",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.523.0",
     "next": "^15.3.0",
     "react": "^18.2.0",
@@ -32,8 +33,10 @@
     "react-dropzone": "^14.3.8",
     "react-easy-crop": "^5.5.0",
     "react-swipeable": "^7.0.2",
+    "react-tsparticles": "^2.12.2",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
+    "tsparticles": "^3.9.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

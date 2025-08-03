@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserIfNotExists } from "@/utils/firestore/createUserIfNotExists";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting...");
 
     if (!email || !password) {
       setErrorMsg('Lütfen e-posta ve şifrenizi giriniz.');
@@ -32,19 +34,15 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('token', data.token);
-// ✅ NEW: Store user in localStorage for access later
-localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-// ✅ 🔥 Create Firestore user (if not exists)
-await createUserIfNotExists(data.user.id, data.user.name, data.user.role);
-      // ✅ Role-based redirect
-      
+      await createUserIfNotExists(data.user.id, data.user.name, data.user.role);
+
       if (data.user.role === 'user') {
-  router.push(`/dashboard/user?id=${data.user.id}`);
-} else if (data.user.role === 'coach') {
-  router.push(`/dashboard/coach?id=${data.user.id}`);
-}
-else {
+        router.push(`/dashboard/user?id=${data.user.id}`);
+      } else if (data.user.role === 'coach') {
+        router.push(`/dashboard/coach?id=${data.user.id}`);
+      } else {
         setErrorMsg('Tanımlanamayan rol.');
       }
 
@@ -55,9 +53,9 @@ else {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 px-4">
-      <form onSubmit={handleLogin} className="w-full max-w-md bg-white dark:bg-zinc-800 p-8 rounded-lg shadow-lg space-y-5">
-        <h2 className="text-2xl font-bold text-center">Giriş Yap</h2>
+    <div className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 px-4 relative">
+      <form onSubmit={handleLogin} className="w-full max-w-md bg-white dark:bg-zinc-800 p-8 rounded-lg shadow-lg space-y-5 relative z-10">
+        <h2 className="text-2xl font-bold text-center text-zinc-800 dark:text-white">Giriş Yap</h2>
 
         {errorMsg && <div className="text-red-500 text-sm">{errorMsg}</div>}
 
@@ -79,7 +77,10 @@ else {
           className="w-full p-3 rounded border dark:bg-zinc-700 dark:text-white"
         />
 
-        <button type="submit" className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded">
+        <button
+          type="submit"
+          className="z-50 w-full bg-zinc-700 hover:bg-zinc-800 text-white py-3 rounded active:scale-95 transition"
+        >
           Giriş Yap
         </button>
 

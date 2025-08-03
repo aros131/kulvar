@@ -1,8 +1,11 @@
 {
   "dependencies": {
     "firebase": "^12.0.0",
+    "lottie-react": "^2.4.1",
     "react-dropzone": "^14.3.8",
     "react-easy-crop": "^5.5.0",
-    "react-swipeable": "^7.0.2"
+    "react-swipeable": "^7.0.2",
+    "react-tsparticles": "^2.12.2",
+    "tsparticles": "^3.9.0"
   }
 }
