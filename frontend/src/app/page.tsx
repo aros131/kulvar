@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
+const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), { ssr: false });
 
 
 import { useEffect, useState } from "react";
@@ -156,7 +157,8 @@ export default function HomePage() {
             <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
           </div>
           <div className="text-center">
-            <Image src="/images/progress.jpg" alt="İlerleme" width={300} height={200} className="rounded-2xl mx-auto" />
+            <LottieIlerleme />
+
             <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
             <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
           </div>
