@@ -1,5 +1,7 @@
 "use client";
-import { Player } from "@lottiefiles/react-lottie-player";
+import dynamic from "next/dynamic";
+const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
+
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -148,12 +150,8 @@ export default function HomePage() {
         <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
         <div className="grid md:grid-cols-2 gap-10">
           <div className="text-center">
-            <Player
-  autoplay
-  loop
-  src="/lotties/topluluk.json"
-  style={{ height: 200, width: 200 }}
-/>
+            <LottieTopluluk />
+
             <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
             <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
           </div>
