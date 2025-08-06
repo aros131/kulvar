@@ -3,7 +3,11 @@ import dynamic from "next/dynamic";
 const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
 const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), { ssr: false });
 const LottieHero = dynamic(() => import("@/components/LottieHero"), { ssr: false });
-
+import { Fascinate } from 'next/font/google';
+const fascinate = Fascinate({
+  subsets: ['latin'],
+  weight: '400',
+});
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -147,13 +151,16 @@ export default function HomePage() {
     {/* LEFT CONTENT */}
     <div className="w-full md:w-1/2 text-white">
       <motion.h1
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-4xl md:text-5xl font-bold mt-4 mb-4"
-      >
-        PerSe Coaching
-      </motion.h1>
+  initial={{ opacity: 0, y: -10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  className={`${fascinate.className} text-4xl md:text-5xl font-bold mt-4 mb-4`}
+  style={{ color: "#8A2B13" }}
+>
+  PerSe Coaching
+</motion.h1>
+
+
 
       <motion.p
         initial={{ opacity: 0 }}
