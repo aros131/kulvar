@@ -175,7 +175,7 @@ export default function HomePage() {
         </Button>
         <Button
           variant="outline"
-          className="border-white text-white hover:bg-white hover:text-black"
+          className="border-white text-black hover:bg-white hover:text-black"
           onClick={() => window.location.href = '#features'}
         >
           Daha Fazla Bilgi
