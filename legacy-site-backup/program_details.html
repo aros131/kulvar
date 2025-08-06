@@ -168,7 +168,7 @@
       }
     }
 
-    async function sendFeedback(clientId, programId) {
+    async function sendFeedback(userId, programId) {
       const feedback = prompt("Müşteriye geri bildiriminizi yazın:");
       if (!feedback) return;
 
@@ -179,7 +179,7 @@
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ clientId, programId, message: feedback }),
+          body: JSON.stringify({ userId, programId, message: feedback }),
         });
 
         if (response.ok) {

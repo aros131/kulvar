@@ -2,6 +2,12 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@font-face {
+  font-family: 'Fascinate';
+  src: url('/fonts/Fascinate-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 @theme inline {
   --color-background: var(--background);

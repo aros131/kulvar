@@ -1,10 +1,10 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
 
 // ✅ Import necessary controllers
-const {
+import {
   logProgress,
   getClientProgress,
   getProgressReport,
@@ -13,13 +13,14 @@ const {
   submitFeedback,
   getUserProgress,
   restartProgram,
-  getProgressTrend,
+  getProgressTrend, 
   updateGoalProgress,
   getUserStreaks,
   getAdaptiveGoalProgress,
   getStrengthProgress,
-  getAllProgramProgress
-} = require("../controllers/progressController");
+  getAllProgramProgress,
+  getCalendarHeatmap
+} from '../controllers/progressController.js';
 
 // ✅ Log user progress (User Only)
 router.post("/", protect, roleMiddleware(["user"]), logProgress);
@@ -63,4 +64,6 @@ router.get("/strength-chart/:programId", protect, getStrengthProgress);
 // ✅ Get all program progress (User Only or Coach depending on implementation)
 router.get("/all-program-progress", protect, getAllProgramProgress);
 
-module.exports = router;
+router.get("/calendar/:programId", protect, roleMiddleware(["user"]), getCalendarHeatmap);
+
+export default router;

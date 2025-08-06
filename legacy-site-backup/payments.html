@@ -115,7 +115,7 @@
         async function requestPayment(event) {
             event.preventDefault();
 
-            const clientId = document.getElementById("client-select").value;
+            const userId = document.getElementById("client-select").value;
             const amount = document.getElementById("amount").value;
 
             try {
@@ -125,7 +125,7 @@
                         "Authorization": `Bearer ${token}`,
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ clientId, amount })
+                    body: JSON.stringify({ userId, amount })
                 });
 
                 if (response.ok) {

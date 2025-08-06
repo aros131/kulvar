@@ -1,12 +1,12 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
-const multer = require("multer");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+import multer from 'multer';
 const upload = multer({ dest: "uploads/" });
 
 // ✅ Import necessary controllers
-const {
+import {
   createProgram,
   getPrograms,
   
@@ -41,7 +41,7 @@ const {
   
  
   
-} = require("../controllers/programController");
+} from '../controllers/programController.js';
 
 // 🟢 Program Management Routes
 router.post("/", protect, roleMiddleware(["coach"]), upload.array("documents"), createProgram);
@@ -92,7 +92,7 @@ router.post("/reschedule-workout", protect, roleMiddleware(["user"]), reschedule
 router.post("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), updateAdaptiveAdjustments);
 router.post("/programs/:programId/track-session", trackSessionCompletion); // Redundant with above? Consider removing
 router.post("/assign-group", protect, roleMiddleware(["coach"]), assignProgramToGroup);
-module.exports = router;
+export default router;
 
 
 

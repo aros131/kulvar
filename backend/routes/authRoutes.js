@@ -1,8 +1,8 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const { register, login, getUserProfile, getUserProfileById } = require("../controllers/authController");
-const User = require('../models/User');
-const protect = require("../middleware/authMiddleware");
+import { register, login, getUserProfile, getUserProfileById } from '../controllers/authController.js';
+import User from '../models/User.js';
+import protect from '../middleware/authMiddleware.js';
 
 router.post("/register", register); // Register users and coaches
 router.post("/login", login); // Login users and coaches
@@ -19,4 +19,4 @@ router.get('/users', async (req, res) => {
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
-module.exports = router;
+export default router;
