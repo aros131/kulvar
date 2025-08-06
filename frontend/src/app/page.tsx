@@ -140,18 +140,19 @@ export default function HomePage() {
       </nav>
       <section
   id="hero"
-  className="relative h-[80vh] bg-cover bg-center bg-no-repeat"
+  className="relative h-[80vh] bg-cover bg-center bg-no-repeat flex items-center"
   style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
 >
-  <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col md:flex-row items-center justify-start px-6 py-12">
-    {/* LEFT: Text above animation */}
-    <div className="w-full md:w-1/2 flex flex-col justify-center text-left text-white">
+  <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full flex flex-col md:flex-row items-start justify-start">
+    {/* LEFT CONTENT: Text + Animation + Buttons */}
+    <div className="w-full md:w-1/2 text-white">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="text-4xl md:text-5xl font-bold mb-4"
       >
+        
         PerSe Coaching
       </motion.h1>
 
@@ -159,26 +160,30 @@ export default function HomePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="text-lg text-white/90 mb-6"
+        className="text-lg text-white/90 mb-6 max-w-xl"
       >
+        
         Hedeflerini keşfet, programını seç, birlikte başaralım.
       </motion.p>
 
+      {/* Lottie animation */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.6 }}
-        className="flex gap-4 mb-8"
+        className="mb-6"
       >
-        
+        <LottieHero />
       </motion.div>
 
-      {/* 👇 Lottie animation below text */}
-      <div className="w-full max-w-xs">
-        <LottieHero />
-      </div>
-    </div>
-    <Button onClick={() => window.location.href = '/koc'}>
+      {/* Buttons */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6, duration: 0.6 }}
+        className="flex gap-4 flex-col sm:flex-row"
+      >
+        <Button onClick={() => window.location.href = '/koc'}>
           Koçlarla Tanış
         </Button>
         <Button
@@ -188,34 +193,15 @@ export default function HomePage() {
         >
           Daha Fazla Bilgi
         </Button>
+      </motion.div>
+    </div>
 
-    {/* RIGHT (optional empty for now) */}
+    {/* RIGHT EMPTY / placeholder */}
     <div className="hidden md:block md:w-1/2" />
   </div>
 </section>
 
-
-
-
-      <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
-        <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="text-center">
-            <LottieTopluluk />
-
-            <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
-          </div>
-          <div className="text-center">
-            <LottieIlerleme />
-
-            <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
-          </div>
-        </div>
-      </section>
-
+      
       <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
         <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
 
