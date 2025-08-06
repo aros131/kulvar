@@ -144,15 +144,14 @@ export default function HomePage() {
   style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
 >
   <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full flex flex-col md:flex-row items-start justify-start">
-    {/* LEFT CONTENT: Text + Animation + Buttons */}
+    {/* LEFT CONTENT */}
     <div className="w-full md:w-1/2 text-white">
       <motion.h1
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-4xl md:text-5xl font-bold mb-4"
+        className="text-4xl md:text-5xl font-bold mt-4 mb-4"
       >
-        
         PerSe Coaching
       </motion.h1>
 
@@ -160,13 +159,11 @@ export default function HomePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="text-lg text-white/90 mb-6 max-w-xl"
+        className="text-lg text-white/90 mb-6 max-w-xl mt-2"
       >
-        
         Hedeflerini keşfet, programını seç, birlikte başaralım.
       </motion.p>
 
-      {/* Lottie animation */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -176,19 +173,18 @@ export default function HomePage() {
         <LottieHero />
       </motion.div>
 
-      {/* Buttons */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6, duration: 0.6 }}
-        className="flex gap-4 flex-col sm:flex-row"
+        className="flex gap-4 flex-col sm:flex-row ml-4"
       >
         <Button onClick={() => window.location.href = '/koc'}>
           Koçlarla Tanış
         </Button>
         <Button
           variant="outline"
-          className="border-white text-black hover:bg-white hover:text-black"
+          className="border-white text-white hover:bg-white hover:text-black"
           onClick={() => window.location.href = '#features'}
         >
           Daha Fazla Bilgi
@@ -196,10 +192,11 @@ export default function HomePage() {
       </motion.div>
     </div>
 
-    {/* RIGHT EMPTY / placeholder */}
+    {/* RIGHT EMPTY / optional content */}
     <div className="hidden md:block md:w-1/2" />
   </div>
 </section>
+
  <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
         <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
         <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
