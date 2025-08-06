@@ -138,55 +138,62 @@ export default function HomePage() {
           </motion.ul>
         )}
       </nav>
-<section
+      <section
   id="hero"
-  className="relative h-[80vh] bg-cover bg-center bg-no-repeat flex items-center justify-center px-6"
+  className="relative h-[80vh] bg-cover bg-center bg-no-repeat"
   style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
 >
-  {/* Animated Lottie in background */}
-  <div className="absolute inset-0 flex items-center justify-center z-0">
-    <LottieHero />
-  </div>
-
-  {/* Text overlay */}
-  <div className="relative z-10 text-white text-center md:text-left max-w-3xl">
-    <motion.h1
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="text-4xl md:text-5xl font-bold mb-4"
-    >
-      PerSe Coaching
-    </motion.h1>
-
-    <motion.p
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.2, duration: 0.6 }}
-      className="text-lg text-white/90 mb-6"
-    >
-      Hedeflerini keşfet, programını seç, birlikte başaralım.
-    </motion.p>
-
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.4, duration: 0.6 }}
-      className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start"
-    >
-      <Button onClick={() => window.location.href = '/koc'}>
-        Koçlarla Tanış
-      </Button>
-      <Button
-        variant="outline"
-        className="border-white text-white hover:bg-white hover:text-black"
-        onClick={() => window.location.href = '#features'}
+  <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col md:flex-row items-center justify-start px-6 py-12">
+    {/* LEFT: Text above animation */}
+    <div className="w-full md:w-1/2 flex flex-col justify-center text-left text-white">
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-4xl md:text-5xl font-bold mb-4"
       >
-        Daha Fazla Bilgi
-      </Button>
-    </motion.div>
+        PerSe Coaching
+      </motion.h1>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="text-lg text-white/90 mb-6"
+      >
+        Hedeflerini keşfet, programını seç, birlikte başaralım.
+      </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+        className="flex gap-4 mb-8"
+      >
+        <Button onClick={() => window.location.href = '/koc'}>
+          Koçlarla Tanış
+        </Button>
+        <Button
+          variant="outline"
+          className="border-white text-white hover:bg-white hover:text-black"
+          onClick={() => window.location.href = '#features'}
+        >
+          Daha Fazla Bilgi
+        </Button>
+      </motion.div>
+
+      {/* 👇 Lottie animation below text */}
+      <div className="w-full max-w-xs">
+        <LottieHero />
+      </div>
+    </div>
+
+    {/* RIGHT (optional empty for now) */}
+    <div className="hidden md:block md:w-1/2" />
   </div>
 </section>
+
+
 
 
       <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
