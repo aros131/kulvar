@@ -139,13 +139,63 @@ export default function HomePage() {
         )}
       </nav>
 
-      <section id="hero" className="text-center py-20 px-4 bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700">
-        <motion.h1 initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-4xl md:text-5xl font-bold mb-4">PerSe Coaching</motion.h1>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.6 }} className="text-lg mb-6">Başla, bırakma.</motion.p>
-        <LottieHero />
+     <section
+  id="hero"
+  className="relative h-[80vh] bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
+>
+  {/* Overlay for contrast */}
+  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-0" />
 
-        <Button onClick={() => window.location.href = '#features'}>Keşfet</Button>
-      </section>
+  <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col md:flex-row items-center justify-between px-6 py-12">
+    {/* LEFT: Lottie + Text */}
+    <div className="w-full md:w-1/2 flex flex-col items-start justify-center text-left text-white">
+      <div className="mb-6">
+        <LottieHero />
+      </div>
+
+      <motion.h1
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-4xl md:text-5xl font-bold mb-4"
+      >
+        PerSe Coaching
+      </motion.h1>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="text-lg text-white/90 mb-6"
+      >
+        Hedeflerini keşfet, programını seç, birlikte başaralım.
+      </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+        className="flex gap-4"
+      >
+        <Button onClick={() => window.location.href = '/koc'}>
+          Koçlarla Tanış
+        </Button>
+        <Button
+          variant="outline"
+          className="border-white text-white hover:bg-white hover:text-black"
+          onClick={() => window.location.href = '#features'}
+        >
+          Daha Fazla Bilgi
+        </Button>
+      </motion.div>
+    </div>
+
+    {/* RIGHT: Empty for now (can add graphic, stats, etc. later) */}
+    <div className="hidden md:block md:w-1/2" />
+  </div>
+</section>
+
 
       <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
         <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
