@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
 const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), { ssr: false });
-
+const LottieHero = dynamic(() => import("@/components/LottieHero"), { ssr: false });
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -142,7 +142,8 @@ export default function HomePage() {
       <section id="hero" className="text-center py-20 px-4 bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700">
         <motion.h1 initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-4xl md:text-5xl font-bold mb-4">PerSe Coaching</motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.6 }} className="text-lg mb-6">Başla, bırakma.</motion.p>
-        <Image src="/images/hero.jpg" alt="Hero" width={500} height={250} className="mx-auto rounded-lg shadow-md mb-6" />
+        <LottieHero />
+
         <Button onClick={() => window.location.href = '#features'}>Keşfet</Button>
       </section>
 
