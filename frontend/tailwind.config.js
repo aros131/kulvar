@@ -1,9 +1,10 @@
-// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx,js,jsx}",
+    "./components/**/*.{ts,tsx,js,jsx}",
+    "./src/**/*.{ts,tsx,js,jsx}",
+    "./app/globals.css"
   ],
   theme: {
     extend: {
@@ -12,4 +13,5 @@ export default {
       },
     },
   },
+  plugins: [],
 };
