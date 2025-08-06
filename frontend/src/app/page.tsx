@@ -170,7 +170,15 @@ export default function HomePage() {
         transition={{ delay: 0.4, duration: 0.6 }}
         className="flex gap-4 mb-8"
       >
-        <Button onClick={() => window.location.href = '/koc'}>
+        
+      </motion.div>
+
+      {/* 👇 Lottie animation below text */}
+      <div className="w-full max-w-xs">
+        <LottieHero />
+      </div>
+    </div>
+    <Button onClick={() => window.location.href = '/koc'}>
           Koçlarla Tanış
         </Button>
         <Button
@@ -180,13 +188,6 @@ export default function HomePage() {
         >
           Daha Fazla Bilgi
         </Button>
-      </motion.div>
-
-      {/* 👇 Lottie animation below text */}
-      <div className="w-full max-w-xs">
-        <LottieHero />
-      </div>
-    </div>
 
     {/* RIGHT (optional empty for now) */}
     <div className="hidden md:block md:w-1/2" />
