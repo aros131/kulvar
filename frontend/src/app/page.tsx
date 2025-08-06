@@ -196,8 +196,7 @@ export default function HomePage() {
     <div className="hidden md:block md:w-1/2" />
   </div>
 </section>
-
-<section id="features" className="py-16 px-6 max-w-5xl mx-auto">
+ <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
         <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
         <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
         <div className="grid md:grid-cols-2 gap-10">
