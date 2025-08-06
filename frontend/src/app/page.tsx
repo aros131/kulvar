@@ -196,24 +196,7 @@ export default function HomePage() {
     <div className="hidden md:block md:w-1/2" />
   </div>
 </section>
- <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
-        <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="text-center">
-            <LottieTopluluk />
 
-            <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
-          </div>
-          <div className="text-center">
-            <LottieIlerleme />
-
-            <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
-          </div>
-        </div>
-      </section>
       
       <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
         <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
