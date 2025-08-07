@@ -6,7 +6,7 @@ const LottieHero = dynamic(() => import("@/components/LottieHero"), { ssr: false
 
 // en üste ekle
 import { DM_Serif_Display } from 'next/font/google';
-
+import AnimatedText from "@/components/AnimatedText";
 const dmSerif = DM_Serif_Display({
   subsets: ['latin'],
   weight: '400',
@@ -163,17 +163,12 @@ export default function HomePage() {
       PerSe.
     </motion.h1>
 
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.2, duration: 0.6 }}
-      className="text-white/90 mb-6 max-w-xl space-y-2"
-    >
-      <p className="text-lg">Hazırsan başlıyoruz!</p>
-      <p className="text-base">PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.</p>
-      <p className="text-base">Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.</p>
-      <p className="text-base">Hedefin varsa, PerSe yanında.</p>
-    </motion.div>
+    <div className="text-white/90 mb-6 max-w-xl space-y-2 text-left">
+  <AnimatedText text="Hazırsan başlıyoruz!" className="text-lg" delay={0.1} />
+  <AnimatedText text="PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen." className="text-base" delay={0.3} />
+  <AnimatedText text="Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon." className="text-base" delay={0.5} />
+  <AnimatedText text="Hedefin varsa, PerSe yanında." className="text-base" delay={0.7} />
+</div>
   </div>
 
 
