@@ -21,11 +21,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Footer from "@/components/Footer";
 
-import { Fascinate } from "next/font/google";
-const fascinate = Fascinate({
-  subsets: ["latin"],
-  weight: "400",
-});
+
 
 import { DM_Serif_Display } from "next/font/google";
 const dmSerif = DM_Serif_Display({
