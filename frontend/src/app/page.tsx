@@ -19,7 +19,7 @@ import { Gym, Yoga, Stretching, Apple } from "iconoir-react";
 import { motion } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import Link from "next/link";
-import Image from "next/image";
+
 import Footer from "@/components/Footer";
 
 const products = [
