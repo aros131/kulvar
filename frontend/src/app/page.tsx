@@ -19,6 +19,7 @@ import { Gym, Yoga, Stretching, Apple } from "iconoir-react";
 import { motion } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import Link from "next/link";
+import RevealOnScroll from "@/components/RevealOnScroll";
 
 import Footer from "@/components/Footer";
 
@@ -212,6 +213,7 @@ export default function HomePage() {
 
 
       {/* FEATURES */}
+      <RevealOnScroll>
       <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
         <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
         <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
@@ -228,8 +230,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
+</RevealOnScroll>
       {/* CATEGORIES */}
+      <RevealOnScroll>
       <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
         <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
         <div className="flex flex-wrap justify-center gap-3 mb-10">
@@ -273,6 +276,7 @@ export default function HomePage() {
           Yukarı/Aşağı kaydırarak kategoriler arasında geçiş yapabilirsin
         </p>
       </section>
+      </RevealOnScroll>
 
       <Footer />
 
