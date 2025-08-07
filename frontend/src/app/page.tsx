@@ -157,7 +157,7 @@ export default function HomePage() {
   className={`${fascinate.className} text-4xl md:text-5xl font-bold mt-4 mb-4`}
   style={{ color: "#8A2B13" }}
 >
-  PerSe Coaching
+  
 </motion.h1>
 
 
