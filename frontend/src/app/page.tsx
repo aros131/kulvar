@@ -91,9 +91,13 @@ export default function HomePage() {
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
       {/* NAVBAR */}
      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
-  {/* Optional gradient for readability */}
+  {/* Optional gradient overlay */}
   <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
 
+  {/* Thin white separator line */}
+  <div className="absolute bottom-0 left-0 w-full h-px bg-white/30 z-10" />
+
+  {/* Navbar content */}
   <div className="flex items-center justify-between w-full relative">
     {/* Logo */}
     <Link href="/">
@@ -106,17 +110,16 @@ export default function HomePage() {
       />
     </Link>
 
-    {/* Desktop menu */}
-    <ul className="hidden md:flex gap-6 text-white items-center">
+    {/* Desktop center-aligned menu */}
+    <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-6 text-white items-center">
       <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
       <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
       <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
       <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
     </ul>
 
-    {/* Right: dark mode + hamburger */}
+    {/* Right: dark mode + hamburger (mobile) */}
     <div className="flex items-center gap-3 md:hidden">
-      {/* Dark mode toggle */}
       <Button
         variant="ghost"
         onClick={() => setDarkMode(!darkMode)}
@@ -125,7 +128,6 @@ export default function HomePage() {
         {darkMode ? <Sun /> : <Moon />}
       </Button>
 
-      {/* Hamburger */}
       <button
         onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
         aria-label="Toggle menu"
@@ -136,7 +138,7 @@ export default function HomePage() {
     </div>
   </div>
 
-  {/* Mobile menu dropdown */}
+  {/* Mobile dropdown menu */}
   {isMobileMenuOpen && (
     <motion.ul
       initial={{ opacity: 0, y: -10 }}
@@ -151,6 +153,7 @@ export default function HomePage() {
     </motion.ul>
   )}
 </nav>
+
 
 
       {/* HERO */}
