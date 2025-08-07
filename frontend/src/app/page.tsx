@@ -1,43 +1,26 @@
 "use client";
-
 import dynamic from "next/dynamic";
+const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
+const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), { ssr: false });
+const LottieHero = dynamic(() => import("@/components/LottieHero"), { ssr: false });
+
+// en üste ekle
+import { DM_Serif_Display } from 'next/font/google';
+
+const dmSerif = DM_Serif_Display({
+  subsets: ['latin'],
+  weight: '400',
+});
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Moon,
-  Sun,
-  Menu,
-  X,
-} from "lucide-react";
-import {
-  Gym,
-  Yoga,
-  Stretching,
-  Apple,
-} from "iconoir-react";
+import { Moon, Sun, Menu, X } from "lucide-react";
+import { Gym, Yoga, Stretching, Apple } from "iconoir-react";
 import { motion } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import Link from "next/link";
 import Image from "next/image";
 import Footer from "@/components/Footer";
-
-
-
-import { DM_Serif_Display } from "next/font/google";
-const dmSerif = DM_Serif_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), {
-  ssr: false,
-});
-const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), {
-  ssr: false,
-});
-const LottieHero = dynamic(() => import("@/components/LottieHero"), {
-  ssr: false,
-});
 
 const products = [
   {
@@ -76,9 +59,7 @@ export default function HomePage() {
   const filteredProducts =
     activeTag === "Tümü"
       ? products
-      : products.filter(
-          (p) => p.title.toLowerCase() === activeTag.toLowerCase()
-        );
+      : products.filter((p) => p.title.toLowerCase() === activeTag.toLowerCase());
 
   useEffect(() => {
     const stored = localStorage.getItem("darkMode");
@@ -108,40 +89,21 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
+      {/* NAVBAR */}
       <nav className="flex justify-between items-center px-6 py-4 shadow-md bg-white dark:bg-zinc-800 relative z-50">
         <Link href="/">
           <Image src="/images/logo.png" alt="Logo" width={100} height={80} />
         </Link>
 
         <ul className="hidden md:flex gap-6">
-          <li>
-            <a href="#hero" className="hover:underline">
-              Anasayfa
-            </a>
-          </li>
-          <li>
-            <Link href="/koc?specialization=all" className="hover:underline">
-              Koçlarımız
-            </Link>
-          </li>
-          <li>
-            <Link href="/contact" className="hover:underline">
-              İletişim
-            </Link>
-          </li>
-          <li>
-            <Link href="/login" className="hover:underline">
-              Giriş Yap
-            </Link>
-          </li>
+          <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+          <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
+          <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
+          <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
         </ul>
 
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => setDarkMode(!darkMode)}
-            aria-label="Toggle dark mode"
-          >
+          <Button variant="ghost" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode">
             {darkMode ? <Sun /> : <Moon />}
           </Button>
           <button
@@ -160,119 +122,95 @@ export default function HomePage() {
             transition={{ duration: 0.3 }}
             className="absolute top-full left-0 w-full bg-white dark:bg-zinc-800 flex flex-col items-center gap-4 py-4 shadow-md md:hidden"
           >
-            <li>
-              <a href="#hero" onClick={() => setMobileMenuOpen(false)}>
-                Anasayfa
-              </a>
-            </li>
-            <li>
-              <Link
-                href="/koc?specialization=all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Koçlarımız
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
-                İletişim
-              </Link>
-            </li>
-            <li>
-              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                Giriş Yap
-              </Link>
-            </li>
+            <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
+            <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
+            <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
+            <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
           </motion.ul>
         )}
       </nav>
 
+      {/* HERO */}
       <section
-        id="hero"
-        className="relative h-[80vh] bg-cover bg-center bg-no-repeat flex items-center"
-        style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
+  id="hero"
+  className="relative h-[80vh] bg-cover bg-center bg-no-repeat flex items-center"
+  style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
+>
+  <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full flex flex-col md:flex-row items-center justify-between">
+    
+    {/* LEFT: LottieHero */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.4, duration: 0.6 }}
+      className="mb-6 transform scale-[1.5] -ml-10 sm:-ml-20 md:-ml-32 lg:-ml-40"
+    >
+      <LottieHero />
+    </motion.div>
+
+    {/* RIGHT: Text and buttons */}
+    <div className="w-full md:w-1/2 text-white text-center md:text-left">
+      <motion.h1
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+          className={`${dmSerif.className} text-5xl md:text-7xl font-normal mb-2`}
       >
-        <div className="absolute inset-0 bg-black bg-opacity-60" />
-        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-white text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className={`${dmSerif.className} text-6xl md:text-8xl font-normal`}
-          >
-            PerSe.
-          </motion.h1>
-        </div>
+        PerSe.
+      </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-lg text-white/90 mb-6 max-w-xl mt-2"
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="text-lg text-white/90 mb-6 max-w-xl mt-2"
+      >
+        Hedeflerini keşfet, programını seç, birlikte başaralım.
+      </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6, duration: 0.6 }}
+        className="flex gap-4 flex-col sm:flex-row justify-center md:justify-start"
+      >
+        <Button onClick={() => window.location.href = '/koc'}>
+          Koçlarla Tanış
+        </Button>
+        <Button
+          variant="outline"
+          className="border-white text-white hover:bg-white hover:text-black"
+          onClick={() => window.location.href = '#features'}
         >
-          Hedeflerini keşfet, programını seç, birlikte başaralım.
-        </motion.p>
+          Daha Fazla Bilgi
+        </Button>
+      </motion.div>
+    </div>
+  </div>
+</section>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-6 transform scale-[1.5] -ml-10 sm:-ml-20 md:-ml-32 lg:-ml-40"
-        >
-          <LottieHero />
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="flex gap-4 flex-col sm:flex-row ml-4"
-        >
-          <Button onClick={() => (window.location.href = "/koc")}>
-            Koçlarla Tanış
-          </Button>
-          <Button
-            variant="outline"
-            className="border-white text-white hover:bg-white hover:text-black"
-            onClick={() => (window.location.href = "#features")}
-          >
-            Daha Fazla Bilgi
-          </Button>
-        </motion.div>
-      </section>
-
+      {/* FEATURES */}
       <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-semibold text-center mb-4">
-          Neden Kullanmalısın?
-        </h2>
-        <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">
-          Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz.
-          Buna son vermek için buradayız.
-        </p>
+        <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
+        <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
         <div className="grid md:grid-cols-2 gap-10">
           <div className="text-center">
             <LottieTopluluk />
             <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">
-              Diğer sporcular ve koçlar ile iletişim kurun.
-            </p>
+            <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
           </div>
           <div className="text-center">
             <LottieIlerleme />
             <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">
-              Performansınızı ve hedeflerinizi kolayca takip edin.
-            </p>
+            <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
           </div>
         </div>
       </section>
 
-      <section
-        className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800"
-        {...swipeHandlers}
-      >
+      {/* CATEGORIES */}
+      <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
         <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
-
         <div className="flex flex-wrap justify-center gap-3 mb-10">
           {allTags.map((tag) => (
             <button
@@ -297,13 +235,9 @@ export default function HomePage() {
               transition={{ duration: 0.3 }}
               className="bg-white dark:bg-zinc-700 p-5 rounded-xl shadow-md flex flex-col items-center text-center"
             >
-              <div className="text-zinc-800 dark:text-white mb-3">
-                {product.icon}
-              </div>
+              <div className="text-zinc-800 dark:text-white mb-3">{product.icon}</div>
               <h3 className="text-lg font-semibold">{product.title}</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">
-                {product.description}
-              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">{product.description}</p>
               <Link
                 href={product.link}
                 className="text-sm font-medium text-white bg-zinc-800 px-3 py-1.5 rounded-md hover:bg-zinc-900"
@@ -322,12 +256,7 @@ export default function HomePage() {
       <Footer />
 
       <button
-        onClick={() =>
-          window.scrollTo({
-            top: 0,
-            behavior: "smooth",
-          })
-        }
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="fixed bottom-6 right-6 bg-zinc-700 hover:bg-zinc-800 text-white p-2 rounded-full shadow-lg"
         aria-label="Back to top"
       >
