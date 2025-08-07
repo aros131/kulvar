@@ -140,13 +140,14 @@ export default function HomePage() {
     
     {/* LEFT: LottieHero */}
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.4, duration: 0.6 }}
-      className="mb-6 transform scale-[1.5] -ml-10 sm:-ml-20 md:-ml-32 lg:-ml-40"
-    >
-      <LottieHero />
-    </motion.div>
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.4, duration: 0.6 }}
+  className="mb-6 transform scale-[1.5] ml-4 sm:ml-8 md:ml-12 lg:ml-16"
+>
+  <LottieHero />
+</motion.div>
+
 
     {/* RIGHT: Text and buttons */}
     <div className="w-full md:w-1/2 text-white text-center md:text-left">
