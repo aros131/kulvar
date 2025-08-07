@@ -158,7 +158,7 @@ export default function HomePage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
       className={`${dmSerif.className} text-4xl md:text-6xl font-normal mb-2`}
-      style={{ color: "#8A2B13" }}
+      
     >
       PerSe.
     </motion.h1>
