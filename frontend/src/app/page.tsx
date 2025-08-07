@@ -167,29 +167,31 @@ export default function HomePage() {
 
     {/* Center Content */}
     <div className="w-full md:w-1/2 flex flex-col items-center text-center text-white">
+      {/* Title */}
       <motion.h1
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className={`${dmSerif.className} text-5xl md:text-7xl font-normal mb-2`}
+        className={`${dmSerif.className} text-5xl md:text-7xl font-normal mb-6 text-white`}
       >
         PerSe.
       </motion.h1>
 
-      <motion.p
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 0.4, duration: 0.6 }}
-  className={`${libertinus.className} text-lg md:text-xl mb-6 text-white whitespace-nowrap overflow-hidden border-r-2 border-white animate-typing`}
->
-  Hazırsan başlıyoruz!
-PerSe Coaching ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.
-Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.
-Hedefin varsa, PerSe yanında.
-</motion.p>
+      {/* Paragraph with fade animation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.8 }}
+        className={`${libertinus.className} text-lg md:text-xl text-white mb-8 space-y-2`}
+      >
+        <p>Hazırsan başlıyoruz!</p>
+        <p>PerSe Coaching ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.</p>
+        <p>Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.</p>
+        <p>Hedefin varsa, PerSe yanında.</p>
+      </motion.div>
 
-
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Buttons */}
+      <div className="flex flex-col sm:flex-row gap-4 mt-2 sm:mt-4">
         <Button onClick={() => window.location.href = '/koc'}>
           Koçlarla Tanış
         </Button>
