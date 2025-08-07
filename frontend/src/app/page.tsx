@@ -159,49 +159,47 @@ export default function HomePage() {
       {/* HERO */}
       <section
   id="hero"
-  className="relative h-[80vh] bg-cover bg-center bg-no-repeat flex items-center"
+  className="relative min-h-[90vh] bg-cover bg-center bg-no-repeat flex items-center overflow-hidden"
   style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
 >
-  <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full flex flex-col md:flex-row items-center justify-between">
+  <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 md:pt-12 pb-12 w-full flex flex-col md:flex-row items-center justify-between gap-8">
     
     {/* LEFT: LottieHero */}
     <motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 0.4, duration: 0.6 }}
-  className="mb-6 transform scale-[1.5] ml-4 sm:ml-8 md:ml-12 lg:ml-16"
->
-  <LottieHero />
-</motion.div>
-
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.4, duration: 0.6 }}
+      className="transform scale-[1.1] sm:scale-[1.25] md:scale-[1.5] ml-2 sm:ml-6 md:ml-12 lg:ml-16"
+    >
+      <LottieHero />
+    </motion.div>
 
     {/* RIGHT: Text and buttons */}
-<div className="w-full md:w-1/2 text-white text-center md:text-left">
-  {/* 👇 Shared wrapper with left margin */}
-  <div className="-ml-4 md:-ml-10 lg:-ml-16 text-left">
-    <motion.h1
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className={`${dmSerif.className} text-4xl md:text-6xl font-normal mb-2`}
-      
-    >
-      PerSe.
-    </motion.h1>
+    <div className="w-full md:w-1/2 text-white text-center md:text-left">
+      {/* Heading and subtitle wrapper */}
+      <div className="-ml-2 sm:-ml-6 md:-ml-10 lg:-ml-16 text-left">
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={`${dmSerif.className} text-3xl sm:text-4xl md:text-6xl font-normal mb-2`}
+        >
+          PerSe.
+        </motion.h1>
 
-    <div className="text-white/90 mb-6 max-w-xl space-y-2 text-left">
-  <AnimatedText text="Hazırsan başlıyoruz!" className="text-lg" delay={0.1} />
-  <AnimatedText text="PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen." className="text-base" delay={0.3} />
-  <AnimatedText text="Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon." className="text-base" delay={0.5} />
-  <AnimatedText text="Hedefin varsa, PerSe yanında." className="text-base" delay={0.7} />
-</div>
-  </div>
+        <div className="text-white/90 mb-6 max-w-xl space-y-2 text-left">
+          <AnimatedText text="Hazırsan başlıyoruz!" className="text-sm sm:text-base" delay={0.1} />
+          <AnimatedText text="PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen." className="text-sm sm:text-base" delay={0.3} />
+          <AnimatedText text="Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon." className="text-sm sm:text-base" delay={0.5} />
+          <AnimatedText text="Hedefin varsa, PerSe yanında." className="text-sm sm:text-base" delay={0.7} />
+        </div>
+      </div>
 
-
+      {/* Buttons */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.6, duration: 0.6 }}
+        transition={{ delay: 0.8, duration: 0.6 }}
         className="flex gap-4 flex-col sm:flex-row justify-center md:justify-start"
       >
         <Button onClick={() => window.location.href = '/koc'}>
@@ -209,7 +207,7 @@ export default function HomePage() {
         </Button>
         <Button
           variant="outline"
-          className="border-white text-black hover:bg-white hover:text-black"
+          className="border-white text-white hover:bg-white hover:text-black"
           onClick={() => window.location.href = '#features'}
         >
           Daha Fazla Bilgi
