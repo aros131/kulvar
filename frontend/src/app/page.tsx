@@ -162,14 +162,18 @@ export default function HomePage() {
 </motion.h1>
 
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        className="text-lg text-white/90 mb-6 max-w-xl mt-2"
-      >
-        Hedeflerini keşfet, programını seç, birlikte başaralım.
-      </motion.p>
+      <motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.2, duration: 0.6 }}
+  className="text-white/90 text-left mb-6 max-w-xl space-y-2"
+>
+  <p className="text-lg">Hazırsan başlıyoruz!</p>
+  <p className="text-base">PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.</p>
+  <p className="text-base">Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.</p>
+  <p className="text-base">Hedefin varsa, PerSe yanında.</p>
+</motion.div>
+
 
       <motion.div
         initial={{ opacity: 0 }}
