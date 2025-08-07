@@ -151,14 +151,16 @@ export default function HomePage() {
 
     {/* RIGHT: Text and buttons */}
     <div className="w-full md:w-1/2 text-white text-center md:text-left">
-      <motion.h1
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-          className={`${dmSerif.className} text-5xl md:text-7xl font-normal mb-2`}
-      >
-        PerSe.
-      </motion.h1>
+     <motion.h1
+  initial={{ opacity: 0, y: -10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  className={`${dmSerif.className} text-4xl md:text-6xl font-normal mb-2 text-left -ml-2 md:-ml-4`}
+  style={{ color: "#8A2B13" }}
+>
+  PerSe.
+</motion.h1>
+
 
       <motion.p
         initial={{ opacity: 0 }}
@@ -180,7 +182,7 @@ export default function HomePage() {
         </Button>
         <Button
           variant="outline"
-          className="border-white text-white hover:bg-white hover:text-black"
+          className="border-white text-orange hover:bg-white hover:text-black"
           onClick={() => window.location.href = '#features'}
         >
           Daha Fazla Bilgi
