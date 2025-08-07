@@ -90,7 +90,8 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
       {/* NAVBAR */}
-      <nav className="flex justify-between items-center px-6 py-4 shadow-md bg-white dark:bg-zinc-800 relative z-50">
+      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
+
         <Link href="/">
           <Image src="/images/logo.png" alt="Logo" width={100} height={80} />
         </Link>
