@@ -3,11 +3,21 @@ import dynamic from "next/dynamic";
 const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
 const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), { ssr: false });
 const LottieHero = dynamic(() => import("@/components/LottieHero"), { ssr: false });
-import { Fascinate } from 'next/font/google';
-const fascinate = Fascinate({
-  subsets: ['latin'],
-  weight: '400',
+import { Libertinus_Math } from "next/font/google";
+
+const libertinus = Libertinus_Math({
+  subsets: ["latin"],
+  weight: ["400"], // you can add "700" if needed
 });
+
+
+import { DM_Serif_Display } from "next/font/google";
+
+const dmSerif = DM_Serif_Display({
+  weight: "400",
+  subsets: ["latin"],
+});
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -144,65 +154,57 @@ export default function HomePage() {
       </nav>
       <section
   id="hero"
-  className="relative h-[80vh] bg-cover bg-center bg-no-repeat flex items-center"
+  className="relative bg-cover bg-center bg-no-repeat min-h-[90vh] flex items-center justify-center px-6"
   style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
 >
-  <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full flex flex-col md:flex-row items-start justify-start">
-    {/* LEFT CONTENT */}
-    <div className="w-full md:w-1/2 text-white">
+  <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+
+  <div className="relative z-10 max-w-7xl w-full flex flex-col md:flex-row items-center justify-between gap-12">
+    {/* Left: Lottie Animation */}
+    <div className="w-full md:w-1/2 flex justify-center">
+      <LottieHero />
+    </div>
+
+    {/* Center Content */}
+    <div className="w-full md:w-1/2 flex flex-col items-center text-center text-white">
       <motion.h1
-  initial={{ opacity: 0, y: -10 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.6 }}
-  className={`${fascinate.className} text-4xl md:text-5xl font-bold mt-4 mb-4`}
-  style={{ color: "#8A2B13" }}
->
-  
-</motion.h1>
-
-
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className={`${dmSerif.className} text-5xl md:text-7xl font-normal mb-2`}
+      >
+        PerSe.
+      </motion.h1>
 
       <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        className="text-lg text-white/90 mb-6 max-w-xl mt-2"
-      >
-        Hedeflerini keşfet, programını seç, birlikte başaralım.
-      </motion.p>
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.4, duration: 0.6 }}
+  className={`${libertinus.className} text-lg md:text-xl mb-6 text-white whitespace-nowrap overflow-hidden border-r-2 border-white animate-typing`}
+>
+  Hazırsan başlıyoruz!
+PerSe Coaching ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.
+Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.
+Hedefin varsa, PerSe yanında.
+</motion.p>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-        className="mb-6"
-      >
-        <LottieHero />
-      </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6, duration: 0.6 }}
-        className="flex gap-4 flex-col sm:flex-row ml-4"
-      >
+      <div className="flex flex-col sm:flex-row gap-4">
         <Button onClick={() => window.location.href = '/koc'}>
           Koçlarla Tanış
         </Button>
         <Button
           variant="outline"
-          className="border-white text-white hover:bg-white hover:text-black"
+          className="border-white text-black hover:bg-white hover:text-black"
           onClick={() => window.location.href = '#features'}
         >
           Daha Fazla Bilgi
         </Button>
-      </motion.div>
+      </div>
     </div>
-
-    {/* RIGHT EMPTY / optional content */}
-    <div className="hidden md:block md:w-1/2" />
   </div>
 </section>
+
 
  <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
         <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
