@@ -3,19 +3,19 @@ import dynamic from "next/dynamic";
 const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
 const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), { ssr: false });
 const LottieHero = dynamic(() => import("@/components/LottieHero"), { ssr: false });
-import { Libertinus_Math } from "next/font/google";
-
-const libertinus = Libertinus_Math({
-  subsets: ["latin"],
-  weight: ["400"], // you can add "700" if needed
-});
+import { Fascinate } from 'next/font/google';
+const fascinate = Fascinate({
+  subsets: ['latin'],
+  weight: '400',
 
 
-import { DM_Serif_Display } from "next/font/google";
 
-const dmSerif = DM_Serif_Display({
-  weight: "400",
-  subsets: ["latin"],
+
+
+
+
+
+
 });
 
 import { useEffect, useState } from "react";
@@ -154,56 +154,81 @@ export default function HomePage() {
       </nav>
       <section
   id="hero"
-  className="relative bg-cover bg-center bg-no-repeat min-h-[90vh] flex items-center justify-center px-6"
+  className="relative h-[80vh] bg-cover bg-center bg-no-repeat flex items-center"
   style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
 >
-  <div className="absolute inset-0 bg-black bg-opacity-60"></div>
-
-  <div className="relative z-10 max-w-7xl w-full flex flex-col md:flex-row items-center justify-between gap-12">
-    {/* Left: Lottie Animation */}
-    <div className="w-full md:w-1/2 flex justify-center">
-      <LottieHero />
-    </div>
-
-    {/* Center Content */}
-    <div className="w-full md:w-1/2 flex flex-col items-center text-center text-white">
-      {/* Title */}
+  <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full flex flex-col md:flex-row items-start justify-start">
+    {/* LEFT CONTENT */}
+    <div className="w-full md:w-1/2 text-white">
       <motion.h1
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className={`${dmSerif.className} text-5xl md:text-7xl font-normal mb-6 text-white`}
-      >
-        PerSe.
-      </motion.h1>
+  initial={{ opacity: 0, y: -10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  className={`${fascinate.className} text-4xl md:text-5xl font-bold mt-4 mb-4`}
+  style={{ color: "#8A2B13" }}
+>
+  
+</motion.h1>
 
-      {/* Paragraph with fade animation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.8 }}
-        className={`${libertinus.className} text-lg md:text-xl text-white mb-8 space-y-2`}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="text-lg text-white/90 mb-6 max-w-xl mt-2"
       >
-        <p>Hazırsan başlıyoruz!</p>
-        <p>PerSe Coaching ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.</p>
-        <p>Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.</p>
-        <p>Hedefin varsa, PerSe yanında.</p>
+        Hedeflerini keşfet, programını seç, birlikte başaralım.
+      </motion.p>
+
+
+
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+        className="mb-6"
+      >
+        <LottieHero />
       </motion.div>
 
-      {/* Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 mt-2 sm:mt-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6, duration: 0.6 }}
+        className="flex gap-4 flex-col sm:flex-row ml-4"
+      >
         <Button onClick={() => window.location.href = '/koc'}>
           Koçlarla Tanış
         </Button>
         <Button
           variant="outline"
-          className="border-white text-black hover:bg-white hover:text-black"
+          className="border-white text-white hover:bg-white hover:text-black"
           onClick={() => window.location.href = '#features'}
         >
           Daha Fazla Bilgi
         </Button>
-      </div>
+      </motion.div>
     </div>
+
+    {/* RIGHT EMPTY / optional content */}
+    <div className="hidden md:block md:w-1/2" />
   </div>
 </section>
 
@@ -226,7 +251,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      
+
       <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
         <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
 
