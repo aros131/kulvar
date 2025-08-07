@@ -150,29 +150,31 @@ export default function HomePage() {
 
 
     {/* RIGHT: Text and buttons */}
-    <div className="w-full md:w-1/2 text-white text-center md:text-left">
-     <motion.h1
-  initial={{ opacity: 0, y: -10 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.6 }}
-  className={`${dmSerif.className} text-4xl md:text-6xl font-normal mb-2 text-left -ml-4 md:-ml-10 lg:-ml-16`}
-  
->
-  PerSe.
-</motion.h1>
+<div className="w-full md:w-1/2 text-white text-center md:text-left">
+  {/* 👇 Shared wrapper with left margin */}
+  <div className="-ml-4 md:-ml-10 lg:-ml-16 text-left">
+    <motion.h1
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className={`${dmSerif.className} text-4xl md:text-6xl font-normal mb-2`}
+      style={{ color: "#8A2B13" }}
+    >
+      PerSe.
+    </motion.h1>
 
-
-      <motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 0.2, duration: 0.6 }}
-  className="text-white/90 text-left mb-6 max-w-xl space-y-2"
->
-  <p className="text-lg">Hazırsan başlıyoruz!</p>
-  <p className="text-base">PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.</p>
-  <p className="text-base">Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.</p>
-  <p className="text-base">Hedefin varsa, PerSe yanında.</p>
-</motion.div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.2, duration: 0.6 }}
+      className="text-white/90 mb-6 max-w-xl space-y-2"
+    >
+      <p className="text-lg">Hazırsan başlıyoruz!</p>
+      <p className="text-base">PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen.</p>
+      <p className="text-base">Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon.</p>
+      <p className="text-base">Hedefin varsa, PerSe yanında.</p>
+    </motion.div>
+  </div>
 
 
       <motion.div
