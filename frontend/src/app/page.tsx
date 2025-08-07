@@ -91,26 +91,19 @@ export default function HomePage() {
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
       {/* NAVBAR */}
      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
-  {/* Optional gradient overlay */}
+  {/* Optional background gradient for readability */}
   <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
 
-  {/* Thin white separator line */}
-  <div className="absolute bottom-0 left-0 w-full h-px bg-white/30 z-10" />
+  {/* Thicker separator line, slightly higher than bottom */}
+  <div className="absolute bottom-1 left-0 w-full h-[2px] bg-white/40 z-10" />
 
-  {/* Navbar content */}
   <div className="flex items-center justify-between w-full relative">
-    {/* Logo */}
-    <Link href="/">
-      <Image
-        src="/images/logo.png"
-        alt="Logo"
-        width={100}
-        height={80}
-        className="object-contain"
-      />
-    </Link>
+    {/* PerSe. text instead of logo */}
+    <div className={`${dmSerif.className} text-2xl sm:text-3xl text-white`} style={{ color: "#8A2B13" }}>
+      PerSe.
+    </div>
 
-    {/* Desktop center-aligned menu */}
+    {/* Desktop nav links */}
     <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-6 text-white items-center">
       <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
       <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
@@ -118,7 +111,7 @@ export default function HomePage() {
       <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
     </ul>
 
-    {/* Right: dark mode + hamburger (mobile) */}
+    {/* Right: dark mode toggle & hamburger (mobile only) */}
     <div className="flex items-center gap-3 md:hidden">
       <Button
         variant="ghost"
@@ -127,11 +120,10 @@ export default function HomePage() {
       >
         {darkMode ? <Sun /> : <Moon />}
       </Button>
-
       <button
         onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-        aria-label="Toggle menu"
         className="text-white"
+        aria-label="Toggle mobile menu"
       >
         {isMobileMenuOpen ? <X /> : <Menu />}
       </button>
@@ -153,6 +145,7 @@ export default function HomePage() {
     </motion.ul>
   )}
 </nav>
+
 
 
 
@@ -207,7 +200,7 @@ export default function HomePage() {
         </Button>
         <Button
           variant="outline"
-          className="border-white text-white hover:bg-white hover:text-black"
+          className="border-white text-black hover:bg-white hover:text-black"
           onClick={() => window.location.href = '#features'}
         >
           Daha Fazla Bilgi
