@@ -90,46 +90,68 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
       {/* NAVBAR */}
-      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
+     <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
+  {/* Optional gradient for readability */}
+  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
 
-        <Link href="/">
-          <Image src="/images/logo.png" alt="Logo" width={100} height={80} />
-        </Link>
+  <div className="flex items-center justify-between w-full relative">
+    {/* Logo */}
+    <Link href="/">
+      <Image
+        src="/images/logo.png"
+        alt="Logo"
+        width={100}
+        height={80}
+        className="object-contain"
+      />
+    </Link>
 
-        <ul className="hidden md:flex gap-6">
-          <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
-          <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
-          <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
-          <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
-        </ul>
+    {/* Desktop menu */}
+    <ul className="hidden md:flex gap-6 text-white items-center">
+      <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+      <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
+      <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
+      <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
+    </ul>
 
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode">
-            {darkMode ? <Sun /> : <Moon />}
-          </Button>
-          <button
-            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden"
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
+    {/* Right: dark mode + hamburger */}
+    <div className="flex items-center gap-3 md:hidden">
+      {/* Dark mode toggle */}
+      <Button
+        variant="ghost"
+        onClick={() => setDarkMode(!darkMode)}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? <Sun /> : <Moon />}
+      </Button>
 
-        {isMobileMenuOpen && (
-          <motion.ul
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute top-full left-0 w-full bg-white dark:bg-zinc-800 flex flex-col items-center gap-4 py-4 shadow-md md:hidden"
-          >
-            <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
-            <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
-            <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
-            <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
-          </motion.ul>
-        )}
-      </nav>
+      {/* Hamburger */}
+      <button
+        onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+        aria-label="Toggle menu"
+        className="text-white"
+      >
+        {isMobileMenuOpen ? <X /> : <Menu />}
+      </button>
+    </div>
+  </div>
+
+  {/* Mobile menu dropdown */}
+  {isMobileMenuOpen && (
+    <motion.ul
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="md:hidden absolute top-full left-0 w-full bg-black/80 backdrop-blur-md flex flex-col items-center gap-4 py-4 text-white z-40"
+    >
+      <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
+      <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
+      <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
+      <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
+    </motion.ul>
+  )}
+</nav>
+
 
       {/* HERO */}
       <section
