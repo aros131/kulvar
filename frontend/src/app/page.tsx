@@ -22,6 +22,7 @@ import Link from "next/link";
 import RevealOnScroll from "@/components/RevealOnScroll";
 
 import Footer from "@/components/Footer";
+import VantaDotsBackground from "@/components/VantaDotsBackground";
 
 const products = [
   {
@@ -212,71 +213,73 @@ export default function HomePage() {
 </section>
 
 
-      {/* FEATURES */}
-      <RevealOnScroll>
-      <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
-        <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="text-center">
-            <LottieTopluluk />
-            <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
-          </div>
-          <div className="text-center">
-            <LottieIlerleme />
-            <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
-          </div>
-        </div>
-      </section>
-</RevealOnScroll>
-      {/* CATEGORIES */}
-      <RevealOnScroll>
-      <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
-        <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(tag)}
-              className={`px-4 py-1 rounded-full text-sm border transition ${
-                tag === activeTag
-                  ? "bg-zinc-800 text-white border-zinc-800"
-                  : "bg-white dark:bg-zinc-700 text-zinc-700 dark:text-white border-zinc-300 dark:border-zinc-600"
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
+      <VantaDotsBackground>
+        {/* FEATURES */}
+        <RevealOnScroll>
+          <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
+            <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
+            <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
+            <div className="grid md:grid-cols-2 gap-10">
+              <div className="text-center">
+                <LottieTopluluk />
+                <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
+                <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
+              </div>
+              <div className="text-center">
+                <LottieIlerleme />
+                <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
+                <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
+              </div>
+            </div>
+          </section>
+        </RevealOnScroll>
+        {/* CATEGORIES */}
+        <RevealOnScroll>
+          <section className="py-16 px-4" {...swipeHandlers}>
+            <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
+            <div className="flex flex-wrap justify-center gap-3 mb-10">
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setActiveTag(tag)}
+                  className={`px-4 py-1 rounded-full text-sm border transition ${
+                    tag === activeTag
+                      ? "bg-zinc-800 text-white border-zinc-800"
+                      : "bg-white dark:bg-zinc-700 text-zinc-700 dark:text-white border-zinc-300 dark:border-zinc-600"
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {filteredProducts.map((product) => (
-            <motion.div
-              key={product.title}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-zinc-700 p-5 rounded-xl shadow-md flex flex-col items-center text-center"
-            >
-              <div className="text-zinc-800 dark:text-white mb-3">{product.icon}</div>
-              <h3 className="text-lg font-semibold">{product.title}</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">{product.description}</p>
-              <Link
-                href={product.link}
-                className="text-sm font-medium text-white bg-zinc-800 px-3 py-1.5 rounded-md hover:bg-zinc-900"
-              >
-                Koçları Gör
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              {filteredProducts.map((product) => (
+                <motion.div
+                  key={product.title}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white dark:bg-zinc-700 p-5 rounded-xl shadow-md flex flex-col items-center text-center"
+                >
+                  <div className="text-zinc-800 dark:text-white mb-3">{product.icon}</div>
+                  <h3 className="text-lg font-semibold">{product.title}</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">{product.description}</p>
+                  <Link
+                    href={product.link}
+                    className="text-sm font-medium text-white bg-zinc-800 px-3 py-1.5 rounded-md hover:bg-zinc-900"
+                  >
+                    Koçları Gör
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
 
-        <p className="text-center text-xs text-zinc-500 mt-6 md:hidden">
-          Yukarı/Aşağı kaydırarak kategoriler arasında geçiş yapabilirsin
-        </p>
-      </section>
-      </RevealOnScroll>
+            <p className="text-center text-xs text-zinc-500 mt-6 md:hidden">
+              Yukarı/Aşağı kaydırarak kategoriler arasında geçiş yapabilirsin
+            </p>
+          </section>
+        </RevealOnScroll>
+      </VantaDotsBackground>
 
       <Footer />
 
