@@ -1,11 +1,12 @@
-const Program = require("../models/Program");
-const User = require("../models/User");
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+import Progress from '../models/Progress.js';
 
 // 🟢 Create a new program
 const createProgram = async (req, res) => {
   try {
     const { name, description, duration, difficulty, nutritionPlan, dailySchedule, fitnessGoal } = req.body;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
     let documents = [];
 
     if (req.files) {
@@ -48,7 +49,7 @@ const getPrograms = async (req, res) => {
 // 🟢 Get all programs assigned to a user
 const getUserPrograms = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const programs = await Program.find({ assignedClients: userId });
 
     if (!programs.length) {
@@ -174,7 +175,6 @@ const getProgramVideos = async (req, res) => {
 
 
 // ✅ DEBUG LOG TO VERIFY EXPORTS
-console.log("✅ programController.js loaded! Exported functions:", module.exports);
 
 // 🟢 Update workout video links
 const updateWorkoutVideo = async (req, res) => {
@@ -212,7 +212,7 @@ const getSessionCompletionData = async (req, res) => {
 
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const userProgress = program.progressTracking.find(entry => entry.user?.toString() === req.user.id);
+    const userProgress = program.progressTracking.find(entry => entry.user?.toString() === req.user._id);
     const completedSessions = userProgress?.completedSessions || 0;
     const totalSessions = program.dailySchedule?.reduce(
       (total, day) => total + (day.sessions?.length || 0),
@@ -229,7 +229,7 @@ const getSessionCompletionData = async (req, res) => {
 const submitSessionFeedback = async (req, res) => {
   try {
     const { programId, session, feedback } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const program = await Program.findByIdAndUpdate(
       programId,
@@ -287,22 +287,22 @@ const rescheduleWorkout = async (req, res) => {
 const assignProgramToClients = async (req, res) => {
   try {
     const { programId } = req.params; // 🔥 get from URL params
-    const { clientIds } = req.body;   // ✅ keep clientIds in body
+    const { userIds } = req.body;   // ✅ keep userIds in body
 
-    if (!programId || !clientIds || !Array.isArray(clientIds)) {
-      return res.status(400).json({ message: "programId and clientIds (array) are required" });
+    if (!programId || !userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ message: "programId and userIds (array) are required" });
     }
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
     // ✅ Validate all client IDs
-    const validClients = await User.find({ _id: { $in: clientIds }, role: "user" });
-    if (validClients.length !== clientIds.length) {
+    const validClients = await User.find({ _id: { $in: userIds }, role: "user" });
+    if (validClients.length !== userIds.length) {
       return res.status(400).json({ message: "Invalid client IDs found" });
     }
 
-    program.assignedClients = [...new Set([...program.assignedClients, ...clientIds])];
+    program.assignedClients = [...new Set([...program.assignedClients, ...userIds])];
     await program.save();
 
     res.status(200).json({ message: "Program successfully assigned!", program });
@@ -433,7 +433,7 @@ const getAssignedClients = async (req, res) => {
 const resetProgress = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOneAndUpdate(
       { programId, userId },
@@ -461,7 +461,7 @@ const updateAdaptiveAdjustments = async (req, res) => {
   try {
     const { programId } = req.params;
     const { fatigueLevel, notes } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -557,7 +557,7 @@ const getUserProgress = async (req, res) => {
 const trackSessionCompletion = async (req, res) => {
   try {
     const { programId, session } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
@@ -596,9 +596,9 @@ const getProgramMedia = async (req, res) => {
 const getAdaptiveAdjustments = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
-    const progress = await require("../models/Progress").findOne({ programId, userId });
+    const progress = await Progress.findOne({ programId, userId });
 
     if (!progress) {
       return res.status(404).json({ message: "No adaptive data found" });
@@ -611,7 +611,7 @@ const getAdaptiveAdjustments = async (req, res) => {
 };
 const getCoachPrograms = async (req, res) => {
   try {
-    const coachId = req.user.id; // ✅ pull from auth middleware
+    const coachId = req.user._id; // ✅ pull from auth middleware
 const programs = await Program.find({ coachId: coachId });
 
     res.json({ programs });
@@ -639,7 +639,7 @@ const assignProgramToGroup = async (req, res) => {
     const group = await ClientGroup.findById(groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    const validClients = await User.find({ _id: { $in: group.clientIds }, role: "user" });
+    const validClients = await User.find({ _id: { $in: group.userIds }, role: "user" });
 
     program.assignedClients = [...new Set([...program.assignedClients, ...validClients.map(c => c._id)])];
     await program.save();
@@ -652,13 +652,13 @@ const assignProgramToGroup = async (req, res) => {
 const unassignClient = async (req, res) => {
   try {
     const { programId } = req.params;
-    const { clientId } = req.body;
+    const { userId } = req.body;
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
     program.assignedClients = program.assignedClients.filter(
-      id => id.toString() !== clientId
+      id => id.toString() !== userId
     );
     await program.save();
 
@@ -670,7 +670,7 @@ const unassignClient = async (req, res) => {
 
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
-module.exports = {
+export {
   createProgram,
   getPrograms,
   getUserPrograms, 
@@ -706,4 +706,3 @@ module.exports = {
 
 
 // ✅ DEBUG LOG TO VERIFY EXPORTS
-console.log("✅ programController.js loaded! Exported functions:", module.exports);

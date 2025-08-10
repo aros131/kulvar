@@ -60,7 +60,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
     fetchAssigned();
   }, [fetchAssigned]);
 
-  const handleAssign = async (clientId: string) => {
+  const handleAssign = async (userId: string) => {
     try {
       const res = await fetch(
         `https://kulvar-qb7t.onrender.com/programs/${programId}/assign`,
@@ -70,7 +70,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ clientIds: [clientId] }),
+          body: JSON.stringify({ userIds: [userId] }),
         }
       );
 
@@ -85,7 +85,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
     }
   };
 
-  const handleUnassign = async (clientId: string) => {
+  const handleUnassign = async (userId: string) => {
     try {
       const res = await fetch(
         `https://kulvar-qb7t.onrender.com/programs/${programId}/unassign`,
@@ -95,7 +95,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ clientId }),
+          body: JSON.stringify({ userId }),
         }
       );
 

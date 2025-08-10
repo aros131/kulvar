@@ -24,7 +24,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = await res.json();
-      setGroupMembers(data.clientIds || []);
+      setGroupMembers(data.userIds || []);
     } catch {
       toast("❌ Grup üyeleri alınamadı");
     }
@@ -52,7 +52,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
     fetchGroupMembers();
   }, [fetchGroupMembers]);
 
-  const handleAssign = async (clientId: string) => {
+  const handleAssign = async (userId: string) => {
     try {
       const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/add-client`, {
         method: "POST",
@@ -60,7 +60,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ clientId }),
+        body: JSON.stringify({ userId }),
       });
 
       if (res.ok) {
@@ -74,7 +74,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
     }
   };
 
-  const handleRemove = async (clientId: string) => {
+  const handleRemove = async (userId: string) => {
     try {
       const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/remove-client`, {
         method: "POST",
@@ -82,7 +82,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ clientId }),
+        body: JSON.stringify({ userId }),
       });
 
       if (res.ok) {

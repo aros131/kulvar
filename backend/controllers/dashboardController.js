@@ -1,31 +1,16 @@
-const Program = require("../models/Program");
-const User = require("../models/User");
-const Notification = require("../models/Notification");
-const Progress = require("../models/Progress");
-const Feedback = require("../models/Feedback");
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+import Progress from '../models/Progress.js';
+import Feedback from '../models/Feedback.js';
 
 // ✅ Send notification
-const sendNotification = async (req, res) => {
-  try {
-    const { clientId, message, type } = req.body;
-    if (!clientId || !message || !type) {
-      return res.status(400).json({ message: "Client ID, message, and type are required" });
-    }
-    const notification = await Notification.create({
-      recipientId: clientId,
-      message,
-      type,
-    });
-    res.status(201).json(notification);
-  } catch (error) {
-    res.status(500).json({ message: "Error sending notification", error: error.message });
-  }
-};
+
 
 // ✅ Fetch Profile
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(200).json({
       name: user.name,
@@ -44,7 +29,7 @@ const getProfile = async (req, res) => {
 const getClients = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
     const query = {
       coachId,
       role: "user",
@@ -75,7 +60,7 @@ const getClientDetails = async (req, res) => {
 // ✅ Get user programs
 const getUserPrograms = async (req, res) => {
   try {
-    const programs = await Program.find({ assignedClients: req.user.id });
+    const programs = await Program.find({ assignedClients: req.user._id });
     if (!programs || programs.length === 0) {
       return res.status(404).json({ message: "No programs found for this user" });
     }
@@ -89,7 +74,7 @@ const getUserPrograms = async (req, res) => {
 const getClientProgress = async (req, res) => {
   try {
     const { id } = req.params;
-    const progress = await Progress.find({ clientId: id });
+    const progress = await Progress.find({ userId: id });
     res.status(200).json({ progress });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving client progress", error: error.message });
@@ -102,7 +87,7 @@ const saveProgress = async (req, res) => {
     const { programId, data } = req.body;
     const newProgress = await Progress.create({
       programId,
-      clientId: req.user.id,
+      userId: req.user._id,
       data,
     });
     res.status(201).json(newProgress);
@@ -114,8 +99,8 @@ const saveProgress = async (req, res) => {
 // ✅ Get analytics for coach
 const getAnalyticsForCoach = async (req, res) => {
   try {
-    const totalClients = await User.countDocuments({ coachId: req.user.id, role: "user" });
-    const totalPrograms = await Program.countDocuments({ coachId: req.user.id });
+    const totalClients = await User.countDocuments({ coachId: req.user._id, role: "user" });
+    const totalPrograms = await Program.countDocuments({ coachId: req.user._id });
     res.status(200).json({ totalClients, totalPrograms });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving analytics", error: error.message });
@@ -125,9 +110,9 @@ const getAnalyticsForCoach = async (req, res) => {
 // ✅ Get analytics for user
 const getAnalyticsForUser = async (req, res) => {
   try {
-    const assignedPrograms = await Program.countDocuments({ assignedClients: req.user.id });
+    const assignedPrograms = await Program.countDocuments({ assignedClients: req.user._id });
     const totalProgress = await Progress.aggregate([
-      { $match: { clientId: req.user.id } },
+      { $match: { userId: req.user._id } },
       {
         $group: {
           _id: null,
@@ -144,23 +129,12 @@ const getAnalyticsForUser = async (req, res) => {
   }
 };
 
-// ✅ Get notifications for coach
-const getNotificationsForCoach = async (req, res) => {
-  try {
-    const notifications = await Notification.find({ recipientId: req.user.id });
-    if (!notifications || notifications.length === 0) {
-      return res.status(404).json({ message: "No notifications found" });
-    }
-    res.status(200).json({ notifications });
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
-  }
-};
+
 
 // ✅ Get notifications for user
 const getNotificationsForUser = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipientId: req.user.id });
+    const notifications = await Notification.find({ recipientId: req.user._id });
     if (!notifications || notifications.length === 0) {
       return res.status(404).json({ message: "No notifications found" });
     }
@@ -185,7 +159,7 @@ const markNotificationAsRead = async (req, res) => {
 // ✅ Get user schedule
 const getUserSchedule = async (req, res) => {
   try {
-    const programs = await Program.find({ assignedClients: req.user.id });
+    const programs = await Program.find({ assignedClients: req.user._id });
     if (!programs || programs.length === 0) {
       return res.status(404).json({ message: "No scheduled workouts found" });
     }
@@ -209,7 +183,7 @@ const getUserSchedule = async (req, res) => {
 // ✅ Get feedbacks
 const getFeedbacks = async (req, res) => {
   try {
-    const feedbacks = await Feedback.find({ coachId: req.user.id }).populate("clientId", "name email");
+    const feedbacks = await Feedback.find({ coachId: req.user._id }).populate("userId", "name email");
     if (!feedbacks || feedbacks.length === 0) {
       return res.status(404).json({ message: "No feedbacks found" });
     }
@@ -247,7 +221,7 @@ const deleteFeedback = async (req, res) => {
 const replyToFeedback = async (req, res) => {
   try {
     const { feedbackId, message } = req.body;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
     const feedback = await Feedback.findByIdAndUpdate(
       feedbackId,
       { $push: { replies: { coachId, message, date: new Date() } } },
@@ -278,9 +252,9 @@ const getCoachAnalytics = async (req, res) => {
   }
 };
 
-// ✅ Final module exports
-module.exports = {
-  sendNotification,
+// ✅ Exports
+export {
+  
   getProfile,
   getClients,
   getClientDetails,
@@ -289,7 +263,7 @@ module.exports = {
   saveProgress,
   getAnalyticsForCoach,
   getAnalyticsForUser,
-  getNotificationsForCoach,
+  
   getNotificationsForUser,
   markNotificationAsRead,
   getUserSchedule,

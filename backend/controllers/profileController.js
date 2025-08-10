@@ -1,9 +1,9 @@
-const User = require("../models/User");
+import User from '../models/User.js';
 
 // Fetch Profile
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -23,7 +23,7 @@ exports.getProfile = async (req, res) => {
 };
 
 // Update Profile
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const updates = req.body;
 
@@ -36,7 +36,7 @@ exports.updateProfile = async (req, res) => {
       return acc;
     }, {});
 
-    const user = await User.findByIdAndUpdate(req.user.id, filteredUpdates, { new: true });
+    const user = await User.findByIdAndUpdate(req.user._id, filteredUpdates, { new: true });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

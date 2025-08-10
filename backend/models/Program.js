@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
 const ProgramSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -132,4 +132,4 @@ ProgramSchema.pre("save", function (next) {
 });
 
 
-module.exports = mongoose.model("Program", ProgramSchema);
+export default mongoose.model("Program", ProgramSchema);

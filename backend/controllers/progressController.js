@@ -1,11 +1,11 @@
-const Progress = require("../models/Progress");
-const Program = require("../models/Program");
+import Progress from '../models/Progress.js';
+import Program from '../models/Program.js';
 
 // 🟢 Log user progress
 const logProgress = async (req, res) => {
   try {
     const { programId, sessionName, fatigueLevel, weightUsed, repsCompleted } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -50,7 +50,7 @@ const getProgressReport = async (req, res) => {
 const markWorkoutCompleted = async (req, res) => {
   try {
     const { programId, sessionName } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -73,7 +73,7 @@ const markWorkoutCompleted = async (req, res) => {
 const rescheduleWorkout = async (req, res) => {
   try {
     const { programId, missedDay, newDay } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -92,7 +92,7 @@ const rescheduleWorkout = async (req, res) => {
 const submitFeedback = async (req, res) => {
   try {
     const { programId, session, feedback } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOneAndUpdate(
       { programId, userId },
@@ -110,7 +110,7 @@ const submitFeedback = async (req, res) => {
 const restartProgram = async (req, res) => {
   try {
     const { programId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -168,7 +168,7 @@ const getAdaptiveGoalProgress = async (req, res) => {
 const getStrengthProgress = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
 
@@ -190,7 +190,7 @@ const getStrengthProgress = async (req, res) => {
 const getUserProgress = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
 
@@ -199,8 +199,11 @@ const getUserProgress = async (req, res) => {
     }
 
     // ✅ Calculate progress percentage
-    const totalSessions = progress.sessionTracking.length;
-    const completedSessions = progress.sessionTracking.filter(s => s.completed).length;
+const program = await Program.findById(programId);
+const totalSessions = program?.dailySchedule?.reduce((acc, day) => acc + (day.sessions?.length || 0), 0) || 0;
+const completedSessions = progress.completedSessions.length;
+
+
     const progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
 
     res.status(200).json({
@@ -226,7 +229,7 @@ const getUserProgress = async (req, res) => {
 const getProgressTrend = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
 
@@ -241,54 +244,61 @@ const getProgressTrend = async (req, res) => {
 };
 
 // 🟢 Mark a session as completed
+// POST /progress/session/complete
 const markSessionCompleted = async (req, res) => {
   try {
-    const { programId, sessionName, fatigueLevel } = req.body;
-    const userId = req.user.id;
+    const { programId, sessionId, feedback, rating } = req.body;
+    const userId = req.user._id;
 
-    let progress = await Progress.findOne({ programId, userId });
+    if (!programId || !sessionId) {
+      return res.status(400).json({ message: "Eksik bilgi: programId veya sessionId yok" });
+    }
+
+    let progress = await Progress.findOne({ userId, programId });
 
     if (!progress) {
-      progress = new Progress({ programId, userId, sessionTracking: [] });
+      progress = new Progress({
+        userId,
+        programId,
+        completedSessions: [],
+        streakTracking: { current: 0, longest: 0 },
+        progressPercentage: 0,
+      });
     }
 
-    // ✅ Check if the session is already completed
-    const session = progress.sessionTracking.find(s => s.sessionName === sessionName);
-    if (session && session.completed) {
-      return res.status(400).json({ message: "Session already completed." });
+    const alreadyCompleted = progress.completedSessions.some((s) => s.sessionId === sessionId);
+    if (alreadyCompleted) {
+      return res.status(400).json({ message: "Bu seans zaten tamamlandı." });
     }
 
-    // ✅ Mark session as completed
-    if (session) {
-      session.completed = true;
-      session.fatigueLevel = fatigueLevel || "Normal";
-      session.dateCompleted = new Date();
-    } else {
-      progress.sessionTracking.push({ sessionName, completed: true, fatigueLevel, dateCompleted: new Date() });
-    }
+    progress.completedSessions.push({
+  sessionId,
+  dateCompleted: new Date(),
+  completed: true,
+  status: "completed",
+  feedback,
+  rating,
+});
 
-    // ✅ Update streak tracking
-    progress.streakTracking.currentStreak += 1;
-    if (progress.streakTracking.currentStreak > progress.streakTracking.longestStreak) {
-      progress.streakTracking.longestStreak = progress.streakTracking.currentStreak;
-    }
 
-    // ✅ Recalculate progress percentage
-    const completedSessions = progress.sessionTracking.filter(s => s.completed).length;
-    const totalSessions = progress.sessionTracking.length;
-    progress.progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
+    const program = await Program.findById(programId);
+    const totalDays = program?.dailySchedule?.length || 0;
+
+    const completed = progress.completedSessions.length;
+    progress.progressPercentage = Math.min(100, Math.round((completed / totalDays) * 100));
+
+    progress.streakTracking.current += 1;
+    progress.streakTracking.longest = Math.max(
+      progress.streakTracking.longest,
+      progress.streakTracking.current
+    );
 
     await progress.save();
 
-    res.status(200).json({
-      message: "Session completed successfully!",
-      progressPercentage: progress.progressPercentage,
-      completedSessions,
-      totalSessions,
-      streakTracking: progress.streakTracking,
-    });
+    res.status(200).json({ message: "Seans başarıyla tamamlandı", progress });
   } catch (error) {
-    res.status(500).json({ message: "Error marking session as completed", error: error.message });
+    console.error("Seans tamamlama hatası:", error.message);
+    res.status(500).json({ message: "Sunucu hatası", error: error.message });
   }
 };
 
@@ -297,7 +307,7 @@ const markSessionCompleted = async (req, res) => {
 const updateGoalProgress = async (req, res) => {
   try {
     const { programId, goalMetric, value } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -317,7 +327,7 @@ const updateGoalProgress = async (req, res) => {
 // 🟢 Get progress percentages for all assigned programs
 const getAllProgramProgress = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Get all assigned programs for this user
     const assignedPrograms = await Program.find({ assignedClients: userId });
@@ -341,11 +351,47 @@ const getAllProgramProgress = async (req, res) => {
     res.status(500).json({ message: "Error fetching program progress", error: error.message });
   }
 };
+const getCalendarHeatmap = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.user._id;
+
+    const progress = await Progress.findOne({ programId, userId: userId });
+
+    if (!progress) {
+      return res.status(404).json({ message: "No progress found" });
+    }
+
+    const days = [];
+
+    // ✅ Build last 30 days
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const isoDate = date.toISOString().split("T")[0];
+
+      const entry = progress.completedSessions.find(s => {
+        const entryDate = s.dateCompleted?.toISOString().split("T")[0];
+        return entryDate === isoDate;
+      });
+
+      let status = "none";
+      if (entry?.completed) status = "completed";
+      else if (entry && !entry.completed) status = "missed";
+
+      days.unshift({ date: isoDate, status });
+    }
+
+    res.status(200).json({ days });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching calendar heatmap", error: error.message });
+  }
+};
 
 
 
 // ✅ Export all functions
-module.exports = {
+export {
   logProgress,
   getClientProgress,
   getProgressReport,
@@ -361,4 +407,5 @@ module.exports = {
   markSessionCompleted,
   updateGoalProgress,
   getAllProgramProgress,
+  getCalendarHeatmap
 };

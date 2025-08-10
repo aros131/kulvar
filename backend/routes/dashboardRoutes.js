@@ -1,12 +1,12 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
 
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
 
-const {
-  sendNotification,
-  getNotificationsForCoach,
+import {
+  
+
   getNotificationsForUser,
   getClients,
   getClientDetails,
@@ -21,7 +21,7 @@ const {
   markNotificationAsRead,
   replyToFeedback,
   getFullCoachAnalytics
-} = require("../controllers/dashboardController");
+} from '../controllers/dashboardController.js';
 
 // ✅ User Programs & Schedule
 router.get("/user-programs", protect, getUserPrograms);
@@ -34,8 +34,8 @@ router.get("/analytics/coach", protect, roleMiddleware(["coach"]), getAnalyticsF
 router.get("/analytics/user", protect, roleMiddleware(["user"]), getAnalyticsForUser);
 
 // ✅ Notifications
-router.post("/notifications", protect, roleMiddleware(["coach"]), sendNotification);
-router.get("/notifications/coach", protect, roleMiddleware(["coach"]), getNotificationsForCoach);
+
+
 router.get("/notifications/user", protect, roleMiddleware(["user"]), getNotificationsForUser);
 router.post("/notifications/read/:notificationId", protect, markNotificationAsRead);
 
@@ -49,4 +49,4 @@ router.post("/feedbacks/reply", protect, roleMiddleware(["coach"]), replyToFeedb
 router.get("/clients", protect, roleMiddleware(["coach"]), getClients);
 router.get("/clients/:id", protect, roleMiddleware(["coach"]), getClientDetails); // leave dynamic last
 
-module.exports = router;
+export default router;
