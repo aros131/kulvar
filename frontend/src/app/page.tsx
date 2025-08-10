@@ -138,60 +138,60 @@ useEffect(() => {
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
       {/* NAVBAR */}
       <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
-        {/* Optional background gradient for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
+  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
+  <div className="absolute bottom-1 left-0 w-full h-[2px] bg-white/40 z-10" />
 
-        {/* Thicker separator line, slightly higher than bottom */}
-        <div className="absolute bottom-1 left-0 w-full h-[2px] bg-white/40 z-10" />
+  <div className="flex items-center justify-between w-full relative">
+    {/* PerSe. text instead of logo */}
+    <div className={`${dmSerif.className} text-2xl sm:text-3xl text-white`} style={{ color: "#8A2B13" }}>
+      PerSe.
+    </div>
 
-        <div className="flex items-center justify-between w-full relative">
-          {/* PerSe. text instead of logo */}
-          <div className={`${dmSerif.className} text-2xl sm:text-3xl text-white`} style={{ color: "#8A2B13" }}>
-            PerSe.
-          </div>
+    {/* Desktop nav links */}
+    <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-6 text-white items-center">
+      <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+      <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
+      <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
+      <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
+    </ul>
 
-          {/* Desktop nav links */}
-          <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-6 text-white items-center">
-            <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
-            <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
-            <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
-            <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
-          </ul>
+    {/* Right controls: dark mode always visible, hamburger only on mobile */}
+    <div className="flex items-center gap-3 relative z-50">
+      <Button
+        variant="ghost"
+        onClick={() => setDarkMode(!darkMode)}
+        aria-label="Toggle dark mode"
+        className="text-white"
+      >
+        {darkMode ? <Sun /> : <Moon />}
+      </Button>
 
-          {/* Right: dark mode toggle & hamburger (mobile only) */}
-          <div className="flex items-center gap-3 md:hidden">
-            <Button
-              variant="ghost"
-              onClick={() => setDarkMode(!darkMode)}
-              aria-label="Toggle dark mode"
-            >
-              {darkMode ? <Sun /> : <Moon />}
-            </Button>
-            <button
-              onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white"
-              aria-label="Toggle mobile menu"
-            >
-              {isMobileMenuOpen ? <X /> : <Menu />}
-            </button>
-          </div>
-        </div>
+      <button
+        onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+        className="md:hidden text-white"
+        aria-label="Toggle mobile menu"
+      >
+        {isMobileMenuOpen ? <X /> : <Menu />}
+      </button>
+    </div>
+  </div> {/* ← this closing div is required */}
 
-        {/* Mobile dropdown menu */}
-        {isMobileMenuOpen && (
-          <motion.ul
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden absolute top-full left-0 w-full bg-black/80 backdrop-blur-md flex flex-col items-center gap-4 py-4 text-white z-40"
-          >
-            <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
-            <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
-            <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
-            <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
-          </motion.ul>
-        )}
-      </nav>
+  {/* Mobile dropdown menu */}
+  {isMobileMenuOpen && (
+    <motion.ul
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="md:hidden absolute top-full left-0 w-full bg-black/80 backdrop-blur-md flex flex-col items-center gap-4 py-4 text-white z-40"
+    >
+      <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
+      <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
+      <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
+      <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
+    </motion.ul>
+  )}
+</nav>
+
 
       {/* HERO */}
       <section
