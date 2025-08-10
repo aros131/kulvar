@@ -12,7 +12,7 @@ const dmSerif = DM_Serif_Display({
   weight: '400',
 });
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Menu, X } from "lucide-react";
 import { Gym, Yoga, Stretching, Apple } from "iconoir-react";
@@ -20,7 +20,8 @@ import { motion } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import Link from "next/link";
 import RevealOnScroll from "@/components/RevealOnScroll";
-
+import * as THREE from "three";
+import DOTS from "vanta/dist/vanta.dots.min";
 import Footer from "@/components/Footer";
 
 const products = [
@@ -88,194 +89,224 @@ export default function HomePage() {
     trackTouch: true,
   });
 
+  // ✅ Move hooks INSIDE the component
+  const vantaRef = useRef<HTMLDivElement | null>(null);
+  const vantaEffect = useRef<ReturnType<typeof DOTS> | undefined>(undefined);
+
+  useEffect(() => {
+    if (!vantaEffect.current && vantaRef.current) {
+      vantaEffect.current = DOTS({
+        el: vantaRef.current,
+        THREE,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.0,
+        minWidth: 200.0,
+        scale: 1.0,
+        scaleMobile: 1.0,
+        backgroundColor: 0x000000,
+        color: 0xff8820,
+        color2: 0xff8820,
+        size: 3,
+        spacing: 35,
+        showLines: false,
+      });
+    }
+    return () => {
+      vantaEffect.current?.destroy();
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
       {/* NAVBAR */}
-     <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
-  {/* Optional background gradient for readability */}
-  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
+      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
+        {/* Optional background gradient for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
 
-  {/* Thicker separator line, slightly higher than bottom */}
-  <div className="absolute bottom-1 left-0 w-full h-[2px] bg-white/40 z-10" />
+        {/* Thicker separator line, slightly higher than bottom */}
+        <div className="absolute bottom-1 left-0 w-full h-[2px] bg-white/40 z-10" />
 
-  <div className="flex items-center justify-between w-full relative">
-    {/* PerSe. text instead of logo */}
-    <div className={`${dmSerif.className} text-2xl sm:text-3xl text-white`} style={{ color: "#8A2B13" }}>
-      PerSe.
-    </div>
+        <div className="flex items-center justify-between w-full relative">
+          {/* PerSe. text instead of logo */}
+          <div className={`${dmSerif.className} text-2xl sm:text-3xl text-white`} style={{ color: "#8A2B13" }}>
+            PerSe.
+          </div>
 
-    {/* Desktop nav links */}
-    <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-6 text-white items-center">
-      <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
-      <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
-      <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
-      <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
-    </ul>
+          {/* Desktop nav links */}
+          <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-6 text-white items-center">
+            <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+            <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
+            <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
+            <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
+          </ul>
 
-    {/* Right: dark mode toggle & hamburger (mobile only) */}
-    <div className="flex items-center gap-3 md:hidden">
-      <Button
-        variant="ghost"
-        onClick={() => setDarkMode(!darkMode)}
-        aria-label="Toggle dark mode"
-      >
-        {darkMode ? <Sun /> : <Moon />}
-      </Button>
-      <button
-        onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-        className="text-white"
-        aria-label="Toggle mobile menu"
-      >
-        {isMobileMenuOpen ? <X /> : <Menu />}
-      </button>
-    </div>
-  </div>
+          {/* Right: dark mode toggle & hamburger (mobile only) */}
+          <div className="flex items-center gap-3 md:hidden">
+            <Button
+              variant="ghost"
+              onClick={() => setDarkMode(!darkMode)}
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? <Sun /> : <Moon />}
+            </Button>
+            <button
+              onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white"
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileMenuOpen ? <X /> : <Menu />}
+            </button>
+          </div>
+        </div>
 
-  {/* Mobile dropdown menu */}
-  {isMobileMenuOpen && (
-    <motion.ul
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="md:hidden absolute top-full left-0 w-full bg-black/80 backdrop-blur-md flex flex-col items-center gap-4 py-4 text-white z-40"
-    >
-      <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
-      <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
-      <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
-      <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
-    </motion.ul>
-  )}
-</nav>
-
-
-
+        {/* Mobile dropdown menu */}
+        {isMobileMenuOpen && (
+          <motion.ul
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden absolute top-full left-0 w-full bg-black/80 backdrop-blur-md flex flex-col items-center gap-4 py-4 text-white z-40"
+          >
+            <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
+            <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
+            <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
+            <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
+          </motion.ul>
+        )}
+      </nav>
 
       {/* HERO */}
       <section
-  id="hero"
-  className="relative min-h-[90vh] bg-cover bg-center bg-no-repeat flex items-center overflow-hidden"
-  style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
->
-  <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 md:pt-12 pb-12 w-full flex flex-col md:flex-row items-center justify-between gap-8">
-    
-    {/* LEFT: LottieHero */}
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.4, duration: 0.6 }}
-      className="transform scale-[1.1] sm:scale-[1.25] md:scale-[1.5] ml-2 sm:ml-6 md:ml-12 lg:ml-16"
-    >
-      <LottieHero />
-    </motion.div>
-
-    {/* RIGHT: Text and buttons */}
-    <div className="w-full md:w-1/2 text-white text-center md:text-left">
-      {/* Heading and subtitle wrapper */}
-      <div className="-ml-2 sm:-ml-6 md:-ml-10 lg:-ml-16 text-left">
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className={`${dmSerif.className} text-3xl sm:text-4xl md:text-6xl font-normal mb-2`}
-        >
-          PerSe.
-        </motion.h1>
-
-        <div className="text-white/90 mb-6 max-w-xl space-y-2 text-left">
-          <AnimatedText text="Hazırsan başlıyoruz!" className="text-sm sm:text-base" delay={0.1} />
-          <AnimatedText text="PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen." className="text-sm sm:text-base" delay={0.3} />
-          <AnimatedText text="Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon." className="text-sm sm:text-base" delay={0.5} />
-          <AnimatedText text="Hedefin varsa, PerSe yanında." className="text-sm sm:text-base" delay={0.7} />
-        </div>
-      </div>
-
-      {/* Buttons */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-        className="flex gap-4 flex-col sm:flex-row justify-center md:justify-start"
+        id="hero"
+        className="relative min-h-[90vh] bg-cover bg-center bg-no-repeat flex items-center overflow-hidden"
+        style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
       >
-        <Button onClick={() => window.location.href = '/koc'}>
-          Koçlarla Tanış
-        </Button>
-        <Button
-          variant="outline"
-          className="border-white text-black hover:bg-white hover:text-black"
-          onClick={() => window.location.href = '#features'}
-        >
-          Daha Fazla Bilgi
-        </Button>
-      </motion.div>
-    </div>
-  </div>
-</section>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 md:pt-12 pb-12 w-full flex flex-col md:flex-row items-center justify-between gap-8">
+          {/* LEFT: LottieHero */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="transform scale-[1.1] sm:scale-[1.25] md:scale-[1.5] ml-2 sm:ml-6 md:ml-12 lg:ml-16"
+          >
+            <LottieHero />
+          </motion.div>
 
-
-      {/* FEATURES */}
-      <RevealOnScroll>
-      <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
-        <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.</p>
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="text-center">
-            <LottieTopluluk />
-            <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
-          </div>
-          <div className="text-center">
-            <LottieIlerleme />
-            <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
-            <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
-          </div>
-        </div>
-      </section>
-</RevealOnScroll>
-      {/* CATEGORIES */}
-      <RevealOnScroll>
-      <section className="py-16 px-4 bg-zinc-50 dark:bg-zinc-800" {...swipeHandlers}>
-        <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(tag)}
-              className={`px-4 py-1 rounded-full text-sm border transition ${
-                tag === activeTag
-                  ? "bg-zinc-800 text-white border-zinc-800"
-                  : "bg-white dark:bg-zinc-700 text-zinc-700 dark:text-white border-zinc-300 dark:border-zinc-600"
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {filteredProducts.map((product) => (
-            <motion.div
-              key={product.title}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-zinc-700 p-5 rounded-xl shadow-md flex flex-col items-center text-center"
-            >
-              <div className="text-zinc-800 dark:text-white mb-3">{product.icon}</div>
-              <h3 className="text-lg font-semibold">{product.title}</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">{product.description}</p>
-              <Link
-                href={product.link}
-                className="text-sm font-medium text-white bg-zinc-800 px-3 py-1.5 rounded-md hover:bg-zinc-900"
+          {/* RIGHT: Text and buttons */}
+          <div className="w-full md:w-1/2 text-white text-center md:text-left">
+            {/* Heading and subtitle wrapper */}
+            <div className="-ml-2 sm:-ml-6 md:-ml-10 lg:-ml-16 text-left">
+              <motion.h1
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className={`${dmSerif.className} text-3xl sm:text-4xl md:text-6xl font-normal mb-2`}
               >
-                Koçları Gör
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+                PerSe.
+              </motion.h1>
 
-        <p className="text-center text-xs text-zinc-500 mt-6 md:hidden">
-          Yukarı/Aşağı kaydırarak kategoriler arasında geçiş yapabilirsin
-        </p>
+              <div className="text-white/90 mb-6 max-w-xl space-y-2 text-left">
+                <AnimatedText text="Hazırsan başlıyoruz!" className="text-sm sm:text-base" delay={0.1} />
+                <AnimatedText text="PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen." className="text-sm sm:text-base" delay={0.3} />
+                <AnimatedText text="Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon." className="text-sm sm:text-base" delay={0.5} />
+                <AnimatedText text="Hedefin varsa, PerSe yanında." className="text-sm sm:text-base" delay={0.7} />
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+              className="flex gap-4 flex-col sm:flex-row justify-center md:justify-start"
+            >
+              <Button onClick={() => window.location.href = '/koc'}>
+                Koçlarla Tanış
+              </Button>
+              <Button
+                variant="outline"
+                className="border-white text-black hover:bg-white hover:text-black"
+                onClick={() => window.location.href = '#features'}
+              >
+                Daha Fazla Bilgi
+              </Button>
+            </motion.div>
+          </div>
+        </div>
       </section>
+
+      {/* FEATURES + CATEGORIES with Vanta Background */}
+      <RevealOnScroll>
+        <div ref={vantaRef} className="relative w-full py-20 overflow-hidden">
+          <div className="relative z-10">
+            {/* FEATURES */}
+            <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
+              <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
+              <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">
+                Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.
+              </p>
+              <div className="grid md:grid-cols-2 gap-10">
+                <div className="text-center">
+                  <LottieTopluluk />
+                  <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
+                  <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
+                </div>
+                <div className="text-center">
+                  <LottieIlerleme />
+                  <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
+                  <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* CATEGORIES */}
+            <section className="py-16 px-4" {...swipeHandlers}>
+              <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
+              <div className="flex flex-wrap justify-center gap-3 mb-10">
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setActiveTag(tag)}
+                    className={`px-4 py-1 rounded-full text-sm border transition ${
+                      tag === activeTag
+                        ? "bg-zinc-800 text-white border-zinc-800"
+                        : "bg-white dark:bg-zinc-700 text-zinc-700 dark:text-white border-zinc-300 dark:border-zinc-600"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                {filteredProducts.map((product) => (
+                  <motion.div
+                    key={product.title}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-white dark:bg-zinc-700 p-5 rounded-xl shadow-md flex flex-col items-center text-center"
+                  >
+                    <div className="text-zinc-800 dark:text-white mb-3">{product.icon}</div>
+                    <h3 className="text-lg font-semibold">{product.title}</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">{product.description}</p>
+                    <Link
+                      href={product.link}
+                      className="text-sm font-medium text-white bg-zinc-800 px-3 py-1.5 rounded-md hover:bg-zinc-900"
+                    >
+                      Koçları Gör
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+
+              <p className="text-center text-xs text-zinc-500 mt-6 md:hidden">
+                Yukarı/Aşağı kaydırarak kategoriler arasında geçiş yapabilirsin
+              </p>
+            </section>
+          </div>
+        </div>
       </RevealOnScroll>
 
       <Footer />
