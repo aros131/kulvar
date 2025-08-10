@@ -117,7 +117,7 @@ useEffect(() => {
       minWidth: 200.0,
       scale: 1.0,
       scaleMobile: 1.0,
-      backgroundColor: 0x000000,
+      backgroundColor: 0xffffff, 
       color: 0xff8820,
       color2: 0xff8820,
       size: 3,
