@@ -20,8 +20,8 @@ import { motion } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import Link from "next/link";
 import RevealOnScroll from "@/components/RevealOnScroll";
-import * as THREE from "three";
-import DOTS from "vanta/dist/vanta.dots.min";
+
+
 import Footer from "@/components/Footer";
 
 const products = [
@@ -90,33 +90,49 @@ export default function HomePage() {
   });
 
   // ✅ Move hooks INSIDE the component
-  const vantaRef = useRef<HTMLDivElement | null>(null);
-  const vantaEffect = useRef<ReturnType<typeof DOTS> | undefined>(undefined);
+const vantaRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!vantaEffect.current && vantaRef.current) {
-      vantaEffect.current = DOTS({
-        el: vantaRef.current,
-        THREE,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.0,
-        minWidth: 200.0,
-        scale: 1.0,
-        scaleMobile: 1.0,
-        backgroundColor: 0x000000,
-        color: 0xff8820,
-        color2: 0xff8820,
-        size: 3,
-        spacing: 35,
-        showLines: false,
-      });
-    }
-    return () => {
-      vantaEffect.current?.destroy();
-    };
-  }, []);
+type VantaInstance = { destroy: () => void };
+const vantaEffect = useRef<VantaInstance | null>(null);
+
+useEffect(() => {
+  let destroyed = false;
+
+  (async () => {
+    if (!vantaRef.current || vantaEffect.current) return;
+
+    // load THREE, expose globally for Vanta
+    window.THREE = (await import("three"));
+
+    const { default: DOTS } = await import("vanta/dist/vanta.dots.min");
+    if (destroyed) return;
+
+    vantaEffect.current = DOTS({
+      el: vantaRef.current,
+      THREE: window.THREE,
+      mouseControls: true,
+      touchControls: true,
+      gyroControls: false,
+      minHeight: 200.0,
+      minWidth: 200.0,
+      scale: 1.0,
+      scaleMobile: 1.0,
+      backgroundColor: 0x000000,
+      color: 0xff8820,
+      color2: 0xff8820,
+      size: 3,
+      spacing: 35,
+      showLines: false,
+    });
+  })();
+
+  return () => {
+    destroyed = true;
+    vantaEffect.current?.destroy();
+    vantaEffect.current = null;
+  };
+}, []);
+
 
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
