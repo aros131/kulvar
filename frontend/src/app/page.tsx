@@ -126,12 +126,12 @@ useEffect(() => {
     });
   })();
 
-  return () => {
-    destroyed = true;
-    vantaEffect.current?.destroy();
-    vantaEffect.current = null;
-  };
-}, []);
+ return () => {
+  destroyed = true;
+  vantaEffect.current?.destroy();
+  vantaEffect.current = null;
+};
+}, [darkMode]); // ✅ only this dependency array
 
 
   return (
