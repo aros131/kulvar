@@ -1,32 +1,34 @@
-import { defineConfig } from 'eslint-define-config';
-import eslintPluginReact from 'eslint-plugin-react';
+import js from "@eslint/js";
+import reactPlugin from "eslint-plugin-react";
 
-export default defineConfig({
-  languageOptions: {
-    globals: {
-      process: 'readonly',
-      __dirname: 'readonly',
+export default [
+  js.configs.recommended,
+  {
+    files: ["**/*.{js,ts}"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        __dirname: "readonly",
+      },
+      parserOptions: {
+        ecmaVersion: 2021,
+      },
     },
-    parserOptions: {
-      ecmaVersion: 2021,
+    plugins: {
+      react: reactPlugin,
+    },
+    rules: {
+      "no-restricted-globals": ["error", "name", "length"],
+      "prefer-arrow-callback": "error",
+      quotes: ["error", "double", { allowTemplateLiterals: true }],
     },
   },
-  plugins: {
-    react: eslintPluginReact,
-  },
-  rules: {
-    'no-restricted-globals': ['error', 'name', 'length'],
-    'prefer-arrow-callback': 'error',
-    quotes: ['error', 'double', { allowTemplateLiterals: true }],
-  },
-  // Convert overrides to an array
-  overrides: [
-    {
-      files: ['**/*.spec.*'],
-      env: {
+  {
+    files: ["**/*.spec.*"],
+    languageOptions: {
+      globals: {
         mocha: true,
       },
-      rules: {},
     },
-  ],
-});
+  },
+];

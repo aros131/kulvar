@@ -1,5 +1,6 @@
 // src/app/api/health/firestore/route.ts
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { adminDb } from "@/lib/firebaseAdmin";
 
