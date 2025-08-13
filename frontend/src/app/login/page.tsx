@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserIfNotExists } from "@/utils/firestore/createUserIfNotExists";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,8 +34,6 @@ export default function LoginPage() {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-
-      await createUserIfNotExists(data.user.id, data.user.name, data.user.role);
 
       if (data.user.role === 'user') {
         router.push(`/dashboard/user?id=${data.user.id}`);
