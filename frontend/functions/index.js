@@ -19,6 +19,7 @@ setGlobalOptions({
 
 // ----- Secrets (prod) -----
 const MONGO_URI = defineSecret('MONGO_URI');
+const JWT_SECRET = defineSecret('JWT_SECRET');
 
 // ----- Emulators: allow .env for local only -----
 if (process.env.FUNCTIONS_EMULATOR) {
@@ -120,4 +121,4 @@ app.get('/', (_req, res) => {
 });
 
 // Export function with secret
-export const api = onRequest({ secrets: [MONGO_URI] }, app);
+export const api = onRequest({ secrets: [MONGO_URI, JWT_SECRET] }, app);
