@@ -1,9 +1,9 @@
-import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
+import { onRequest } from "firebase-functions/v2/https";
+import { initializeApp } from "firebase-admin/app";
 import { Request, Response } from "express";
 
-admin.initializeApp();
+initializeApp();
 
-export const ping = functions.https.onRequest((req: Request, res: Response) => {
+export const ping = onRequest((req: Request, res: Response) => {
   res.status(200).send({ message: "Pong" });
 });

@@ -1,12 +1,14 @@
-import * as functions from 'firebase-functions';  // Import Firebase Functions
-import express from 'express';  // Import Express
-import mongoose from 'mongoose';  // MongoDB
-import cors from 'cors';  // Enable CORS
-import path, { dirname } from 'path';  // Path for static files
-import { fileURLToPath } from 'url';  // For ES Modules compatibility
-import dotenv from 'dotenv';  // Load environment variables
+import { onRequest } from 'firebase-functions/v2/https'; // Firebase v2 HTTP
+import { initializeApp } from 'firebase-admin/app'; // Firebase Admin initialization
+import express from 'express'; // Import Express
+import mongoose from 'mongoose'; // MongoDB
+import cors from 'cors'; // Enable CORS
+import path, { dirname } from 'path'; // Path for static files
+import { fileURLToPath } from 'url'; // For ES Modules compatibility
+import dotenv from 'dotenv'; // Load environment variables
 
-dotenv.config();  // Load environment variables from .env
+dotenv.config(); // Load environment variables from .env
+initializeApp(); // Initialize Firebase Admin
 
 // Import your route files
 import authRoutes from './routes/authRoutes.js';
@@ -68,8 +70,8 @@ app.get('/', (req, res) => {
   res.send('Welcome to the backend API!');
 });
 
-// Export Express app as Firebase Function
-export const api = functions.https.onRequest(app);
+// Export Express app as Firebase Function using v2 API
+export const api = onRequest(app);
 
 // Start the server
 // app.listen(5001, () => { console.log("Server running on http://localhost:5001"); });

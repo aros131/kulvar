@@ -1,11 +1,14 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2/options";
 import * as logger from "firebase-functions/logger";
+import { initializeApp } from "firebase-admin/app";
+
+initializeApp();
 
 setGlobalOptions({
   region: "europe-west1",
   maxInstances: 10,
-  serviceAccount: "persecoaching@appspot.gserviceaccount.com"
+  serviceAccount: "persecoaching@appspot.gserviceaccount.com",
 });
 
 export const ping = onRequest((req, res) => {
