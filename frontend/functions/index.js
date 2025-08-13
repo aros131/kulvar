@@ -1,16 +1,76 @@
-import { onRequest } from 'firebase-functions/v2/https'; // Firebase v2 HTTP
-import { initializeApp } from 'firebase-admin/app'; // Firebase Admin initialization
-import express from 'express'; // Import Express
-import mongoose from 'mongoose'; // MongoDB
-import cors from 'cors'; // Enable CORS
-import path, { dirname } from 'path'; // Path for static files
-import { fileURLToPath } from 'url'; // For ES Modules compatibility
-import dotenv from 'dotenv'; // Load environment variables
+// functions/index.js (ESM, pure JS)
 
-dotenv.config(); // Load environment variables from .env
-initializeApp(); // Initialize Firebase Admin
+import { onRequest } from 'firebase-functions/v2/https';
+import { setGlobalOptions, defineSecret } from 'firebase-functions/v2';
+import { initializeApp } from 'firebase-admin/app';
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
 
-// Import your route files
+// ----- Global options (pick your region) -----
+setGlobalOptions({
+  region: 'us-central1',
+  memory: '512MiB',
+  concurrency: 80,
+});
+
+// ----- Secrets (prod) -----
+const MONGO_URI = defineSecret('MONGO_URI');
+
+// ----- Emulators: allow .env for local only -----
+if (process.env.FUNCTIONS_EMULATOR) {
+  const dotenv = await import('dotenv');
+  dotenv.config();
+}
+
+initializeApp();
+
+const app = express();
+
+// ----- CORS (tight whitelist recommended) -----
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  // add your deploy domains here:
+  // 'https://persecoaching.vercel.app',
+];
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // allow curl/postman
+      cb(null, ALLOWED_ORIGINS.includes(origin));
+    },
+    credentials: true,
+  })
+);
+
+app.use(express.json());
+
+// ----- Mongoose connection cache (no TS types here) -----
+let connPromise = null;
+
+async function ensureMongoose() {
+  if (mongoose.connection.readyState === 1) return mongoose;
+
+  if (!connPromise) {
+    // local vs prod secret
+    const uri =
+      process.env.FUNCTIONS_EMULATOR && process.env.MONGO_URI
+        ? process.env.MONGO_URI
+        : MONGO_URI.value(); // no "as string" needed in JS
+
+    connPromise = mongoose.connect(uri, {
+      maxPoolSize: 5,
+      serverSelectionTimeoutMS: 10000,
+    });
+  }
+  await connPromise;
+  return mongoose;
+}
+
+// ----- Routes (imports must be JS files) -----
 import authRoutes from './routes/authRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import contentRoutes from './routes/contentRoutes.js';
@@ -25,35 +85,22 @@ import coachRoutes from './routes/coachRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 
-// Initialize Express
-const app = express();
+// Gate DB usage so first request ensures connection
+app.use(async (_req, _res, next) => {
+  try {
+    await ensureMongoose();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
-// Enable CORS for all routes
-app.use(cors({
-  origin: (origin, callback) => {
-    callback(null, origin); // Dynamically reflect allowed origin
-  },
-  credentials: true, // Allow cookies/headers
-}));
-
-// Parse incoming requests with JSON payloads
-app.use(express.json());
-
-// MongoDB Connection (ensure .env has MONGO_URI set)
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
-
-// Add your routes
+// Mount routers
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/content', contentRoutes);
-app.use("/notifications", notificationRoutes);
-app.use("/dashboard/notifications", notificationRoutes);
-
+app.use('/notifications', notificationRoutes);
+app.use('/dashboard/notifications', notificationRoutes);
 app.use('/exercise-templates', exerciseTemplateRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/groups', clientGroupRoutes);
@@ -61,17 +108,15 @@ app.use('/profile', profileRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/programs', programRoutes);
 app.use('/coaches', coachRoutes);
-app.use("/progress", progressRoutes);
-app.use("/users", userRoutes);
-app.use("/uploads", express.static(path.join(dirname(fileURLToPath(import.meta.url)), "uploads")));
+app.use('/progress', progressRoutes);
+app.use('/users', userRoutes);
 
-// Default Route
-app.get('/', (req, res) => {
+// Avoid using uploads folder in Functions FS (use Cloud Storage instead)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+app.get('/', (_req, res) => {
   res.send('Welcome to the backend API!');
 });
 
-// Export Express app as Firebase Function using v2 API
-export const api = onRequest(app);
-
-// Start the server
-// app.listen(5001, () => { console.log("Server running on http://localhost:5001"); });
+// Export function with secret
+export const api = onRequest({ secrets: [MONGO_URI] }, app);
