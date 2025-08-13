@@ -1,7 +1,8 @@
 // functions/index.js (ESM, pure JS)
 
 import { onRequest } from 'firebase-functions/v2/https';
-import { setGlobalOptions, defineSecret } from 'firebase-functions/v2';
+import { setGlobalOptions } from 'firebase-functions/v2';
+import { defineSecret } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import express from 'express';
 import mongoose from 'mongoose';
