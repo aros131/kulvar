@@ -1,32 +1,75 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+import * as functions from 'firebase-functions';  // Import Firebase Functions
+import express from 'express';  // Import Express
+import mongoose from 'mongoose';  // MongoDB
+import cors from 'cors';  // Enable CORS
+import path, { dirname } from 'path';  // Path for static files
+import { fileURLToPath } from 'url';  // For ES Modules compatibility
+import dotenv from 'dotenv';  // Load environment variables
 
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
-const logger = require("firebase-functions/logger");
+dotenv.config();  // Load environment variables from .env
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+// Import your route files
+import authRoutes from './routes/authRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import contentRoutes from './routes/contentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import exerciseTemplateRoutes from './routes/exerciseTemplateRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
+import clientGroupRoutes from './routes/clientGroupRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+import programRoutes from './routes/programRoutes.js';
+import coachRoutes from './routes/coachRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import progressRoutes from './routes/progressRoutes.js';
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+// Initialize Express
+const app = express();
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Enable CORS for all routes
+app.use(cors({
+  origin: (origin, callback) => {
+    callback(null, origin); // Dynamically reflect allowed origin
+  },
+  credentials: true, // Allow cookies/headers
+}));
+
+// Parse incoming requests with JSON payloads
+app.use(express.json());
+
+// MongoDB Connection (ensure .env has MONGO_URI set)
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Add your routes
+app.use('/auth', authRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/content', contentRoutes);
+app.use("/notifications", notificationRoutes);
+app.use("/dashboard/notifications", notificationRoutes);
+
+app.use('/exercise-templates', exerciseTemplateRoutes);
+app.use('/feedback', feedbackRoutes);
+app.use('/groups', clientGroupRoutes);
+app.use('/profile', profileRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/programs', programRoutes);
+app.use('/coaches', coachRoutes);
+app.use("/progress", progressRoutes);
+app.use("/users", userRoutes);
+app.use("/uploads", express.static(path.join(dirname(fileURLToPath(import.meta.url)), "uploads")));
+
+// Default Route
+app.get('/', (req, res) => {
+  res.send('Welcome to the backend API!');
+});
+
+// Export Express app as Firebase Function
+export const api = functions.https.onRequest(app);
+
+// Start the server
+// app.listen(5001, () => { console.log("Server running on http://localhost:5001"); });

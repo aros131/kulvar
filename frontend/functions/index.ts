@@ -1,8 +1,9 @@
-// functions/index.js (or index.ts for TypeScript)
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import { Request, Response } from "express";
+
 admin.initializeApp();
 
-exports.ping = functions.https.onRequest((req, res) => {
-  res.status(200).send({ message: 'Pong' });
+export const ping = functions.https.onRequest((req: Request, res: Response) => {
+  res.status(200).send({ message: "Pong" });
 });
