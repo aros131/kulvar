@@ -1,7 +1,7 @@
 // src/components/coach/EditProgramForm.tsx
 
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
+
 
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";

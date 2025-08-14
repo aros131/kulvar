@@ -22,6 +22,12 @@ interface UserProgress {
     longestStreak: number;
   };
 }
+type UISession = {
+  sessionId?: string;
+  _id?: string;
+  id?: string;
+  name?: string;
+};
 
 export default function ProgramContentPage() {
   // ✅ Ensure programId is a string
@@ -76,25 +82,23 @@ export default function ProgramContentPage() {
   if (!program) return <div className="p-4">Program yükleniyor…</div>;
 
   // ✅ Completed session ids (defensive, no non-null assertion)
-  const completedIds = new Set(
-    Array.isArray(userProgress?.completedSessions)
-      ? userProgress!.completedSessions.map((s) => s.sessionId)
-      : []
-  );
+ const completedIds = new Set(
+  (userProgress?.completedSessions ?? []).map((s) => s.sessionId)
+);
 
   // ✅ Build timeline view model (use real session IDs when available)
   const timelineSessions =
-    program.dailySchedule?.flatMap((dayEntry, dayIdx) =>
-      (dayEntry.sessions || []).map((s: any, si: number) => {
-        const candidateId =
-          s.sessionId ?? s._id ?? s.id ?? `day-${dayIdx + 1}`; // fallback keeps your current logic
-        return {
-          day: dayIdx + 1,
-          title: s.name,
-          completed: completedIds.has(candidateId),
-        };
-      })
-    ) || [];
+  program.dailySchedule?.flatMap((dayEntry, dayIdx) =>
+    (dayEntry.sessions ?? []).map((s: UISession, idx: number) => {
+      const candidateId =
+        s.sessionId ?? s._id ?? s.id ?? `day-${dayIdx + 1}-s-${idx + 1}`;
+      return {
+        day: dayIdx + 1,
+        title: s.name ?? `Session ${idx + 1}`,
+        completed: completedIds.has(candidateId),
+      };
+    })
+  ) ?? [];
 
   return (
     <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">

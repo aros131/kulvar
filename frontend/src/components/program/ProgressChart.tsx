@@ -7,8 +7,10 @@ import {
   ArcElement,
   Tooltip,
   Legend,
-  Plugin,
-  ChartOptions,
+  type Plugin,
+  type ChartOptions,
+  type TooltipItem,
+  type ChartData,
 } from "chart.js";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -17,36 +19,10 @@ type Props =
   | { completionPercentage: number; completedSessions?: never; totalSessions?: never }
   | { completionPercentage?: never; completedSessions: number; totalSessions: number };
 
-const centerText: Plugin<"doughnut"> = {
-  id: "centerText",
-  afterDraw(chart) {
-    const { ctx, chartArea } = chart;
-    if (!chartArea) return;
-    const { width, height, left, top } = chartArea;
-
-    // we pass our own meta via data.meta
-    const meta: any = (chart.config.data as any)?.meta || {};
-    const pct = meta?.pct ?? 0;
-    const sub = meta?.sub ?? "";
-
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // % value
-    ctx.font = "600 28px ui-sans-serif, system-ui, -apple-system";
-    // try CSS var, fallback to dark/light safe color
-    const fg = getComputedStyle(document.documentElement).getPropertyValue("--foreground") || "#111";
-    ctx.fillStyle = fg.trim() || "#111";
-    ctx.fillText(`${pct}%`, left + width / 2, top + height / 2 - 8);
-
-    // sub label (e.g., 8/12 seans)
-    ctx.font = "400 12px ui-sans-serif, system-ui, -apple-system";
-    ctx.globalAlpha = 0.7;
-    ctx.fillText(sub, left + width / 2, top + height / 2 + 16);
-    ctx.restore();
-  },
-};
+function clampPercent(n: number) {
+  if (Number.isNaN(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
 
 function colorFor(pct: number) {
   if (pct >= 80) return "#22c55e"; // green
@@ -54,31 +30,58 @@ function colorFor(pct: number) {
   return "#ef4444"; // red
 }
 
-const ProgressChart: React.FC<Props> = (props) => {
-  const { pct, subLabel, completed, total } = useMemo(() => {
-    const usingPct =
-      "completionPercentage" in props && typeof props.completionPercentage === "number";
+export default function ProgressChart(props: Props) {
+  // --- derive values from props (no any, no complex deps) ---
+  const usingPct =
+    "completionPercentage" in props && typeof props.completionPercentage === "number";
 
-    const raw = usingPct
-      ? props.completionPercentage
-      : (props.completedSessions / Math.max(1, props.totalSessions)) * 100;
+  const rawPct = usingPct
+    ? props.completionPercentage
+    : (props.completedSessions / Math.max(1, props.totalSessions)) * 100;
 
-    const pct = Math.min(100, Math.max(0, Math.round(raw || 0)));
-    const sub =
-      "completedSessions" in props && "totalSessions" in props
-        ? `${props.completedSessions}/${props.totalSessions} seans`
-        : "Program İlerleme";
+  const pct = clampPercent(rawPct || 0);
+  const completed = usingPct ? undefined : props.completedSessions;
+  const total = usingPct ? undefined : props.totalSessions;
+  const subLabel =
+    completed != null && total != null ? `${completed}/${total} seans` : "Program İlerleme";
 
+  // --- center text plugin (close over pct + subLabel to avoid 'any') ---
+  const centerText = useMemo<Plugin<"doughnut">>(() => {
     return {
-      pct,
-      subLabel: sub,
-      completed: "completedSessions" in props ? props.completedSessions : undefined,
-      total: "totalSessions" in props ? props.totalSessions : undefined,
-    };
-  }, [("completionPercentage" in props ? props.completionPercentage : undefined), ("completedSessions" in props ? props.completedSessions : undefined), ("totalSessions" in props ? props.totalSessions : undefined)]);
+      id: "centerText",
+      afterDraw(chart) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+        const { width, height, left, top } = chartArea;
 
-  // Use `any` here to attach our custom meta for the centerText plugin & tooltip
-  const data: any = {
+        // Safe foreground color from CSS var (fallback provided)
+        let fg = "#111";
+        if (typeof window !== "undefined") {
+          const css = getComputedStyle(document.documentElement);
+          const v = css.getPropertyValue("--foreground").trim();
+          if (v) fg = v;
+        }
+
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // % value
+        ctx.font = "600 28px ui-sans-serif, system-ui, -apple-system";
+        ctx.fillStyle = fg;
+        ctx.fillText(`${pct}%`, left + width / 2, top + height / 2 - 8);
+
+        // sub label
+        ctx.font = "400 12px ui-sans-serif, system-ui, -apple-system";
+        ctx.globalAlpha = 0.7;
+        ctx.fillText(subLabel, left + width / 2, top + height / 2 + 16);
+        ctx.restore();
+      },
+    };
+  }, [pct, subLabel]);
+
+  // --- data & options (fully typed, no meta hacks) ---
+  const data: ChartData<"doughnut", number[], string> = {
     labels: ["Tamamlanan", "Kalan"],
     datasets: [
       {
@@ -87,7 +90,6 @@ const ProgressChart: React.FC<Props> = (props) => {
         borderWidth: 0,
       },
     ],
-    meta: { pct, sub: subLabel, completed, total },
   };
 
   const options: ChartOptions<"doughnut"> = {
@@ -96,11 +98,10 @@ const ProgressChart: React.FC<Props> = (props) => {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx) => {
-            const meta: any = (ctx.chart.config.data as any)?.meta || {};
+          label: (ctx: TooltipItem<"doughnut">) => {
             const slicePct = Math.round(Number(ctx.parsed) || 0);
-            if (ctx.dataIndex === 0 && meta.completed != null && meta.total != null) {
-              return `${ctx.label}: ${slicePct}% (${meta.completed}/${meta.total})`;
+            if (ctx.dataIndex === 0 && completed != null && total != null) {
+              return `${ctx.label}: ${slicePct}% (${completed}/${total})`;
             }
             return `${ctx.label}: ${slicePct}%`;
           },
@@ -117,12 +118,10 @@ const ProgressChart: React.FC<Props> = (props) => {
       <div
         className="mx-auto aspect-square max-w-[280px] w-full"
         role="img"
-        aria-label={`Program ilerleme grafiği: ${pct} yüzde tamamlandı (${subLabel}).`}
+        aria-label={`Program ilerleme grafiği: yüzde ${pct} tamamlandı (${subLabel}).`}
       >
         <Doughnut data={data} options={options} plugins={[centerText]} />
       </div>
     </div>
   );
-};
-
-export default ProgressChart;
+}
