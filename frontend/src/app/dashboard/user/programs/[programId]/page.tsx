@@ -8,7 +8,7 @@ import SessionTimeline from "@/components/program/SessionTimeline";
 import StreakTracker from "@/components/program/StreakTracker";
 import FeedbackHistory from "@/components/program/FeedbackHistory";
 import CalendarHeatmap from "@/components/program/CalendarHeatmap";
-
+import ProgramDetailsView from "@/components/program/ProgramDetailsView"; 
 interface UserProgress {
   progressPercentage: number;
   completedSessions: { sessionId: string }[];
@@ -95,6 +95,8 @@ export default function ProgramContentPage() {
         <div className="mb-8">
           <StreakTracker programId={program._id} />
         </div>
+        <ProgramDetailsView program={program} />
+
 
         {/* 📆 Session Timeline */}
         <div className="mb-8">

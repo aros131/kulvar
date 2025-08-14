@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { JSX } from "react";
 import { Card } from "@/components/ui/card";
 
 // Local fallback Separator since shadcn/ui/separator is not present
@@ -66,6 +66,7 @@ type ProgramModel = {
   duration: number;
   coachId: Id;
   assignedClients?: Assigned[];
+
   difficulty: "Başlangıç" | "Orta Düzey" | "İleri Seviye";
   fitnessGoal:
     | "Kilo Kaybı"
@@ -91,11 +92,36 @@ type ProgramModel = {
 
   missedWorkouts?: MissedWorkout[];
 
-  status: "Aktif" | "Tamamlandı" | "Durduruldu";
+  status?: "Aktif" | "Tamamlandı" | "Durduruldu";
   createdAt?: string | Date;
 };
 
-export function ProgramDetailsView({ program }: { program: ProgramModel }) {
+// Accept a looser shape (works with your existing `Program` type)
+// NOTE: We deliberately use broad `string` for enums to accept API types like `string | undefined`.
+type ProgramLike = {
+  _id?: Id;
+  name?: string;
+  description?: string;
+  duration?: number;
+  coachId?: Id;
+  assignedClients?: Assigned[];
+  difficulty?: string; // broadened from literal union
+  fitnessGoal?: string; // broadened from literal union
+  dailySchedule?: DSDay[];
+  exercises?: StandaloneExercise[];
+  nutritionPlan?: NutritionPlan;
+  videos?: MediaItem[];
+  pdfs?: MediaItem[];
+  announcements?: Announcement[];
+  progressTracking?: ProgressTrack[];
+  feedback?: FeedbackItem[];
+  missedWorkouts?: MissedWorkout[];
+  status?: string; // broadened from literal union
+  createdAt?: string | Date;
+};
+
+export function ProgramDetailsView({ program }: { program: ProgramLike }): JSX.Element {
+
   // ---- Helpers ----
   const fmtDate = (d?: string | Date) => {
     if (!d) return "";
@@ -126,18 +152,18 @@ export function ProgramDetailsView({ program }: { program: ProgramModel }) {
   };
 
   const StatusBadge = () => {
-    const c: BadgeColor =
-      program.status === "Aktif" ? "green" : program.status === "Durduruldu" ? "amber" : "blue";
-    return <Badge color={c}>{program.status}</Badge>;
+    const st = program.status || "Aktif";
+    const c: BadgeColor = st === "Aktif" ? "green" : st === "Durduruldu" ? "amber" : "blue";
+    return <Badge color={c}>{st}</Badge>;
   };
 
   const DifficultyBadge = () => {
-    const c: BadgeColor =
-      program.difficulty === "Başlangıç" ? "green" : program.difficulty === "Orta Düzey" ? "amber" : "red";
-    return <Badge color={c}>{program.difficulty}</Badge>;
+    const diff = program.difficulty || "Başlangıç";
+    const c: BadgeColor = diff === "Başlangıç" ? "green" : diff === "Orta Düzey" ? "amber" : "red";
+    return <Badge color={c}>{diff}</Badge>;
   };
 
-  const GoalBadge = () => <Badge color="blue">{program.fitnessGoal}</Badge>;
+  const GoalBadge = () => <Badge color="blue">{program.fitnessGoal || "Hedef Yok"}</Badge>;
 
   // generic safe array
   const arr = <T,>(v?: T[]) => (Array.isArray(v) ? v : []);
@@ -165,19 +191,19 @@ export function ProgramDetailsView({ program }: { program: ProgramModel }) {
       {/* Header */}
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold">{program.name}</h1>
+          <h1 className="text-2xl font-bold">{program.name ?? "Program"}</h1>
           <StatusBadge />
           <DifficultyBadge />
           <GoalBadge />
         </div>
-        <p className="text-zinc-700 dark:text-zinc-300">{program.description}</p>
+        <p className="text-zinc-700 dark:text-zinc-300">{program.description || "Açıklama yok"}</p>
         <div className="text-sm text-zinc-500 flex flex-wrap gap-3">
           <span>
-            Süre: <strong>{program.duration}</strong> hafta
+            Süre: <strong>{typeof program.duration === "number" ? program.duration : "-"}</strong> hafta
           </span>
           <span>Oluşturma: {fmtDate(program.createdAt)}</span>
           <span>
-            Koç: <code className="text-xs bg-zinc-100 px-1 py-0.5 rounded">{String(program.coachId)}</code>
+            Koç: <code className="text-xs bg-zinc-100 px-1 py-0.5 rounded">{program.coachId ? String(program.coachId) : "-"}</code>
           </span>
         </div>
 
@@ -479,7 +505,13 @@ export function ProgramDetailsView({ program }: { program: ProgramModel }) {
           <ul className="space-y-1 text-sm">
             {arr(program.missedWorkouts).map((m, i) => (
               <li key={i} className="flex items-center gap-2">
-                <Badge color={m.status === "Kaçırıldı" ? "red" : "amber"}>{m.status}</Badge>
+                <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${
+                  m.status === "Kaçırıldı"
+                    ? "bg-red-100 text-red-800 border-red-200"
+                    : "bg-amber-100 text-amber-800 border-amber-200"
+                }`}>
+                  {m.status}
+                </span>
                 <span>Gün: {m.missedDay}</span>
                 {typeof m.rescheduledTo === "number" && <span>→ {m.rescheduledTo}. gün</span>}
               </li>
