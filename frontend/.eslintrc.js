@@ -6,6 +6,6 @@ module.exports = {
     'plugin:react/jsx-runtime',
   ],
   rules: {
-    // Add any custom rules here if necessary
+  "@typescript-eslint/no-explicit-any": ["error", { fixToUnknown: true, ignoreRestArgs: true }],
   },
 };
