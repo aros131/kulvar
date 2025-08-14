@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchJSON } from "@/lib/api";
+import { fetchJSONorNull } from "@/lib/api";
 
 type ProgressResp = {
   progressPercentage?: number;
@@ -25,19 +25,17 @@ export function useProgramProgress(programId?: string) {
       setError(null);
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        const data = await fetchJSON<ProgressResp>(`progress/user/${programId}`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+        const data = await fetchJSONorNull<ProgressResp>(`progress/user/${programId}`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           cache: "no-store",
         });
 
         if (cancelled) return;
 
-        const comp = Array.isArray(data.completedSessions) ? data.completedSessions.length : 0;
-        const tot = Number(data.totalSessions || 0);
-        const pct = typeof data.progressPercentage === "number"
-          ? Math.max(0, Math.min(100, Math.round(data.progressPercentage)))
+        const comp = Array.isArray(data?.completedSessions) ? data!.completedSessions.length : 0;
+        const tot = Number(data?.totalSessions || 0);
+        const pct = typeof data?.progressPercentage === "number"
+          ? Math.max(0, Math.min(100, Math.round(data!.progressPercentage!)))
           : tot > 0 ? Math.round((comp / tot) * 100) : 0;
 
         setCompleted(comp);
@@ -46,7 +44,6 @@ export function useProgramProgress(programId?: string) {
       } catch (e: unknown) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : String(e));
-        // Graceful fallback
         setCompleted(0);
         setTotal(0);
         setPercent(0);
