@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { fetchJSONorNull } from "@/lib/api";
+import { tryCandidatesJSON } from "@/lib/api";
 
 export default function StreakTracker({ programId }: { programId: string }) {
   const [loading, setLoading] = useState(true);
@@ -13,12 +13,20 @@ export default function StreakTracker({ programId }: { programId: string }) {
       setLoading(true);
       setErr(null);
       try {
-        const data = await fetchJSONorNull<{ currentStreak: number; longestStreak: number }>(
+        const candidates = [
           `progress/streak/${programId}`,
-          { cache: "no-store" }
-        );
-        if (!cancelled) setStreak(data); // data === null on 404
-      } catch (e: unknown) {
+          `streak/${programId}`,
+          `programs/${programId}/streak`,
+          `users/me/programs/${programId}/streak`,
+          `users/me/streak/${programId}`,
+        ];
+
+        const { data } = await tryCandidatesJSON<{ currentStreak: number; longestStreak: number }>(candidates, {
+          cache: "no-store",
+        });
+
+        if (!cancelled) setStreak(data); // null → show "no data"
+      } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
       } finally {
         if (!cancelled) setLoading(false);

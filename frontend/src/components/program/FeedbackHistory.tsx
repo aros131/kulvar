@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { fetchJSONorNull } from "@/lib/api";
+import { tryCandidatesJSON } from "@/lib/api";
 
 type FeedbackItem = { _id: string; message: string; createdAt: string };
 
@@ -15,9 +15,17 @@ export default function FeedbackHistory({ programId }: { programId: string }) {
       setLoading(true);
       setErr(null);
       try {
-        const data = await fetchJSONorNull<FeedbackItem[]>(`feedback/program/${programId}`, { cache: "no-store" });
-        if (!cancelled) setItems(Array.isArray(data) ? data : []); // null => []
-      } catch (e: unknown) {
+        const candidates = [
+          `feedback/program/${programId}`,
+          `programs/${programId}/feedback`,
+          `feedback/${programId}`,
+          `program/${programId}/feedbacks`,
+        ];
+
+        const { data } = await tryCandidatesJSON<FeedbackItem[]>(candidates, { cache: "no-store" });
+
+        if (!cancelled) setItems(Array.isArray(data) ? data : []);
+      } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
         if (!cancelled) setItems([]);
       } finally {
