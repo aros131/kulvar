@@ -1,4 +1,7 @@
 "use client";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { fetchCoachPrograms } from "@/utils/api";
@@ -117,6 +120,12 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched }) => {
                       programId={program._id}
                       onUpdated={fetchProgramsWithClients}
                     />
+                    <Button asChild variant="default" size="sm" className="gap-1">
+  <Link href={`/dashboard/coach/programs/${program._id}/edit`}>
+    Programa bak <ArrowRight size={16} />
+  </Link>
+</Button>
+
                     <AssignClientsDialog programId={program._id} />
                     <DeleteProgramDialog
                       programId={program._id}
