@@ -9,15 +9,12 @@ import StreakTracker from "@/components/program/StreakTracker";
 import FeedbackHistory from "@/components/program/FeedbackHistory";
 import CalendarHeatmap from "@/components/program/CalendarHeatmap";
 import ProgramDetailsView from "@/components/program/ProgramDetailsView";
-import { tryCandidatesJSON } from "@/lib/api";
+import { useProgramProgress } from "@/hooks/useProgramProgress";
 
-interface UserProgress {
-  progressPercentage?: number;
-  completedSessions?: { sessionId: string }[];
-  totalSessions?: number;
-  streakTracking?: { currentStreak: number; longestStreak: number };
-}
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+
 type UISession = { sessionId?: string; _id?: string; id?: string; name?: string };
+type UserProgress = { completedSessions?: { sessionId: string }[] };
 
 const asArray = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
@@ -28,64 +25,58 @@ export default function ProgramContentPage() {
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
 
+  // still available if backend /progress/user/:id returns total & pct
+  const { loading, error, completed, total, percent } = useProgramProgress(programId);
+
   useEffect(() => {
     if (!programId) return;
-    const token = localStorage.getItem("token") ?? "";
-    let cancelled = false;
-
+    const ac = new AbortController();
     (async () => {
       try {
-        // Program: try common shapes
-        const { data: programData } = await tryCandidatesJSON<{ program: Program } | Program>(
-          [`programs/${programId}`, `program/${programId}`],
-          {
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            cache: "no-store",
-          }
-        );
-
-        if (cancelled) return;
-
-        const p = (programData && "program" in programData ? (programData as any).program : programData) as Program | null;
-        if (!p) throw new Error("Program bulunamadı (404).");
+        const token = localStorage.getItem("token") ?? "";
+        const res = await fetch(`${API}/programs/${programId}`, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          signal: ac.signal,
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Program ${res.status}: ${body.slice(0,160)}…`);
+        }
+        const data = await res.json();
+        const p: Program = (data && (data as any).program) ? (data as any).program : data;
         setProgram(p);
-      } catch (e) {
-        if (cancelled) return;
-        setLoadErr(e instanceof Error ? e.message : String(e));
+      } catch (e: any) {
+        setLoadErr(e?.message || String(e));
         setProgram(null);
       }
     })();
 
     (async () => {
       try {
-        const { data } = await tryCandidatesJSON<UserProgress>(
-          [
-            `progress/user/${programId}`,
-            `user/progress/${programId}`,
-            `users/me/progress/${programId}`,
-            `users/me/programs/${programId}/progress`,
-            `progress/${programId}`,
-            `programs/${programId}/progress`,
-          ],
-          { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
-        );
-        if (!cancelled) setUserProgress(data ?? null);
+        const token = localStorage.getItem("token") ?? "";
+        const res = await fetch(`${API}/progress/user/${programId}`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          signal: ac.signal,
+          cache: "no-store",
+        });
+        if (res.ok && (res.headers.get("content-type") || "").includes("application/json")) {
+          setUserProgress(await res.json());
+        } else {
+          setUserProgress(null);
+        }
       } catch {
-        if (!cancelled) setUserProgress(null); // fail-soft
+        setUserProgress(null);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => ac.abort();
   }, [programId]);
 
-  if (!program) {
-    return <div className="p-4">{loadErr ? `Yükleme hatası: ${loadErr}` : "Program yükleniyor…"}</div>;
-  }
+  if (!program) return <div className="p-4">{loadErr ? `Yükleme hatası: ${loadErr}` : "Program yükleniyor…"}</div>;
 
-  // Completed IDs from userProgress
   const completedIds = new Set(asArray<{ sessionId: string }>(userProgress?.completedSessions).map(s => s.sessionId));
 
-  // Timeline + totals from Program (stable)
   const daily = asArray<Program["dailySchedule"] extends (infer D)[] ? D : never>(program.dailySchedule);
   const timelineSessions = daily.flatMap((dayEntry, dayIdx) => {
     const sessions = asArray<UISession>((dayEntry as any)?.sessions);
@@ -98,9 +89,6 @@ export default function ProgramContentPage() {
 
   const totalSessionsFromProgram = daily.reduce((acc, d: any) => acc + asArray<any>(d?.sessions).length, 0);
   const completedCount = completedIds.size;
-  const pct = totalSessionsFromProgram > 0
-    ? Math.max(0, Math.min(100, Math.round((completedCount / totalSessionsFromProgram) * 100)))
-    : Math.max(0, Math.min(100, Math.round(userProgress?.progressPercentage ?? 0)));
 
   return (
     <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
@@ -108,12 +96,13 @@ export default function ProgramContentPage() {
         <h1 className="text-3xl font-bold mb-2">{program.name}</h1>
         <p className="text-zinc-600 dark:text-zinc-300 mb-6">{program.description}</p>
 
-        {/* Donut chart – consistent with timeline */}
         <div className="mb-8">
-          {totalSessionsFromProgram > 0 ? (
-            <ProgressChart completedSessions={completedCount} totalSessions={totalSessionsFromProgram} />
-          ) : (
-            <ProgressChart completionPercentage={pct} />
+          {loading && <div className="text-sm text-zinc-500">İlerleme yükleniyor…</div>}
+          {error && <div className="text-sm text-red-600">Hata: {error}</div>}
+          {!loading && !error && (
+            totalSessionsFromProgram > 0
+              ? <ProgressChart completedSessions={completedCount} totalSessions={totalSessionsFromProgram} />
+              : <ProgressChart completionPercentage={Math.round(percent)} />
           )}
         </div>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
 type ProgressResp = {
   progressPercentage?: number;
@@ -27,13 +27,11 @@ export function useProgramProgress(programId?: string) {
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
         const res = await fetch(`${API}/progress/user/${programId}`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           cache: "no-store",
         });
 
-        if (res.status === 404) {
+        if (res.status === 404) { // veri yok → 0
           if (!cancelled) { setCompleted(0); setTotal(0); setPercent(0); }
           return;
         }

@@ -20,29 +20,20 @@ export default function StreakTracker({ programId }: { programId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
       setLoading(true);
       setErr(null);
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
         const userId = getUserIdFromToken(token);
-
-        if (!userId) {
-          setStreak(null);
-          setErr("Kullanıcı kimliği bulunamadı.");
-          return;
-        }
+        if (!userId) { setStreak(null); setErr("Kullanıcı kimliği bulunamadı."); return; }
 
         const res = await fetch(`${API}/progress/streaks/${userId}`, {
           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           cache: "no-store",
         });
 
-        if (res.status === 404) {
-          if (!cancelled) setStreak(null);
-          return;
-        }
+        if (res.status === 404) { if (!cancelled) setStreak(null); return; }
         if (!res.ok) {
           const body = await res.text().catch(() => "");
           throw new Error(`Streak ${res.status}: ${body.slice(0,160)}…`);
@@ -56,9 +47,8 @@ export default function StreakTracker({ programId }: { programId: string }) {
         if (!cancelled) setLoading(false);
       }
     })();
-
     return () => { cancelled = true; };
-  }, [programId]); // programId unused for the call but keeps effect tied to the page
+  }, [programId]);
 
   if (loading) return <div className="text-sm text-zinc-500">Seri yükleniyor…</div>;
   if (err) return <div className="text-sm text-zinc-500">Seri bilgisi yok.</div>;

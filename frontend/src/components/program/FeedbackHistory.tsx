@@ -12,7 +12,6 @@ export default function FeedbackHistory({ programId }: { programId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
       setLoading(true);
       setErr(null);
@@ -37,7 +36,6 @@ export default function FeedbackHistory({ programId }: { programId: string }) {
         if (!cancelled) setLoading(false);
       }
     })();
-
     return () => { cancelled = true; };
   }, [programId]);
 

@@ -12,7 +12,6 @@ export default function CalendarHeatmap({ programId }: { programId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
       setLoading(true);
       setErr(null);
@@ -37,7 +36,6 @@ export default function CalendarHeatmap({ programId }: { programId: string }) {
         if (!cancelled) setLoading(false);
       }
     })();
-
     return () => { cancelled = true; };
   }, [programId]);
 
@@ -45,7 +43,6 @@ export default function CalendarHeatmap({ programId }: { programId: string }) {
   if (err) return <div className="text-sm text-zinc-500">Takvim verisi alınamadı.</div>;
   if (!data.length) return <div className="text-sm text-zinc-500">Henüz kayıt yok.</div>;
 
-  // Render YOUR heatmap component here; placeholder:
   return (
     <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900">
       <div className="text-sm">({data.length}) kayıt</div>
