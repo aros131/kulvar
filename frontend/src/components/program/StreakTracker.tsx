@@ -1,43 +1,40 @@
-// components/program/StreakTracker.tsx
-
-import { Flame } from "lucide-react";
+"use client";
 import { useEffect, useState } from "react";
+import { fetchJSON } from "@/lib/api";
 
-interface StreakTrackerProps {
-  programId: string;
-}
-
-export default function StreakTracker({ programId }: StreakTrackerProps) {
-  const [streak, setStreak] = useState<number>(0);
+export default function StreakTracker({ programId }: { programId: string }) {
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [streak, setStreak] = useState<{ currentStreak: number; longestStreak: number } | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    const fetchStreak = async () => {
-      const res = await fetch(
-        `https://kulvar-qb7t.onrender.com/progress/streak/${programId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await res.json();
-      setStreak(data.streak || 0);
-    };
-
-    fetchStreak();
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const data = await fetchJSON<{ currentStreak: number; longestStreak: number }>(
+          `progress/streak/${programId}`,
+          { cache: "no-store" }
+        );
+        if (!cancelled) setStreak(data);
+      } catch (e: unknown) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [programId]);
 
+  if (loading) return <div className="text-sm text-zinc-500">Seri yükleniyor…</div>;
+  if (err) return <div className="text-sm text-zinc-500">Seri bilgisi yok.</div>;
+  if (!streak) return null;
+
   return (
-    <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl shadow text-center">
-      <div className="flex justify-center mb-2">
-        <Flame className="text-orange-500 w-6 h-6 animate-pulse" />
-      </div>
-      <h2 className="text-lg font-semibold">🔥 {streak} Günlük Streak</h2>
-      <p className="text-sm text-muted-foreground mt-1">
-        Devam et! Hedefe çok az kaldı.
-      </p>
+    <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900">
+      <div>Mevcut seri: <b>{streak.currentStreak}</b> gün</div>
+      <div>En uzun seri: <b>{streak.longestStreak}</b> gün</div>
     </div>
   );
 }

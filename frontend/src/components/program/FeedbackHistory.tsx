@@ -1,73 +1,44 @@
-// components/program/FeedbackHistory.tsx
-
+"use client";
 import { useEffect, useState } from "react";
-import { MessageCircle, CalendarDays, Star } from "lucide-react";
+import { fetchJSON } from "@/lib/api";
 
-interface Feedback {
-  day: number;
-  title: string;
-  date: string;
-  message: string;
-  rating?: number; // optional star rating
-}
+type FeedbackItem = { _id: string; message: string; createdAt: string };
 
-interface FeedbackHistoryProps {
-  programId: string;
-}
-
-export default function FeedbackHistory({ programId }: FeedbackHistoryProps) {
-  const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
+export default function FeedbackHistory({ programId }: { programId: string }) {
+  const [items, setItems] = useState<FeedbackItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    const fetchFeedback = async () => {
-      const res = await fetch(
-        `https://kulvar-qb7t.onrender.com/feedback/program/${programId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await res.json();
-      setFeedbackList(data.feedback || []);
-    };
-
-    fetchFeedback();
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const data = await fetchJSON<FeedbackItem[]>(`feedback/program/${programId}`, { cache: "no-store" });
+        if (!cancelled) setItems(Array.isArray(data) ? data : []);
+      } catch (e: unknown) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setItems([]); // graceful empty
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [programId]);
 
+  if (loading) return <div className="text-sm text-zinc-500">Geri bildirimler yükleniyor…</div>;
+  if (err) return <div className="text-sm text-zinc-500">Geri bildirim bulunamadı.</div>;
+  if (!items.length) return <div className="text-sm text-zinc-500">Henüz geri bildirim yok.</div>;
+
   return (
-    <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl shadow">
-      <h2 className="text-xl font-semibold mb-4">💬 Geri Bildirimler</h2>
-      {feedbackList.length === 0 ? (
-        <p className="text-muted-foreground">Henüz geri bildirim yok.</p>
-      ) : (
-        <ul className="space-y-4">
-          {feedbackList.map((f, i) => (
-            <li
-              key={i}
-              className="border-b border-zinc-200 dark:border-zinc-700 pb-2"
-            >
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                <CalendarDays className="w-4 h-4" />
-                <span>
-                  Gün {f.day} – {f.title} ({new Date(f.date).toLocaleDateString("tr-TR")})
-                </span>
-              </div>
-              <div className="flex items-start gap-2 text-zinc-800 dark:text-zinc-100">
-                <MessageCircle className="w-4 h-4 mt-[2px]" />
-                <span>{f.message}</span>
-              </div>
-              {f.rating && (
-                <div className="flex gap-[2px] mt-1">
-                  {Array.from({ length: f.rating }).map((_, idx) => (
-                    <Star key={idx} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900 space-y-2">
+      {items.map((f) => (
+        <div key={f._id} className="border-b last:border-0 pb-2">
+          <div className="text-sm">{f.message}</div>
+          <div className="text-xs text-zinc-500">{new Date(f.createdAt).toLocaleString()}</div>
+        </div>
+      ))}
     </div>
   );
 }
