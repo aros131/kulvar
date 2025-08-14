@@ -42,15 +42,16 @@ export default function EditProgramPage() {
 
         const data = await res.json();
         setProgram(data.program ?? data);
-      } catch (e: unknown) {
-        const msg =
-          typeof e === "object" && e && "message" in e
-            ? (e as any).message
-            : "İstek hatası";
-        setErr(String(msg));
-      } finally {
-        setLoading(false);
-      }
+     } catch (e: unknown) {
+  const msg =
+    e instanceof Error ? e.message :
+    typeof e === "string" ? e :
+    "İstek hatası";
+  setErr(msg);
+} finally {
+  setLoading(false);
+}
+
     })();
   }, [programId]);
 
