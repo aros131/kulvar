@@ -22,6 +22,7 @@ interface UserProgress {
     longestStreak: number;
   };
 }
+
 type UISession = {
   sessionId?: string;
   _id?: string;
@@ -29,14 +30,17 @@ type UISession = {
   name?: string;
 };
 
+// Helper: always return an array
+function asArray<T>(val: unknown): T[] {
+  return Array.isArray(val) ? (val as T[]) : [];
+}
+
 export default function ProgramContentPage() {
-  // ✅ Ensure programId is a string
   const { programId } = useParams<{ programId: string }>();
 
   const [program, setProgram] = useState<Program | null>(null);
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
-  // ✅ Progress hook (server provides completed/total; hook also returns percent)
   const { loading, error, completed, total, percent } = useProgramProgress(programId);
 
   useEffect(() => {
@@ -51,11 +55,15 @@ export default function ProgramContentPage() {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           signal: ac.signal,
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          const body = await res.text();
+          throw new Error(`Program ${res.status} – ${body.slice(0,120)}…`);
+        }
         const data = await res.json();
         setProgram(data.program);
-      } catch {
-        // optional: toast or soft error UI
+      } catch (e) {
+        console.error("Program fetch failed:", e);
+        setProgram(null);
       }
     };
 
@@ -65,11 +73,15 @@ export default function ProgramContentPage() {
           headers: { Authorization: `Bearer ${token}` },
           signal: ac.signal,
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          const body = await res.text(); // avoid JSON parse of HTML 404
+          throw new Error(`Progress ${res.status} – ${body.slice(0,120)}…`);
+        }
         const data = await res.json();
         setUserProgress(data);
-      } catch {
-        // optional: toast or soft error UI
+      } catch (e) {
+        console.error("User progress fetch failed:", e);
+        setUserProgress(null);
       }
     };
 
@@ -81,24 +93,24 @@ export default function ProgramContentPage() {
 
   if (!program) return <div className="p-4">Program yükleniyor…</div>;
 
-  // ✅ Completed session ids (defensive, no non-null assertion)
- const completedIds = new Set(
-  (userProgress?.completedSessions ?? []).map((s) => s.sessionId)
-);
+  // ✅ Safe completed IDs (never map on non-array)
+  const completedSessionsArr = asArray<{ sessionId: string }>(userProgress?.completedSessions);
+  const completedIds = new Set(completedSessionsArr.map((s) => s.sessionId));
 
-  // ✅ Build timeline view model (use real session IDs when available)
+  // ✅ Safe timeline build (guard both dailySchedule and sessions)
+  const daily = asArray<Program["dailySchedule"] extends (infer D)[] ? D : any>(program.dailySchedule);
   const timelineSessions =
-  program.dailySchedule?.flatMap((dayEntry, dayIdx) =>
-    (dayEntry.sessions ?? []).map((s: UISession, idx: number) => {
-      const candidateId =
-        s.sessionId ?? s._id ?? s.id ?? `day-${dayIdx + 1}-s-${idx + 1}`;
-      return {
-        day: dayIdx + 1,
-        title: s.name ?? `Session ${idx + 1}`,
-        completed: completedIds.has(candidateId),
-      };
-    })
-  ) ?? [];
+    daily.flatMap((dayEntry, dayIdx) => {
+      const sessions = asArray<UISession>((dayEntry as any)?.sessions);
+      return sessions.map((s, idx) => {
+        const candidateId = s.sessionId ?? s._id ?? s.id ?? `day-${dayIdx + 1}-s-${idx + 1}`;
+        return {
+          day: dayIdx + 1,
+          title: s.name ?? `Session ${idx + 1}`,
+          completed: completedIds.has(candidateId),
+        };
+      });
+    });
 
   return (
     <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
@@ -106,12 +118,12 @@ export default function ProgramContentPage() {
         <h1 className="text-3xl font-bold mb-2">{program.name}</h1>
         <p className="text-zinc-600 dark:text-zinc-300 mb-6">{program.description}</p>
 
-        {/* 🔘 Donut Chart — single source, rendered in-place */}
+        {/* 🔘 Donut Chart */}
         <div className="mb-8">
           {loading && <div className="text-sm text-zinc-500">İlerleme yükleniyor…</div>}
           {error && <div className="text-sm text-red-600">Hata: {error}</div>}
           {!loading && !error && (
-            total > 0 ? (
+            (Number(total) > 0) ? (
               <ProgressChart completedSessions={completed} totalSessions={total} />
             ) : (
               <ProgressChart
