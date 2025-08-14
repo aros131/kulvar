@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { tryCandidatesJSON } from "@/lib/api";
+
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
 
 type FeedbackItem = { _id: string; message: string; createdAt: string };
 
@@ -11,32 +12,37 @@ export default function FeedbackHistory({ programId }: { programId: string }) {
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       setLoading(true);
       setErr(null);
       try {
-        const candidates = [
-          `feedback/program/${programId}`,
-          `programs/${programId}/feedback`,
-          `feedback/${programId}`,
-          `program/${programId}/feedbacks`,
-        ];
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const res = await fetch(`${API}/programs/${programId}/feedback`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          cache: "no-store",
+        });
 
-        const { data } = await tryCandidatesJSON<FeedbackItem[]>(candidates, { cache: "no-store" });
+        if (res.status === 404) { if (!cancelled) setItems([]); return; }
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Feedback ${res.status}: ${body.slice(0,160)}…`);
+        }
 
+        const data = (await res.json()) as FeedbackItem[];
         if (!cancelled) setItems(Array.isArray(data) ? data : []);
-      } catch (e) {
-        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
-        if (!cancelled) setItems([]);
+      } catch (e: any) {
+        if (!cancelled) { setErr(e?.message || String(e)); setItems([]); }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => { cancelled = true; };
   }, [programId]);
 
   if (loading) return <div className="text-sm text-zinc-500">Geri bildirimler yükleniyor…</div>;
-  if (err) return <div className="text-sm text-zinc-500">Geri bildirim bulunamadı.</div>;
+  if (err) return <div className="text-sm text-zinc-500">Geri bildirim alınamadı.</div>;
   if (!items.length) return <div className="text-sm text-zinc-500">Henüz geri bildirim yok.</div>;
 
   return (

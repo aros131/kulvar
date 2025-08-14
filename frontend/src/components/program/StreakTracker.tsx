@@ -1,6 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import { tryCandidatesJSON } from "@/lib/api";
+
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+
+function getUserIdFromToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1] || ""));
+    return payload.id || payload.userId || payload._id || payload.sub || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function StreakTracker({ programId }: { programId: string }) {
   const [loading, setLoading] = useState(true);
@@ -9,31 +20,45 @@ export default function StreakTracker({ programId }: { programId: string }) {
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       setLoading(true);
       setErr(null);
       try {
-        const candidates = [
-          `progress/streak/${programId}`,
-          `streak/${programId}`,
-          `programs/${programId}/streak`,
-          `users/me/programs/${programId}/streak`,
-          `users/me/streak/${programId}`,
-        ];
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const userId = getUserIdFromToken(token);
 
-        const { data } = await tryCandidatesJSON<{ currentStreak: number; longestStreak: number }>(candidates, {
+        if (!userId) {
+          setStreak(null);
+          setErr("Kullanıcı kimliği bulunamadı.");
+          return;
+        }
+
+        const res = await fetch(`${API}/progress/streaks/${userId}`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           cache: "no-store",
         });
 
-        if (!cancelled) setStreak(data); // null → show "no data"
-      } catch (e) {
-        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+        if (res.status === 404) {
+          if (!cancelled) setStreak(null);
+          return;
+        }
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Streak ${res.status}: ${body.slice(0,160)}…`);
+        }
+
+        const data = (await res.json()) as { currentStreak: number; longestStreak: number };
+        if (!cancelled) setStreak(data);
+      } catch (e: any) {
+        if (!cancelled) setErr(e?.message || String(e));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => { cancelled = true; };
-  }, [programId]);
+  }, [programId]); // programId unused for the call but keeps effect tied to the page
 
   if (loading) return <div className="text-sm text-zinc-500">Seri yükleniyor…</div>;
   if (err) return <div className="text-sm text-zinc-500">Seri bilgisi yok.</div>;

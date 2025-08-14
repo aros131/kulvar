@@ -1,56 +1,54 @@
-// components/program/CalendarHeatmap.tsx
-
+"use client";
 import { useEffect, useState } from "react";
 
-interface CalendarHeatmapProps {
-  programId: string;
-}
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
 
-interface CalendarEntry {
-  date: string; // ISO date string
-  status: "completed" | "missed" | "none";
-}
+type HeatItem = { date: string; count: number };
 
-export default function CalendarHeatmap({ programId }: CalendarHeatmapProps) {
-  const [calendarData, setCalendarData] = useState<CalendarEntry[]>([]);
+export default function CalendarHeatmap({ programId }: { programId: string }) {
+  const [data, setData] = useState<HeatItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    let cancelled = false;
 
-    const fetchCalendar = async () => {
-      const res = await fetch(
-        `https://kulvar-qb7t.onrender.com/progress/calendar/${programId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const res = await fetch(`${API}/progress/calendar/${programId}`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          cache: "no-store",
+        });
+
+        if (res.status === 404) { if (!cancelled) setData([]); return; }
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Calendar ${res.status}: ${body.slice(0,160)}…`);
         }
-      );
-      const data = await res.json();
-      setCalendarData(data.days || []);
-    };
 
-    fetchCalendar();
+        const json = (await res.json()) as HeatItem[];
+        if (!cancelled) setData(Array.isArray(json) ? json : []);
+      } catch (e: any) {
+        if (!cancelled) { setErr(e?.message || String(e)); setData([]); }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [programId]);
 
-  const getColor = (status: string) => {
-    if (status === "completed") return "bg-green-500";
-    if (status === "missed") return "bg-red-400";
-    return "bg-zinc-300 dark:bg-zinc-700";
-  };
+  if (loading) return <div className="text-sm text-zinc-500">Takvim yükleniyor…</div>;
+  if (err) return <div className="text-sm text-zinc-500">Takvim verisi alınamadı.</div>;
+  if (!data.length) return <div className="text-sm text-zinc-500">Henüz kayıt yok.</div>;
 
+  // Render YOUR heatmap component here; placeholder:
   return (
-    <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl shadow">
-      <h2 className="text-xl font-semibold mb-4">🗓 Antrenman Takvimi</h2>
-      <div className="grid grid-cols-7 gap-2">
-        {calendarData.map((entry, i) => (
-          <div
-            key={i}
-            className={`w-8 h-8 rounded ${getColor(entry.status)}`}
-            title={new Date(entry.date).toLocaleDateString("tr-TR")}
-          ></div>
-        ))}
-      </div>
-      <p className="text-sm text-muted-foreground mt-3">Son 30 gün</p>
+    <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900">
+      <div className="text-sm">({data.length}) kayıt</div>
     </div>
   );
 }
-

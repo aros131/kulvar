@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { tryCandidatesJSON } from "@/lib/api";
+
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
 
 type ProgressResp = {
   progressPercentage?: number;
@@ -11,9 +12,9 @@ type ProgressResp = {
 
 export function useProgramProgress(programId?: string) {
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
   const [completed, setCompleted] = useState(0);
-  const [total, setTotal]   = useState(0);
+  const [total, setTotal]     = useState(0);
   const [percent, setPercent] = useState(0);
 
   useEffect(() => {
@@ -25,39 +26,36 @@ export function useProgramProgress(programId?: string) {
       setError(null);
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-        // Common shapes WITHOUT /api prefix
-        const candidates = [
-          `progress/user/${programId}`,
-          `user/progress/${programId}`,
-          `users/me/progress/${programId}`,
-          `users/me/programs/${programId}/progress`,
-          `progress/${programId}`,
-          `programs/${programId}/progress`,
-        ];
-
-        const { data } = await tryCandidatesJSON<ProgressResp>(candidates, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        const res = await fetch(`${API}/progress/user/${programId}`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           cache: "no-store",
         });
 
-        if (cancelled) return;
+        if (res.status === 404) {
+          if (!cancelled) { setCompleted(0); setTotal(0); setPercent(0); }
+          return;
+        }
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Progress ${res.status}: ${body.slice(0,160)}…`);
+        }
 
-        const comp = Array.isArray(data?.completedSessions) ? data!.completedSessions.length : 0;
-        const tot  = Number(data?.totalSessions || 0);
-        const pct  = typeof data?.progressPercentage === "number"
-          ? Math.max(0, Math.min(100, Math.round(data!.progressPercentage!)))
-          : tot > 0 ? Math.round((comp / tot) * 100) : 0;
+        const data = (await res.json()) as ProgressResp;
+        const comp = Array.isArray(data.completedSessions) ? data.completedSessions.length : 0;
+        const tot  = Number(data.totalSessions || 0);
+        const pct  = typeof data.progressPercentage === "number"
+          ? Math.max(0, Math.min(100, Math.round(data.progressPercentage)))
+          : (tot > 0 ? Math.round((comp / tot) * 100) : 0);
 
-        setCompleted(comp);
-        setTotal(tot);
-        setPercent(pct);
-      } catch (e) {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : String(e));
-        setCompleted(0);
-        setTotal(0);
-        setPercent(0);
+        if (!cancelled) {
+          setCompleted(comp);
+          setTotal(tot);
+          setPercent(pct);
+        }
+      } catch (e: any) {
+        if (!cancelled) { setError(e?.message || String(e)); setCompleted(0); setTotal(0); setPercent(0); }
       } finally {
         if (!cancelled) setLoading(false);
       }
