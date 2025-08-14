@@ -30,7 +30,7 @@ import {
   resetProgress,
   updateAdaptiveAdjustments,
   getProgramFeedback,
-  getUserProgress,
+ 
   completeSession,
   getAdaptiveAdjustments,
   getProgramMedia,
@@ -77,7 +77,7 @@ router.get("/:id/media", protect, getProgramMedia);
 
 // 🟢 Analytics
 router.get("/:id/session-completion", protect, roleMiddleware(["coach", "user"]), getSessionCompletionData);
-router.get("/:programId/user-progress", protect, getUserProgress);
+
 router.get("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), getAdaptiveAdjustments);
 
 // 🟢 Assignments

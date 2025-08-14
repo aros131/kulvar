@@ -8,7 +8,11 @@ import SessionTimeline from "@/components/program/SessionTimeline";
 import StreakTracker from "@/components/program/StreakTracker";
 import FeedbackHistory from "@/components/program/FeedbackHistory";
 import CalendarHeatmap from "@/components/program/CalendarHeatmap";
-import ProgramDetailsView from "@/components/program/ProgramDetailsView"; 
+import ProgramDetailsView from "@/components/program/ProgramDetailsView";
+import { useProgramProgress } from "@/hooks/useProgramProgress";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com";
+
 interface UserProgress {
   progressPercentage: number;
   completedSessions: { sessionId: string }[];
@@ -20,90 +24,110 @@ interface UserProgress {
 }
 
 export default function ProgramContentPage() {
-  const { programId } = useParams();
+  // ✅ Ensure programId is a string
+  const { programId } = useParams<{ programId: string }>();
+
   const [program, setProgram] = useState<Program | null>(null);
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
+  // ✅ Progress hook (server provides completed/total; hook also returns percent)
+  const { loading, error, completed, total, percent } = useProgramProgress(programId);
+
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    if (!programId) return;
+
+    const token = localStorage.getItem("token") ?? "";
+    const ac = new AbortController();
 
     const fetchProgram = async () => {
-      const res = await fetch(
-        `https://kulvar-qb7t.onrender.com/programs/${programId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = await res.json();
-      setProgram(data.program);
+      try {
+        const res = await fetch(`${API_URL}/programs/${programId}`, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          signal: ac.signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setProgram(data.program);
+      } catch {
+        // optional: toast or soft error UI
+      }
     };
 
     const fetchUserProgress = async () => {
-      const res = await fetch(
-        `https://kulvar-qb7t.onrender.com/progress/user/${programId}`,
-        {
+      try {
+        const res = await fetch(`${API_URL}/progress/user/${programId}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await res.json();
-      setUserProgress(data);
+          signal: ac.signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setUserProgress(data);
+      } catch {
+        // optional: toast or soft error UI
+      }
     };
 
-    if (programId) {
-      fetchProgram();
-      fetchUserProgress();
-    }
+    fetchProgram();
+    fetchUserProgress();
+
+    return () => ac.abort();
   }, [programId]);
 
-  if (!program) return <div className="p-4">Program yükleniyor...</div>;
+  if (!program) return <div className="p-4">Program yükleniyor…</div>;
 
+  // ✅ Completed session ids (defensive, no non-null assertion)
   const completedIds = new Set(
-  Array.isArray(userProgress?.completedSessions)
-    ? userProgress.completedSessions.map((s) => s.sessionId)
-    : []
-);
+    Array.isArray(userProgress?.completedSessions)
+      ? userProgress!.completedSessions.map((s) => s.sessionId)
+      : []
+  );
 
-
+  // ✅ Build timeline view model (use real session IDs when available)
   const timelineSessions =
-    program.dailySchedule?.flatMap((dayEntry, index) =>
-      (dayEntry.sessions || []).map((s) => ({
-        day: index + 1,
-        title: s.name,
-        completed: completedIds.has(`day-${index + 1}`),
-      }))
+    program.dailySchedule?.flatMap((dayEntry, dayIdx) =>
+      (dayEntry.sessions || []).map((s: any, si: number) => {
+        const candidateId =
+          s.sessionId ?? s._id ?? s.id ?? `day-${dayIdx + 1}`; // fallback keeps your current logic
+        return {
+          day: dayIdx + 1,
+          title: s.name,
+          completed: completedIds.has(candidateId),
+        };
+      })
     ) || [];
 
   return (
     <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">{program.name}</h1>
-        <p className="text-zinc-600 dark:text-zinc-300 mb-6">
-          {program.description}
-        </p>
+        <p className="text-zinc-600 dark:text-zinc-300 mb-6">{program.description}</p>
 
-        {/* 🔘 Donut Chart */}
+        {/* 🔘 Donut Chart — single source, rendered in-place */}
         <div className="mb-8">
-          <ProgressChart
-            completionPercentage={userProgress?.progressPercentage || 0}
-          />
+          {loading && <div className="text-sm text-zinc-500">İlerleme yükleniyor…</div>}
+          {error && <div className="text-sm text-red-600">Hata: {error}</div>}
+          {!loading && !error && (
+            total > 0 ? (
+              <ProgressChart completedSessions={completed} totalSessions={total} />
+            ) : (
+              <ProgressChart
+                completionPercentage={Math.round(userProgress?.progressPercentage ?? percent ?? 0)}
+              />
+            )
+          )}
         </div>
 
         {/* 🔥 Streak */}
         <div className="mb-8">
           <StreakTracker programId={program._id} />
         </div>
-        <ProgramDetailsView program={program} />
 
+        {/* 📄 Program details */}
+        <ProgramDetailsView program={program} />
 
         {/* 📆 Session Timeline */}
         <div className="mb-8">
-          <SessionTimeline
-            sessions={timelineSessions}
-            programId={program._id}
-          />
+          <SessionTimeline sessions={timelineSessions} programId={program._id} />
         </div>
 
         {/* 🗓 Calendar Heatmap */}

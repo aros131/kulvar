@@ -243,8 +243,7 @@ const getProgressTrend = async (req, res) => {
   }
 };
 
-// 🟢 Mark a session as completed
-// POST /progress/session/complete
+// 🟢 Mark a session as completed (idempotent, correct percentage)
 const markSessionCompleted = async (req, res) => {
   try {
     const { programId, sessionId, feedback, rating } = req.body;
@@ -254,53 +253,71 @@ const markSessionCompleted = async (req, res) => {
       return res.status(400).json({ message: "Eksik bilgi: programId veya sessionId yok" });
     }
 
-    let progress = await Progress.findOne({ userId, programId });
+    // Get totalSessions = sum of sessions across all days (not just number of days)
+    const program = await Program.findById(programId);
+    if (!program) return res.status(404).json({ message: "Program bulunamadı." });
 
-    if (!progress) {
-      progress = new Progress({
-        userId,
-        programId,
-        completedSessions: [],
-        streakTracking: { current: 0, longest: 0 },
-        progressPercentage: 0,
-      });
-    }
+    const totalSessions =
+      program?.dailySchedule?.reduce((acc, day) => acc + (day.sessions?.length || 0), 0) || 0;
 
-    const alreadyCompleted = progress.completedSessions.some((s) => s.sessionId === sessionId);
-    if (alreadyCompleted) {
+    // Atomic upsert that only pushes if this sessionId isn't already present
+    const updated = await Progress.findOneAndUpdate(
+      { userId, programId, "completedSessions.sessionId": { $ne: sessionId } },
+      {
+        $setOnInsert: {
+          userId,
+          programId,
+          completedSessions: [],
+          streakTracking: { current: 0, longest: 0 },
+          progressPercentage: 0,
+        },
+        $push: {
+          completedSessions: {
+            sessionId,
+            dateCompleted: new Date(),
+            completed: true,
+            status: "completed",
+            feedback,
+            rating,
+          },
+        },
+      },
+      { new: true, upsert: true }
+    );
+
+    // If no update happened, session was already completed
+    if (!updated) {
       return res.status(400).json({ message: "Bu seans zaten tamamlandı." });
     }
 
-    progress.completedSessions.push({
-  sessionId,
-  dateCompleted: new Date(),
-  completed: true,
-  status: "completed",
-  feedback,
-  rating,
-});
+    // Recompute percentage + streaks based on the updated doc
+    const completed = updated.completedSessions.length;
+    const percent =
+      totalSessions > 0 ? Math.min(100, Math.round((completed / totalSessions) * 100)) : 0;
 
+    const newCurrent = (updated.streakTracking?.current || 0) + 1;
+    const newLongest = Math.max(updated.streakTracking?.longest || 0, newCurrent);
 
-    const program = await Program.findById(programId);
-    const totalDays = program?.dailySchedule?.length || 0;
-
-    const completed = progress.completedSessions.length;
-    progress.progressPercentage = Math.min(100, Math.round((completed / totalDays) * 100));
-
-    progress.streakTracking.current += 1;
-    progress.streakTracking.longest = Math.max(
-      progress.streakTracking.longest,
-      progress.streakTracking.current
+    const final = await Progress.findByIdAndUpdate(
+      updated._id,
+      {
+        $set: {
+          progressPercentage: percent,
+          "streakTracking.current": newCurrent,
+          "streakTracking.longest": newLongest,
+        },
+      },
+      { new: true }
     );
 
-    await progress.save();
-
-    res.status(200).json({ message: "Seans başarıyla tamamlandı", progress });
+    return res.status(200).json({ message: "Seans başarıyla tamamlandı", progress: final });
   } catch (error) {
     console.error("Seans tamamlama hatası:", error.message);
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    return res.status(500).json({ message: "Sunucu hatası", error: error.message });
   }
 };
+
+   
 
 
 // 🟢 Update user goal progress

@@ -502,57 +502,6 @@ const getProgramFeedback = async (req, res) => {
   }
 };
 
-// 🟢 Get program progress for a user
-const getUserProgress = async (req, res) => {
-  const { programId } = req.params;
-
-  try {
-    if (!programId) {
-      return res.status(400).json({ message: "Program ID is required." });
-    }
-
-    const program = await Program.findById(programId);
-
-    if (!program) {
-      return res.status(404).json({ message: "Program not found." });
-    }
-
-    if (!Array.isArray(program.progressTracking)) {
-      program.progressTracking = [];
-    }
-
-    let userProgress = program.progressTracking.find(
-      (entry) => entry.userId?.toString() === req.user._id.toString()
-    );
-
-    if (!userProgress) {
-      userProgress = {
-        userId: req.user._id,
-        completedSessions: 0,
-        progressPercentage: 0,
-      };
-
-      program.progressTracking.push(userProgress);
-      await program.save();
-    }
-
-    const totalSessions = program.dailySchedule?.reduce(
-      (total, day) => total + (day.sessions?.length || 0),
-      0
-    ) || 0;
-    
-    const completedSessions = program.progressTracking.reduce(
-      (total, entry) => total + (entry.completedSessions || 0),
-      0
-    );
-    
-    res.status(200).json({ completedSessions, totalSessions });
-    
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching user progress", error: error.message });
-  }
-};
-
 
 const trackSessionCompletion = async (req, res) => {
   try {
@@ -691,7 +640,7 @@ export {
   resetProgress,
   updateAdaptiveAdjustments,
   getProgramFeedback,
-  getUserProgress,
+  
   completeSession,
   trackSessionCompletion,
   getAdaptiveAdjustments,
