@@ -59,42 +59,6 @@ type MissedWorkout = {
   status: "Kaçırıldı" | "Yeniden Planlandı";
 };
 
-type ProgramModel = {
-  _id: Id;
-  name: string;
-  description: string;
-  duration: number;
-  coachId: Id;
-  assignedClients?: Assigned[];
-
-  difficulty: "Başlangıç" | "Orta Düzey" | "İleri Seviye";
-  fitnessGoal:
-    | "Kilo Kaybı"
-    | "Kas Kazanımı"
-    | "Dayanıklılık"
-    | "Genel Fitness"
-    | "Genel Fitness ve Güç Geliştirme"
-    | "Hedefe Özel Gelişim";
-
-  dailySchedule?: DSDay[];
-  exercises?: StandaloneExercise[];
-
-  nutritionPlan?: NutritionPlan;
-
-  videos?: MediaItem[];
-  pdfs?: MediaItem[];
-
-  announcements?: Announcement[];
-
-  progressTracking?: ProgressTrack[];
-
-  feedback?: FeedbackItem[];
-
-  missedWorkouts?: MissedWorkout[];
-
-  status?: "Aktif" | "Tamamlandı" | "Durduruldu";
-  createdAt?: string | Date;
-};
 
 // Accept a looser shape (works with your existing `Program` type)
 // NOTE: We deliberately use broad `string` for enums to accept API types like `string | undefined`.
