@@ -5,15 +5,12 @@ import ProgramMediaSection from "@/components/coach/ProgramMediaSection";
 import { Program } from "@/types/program";
 
 interface Props {
-  params: { programId: string };
+  params: Promise<{ programId: string }>; // ✅ your project expects a Promise here
 }
 
 export default async function EditProgramPage({ params }: Props) {
-  const { programId } = params;
-
-  // ✅ In your setup cookies() returns a Promise → await it
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
+  const { programId } = await params;                   // ✅ await the promise
+  const token = (await cookies()).get("token")?.value;  // ✅ await cookies in your setup
 
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL || "https://kulvar-qb7t.onrender.com";
@@ -39,7 +36,6 @@ export default async function EditProgramPage({ params }: Props) {
       <h1 className="text-2xl font-bold mb-4">Programı Düzenle</h1>
       <EditProgramForm program={program} mode="edit" />
 
-      {/* Media manager */}
       <div className="mt-10">
         <ProgramMediaSection programId={programId} />
       </div>

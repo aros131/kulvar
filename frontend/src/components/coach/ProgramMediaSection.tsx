@@ -13,15 +13,21 @@ type Asset = {
   uploadedAt?: string;
 };
 
-type Props = {
-  programId: string;
-};
+type Props = { programId: string };
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
+// Small helper to stringify unknown errors without using `any`
+function errMsg(err: unknown) {
+  if (typeof err === "object" && err !== null) {
+    const e = err as { response?: { data?: { message?: string } }; message?: string };
+    return e.response?.data?.message || e.message || "Unknown error";
+  }
+  return "Unknown error";
+}
+
 export default function ProgramMediaSection({ programId }: Props) {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [allAssets, setAllAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -31,32 +37,26 @@ export default function ProgramMediaSection({ programId }: Props) {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // messages-like: load on mount and keep local state
+  // load on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const run = async () => {
+    (async () => {
       try {
-        // you already have GET /:id/media → getProgramMedia
         const res = await axios.get<{ assets: Asset[] }>(`${API}/programs/${programId}/media`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        const list = res.data.assets || [];
-        setAssets(list);
-        setAllAssets(list);
+        setAssets(res.data.assets || []);
       } catch (e) {
         console.error(e);
       } finally {
         setLoading(false);
       }
-    };
-
-    run();
+    })();
   }, [programId]);
 
-  // search like in messages list
+  // search
   const filtered = useMemo(() => {
     if (!search) return assets;
     const term = search.toLowerCase();
@@ -93,25 +93,22 @@ export default function ProgramMediaSection({ programId }: Props) {
         {
           headers: { Authorization: `Bearer ${token}` },
           onUploadProgress: (evt) => {
-            if (evt.total) {
-              setProgress(Math.round((evt.loaded / evt.total) * 100));
-            }
+            if (evt.total) setProgress(Math.round((evt.loaded / evt.total) * 100));
           },
         }
       );
 
       const asset = res.data.asset;
       setAssets((prev) => [asset, ...prev]);
-      setAllAssets((prev) => [asset, ...prev]);
 
       // reset
       setFile(null);
       setTitle("");
       setProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || e?.message || "Upload failed");
+      alert(errMsg(e));
     }
   };
 
@@ -125,10 +122,9 @@ export default function ProgramMediaSection({ programId }: Props) {
         data: { storagePath },
       });
       setAssets((prev) => prev.filter((a) => a.storagePath !== storagePath));
-      setAllAssets((prev) => prev.filter((a) => a.storagePath !== storagePath));
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || e?.message || "Delete failed");
+      alert(errMsg(e));
     } finally {
       setBusyPath(null);
     }
@@ -136,12 +132,10 @@ export default function ProgramMediaSection({ programId }: Props) {
 
   return (
     <section className="max-w-3xl w-full mx-auto p-4">
-      {/* Header like your messages page */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">📁 Program Medyası</h2>
       </div>
 
-      {/* Search like messages */}
       <input
         type="text"
         placeholder="Ara: başlık, tür (image/video) veya MIME..."
@@ -150,7 +144,6 @@ export default function ProgramMediaSection({ programId }: Props) {
         className="w-full mb-4 p-2 rounded border border-zinc-300 dark:border-zinc-600"
       />
 
-      {/* Upload row (title + file + button) */}
       <div className="flex flex-col md:flex-row gap-2 mb-4">
         <input
           type="text"
@@ -175,20 +168,15 @@ export default function ProgramMediaSection({ programId }: Props) {
         </button>
       </div>
 
-      {/* Progress (like a simple skeleton/progress) */}
       {progress > 0 && (
         <div className="w-full mb-4">
           <div className="h-2 rounded bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
-            <div
-              className="h-2 bg-blue-600 transition-all"
-              style={{ width: `${progress}%` }}
-            />
+            <div className="h-2 bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
           </div>
           <div className="text-xs text-zinc-500 mt-1">{progress}%</div>
         </div>
       )}
 
-      {/* Loading skeletons similar to messages */}
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -200,10 +188,7 @@ export default function ProgramMediaSection({ programId }: Props) {
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filtered.map((a) => (
-            <li
-              key={a.storagePath}
-              className="border border-zinc-200 dark:border-zinc-700 rounded-xl p-3"
-            >
+            <li key={a.storagePath} className="border border-zinc-200 dark:border-zinc-700 rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-semibold truncate">{a.title || "(Başlıksız)"}</div>
                 <button
@@ -216,10 +201,8 @@ export default function ProgramMediaSection({ programId }: Props) {
               </div>
 
               {a.kind === "image" ? (
-                <div className="relative w-full overflow-hidden rounded-lg">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={a.url} alt={a.title || ""} className="w-full h-auto rounded" />
-                </div>
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={a.url} alt={a.title || ""} className="w-full h-auto rounded" />
               ) : (
                 <video src={a.url} controls className="w-full rounded" />
               )}

@@ -1,6 +1,7 @@
 // src/components/coach/EditProgramForm.tsx
 
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -618,7 +619,8 @@ export default function EditProgramForm({ program: initialProgram, mode, onSucce
         ))}
 
         <div className="flex items-center justify-between mt-4">
-          <h2 className="text-lg font-semibold">PDF'ler (URL)</h2>
+         <h2 className="text-lg font-semibold">PDF’ler (URL)</h2>
+
           <Button type="button" onClick={() => addLegacy("pdfs")}>PDF ekle</Button>
         </div>
         {(program as any).pdfs?.map((v: MediaItem, i: number) => (
