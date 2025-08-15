@@ -1,90 +1,39 @@
-// components/program/SessionTimeline.tsx
-"use client";
+import { useState } from "react";
+import { completeSession } from "@/utils/completeSession";
 
-import { CheckCircle, XCircle, Clock } from "lucide-react";
-import CompleteSessionDialog from "./CompleteSessionDialog";
-
-interface Session {
-  day: number;
-  title: string;
-  completed?: boolean;
-  missed?: boolean;
-}
-
-interface SessionTimelineProps {
-  sessions: Session[];
+function CompleteButton({ programId, sessionId, sessionName, onDone }: {
   programId: string;
-}
+  sessionId?: string;
+  sessionName?: string;
+  onDone?: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-export default function SessionTimeline({ sessions, programId }: SessionTimelineProps) {
+  const handleClick = async () => {
+    try {
+      setPending(true);
+      setErr(null);
+      const res = await completeSession(programId, sessionId, sessionName);
+      // optionally toast: res.message
+      onDone?.(); // e.g., refetch progress or invalidate SWR/React Query cache
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
-    <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl shadow">
-      <h2 className="text-xl font-semibold mb-4">📅 Günlük Seans Takvimi</h2>
-      <ul className="space-y-4">
-        {sessions.map((session) => {
-          let statusIcon;
-          let statusColor = "";
-
-          if (session.completed) {
-            statusIcon = <CheckCircle className="text-green-500 w-5 h-5" />;
-            statusColor = "text-green-600";
-          } else if (session.missed) {
-            statusIcon = <XCircle className="text-red-500 w-5 h-5" />;
-            statusColor = "text-red-600";
-          } else {
-            statusIcon = <Clock className="text-yellow-500 w-5 h-5" />;
-            statusColor = "text-yellow-600";
-          }
-
-          return (
-            <li
-              key={session.day}
-              className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-zinc-200 pb-2"
-            >
-              <div className="flex items-center gap-3">
-                {statusIcon}
-                <span className={`text-sm font-medium ${statusColor}`}>
-                  Gün {session.day}: {session.title}
-                </span>
-              </div>
-              <CompleteSessionDialog
-  programId={programId}
-  day={session.day}
-  sessionTitle={session.title}
-/>
-
-            </li>
-          );
-        })}
-      </ul>
+    <div>
+      <button
+        className="px-3 py-1 rounded bg-green-600 text-white disabled:opacity-60"
+        onClick={handleClick}
+        disabled={pending}
+      >
+        {pending ? "Kaydediliyor…" : "Tamamla"}
+      </button>
+      {err && <div className="text-sm text-red-600 mt-1">{err}</div>}
     </div>
   );
-}
-// utils/completeSession.ts
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
-
-function token() {
-  if (typeof window === "undefined") return null;
-  const t = localStorage.getItem("token");
-  return t ? t.replace(/^"+|"+$/g, "").replace(/^Bearer\s+/i, "") : null;
-}
-
-export async function completeSession(programId: string, sessionId?: string, sessionName?: string) {
-  const t = token();
-  if (!t) throw new Error("Giriş yapın: token yok");
-
-  const res = await fetch(`${API}/progress/complete-session`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${t}`,
-    },
-    body: JSON.stringify({ programId, sessionId, sessionName }),
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Tamamlama hatası ${res.status}: ${txt}`);
-  }
-  return res.json();
 }
