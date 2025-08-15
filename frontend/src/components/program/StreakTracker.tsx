@@ -1,12 +1,25 @@
+// src/components/program/StreakTracker.tsx
 "use client";
 import { useEffect, useState } from "react";
-import { authFetch } from "@/lib/authFetch";
 
-function getUserIdFromToken(token: string | null): string | null {
-  if (!token) return null;
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+
+// pull + sanitize token from localStorage
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  let t = localStorage.getItem("token");
+  if (!t) return null;
+  t = t.replace(/^"+|"+$/g, "");           // strip accidental quotes
+  t = t.replace(/^Bearer\s+/i, "");        // strip accidental "Bearer "
+  return t;
+}
+
+// decode userId from JWT payload: id | userId | _id | sub
+function getUserIdFromToken(raw: string | null): string | null {
+  if (!raw) return null;
   try {
-    const p = JSON.parse(atob(token.split(".")[1] || ""));
-    return p.id || p.userId || p._id || p.sub || null;
+    const payload = JSON.parse(atob(raw.split(".")[1] || ""));
+    return payload.id || payload.userId || payload._id || payload.sub || null;
   } catch { return null; }
 }
 
@@ -18,16 +31,28 @@ export default function StreakTracker({ programId }: { programId: string }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true); setErr(null);
+      setLoading(true);
+      setErr(null);
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = getToken();
       const userId = getUserIdFromToken(token);
-      if (!userId) { setErr("Giriş yapın: token yok veya geçersiz."); setLoading(false); return; }
+      if (!userId) { setErr("Giriş yapın: token yok/geçersiz."); setLoading(false); return; }
 
       try {
-        const res = await authFetch(`progress/streaks/${userId}`);
+        const res = await fetch(`${API}/progress/streaks/${userId}`, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`,   // <— header is sent here
+          },
+          credentials: "include",  // send cookies as well (if backend uses them)
+          mode: "cors",
+          cache: "no-store",
+        });
+
         if (res.status === 404) { if (!cancelled) setStreak(null); return; }
         if (!res.ok) throw new Error(`Streak ${res.status}: ${await res.text()}`);
+
         const data = await res.json();
         if (!cancelled) setStreak(data);
       } catch (e: any) {
