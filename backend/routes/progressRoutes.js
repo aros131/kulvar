@@ -32,7 +32,8 @@ router.get("/", protect, roleMiddleware(["coach"]), getClientProgress);
 router.get("/:id/report", protect, roleMiddleware(["coach"]), getProgressReport);
 
 // ✅ Mark a session as completed (User Only)
-router.post("/session/complete", protect, roleMiddleware(["user"]), markSessionCompleted);
+router.post("/complete-session", protect, roleMiddleware(["user"]), markSessionCompleted);
+
 
 // ✅ Reschedule a missed workout (User Only)
 router.post("/reschedule", protect, roleMiddleware(["user"]), rescheduleWorkout);

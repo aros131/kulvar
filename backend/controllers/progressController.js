@@ -12,6 +12,32 @@ const ymd = (d) => {
   const z = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
 };
+const computeStreaksFromDates = (dateStringsSet /* Set<string> */) => {
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // current streak: walk back from today
+  let current = 0;
+  const cur = new Date(today);
+  while (dateStringsSet.has(ymd(cur))) {
+    current += 1;
+    cur.setDate(cur.getDate() - 1);
+  }
+
+  // longest streak: scan all dates in order
+  const all = Array.from(dateStringsSet).sort();
+  let longest = 0, run = 0, prev = null;
+  for (const ds of all) {
+    if (prev) {
+      const p = new Date(prev); p.setDate(p.getDate() + 1);
+      run = (ymd(p) === ds) ? run + 1 : 1;
+    } else {
+      run = 1;
+    }
+    if (run > longest) longest = run;
+    prev = ds;
+  }
+  return { currentStreak: current, longestStreak: longest };
+};
 
 // 🟢 Log user progress
 const logProgress = async (req, res) => {
@@ -59,31 +85,65 @@ const getProgressReport = async (req, res) => {
   }
 };
 
-// 🟢 Mark a workout as completed (by session name) — unified shape with markSessionCompleted
+// 🟢 Mark a workout as completed (by session name) — now also recomputes percentage + streaks
 const markWorkoutCompleted = async (req, res) => {
   try {
     const { programId, sessionName } = req.body;
     const userId = req.user._id;
 
+    if (!programId || !sessionName) {
+      return res.status(400).json({ message: "Eksik bilgi: programId ve sessionName gerekli" });
+    }
+
+    // load program and compute total sessions
+    const program = await Program.findById(programId).lean();
+    if (!program) return res.status(404).json({ message: "Program bulunamadı." });
+    const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
+    const totalSessions = days.reduce((acc, d) => acc + (Array.isArray(d?.sessions) ? d.sessions.length : 0), 0);
+
+    // try to resolve a real id for this name
+    let resolvedSessionId = null;
+    outer:
+    for (const day of days) {
+      const ss = Array.isArray(day?.sessions) ? day.sessions : [];
+      for (const s of ss) {
+        if ((s?.name || "").trim() === sessionName.trim()) {
+          resolvedSessionId = String(s?.sessionId || s?._id || s?.id || sessionName);
+          break outer;
+        }
+      }
+    }
+    if (!resolvedSessionId) resolvedSessionId = String(sessionName);
+
     let progress = await Progress.findOne({ programId, userId });
     if (!progress) {
-      progress = new Progress({ programId, userId, completedSessions: [] });
+      progress = new Progress({ programId, userId, completedSessions: [], streakTracking: { current: 0, longest: 0 }, progressPercentage: 0 });
     }
 
     const list = Array.isArray(progress.completedSessions) ? progress.completedSessions : [];
-    const exists = list.some(s => s?.sessionId === sessionName);
+    const exists = list.some(s => (s?.sessionId + "") === (resolvedSessionId + ""));
     if (!exists) {
       list.push({
-        sessionId: sessionName,
+        sessionId: resolvedSessionId,
         dateCompleted: new Date(),
         completed: true,
         status: "completed",
       });
+      progress.completedSessions = list;
     }
-    progress.completedSessions = list;
+
+    // recompute percentage
+    const completedCount = progress.completedSessions.length;
+    progress.progressPercentage = totalSessions > 0
+      ? Math.min(100, Math.round((completedCount / totalSessions) * 100))
+      : 0;
+
+    // recompute streaks from completion dates
+    const completedDates = new Set(progress.completedSessions.map(s => toISODate(s?.dateCompleted)).filter(Boolean));
+    progress.streakTracking = computeStreaksFromDates(completedDates);
 
     await progress.save();
-    res.status(200).json({ message: "Workout marked as completed", progress });
+    res.status(200).json({ message: exists ? "Bu seans daha önce tamamlanmış." : "Workout marked as completed", progress });
   } catch (error) {
     res.status(500).json({ message: "Error marking workout as completed", error: error.message });
   }
@@ -138,6 +198,8 @@ const restartProgram = async (req, res) => {
 
     progress.completedSessions = [];
     progress.sessionTracking = [];
+    progress.progressPercentage = 0;
+    progress.streakTracking = { current: 0, longest: 0 };
 
     await progress.save();
     res.status(200).json({ message: "Program successfully restarted", progress });
@@ -155,7 +217,6 @@ const getUserStreaks = async (req, res) => {
     const docs = await Progress.find({ userId }).lean();
     const list = Array.isArray(docs) ? docs : [];
 
-    // collect set of YYYY-MM-DD dates with at least one completed session
     const completedDates = new Set();
     list.forEach((doc) => {
       const arr = Array.isArray(doc?.completedSessions) ? doc.completedSessions : [];
@@ -167,33 +228,10 @@ const getUserStreaks = async (req, res) => {
       });
     });
 
-    // compute currentStreak (from today backwards)
-    const today = new Date(); today.setHours(0,0,0,0);
-    let currentStreak = 0;
-    const cursor = new Date(today);
-    while (completedDates.has(ymd(cursor))) {
-      currentStreak += 1;
-      cursor.setDate(cursor.getDate() - 1);
-    }
-
-    // compute longestStreak across all dates
-    const sorted = Array.from(completedDates).sort(); // asc
-    let longestStreak = 0, run = 0, prev = null;
-    for (const ds of sorted) {
-      if (prev) {
-        const p = new Date(prev); p.setDate(p.getDate() + 1);
-        if (ymd(p) === ds) run += 1; else run = 1;
-      } else {
-        run = 1;
-      }
-      if (run > longestStreak) longestStreak = run;
-      prev = ds;
-    }
-
+    const { currentStreak, longestStreak } = computeStreaksFromDates(completedDates);
     return res.status(200).json({ currentStreak, longestStreak });
   } catch (error) {
     console.error("getUserStreaks error:", error);
-    // return a safe payload instead of crashing the UI
     return res.status(200).json({ currentStreak: 0, longestStreak: 0 });
   }
 };
@@ -243,7 +281,6 @@ const getUserProgress = async (req, res) => {
       return res.status(404).json({ message: "No progress found for this program." });
     }
 
-    // totalSessions from Program.dailySchedule
     const program = await Program.findById(programId).lean();
     const totalSessions =
       (Array.isArray(program?.dailySchedule) ? program.dailySchedule : [])
@@ -252,7 +289,6 @@ const getUserProgress = async (req, res) => {
     const completedArr = Array.isArray(progress.completedSessions) ? progress.completedSessions : [];
     const completedCount = completedArr.length;
 
-    // number result (not string)
     const progressPercentage =
       totalSessions > 0 ? Number(((completedCount / totalSessions) * 100).toFixed(2)) : 0;
 
@@ -293,75 +329,85 @@ const getProgressTrend = async (req, res) => {
   }
 };
 
-// 🟢 Mark a session as completed (idempotent, correct percentage)
+// 🟢 Mark a session as completed (idempotent, accepts sessionId or sessionName)
 const markSessionCompleted = async (req, res) => {
   try {
-    const { programId, sessionId, feedback, rating } = req.body;
+    const { programId, sessionId, sessionName, feedback, rating } = req.body;
     const userId = req.user._id;
 
-    if (!programId || !sessionId) {
-      return res.status(400).json({ message: "Eksik bilgi: programId veya sessionId yok" });
+    if (!programId || (!sessionId && !sessionName)) {
+      return res.status(400).json({ message: "Eksik bilgi: programId ve (sessionId | sessionName) gerekli" });
     }
 
     const program = await Program.findById(programId).lean();
     if (!program) return res.status(404).json({ message: "Program bulunamadı." });
 
-    const totalSessions =
-      (Array.isArray(program?.dailySchedule) ? program.dailySchedule : [])
-        .reduce((acc, day) => acc + (Array.isArray(day?.sessions) ? day.sessions.length : 0), 0);
+    const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
+    const totalSessions = days.reduce((acc, d) => acc + (Array.isArray(d?.sessions) ? d.sessions.length : 0), 0);
 
-    // Insert only if sessionId not already present
-    const updated = await Progress.findOneAndUpdate(
-      { userId, programId, "completedSessions.sessionId": { $ne: sessionId } },
-      {
-        $setOnInsert: {
-          userId,
-          programId,
-          completedSessions: [],
-          streakTracking: { current: 0, longest: 0 },
-          progressPercentage: 0,
-        },
-        $push: {
-          completedSessions: {
-            sessionId,
-            dateCompleted: new Date(),
-            completed: true,
-            status: "completed",
-            feedback,
-            rating,
-          },
-        },
-      },
-      { new: true, upsert: true }
-    );
-
-    if (!updated) {
-      return res.status(400).json({ message: "Bu seans zaten tamamlandı." });
+    // Resolve real sessionId if only name is given
+    let resolvedSessionId = sessionId || null;
+    if (!resolvedSessionId && sessionName) {
+      outer:
+      for (const day of days) {
+        const ss = Array.isArray(day?.sessions) ? day.sessions : [];
+        for (const s of ss) {
+          if ((s?.name || "").trim() === sessionName.trim()) {
+            resolvedSessionId = String(s?.sessionId || s?._id || s?.id || sessionName);
+            break outer;
+          }
+        }
+      }
+      if (!resolvedSessionId) resolvedSessionId = String(sessionName);
     }
 
-    // Recompute percentage + streaks
-    const completed = Array.isArray(updated.completedSessions) ? updated.completedSessions.length : 0;
-    const percent = totalSessions > 0 ? Math.min(100, Math.round((completed / totalSessions) * 100)) : 0;
+    let progress = await Progress.findOne({ userId, programId });
+    if (!progress) {
+      progress = new Progress({
+        userId,
+        programId,
+        completedSessions: [],
+        streakTracking: { current: 0, longest: 0 },
+        progressPercentage: 0,
+      });
+    }
 
-    const newCurrent = (updated.streakTracking?.current || 0) + 1;
-    const newLongest = Math.max(updated.streakTracking?.longest || 0, newCurrent);
+    const list = Array.isArray(progress.completedSessions) ? progress.completedSessions : [];
+    const already = list.some(cs => (cs?.sessionId + "") === (resolvedSessionId + ""));
 
-    const final = await Progress.findByIdAndUpdate(
-      updated._id,
-      {
-        $set: {
-          progressPercentage: percent,
-          "streakTracking.current": newCurrent,
-          "streakTracking.longest": newLongest,
-        },
-      },
-      { new: true }
+    if (!already) {
+      list.push({
+        sessionId: resolvedSessionId,
+        dateCompleted: new Date(),
+        completed: true,
+        status: "completed",
+        feedback,
+        rating,
+      });
+      progress.completedSessions = list;
+    }
+
+    // Recompute percentage
+    const completedCount = progress.completedSessions.length;
+    progress.progressPercentage = totalSessions > 0
+      ? Math.min(100, Math.round((completedCount / totalSessions) * 100))
+      : 0;
+
+    // Recompute streaks from completion dates
+    const completedDates = new Set(
+      progress.completedSessions.map(s => toISODate(s?.dateCompleted)).filter(Boolean)
     );
+    progress.streakTracking = computeStreaksFromDates(completedDates);
 
-    return res.status(200).json({ message: "Seans başarıyla tamamlandı", progress: final });
+    await progress.save();
+
+    return res.status(200).json({
+      message: already ? "Bu seans daha önce tamamlanmış." : "Seans başarıyla tamamlandı",
+      progress,
+    });
   } catch (error) {
-    console.error("Seans tamamlama hatası:", error.message);
-    return res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    console.error("Seans tamamlama hatası:", error);
+    return res.status(500).json({ message: "Seans tamamlama hatası", error: error.message });
   }
 };
 
@@ -429,10 +475,7 @@ const getCalendarHeatmap = async (req, res) => {
       const date = new Date(); date.setDate(date.getDate() - i);
       const isoDate = ymd(date);
 
-      const entry = completed.find(s => {
-        const entryDate = toISODate(s?.dateCompleted);
-        return entryDate === isoDate;
-      });
+      const entry = completed.find(s => toISODate(s?.dateCompleted) === isoDate);
 
       let status = "none";
       if (entry?.completed) status = "completed";
