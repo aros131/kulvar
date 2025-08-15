@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+import { authFetch } from "@/lib/authFetch";
 
 type FeedbackItem = { _id: string; message: string; createdAt: string };
 
@@ -13,22 +12,12 @@ export default function FeedbackHistory({ programId }: { programId: string }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      setErr(null);
+      setLoading(true); setErr(null);
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        const res = await fetch(`${API}/programs/${programId}/feedback`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          cache: "no-store",
-        });
-
+        const res = await authFetch(`programs/${programId}/feedback`);
         if (res.status === 404) { if (!cancelled) setItems([]); return; }
-        if (!res.ok) {
-          const body = await res.text().catch(() => "");
-          throw new Error(`Feedback ${res.status}: ${body.slice(0,160)}…`);
-        }
-
-        const data = (await res.json()) as FeedbackItem[];
+        if (!res.ok) throw new Error(`Feedback ${res.status}: ${await res.text()}`);
+        const data = await res.json();
         if (!cancelled) setItems(Array.isArray(data) ? data : []);
       } catch (e: any) {
         if (!cancelled) { setErr(e?.message || String(e)); setItems([]); }
@@ -40,7 +29,7 @@ export default function FeedbackHistory({ programId }: { programId: string }) {
   }, [programId]);
 
   if (loading) return <div className="text-sm text-zinc-500">Geri bildirimler yükleniyor…</div>;
-  if (err) return <div className="text-sm text-zinc-500">Geri bildirim alınamadı.</div>;
+  if (err) return <div className="text-sm text-zinc-500">{err}</div>;
   if (!items.length) return <div className="text-sm text-zinc-500">Henüz geri bildirim yok.</div>;
 
   return (

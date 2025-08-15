@@ -1,16 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+import { authFetch } from "@/lib/authFetch";
 
 function getUserIdFromToken(token: string | null): string | null {
   if (!token) return null;
   try {
-    const payload = JSON.parse(atob(token.split(".")[1] || ""));
-    return payload.id || payload.userId || payload._id || payload.sub || null;
-  } catch {
-    return null;
-  }
+    const p = JSON.parse(atob(token.split(".")[1] || ""));
+    return p.id || p.userId || p._id || p.sub || null;
+  } catch { return null; }
 }
 
 export default function StreakTracker({ programId }: { programId: string }) {
@@ -21,25 +18,17 @@ export default function StreakTracker({ programId }: { programId: string }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      setErr(null);
+      setLoading(true); setErr(null);
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const userId = getUserIdFromToken(token);
+      if (!userId) { setErr("Giriş yapın: token yok veya geçersiz."); setLoading(false); return; }
+
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        const userId = getUserIdFromToken(token);
-        if (!userId) { setStreak(null); setErr("Kullanıcı kimliği bulunamadı."); return; }
-
-        const res = await fetch(`${API}/progress/streaks/${userId}`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          cache: "no-store",
-        });
-
+        const res = await authFetch(`progress/streaks/${userId}`);
         if (res.status === 404) { if (!cancelled) setStreak(null); return; }
-        if (!res.ok) {
-          const body = await res.text().catch(() => "");
-          throw new Error(`Streak ${res.status}: ${body.slice(0,160)}…`);
-        }
-
-        const data = (await res.json()) as { currentStreak: number; longestStreak: number };
+        if (!res.ok) throw new Error(`Streak ${res.status}: ${await res.text()}`);
+        const data = await res.json();
         if (!cancelled) setStreak(data);
       } catch (e: any) {
         if (!cancelled) setErr(e?.message || String(e));
@@ -47,11 +36,12 @@ export default function StreakTracker({ programId }: { programId: string }) {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => { cancelled = true; };
   }, [programId]);
 
   if (loading) return <div className="text-sm text-zinc-500">Seri yükleniyor…</div>;
-  if (err) return <div className="text-sm text-zinc-500">Seri bilgisi yok.</div>;
+  if (err) return <div className="text-sm text-zinc-500">{err}</div>;
   if (!streak) return <div className="text-sm text-zinc-500">Seri bulunamadı.</div>;
 
   return (
