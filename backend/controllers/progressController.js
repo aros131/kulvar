@@ -1,6 +1,18 @@
 import Progress from '../models/Progress.js';
 import Program from '../models/Program.js';
 
+// small utils
+const toISODate = (d) => {
+  if (!d) return null;
+  const dt = (d instanceof Date) ? d : new Date(d);
+  if (Number.isNaN(dt.getTime())) return null;
+  return dt.toISOString().split('T')[0];
+};
+const ymd = (d) => {
+  const z = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+};
+
 // 🟢 Log user progress
 const logProgress = async (req, res) => {
   try {
@@ -8,12 +20,13 @@ const logProgress = async (req, res) => {
     const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
-
     if (!progress) {
-      progress = new Progress({ programId, userId, sessionTracking: [] });
+      progress = new Progress({ programId, userId, sessionTracking: [], completedSessions: [] });
     }
 
-    progress.sessionTracking.push({ sessionName, fatigueLevel, weightUsed, repsCompleted, date: new Date() });
+    const track = Array.isArray(progress.sessionTracking) ? progress.sessionTracking : [];
+    track.push({ sessionName, fatigueLevel, weightUsed, repsCompleted, date: new Date() });
+    progress.sessionTracking = track;
 
     await progress.save();
     res.status(201).json({ message: "Progress logged successfully", progress });
@@ -46,21 +59,28 @@ const getProgressReport = async (req, res) => {
   }
 };
 
-// 🟢 Mark a workout as completed
+// 🟢 Mark a workout as completed (by session name) — unified shape with markSessionCompleted
 const markWorkoutCompleted = async (req, res) => {
   try {
     const { programId, sessionName } = req.body;
     const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
-
     if (!progress) {
       progress = new Progress({ programId, userId, completedSessions: [] });
     }
 
-    if (!progress.completedSessions.includes(sessionName)) {
-      progress.completedSessions.push(sessionName);
+    const list = Array.isArray(progress.completedSessions) ? progress.completedSessions : [];
+    const exists = list.some(s => s?.sessionId === sessionName);
+    if (!exists) {
+      list.push({
+        sessionId: sessionName,
+        dateCompleted: new Date(),
+        completed: true,
+        status: "completed",
+      });
     }
+    progress.completedSessions = list;
 
     await progress.save();
     res.status(200).json({ message: "Workout marked as completed", progress });
@@ -75,11 +95,12 @@ const rescheduleWorkout = async (req, res) => {
     const { programId, missedDay, newDay } = req.body;
     const userId = req.user._id;
 
-    let progress = await Progress.findOne({ programId, userId });
-
+    const progress = await Progress.findOne({ programId, userId });
     if (!progress) return res.status(404).json({ message: "No progress found" });
 
-    progress.missedWorkouts.push({ missedDay, rescheduledTo: newDay });
+    const arr = Array.isArray(progress.missedWorkouts) ? progress.missedWorkouts : [];
+    arr.push({ missedDay, rescheduledTo: newDay });
+    progress.missedWorkouts = arr;
 
     await progress.save();
     res.status(200).json({ message: `Missed workout rescheduled to ${newDay}`, progress });
@@ -94,7 +115,7 @@ const submitFeedback = async (req, res) => {
     const { programId, session, feedback } = req.body;
     const userId = req.user._id;
 
-    let progress = await Progress.findOneAndUpdate(
+    const progress = await Progress.findOneAndUpdate(
       { programId, userId },
       { $push: { feedback: { session, feedback, date: new Date() } } },
       { new: true, upsert: true }
@@ -112,8 +133,7 @@ const restartProgram = async (req, res) => {
     const { programId } = req.body;
     const userId = req.user._id;
 
-    let progress = await Progress.findOne({ programId, userId });
-
+    const progress = await Progress.findOne({ programId, userId });
     if (!progress) return res.status(404).json({ message: "Progress not found" });
 
     progress.completedSessions = [];
@@ -126,29 +146,55 @@ const restartProgram = async (req, res) => {
   }
 };
 
-// 🟢 Get user workout streaks
+// 🟢 Get user workout streaks (SAFE) — computes from completedSessions.dateCompleted
 const getUserStreaks = async (req, res) => {
   try {
     const { userId } = req.params;
-    const progress = await Progress.find({ userId });
+    if (!userId) return res.status(400).json({ message: "userId is required" });
 
-    let maxStreak = 0;
-    let currentStreak = 0;
+    const docs = await Progress.find({ userId }).lean();
+    const list = Array.isArray(docs) ? docs : [];
 
-    progress.forEach(prog => {
-      prog.sessionTracking.forEach(session => {
-        if (session.completed) {
-          currentStreak += 1;
-          if (currentStreak > maxStreak) maxStreak = currentStreak;
-        } else {
-          currentStreak = 0;
+    // collect set of YYYY-MM-DD dates with at least one completed session
+    const completedDates = new Set();
+    list.forEach((doc) => {
+      const arr = Array.isArray(doc?.completedSessions) ? doc.completedSessions : [];
+      arr.forEach((s) => {
+        const iso = toISODate(s?.dateCompleted || s?.date || null);
+        if (iso && (s?.completed === true || s?.status === "completed" || s?.completed == null)) {
+          completedDates.add(iso);
         }
       });
     });
 
-    res.status(200).json({ maxStreak, currentStreak });
+    // compute currentStreak (from today backwards)
+    const today = new Date(); today.setHours(0,0,0,0);
+    let currentStreak = 0;
+    const cursor = new Date(today);
+    while (completedDates.has(ymd(cursor))) {
+      currentStreak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    // compute longestStreak across all dates
+    const sorted = Array.from(completedDates).sort(); // asc
+    let longestStreak = 0, run = 0, prev = null;
+    for (const ds of sorted) {
+      if (prev) {
+        const p = new Date(prev); p.setDate(p.getDate() + 1);
+        if (ymd(p) === ds) run += 1; else run = 1;
+      } else {
+        run = 1;
+      }
+      if (run > longestStreak) longestStreak = run;
+      prev = ds;
+    }
+
+    return res.status(200).json({ currentStreak, longestStreak });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching streaks", error: error.message });
+    console.error("getUserStreaks error:", error);
+    // return a safe payload instead of crashing the UI
+    return res.status(200).json({ currentStreak: 0, longestStreak: 0 });
   }
 };
 
@@ -157,7 +203,6 @@ const getAdaptiveGoalProgress = async (req, res) => {
   try {
     const { userId } = req.params;
     const progress = await Progress.find({ userId });
-
     res.status(200).json({ progress });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving goal progress", error: error.message });
@@ -171,59 +216,65 @@ const getStrengthProgress = async (req, res) => {
     const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
-
     if (!progress) {
       return res.status(404).json({ message: "Strength progress not found." });
     }
 
+    const po = Array.isArray(progress.progressiveOverload) ? progress.progressiveOverload : [];
     res.status(200).json({
-      strength: progress.progressiveOverload.map(entry => ({
-        exerciseName: entry.exerciseName,
-        currentWeight: entry.currentWeight,
+      strength: po.map(entry => ({
+        exerciseName: entry?.exerciseName,
+        currentWeight: entry?.currentWeight,
       })),
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching strength progress", error: error.message });
   }
 };
-// 🟢 Get user progress for a specific program
+
+// 🟢 Get user progress for a specific program (frontend-friendly shape)
 const getUserProgress = async (req, res) => {
   try {
     const { programId } = req.params;
     const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
-
     if (!progress) {
       return res.status(404).json({ message: "No progress found for this program." });
     }
 
-    // ✅ Calculate progress percentage
-const program = await Program.findById(programId);
-const totalSessions = program?.dailySchedule?.reduce((acc, day) => acc + (day.sessions?.length || 0), 0) || 0;
-const completedSessions = progress.completedSessions.length;
+    // totalSessions from Program.dailySchedule
+    const program = await Program.findById(programId).lean();
+    const totalSessions =
+      (Array.isArray(program?.dailySchedule) ? program.dailySchedule : [])
+        .reduce((acc, day) => acc + (Array.isArray(day?.sessions) ? day.sessions.length : 0), 0);
 
+    const completedArr = Array.isArray(progress.completedSessions) ? progress.completedSessions : [];
+    const completedCount = completedArr.length;
 
-    const progressPercentage = totalSessions > 0 ? ((completedSessions / totalSessions) * 100).toFixed(2) : 0;
+    // number result (not string)
+    const progressPercentage =
+      totalSessions > 0 ? Number(((completedCount / totalSessions) * 100).toFixed(2)) : 0;
 
     res.status(200).json({
-      progressPercentage,
-      completedSessions,
-      totalSessions,
-      streakTracking: progress.streakTracking,
-      achievementBadges: progress.achievementBadges,
-      goalTracking: progress.goalTracking,
-      missedWorkouts: progress.missedWorkouts,
-      strengthProgress: progress.progressiveOverload.map(entry => ({
-        exerciseName: entry.exerciseName,
-        currentWeight: entry.currentWeight,
+      progressPercentage,                                   // number
+      completedSessions: completedArr.map(s => ({           // array of { sessionId }
+        sessionId: s?.sessionId,
+      })),
+      totalSessions,                                        // number
+      streakTracking: progress.streakTracking || { current: 0, longest: 0 },
+      achievementBadges: Array.isArray(progress.achievementBadges) ? progress.achievementBadges : [],
+      goalTracking: progress.goalTracking || {},
+      missedWorkouts: Array.isArray(progress.missedWorkouts) ? progress.missedWorkouts : [],
+      strengthProgress: (Array.isArray(progress.progressiveOverload) ? progress.progressiveOverload : []).map(entry => ({
+        exerciseName: entry?.exerciseName,
+        currentWeight: entry?.currentWeight,
       })),
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching progress", error: error.message });
   }
 };
-
 
 // 🟢 Fetch progress trend over time
 const getProgressTrend = async (req, res) => {
@@ -232,7 +283,6 @@ const getProgressTrend = async (req, res) => {
     const userId = req.user._id;
 
     const progress = await Progress.findOne({ programId, userId });
-
     if (!progress || !progress.trendData) {
       return res.status(404).json({ message: "No progress data found." });
     }
@@ -253,14 +303,14 @@ const markSessionCompleted = async (req, res) => {
       return res.status(400).json({ message: "Eksik bilgi: programId veya sessionId yok" });
     }
 
-    // Get totalSessions = sum of sessions across all days (not just number of days)
-    const program = await Program.findById(programId);
+    const program = await Program.findById(programId).lean();
     if (!program) return res.status(404).json({ message: "Program bulunamadı." });
 
     const totalSessions =
-      program?.dailySchedule?.reduce((acc, day) => acc + (day.sessions?.length || 0), 0) || 0;
+      (Array.isArray(program?.dailySchedule) ? program.dailySchedule : [])
+        .reduce((acc, day) => acc + (Array.isArray(day?.sessions) ? day.sessions.length : 0), 0);
 
-    // Atomic upsert that only pushes if this sessionId isn't already present
+    // Insert only if sessionId not already present
     const updated = await Progress.findOneAndUpdate(
       { userId, programId, "completedSessions.sessionId": { $ne: sessionId } },
       {
@@ -285,15 +335,13 @@ const markSessionCompleted = async (req, res) => {
       { new: true, upsert: true }
     );
 
-    // If no update happened, session was already completed
     if (!updated) {
       return res.status(400).json({ message: "Bu seans zaten tamamlandı." });
     }
 
-    // Recompute percentage + streaks based on the updated doc
-    const completed = updated.completedSessions.length;
-    const percent =
-      totalSessions > 0 ? Math.min(100, Math.round((completed / totalSessions) * 100)) : 0;
+    // Recompute percentage + streaks
+    const completed = Array.isArray(updated.completedSessions) ? updated.completedSessions.length : 0;
+    const percent = totalSessions > 0 ? Math.min(100, Math.round((completed / totalSessions) * 100)) : 0;
 
     const newCurrent = (updated.streakTracking?.current || 0) + 1;
     const newLongest = Math.max(updated.streakTracking?.longest || 0, newCurrent);
@@ -317,9 +365,6 @@ const markSessionCompleted = async (req, res) => {
   }
 };
 
-   
-
-
 // 🟢 Update user goal progress
 const updateGoalProgress = async (req, res) => {
   try {
@@ -327,13 +372,11 @@ const updateGoalProgress = async (req, res) => {
     const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
-
     if (!progress) {
       progress = new Progress({ programId, userId, goalProgress: {} });
     }
 
-    progress.goalProgress[goalMetric] = value;
-
+    progress.goalProgress = { ...(progress.goalProgress || {}), [goalMetric]: value };
     await progress.save();
 
     res.status(200).json({ message: "Goal progress updated", progress });
@@ -341,54 +384,53 @@ const updateGoalProgress = async (req, res) => {
     res.status(500).json({ message: "Error updating goal progress", error: error.message });
   }
 };
+
 // 🟢 Get progress percentages for all assigned programs
 const getAllProgramProgress = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Get all assigned programs for this user
-    const assignedPrograms = await Program.find({ assignedClients: userId });
-
-    // For each program, get its progress
-    const programProgress = await Promise.all(assignedPrograms.map(async (program) => {
-      const progress = await Progress.findOne({ programId: program._id, userId });
-      const percentage = progress ? progress.progressPercentage : 0;
-
-      return {
-        programId: program._id,
-        name: program.name,
-        description: program.description,
-        duration: program.duration,
-        progressPercentage: percentage,
-      };
-    }));
+    const assignedPrograms = await Program.find({ assignedClients: userId }).lean();
+    const programProgress = await Promise.all(
+      (Array.isArray(assignedPrograms) ? assignedPrograms : []).map(async (program) => {
+        const progress = await Progress.findOne({ programId: program._id, userId }).lean();
+        const percentage = progress ? (Number(progress.progressPercentage) || 0) : 0;
+        return {
+          programId: program._id,
+          name: program.name,
+          description: program.description,
+          duration: program.duration,
+          progressPercentage: percentage,
+        };
+      })
+    );
 
     res.status(200).json({ programProgress });
   } catch (error) {
     res.status(500).json({ message: "Error fetching program progress", error: error.message });
   }
 };
+
+// 🟢 Calendar heatmap (last 30 days) — safe date handling
 const getCalendarHeatmap = async (req, res) => {
   try {
     const { programId } = req.params;
     const userId = req.user._id;
 
-    const progress = await Progress.findOne({ programId, userId: userId });
-
+    const progress = await Progress.findOne({ programId, userId });
     if (!progress) {
       return res.status(404).json({ message: "No progress found" });
     }
 
+    const completed = Array.isArray(progress.completedSessions) ? progress.completedSessions : [];
     const days = [];
 
-    // ✅ Build last 30 days
     for (let i = 0; i < 30; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const isoDate = date.toISOString().split("T")[0];
+      const date = new Date(); date.setDate(date.getDate() - i);
+      const isoDate = ymd(date);
 
-      const entry = progress.completedSessions.find(s => {
-        const entryDate = s.dateCompleted?.toISOString().split("T")[0];
+      const entry = completed.find(s => {
+        const entryDate = toISODate(s?.dateCompleted);
         return entryDate === isoDate;
       });
 
@@ -404,8 +446,6 @@ const getCalendarHeatmap = async (req, res) => {
     res.status(500).json({ message: "Error fetching calendar heatmap", error: error.message });
   }
 };
-
-
 
 // ✅ Export all functions
 export {
