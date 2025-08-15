@@ -1,45 +1,28 @@
+// src/components/program/FeedbackHistory.tsx
 "use client";
-import { useEffect, useState } from "react";
-import { authFetch } from "@/lib/authFetch";
-
-type FeedbackItem = { _id: string; message: string; createdAt: string };
+import { useState } from "react";
 
 export default function FeedbackHistory({ programId }: { programId: string }) {
-  const [items, setItems] = useState<FeedbackItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true); setErr(null);
-      try {
-        const res = await authFetch(`programs/${programId}/feedback`);
-        if (res.status === 404) { if (!cancelled) setItems([]); return; }
-        if (!res.ok) throw new Error(`Feedback ${res.status}: ${await res.text()}`);
-        const data = await res.json();
-        if (!cancelled) setItems(Array.isArray(data) ? data : []);
-      } catch (e: any) {
-        if (!cancelled) { setErr(e?.message || String(e)); setItems([]); }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [programId]);
-
-  if (loading) return <div className="text-sm text-zinc-500">Geri bildirimler yükleniyor…</div>;
-  if (err) return <div className="text-sm text-zinc-500">{err}</div>;
-  if (!items.length) return <div className="text-sm text-zinc-500">Henüz geri bildirim yok.</div>;
+  // There is no GET route to list feedback in your backend right now.
+  // So we just show an empty state safely.
+  const [items] = useState<Array<{ date: string; session: string; feedback: string }>>([]);
 
   return (
-    <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900 space-y-2">
-      {items.map((f) => (
-        <div key={f._id} className="border-b last:border-0 pb-2">
-          <div className="text-sm">{f.message}</div>
-          <div className="text-xs text-zinc-500">{new Date(f.createdAt).toLocaleString()}</div>
-        </div>
-      ))}
+    <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900">
+      <h3 className="font-medium mb-2">Geri Bildirim Geçmişi</h3>
+      {items.length === 0 ? (
+        <div className="text-sm text-zinc-500">Henüz geri bildirim yok.</div>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((it, i) => (
+            <li key={i} className="text-sm">
+              <div className="font-medium">{it.session}</div>
+              <div className="text-zinc-500">{new Date(it.date).toLocaleString()}</div>
+              <div>{String(it.feedback ?? "")}</div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

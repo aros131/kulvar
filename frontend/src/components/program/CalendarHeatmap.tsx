@@ -1,14 +1,21 @@
+// src/components/program/CalendarHeatmap.tsx
 "use client";
 import { useEffect, useState } from "react";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
 
-type HeatItem = { date: string; count: number };
+type Day = { date: string; status: "completed" | "missed" | "none" };
+
+function token() {
+  if (typeof window === "undefined") return null;
+  const t = localStorage.getItem("token");
+  return t ? t.replace(/^"+|"+$/g, "").replace(/^Bearer\s+/i, "") : null;
+}
 
 export default function CalendarHeatmap({ programId }: { programId: string }) {
-  const [data, setData] = useState<HeatItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState<Day[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -16,22 +23,23 @@ export default function CalendarHeatmap({ programId }: { programId: string }) {
       setLoading(true);
       setErr(null);
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const t = token();
         const res = await fetch(`${API}/progress/calendar/${programId}`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: {
+            Accept: "application/json",
+            ...(t ? { Authorization: `Bearer ${t}` } : {}),
+          },
           cache: "no-store",
+          credentials: "include",
         });
-
-        if (res.status === 404) { if (!cancelled) setData([]); return; }
-        if (!res.ok) {
-          const body = await res.text().catch(() => "");
-          throw new Error(`Calendar ${res.status}: ${body.slice(0,160)}…`);
-        }
-
-        const json = (await res.json()) as HeatItem[];
-        if (!cancelled) setData(Array.isArray(json) ? json : []);
+        const text = await res.text();
+        if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
+        const json = ct.includes("application/json") ? JSON.parse(text) : {};
+        const list = Array.isArray(json?.days) ? (json.days as Day[]) : [];
+        if (!cancelled) setDays(list);
       } catch (e: any) {
-        if (!cancelled) { setErr(e?.message || String(e)); setData([]); }
+        if (!cancelled) setErr(e?.message || String(e));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -39,13 +47,31 @@ export default function CalendarHeatmap({ programId }: { programId: string }) {
     return () => { cancelled = true; };
   }, [programId]);
 
-  if (loading) return <div className="text-sm text-zinc-500">Takvim yükleniyor…</div>;
-  if (err) return <div className="text-sm text-zinc-500">Takvim verisi alınamadı.</div>;
-  if (!data.length) return <div className="text-sm text-zinc-500">Henüz kayıt yok.</div>;
-
   return (
     <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900">
-      <div className="text-sm">({data.length}) kayıt</div>
+      <h3 className="font-medium mb-2">Son 30 Gün</h3>
+      {loading && <div className="text-sm text-zinc-500">Yükleniyor…</div>}
+      {err && <div className="text-sm text-red-600">Hata: {String(err)}</div>}
+      {!loading && !err && (
+        <div className="grid grid-cols-10 gap-1">
+          {days.map((d, i) => {
+            const status = d?.status || "none";
+            // only render strings/booleans/numbers as children; avoid objects
+            return (
+              <div
+                key={`${d?.date ?? i}`}
+                title={`${String(d?.date ?? "")} - ${status}`}
+                className={[
+                  "h-4 w-4 rounded",
+                  status === "completed" ? "bg-green-500" :
+                  status === "missed"    ? "bg-amber-500" :
+                                           "bg-zinc-300 dark:bg-zinc-700"
+                ].join(" ")}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

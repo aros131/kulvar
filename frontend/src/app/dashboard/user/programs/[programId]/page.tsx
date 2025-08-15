@@ -79,13 +79,18 @@ export default function ProgramContentPage() {
 
   const daily = asArray<Program["dailySchedule"] extends (infer D)[] ? D : never>(program.dailySchedule);
   const timelineSessions = daily.flatMap((dayEntry, dayIdx) => {
-    const sessions = asArray<UISession>((dayEntry as any)?.sessions);
-    return sessions.map((s, idx) => ({
+  const sessions = asArray<UISession>((dayEntry as any)?.sessions);
+  return sessions.map((s, idx) => {
+    const sid = s.sessionId ?? s._id ?? s.id ?? `day-${dayIdx + 1}-s-${idx + 1}`;
+    return {
       day: dayIdx + 1,
       title: s.name ?? `Session ${idx + 1}`,
-      completed: completedIds.has(s.sessionId ?? s._id ?? s.id ?? `day-${dayIdx + 1}-s-${idx + 1}`),
-    }));
+      sessionId: sid,                     // ✅ pass down to SessionTimeline
+      completed: completedIds.has(sid),   // ✅ use the same id here
+    };
   });
+});
+
 
   const totalSessionsFromProgram = daily.reduce((acc, d: any) => acc + asArray<any>(d?.sessions).length, 0);
   const completedCount = completedIds.size;
