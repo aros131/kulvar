@@ -1,3 +1,4 @@
+// src/app/dashboard/user/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -36,7 +37,6 @@ interface UserProfile {
   profilePicture: string;
 }
 
-/** Clean token from localStorage and strip accidental quotes / duplicate Bearer */
 const cleanToken = (): string | null => {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem("token");
@@ -45,16 +45,16 @@ const cleanToken = (): string | null => {
   return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
 };
 
-/** Always return a real Headers object (prevents TS overload error) */
 const makeAuthHeaders = (token: string | null): Headers => {
   const h = new Headers();
   if (token) h.set("Authorization", `Bearer ${token}`);
   return h;
 };
 
-/** Linear progress bar that mirrors doughnut rounding (Math.round + clamp 0..100) */
+const roundPct = (n: unknown) => Math.min(100, Math.max(0, Math.round(Number(n) || 0)));
+
 function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: string }) {
-  const pct = Math.min(100, Math.max(0, Math.round(Number(value) || 0)));
+  const pct = roundPct(value);
   return (
     <div>
       <div className="flex justify-between text-xs mb-1">
@@ -87,13 +87,28 @@ export default function UserDashboardPage() {
 
     const fetchPrograms = async () => {
       try {
-        const res = await fetch(`${API}/progress/all-program-progress`, {
-          headers,
-          cache: "no-store",
-        });
+        // 1) Base list
+        const res = await fetch(`${API}/progress/all-program-progress`, { headers, cache: "no-store" });
         const data = res.ok ? await res.json().catch(() => ({})) : {};
-        const list = Array.isArray((data as any).programProgress) ? (data as any).programProgress : [];
-        setPrograms(list as UserProgram[]);
+        const list: UserProgram[] = Array.isArray((data as any).programProgress) ? (data as any).programProgress : [];
+
+        // 2) For each program, pull the SAME number Program page uses
+        const enriched = await Promise.all(
+          list.map(async (p) => {
+            try {
+              const r = await fetch(`${API}/progress/user/${p.programId}`, { headers, cache: "no-store" });
+              if (r.ok && (r.headers.get("content-type") || "").includes("application/json")) {
+                const j = await r.json();
+                // override with the canonical percentage
+                return { ...p, progressPercentage: roundPct(j.progressPercentage) };
+              }
+            } catch {}
+            // fallback to whatever came from the list
+            return { ...p, progressPercentage: roundPct(p.progressPercentage) };
+          })
+        );
+
+        setPrograms(enriched);
       } catch {
         setPrograms([]);
       }
@@ -101,10 +116,7 @@ export default function UserDashboardPage() {
 
     const fetchProgress = async () => {
       try {
-        const res = await fetch(`${API}/dashboard/analytics/user`, {
-          headers,
-          cache: "no-store",
-        });
+        const res = await fetch(`${API}/dashboard/analytics/user`, { headers, cache: "no-store" });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
         setProgress({
           totalCompletedSessions: Number(data.totalCompletedSessions) || 0,
@@ -118,10 +130,7 @@ export default function UserDashboardPage() {
 
     const fetchUnreadNotifications = async () => {
       try {
-        const res = await fetch(`${API}/dashboard/notifications/user`, {
-          headers,
-          cache: "no-store",
-        });
+        const res = await fetch(`${API}/dashboard/notifications/user`, { headers, cache: "no-store" });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
         const list: Notification[] = Array.isArray(data.notifications) ? data.notifications : [];
         setUnreadCount(list.filter((n) => !n.isRead).length);
@@ -132,10 +141,7 @@ export default function UserDashboardPage() {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`${API}/profile`, {
-          headers,
-          cache: "no-store",
-        });
+        const res = await fetch(`${API}/profile`, { headers, cache: "no-store" });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
         setProfile(data && typeof data === "object" ? data : null);
       } catch {
@@ -174,53 +180,47 @@ export default function UserDashboardPage() {
             </div>
           </div>
 
-          {/* 🔥 Programs Section — uses linear ProgressBar (rounded like doughnut) */}
+          {/* 🔥 Programs Section — linear bar fed by /progress/user/:id */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {programs.length > 0 ? (
-              programs.map((program) => {
-                const pct = Math.min(100, Math.max(0, Math.round(Number(program.progressPercentage) || 0)));
-                return (
-                  <div
-                    key={program.programId}
-                    className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col"
-                  >
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">{program.name}</h3>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1 line-clamp-2">
-                        {program.description}
-                      </p>
-                    </div>
-
-                    <div className="mt-4">
-                      <ProgressBar value={pct} />
-                    </div>
-
-                    <Link href={`/dashboard/user/programs/${program.programId}`} className="mt-4">
-                      <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-                        Programa Git
-                      </button>
-                    </Link>
+              programs.map((program) => (
+                <div
+                  key={program.programId}
+                  className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col"
+                >
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold">{program.name}</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1 line-clamp-2">
+                      {program.description}
+                    </p>
                   </div>
-                );
-              })
+
+                  <div className="mt-4">
+                    <ProgressBar value={program.progressPercentage} />
+                  </div>
+
+                  <Link href={`/dashboard/user/programs/${program.programId}`} className="mt-4">
+                    <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+                      Programa Git
+                    </button>
+                  </Link>
+                </div>
+              ))
             ) : (
               <p>Atanmış programın yok.</p>
             )}
           </div>
 
-          {/* 📈 Goal Tracking — also use the same ProgressBar (rounded/clamped) */}
+          {/* 📈 Goal Tracking — reuse same number style */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
             <h2 className="text-xl font-semibold mb-4">Hedef Takibi</h2>
             {progress?.goalTracking.length ? (
-              progress.goalTracking.map((goal) => {
-                const pct = Math.min(100, Math.max(0, Math.round(Number(goal.progressPercentage) || 0)));
-                return (
-                  <div key={goal.programId} className="mb-6">
-                    <p className="mb-1 text-sm font-medium">Program: {goal.programId}</p>
-                    <ProgressBar value={pct} />
-                  </div>
-                );
-              })
+              progress.goalTracking.map((goal) => (
+                <div key={goal.programId} className="mb-6">
+                  <p className="mb-1 text-sm font-medium">Program: {goal.programId}</p>
+                  <ProgressBar value={goal.progressPercentage} />
+                </div>
+              ))
             ) : (
               <p>Hedef bulunamadı.</p>
             )}
