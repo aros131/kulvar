@@ -37,9 +37,8 @@ type CompletedRaw =
 
 type Props = {
   program: Program;
-  programId: string;
-
-  /** Optional: if the page already fetched progress, pass them in. */
+  /** optional now — will fall back to program._id */
+  programId?: string;
   completedSessionIds?: string[] | Set<string>;
   completedSessions?: CompletedRaw[];
 };
@@ -50,16 +49,23 @@ export default function ProgramDetailsView({
   completedSessionIds,
   completedSessions,
 }: Props) {
+  // ✅ derive a safe program id automatically
+  const pid = useMemo(
+    () => String((programId || (program as any)?._id || (program as any)?.id || "")).trim(),
+    [programId, program]
+  );
+
   // 1) If the parent didn’t pass completion info, we’ll fetch it ourselves
   const [fetchedCompleted, setFetchedCompleted] = useState<string[]>([]);
   useEffect(() => {
     let aborted = false;
     (async () => {
       if (completedSessionIds || completedSessions) return; // parent controls it
+      if (!pid) return; // nothing to fetch yet
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") ?? "" : "";
-        const res = await fetch(`${API}/progress/user/${programId}`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), "Accept": "application/json" },
+        const res = await fetch(`${API}/progress/user/${pid}`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), Accept: "application/json" },
           cache: "no-store",
         });
         if (!res.ok) return;
@@ -68,11 +74,11 @@ export default function ProgramDetailsView({
         const ids = arr<any>(data.completedSessions).map((s) => String(s?.sessionId || "").trim()).filter(Boolean);
         setFetchedCompleted(ids);
       } catch {
-        // ignore – just don’t auto-mark
+        // ignore
       }
     })();
     return () => { aborted = true; };
-  }, [API, programId, completedSessionIds, completedSessions]);
+  }, [pid, completedSessionIds, completedSessions]);
 
   // 2) Build a set of “completed tokens” (ids + names) we can match quickly
   const completedTokens = useMemo(() => {
@@ -105,7 +111,7 @@ export default function ProgramDetailsView({
 
   // 3) optimistic local completions (no full reload)
   const [localDone, setLocalDone] = useState<Set<string>>(new Set());
-  useEffect(() => setLocalDone(new Set()), [programId]);
+  useEffect(() => setLocalDone(new Set()), [pid]);
 
   // 4) normalize schedule
   const days = useMemo(() => arr<DSDay>(program.dailySchedule), [program.dailySchedule]);
@@ -169,7 +175,7 @@ export default function ProgramDetailsView({
 
                               {!done ? (
                                 <CompleteButton
-                                  programId={programId}
+                                  programId={pid}               // ✅ always use derived pid
                                   sessionId={String(sid)}
                                   sessionName={s?.name}
                                   onOk={() => markLocal(s, fallbackKey)}
@@ -379,7 +385,7 @@ function CompleteButton({
 
   const handleClick = async () => {
     if (!programId) {
-      setErr("programId gerekli");
+      setErr("Program ID bulunamadı");
       return;
     }
     try {
@@ -401,9 +407,10 @@ function CompleteButton({
         type="button"
         className="px-3 py-1 rounded bg-green-600 text-white disabled:opacity-60"
         onClick={handleClick}
-        disabled={pending}
+        disabled={pending || !programId}
         aria-busy={pending}
         aria-label="Seansı tamamla"
+        title={!programId ? "Program ID bulunamadı" : undefined}
       >
         {pending ? "Kaydediliyor…" : "Tamamla"}
       </button>
