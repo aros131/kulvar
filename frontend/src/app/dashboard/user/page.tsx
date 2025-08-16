@@ -3,17 +3,18 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProgramCard from "@/components/dashboard/ProgramCard";
-
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import ProgressChart from "@/components/program/ProgressChart";
 import Image from "next/image";
 
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+
 interface UserProgram {
   programId: string;
   name: string;
   description: string;
-  duration?: string;
+  duration?: number | string;
   image?: string;
   progressPercentage: number;
 }
@@ -37,6 +38,19 @@ interface UserProfile {
   profilePicture: string;
 }
 
+/** Clean token from localStorage and strip accidental quotes / duplicate Bearer */
+const cleanToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("token");
+  if (!raw) return null;
+  const trimmed = raw.replace(/^"+|"+$/g, "").trim();
+  return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+};
+
+/** Always return a consistent type for fetch init.headers */
+const authHeaders = (token: string | null): HeadersInit | undefined =>
+  token ? { Authorization: `Bearer ${token}` } : undefined;
+
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
@@ -44,43 +58,64 @@ export default function UserDashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = cleanToken();
 
     const fetchPrograms = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/progress/all-program-progress", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setPrograms(data.programProgress || []);
+      try {
+        const res = await fetch(`${API}/progress/all-program-progress`, {
+          headers: authHeaders(token),
+          cache: "no-store",
+        });
+        const data = res.ok ? await res.json().catch(() => ({})) : {};
+        const list = Array.isArray((data as any).programProgress) ? (data as any).programProgress : [];
+        setPrograms(list);
+      } catch {
+        setPrograms([]);
+      }
     };
 
     const fetchProgress = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/analytics/user", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProgress({
-        totalCompletedSessions: data.totalCompletedSessions || 0,
-        assignedPrograms: data.assignedPrograms || 0,
-        goalTracking: data.goalTracking || [],
-      });
+      try {
+        const res = await fetch(`${API}/dashboard/analytics/user`, {
+          headers: authHeaders(token),
+          cache: "no-store",
+        });
+        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
+        setProgress({
+          totalCompletedSessions: Number(data.totalCompletedSessions) || 0,
+          assignedPrograms: Number(data.assignedPrograms) || 0,
+          goalTracking: Array.isArray(data.goalTracking) ? data.goalTracking : [],
+        });
+      } catch {
+        setProgress({ totalCompletedSessions: 0, assignedPrograms: 0, goalTracking: [] });
+      }
     };
 
     const fetchUnreadNotifications = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const unread = (data.notifications as Notification[]).filter((n) => !n.isRead).length;
-      setUnreadCount(unread);
+      try {
+        const res = await fetch(`${API}/dashboard/notifications/user`, {
+          headers: authHeaders(token),
+          cache: "no-store",
+        });
+        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
+        const list: Notification[] = Array.isArray(data.notifications) ? data.notifications : [];
+        setUnreadCount(list.filter((n) => !n.isRead).length);
+      } catch {
+        setUnreadCount(0);
+      }
     };
 
     const fetchProfile = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProfile(data);
+      try {
+        const res = await fetch(`${API}/profile`, {
+          headers: authHeaders(token),
+          cache: "no-store",
+        });
+        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
+        setProfile(data && typeof data === "object" ? data : null);
+      } catch {
+        setProfile(null);
+      }
     };
 
     fetchPrograms();
@@ -95,7 +130,6 @@ export default function UserDashboardPage() {
 
       <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
         <Navbar />
-       
 
         <section className="max-w-6xl mx-auto px-4 py-10">
           <div className="flex items-center gap-4 mb-6">
@@ -111,9 +145,7 @@ export default function UserDashboardPage() {
             )}
             <div>
               <h1 className="text-3xl font-bold">Hoş Geldin, {profile?.name || "Kullanıcı"}!</h1>
-              <p className="text-zinc-600 dark:text-zinc-300">
-                Bugün de hedeflerine ulaşmak için harika bir gün.
-              </p>
+              <p className="text-zinc-600 dark:text-zinc-300">Bugün de hedeflerine ulaşmak için harika bir gün.</p>
             </div>
           </div>
 
@@ -126,7 +158,7 @@ export default function UserDashboardPage() {
                     name={program.name}
                     description={program.description}
                     duration={typeof program.duration === "number" ? program.duration : 0}
-                    progressPercentage={program.progressPercentage}
+                    progressPercentage={Number(program.progressPercentage) || 0}
                     difficulty={""}
                     fitnessGoal={""}
                   />
@@ -152,11 +184,11 @@ export default function UserDashboardPage() {
                   <div className="w-full bg-gray-300 rounded-full h-2 mb-1">
                     <div
                       className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${goal.progressPercentage}%` }}
-                    ></div>
+                      style={{ width: `${Number(goal.progressPercentage) || 0}%` }}
+                    />
                   </div>
-                  <p className="text-sm mb-2">{goal.progressPercentage}% tamamlandı</p>
-                  <ProgressChart completionPercentage={goal.progressPercentage || 0} />
+                  <p className="text-sm mb-2">{Number(goal.progressPercentage) || 0}% tamamlandı</p>
+                  <ProgressChart completionPercentage={Number(goal.progressPercentage) || 0} />
                 </div>
               ))
             ) : (
