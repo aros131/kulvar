@@ -24,20 +24,27 @@ const fmtDate = (d?: string | Date) => {
 // --- types used in the schedule sections ---
 type DSVideoUrl = { url?: string; description?: string };
 type DSExercise = { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number; videoUrls?: DSVideoUrl[] };
-type DSSession = { name?: string; sessionId?: string; _id?: string; id?: string; exercises?: DSExercise[] };
+type DSSession = {
+  name?: string;
+  completed?: boolean;         // ← we’ll respect this now
+  sessionId?: string;
+  _id?: string;
+  id?: string;
+  exercises?: DSExercise[];
+};
 type DSDay = { day?: string; notes?: string; sessions?: DSSession[] };
 
 type Props = {
   program: Program;
   programId: string;
-  /** array OR set of completed session ids */
+  /** array OR set of completed session ids (ids *or* names) */
   completedSessionIds?: string[] | Set<string>;
   /** when a session completes successfully */
   onCompleted?: (sessionId?: string) => void;
 };
 
 export default function ProgramPlan({ program, programId, completedSessionIds, onCompleted }: Props) {
-  // normalize completed ids
+  // normalize completed ids (may contain ids or names depending on backend)
   const completedSet = useMemo(() => {
     if (!completedSessionIds) return new Set<string>();
     return completedSessionIds instanceof Set ? completedSessionIds : new Set(completedSessionIds);
@@ -50,13 +57,17 @@ export default function ProgramPlan({ program, programId, completedSessionIds, o
   const [completedLocal, setCompletedLocal] = useState<Set<string>>(new Set());
   useEffect(() => setCompletedLocal(new Set()), [programId]);
 
-  const isCompleted = (sid?: string) => {
-    if (!sid) return false;
-    return completedSet.has(sid) || completedLocal.has(sid);
+  const inAnyCompletedSet = (key?: string) => {
+    if (!key) return false;
+    return completedSet.has(key) || completedLocal.has(key);
   };
-  const markLocalCompleted = (sid?: string) => {
-    if (!sid) return;
-    setCompletedLocal((prev) => new Set(prev).add(sid));
+
+  const markLocalCompleted = (...keys: (string | undefined)[]) => {
+    setCompletedLocal(prev => {
+      const next = new Set(prev);
+      keys.forEach(k => { if (k) next.add(k); });
+      return next;
+    });
   };
 
   return (
@@ -98,18 +109,29 @@ export default function ProgramPlan({ program, programId, completedSessionIds, o
                     <ul className="space-y-3">
                       {sessions.map((s, sIdx) => {
                         const sid = s.sessionId ?? s._id ?? s.id ?? `day-${dIdx + 1}-s-${sIdx + 1}`;
-                        const done = isCompleted(sid);
+
+                        // ✅ decide completion:
+                        // 1) respect s.completed
+                        // 2) if id or name is in completed set
+                        // 3) if optimistically completed
+                        const done =
+                          Boolean(s?.completed) ||
+                          inAnyCompletedSet(sid) ||
+                          inAnyCompletedSet(s?.name);
+
                         return (
                           <li key={sid} className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
                             <div className="flex items-center justify-between">
                               <div className="font-medium">{s?.name || `Seans ${sIdx + 1}`}</div>
+
                               {!done ? (
                                 <CompleteButton
                                   programId={programId}
                                   sessionId={sid}
                                   sessionName={s?.name}
                                   onOk={() => {
-                                    markLocalCompleted(sid);
+                                    // mark by both id and name so either matching strategy works
+                                    markLocalCompleted(sid, s?.name);
                                     onCompleted?.(sid);
                                   }}
                                 />
@@ -318,37 +340,6 @@ export default function ProgramPlan({ program, programId, completedSessionIds, o
               </tbody>
             </table>
           </div>
-        )}
-      </section>
-
-      <Separator />
-
-      {/* FEEDBACK (from ProgramDetailsView) */}
-      <section className="space-y-3">
-        <h3 className="text-lg font-semibold">Geri Bildirim</h3>
-        {arr<any>(program.feedback).length === 0 ? (
-          <p className="text-sm text-zinc-500">Geri bildirim yok.</p>
-        ) : (
-          <ul className="space-y-2">
-            {arr<any>(program.feedback).map((f, i) => (
-              <li key={i} className="border rounded p-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">Kullanıcı: </span>
-                    <code className="bg-zinc-100 px-1 py-0.5 rounded">{String(f?.userId ?? "-")}</code>
-                    {f?.session ? <span className="ml-2 text-zinc-500">({f.session})</span> : null}
-                  </div>
-                  {typeof f?.rating === "number" && (
-                    <div className="text-amber-500" aria-label={`Puan ${f.rating}/5`}>
-                      {"★".repeat(Math.max(0, Math.min(5, Math.round(f.rating))))}
-                    </div>
-                  )}
-                </div>
-                {f?.feedback ? <div className="mt-1">{String(f.feedback)}</div> : null}
-                <div className="text-xs text-zinc-500 mt-1">{fmtDate(f?.date)}</div>
-              </li>
-            ))}
-          </ul>
         )}
       </section>
 

@@ -115,11 +115,9 @@ export default function ProgramContentPage() {
           <StreakTracker programId={program._id} />
         </div>
 
-        <ProgramDetailsView program={program} />
+        <ProgramDetailsView program={program} programId={""} />
 
-        <div className="mb-8">
-          <SessionTimeline sessions={timelineSessions} programId={program._id} />
-        </div>
+       
 
         <div className="mb-8">
           <CalendarHeatmap programId={program._id} />
