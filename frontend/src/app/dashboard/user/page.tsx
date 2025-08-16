@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-import ProgramCard from "@/components/dashboard/ProgramCard";
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
-import ProgressChart from "@/components/program/ProgressChart";
 import Image from "next/image";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
@@ -47,9 +45,35 @@ const cleanToken = (): string | null => {
   return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
 };
 
-/** Always return a consistent type for fetch init.headers */
-const authHeaders = (token: string | null): HeadersInit | undefined =>
-  token ? { Authorization: `Bearer ${token}` } : undefined;
+/** Always return a real Headers object (prevents TS overload error) */
+const makeAuthHeaders = (token: string | null): Headers => {
+  const h = new Headers();
+  if (token) h.set("Authorization", `Bearer ${token}`);
+  return h;
+};
+
+/** Linear progress bar that mirrors doughnut rounding (Math.round + clamp 0..100) */
+function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: string }) {
+  const pct = Math.min(100, Math.max(0, Math.round(Number(value) || 0)));
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span>{label}</span>
+        <span>{pct}%</span>
+      </div>
+      <div
+        className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        aria-label={label}
+      >
+        <div className="h-2 rounded-full bg-green-500" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
 
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
@@ -59,16 +83,17 @@ export default function UserDashboardPage() {
 
   useEffect(() => {
     const token = cleanToken();
+    const headers = makeAuthHeaders(token);
 
     const fetchPrograms = async () => {
       try {
         const res = await fetch(`${API}/progress/all-program-progress`, {
-          headers: authHeaders(token),
+          headers,
           cache: "no-store",
         });
         const data = res.ok ? await res.json().catch(() => ({})) : {};
         const list = Array.isArray((data as any).programProgress) ? (data as any).programProgress : [];
-        setPrograms(list);
+        setPrograms(list as UserProgram[]);
       } catch {
         setPrograms([]);
       }
@@ -77,7 +102,7 @@ export default function UserDashboardPage() {
     const fetchProgress = async () => {
       try {
         const res = await fetch(`${API}/dashboard/analytics/user`, {
-          headers: authHeaders(token),
+          headers,
           cache: "no-store",
         });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
@@ -94,7 +119,7 @@ export default function UserDashboardPage() {
     const fetchUnreadNotifications = async () => {
       try {
         const res = await fetch(`${API}/dashboard/notifications/user`, {
-          headers: authHeaders(token),
+          headers,
           cache: "no-store",
         });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
@@ -108,7 +133,7 @@ export default function UserDashboardPage() {
     const fetchProfile = async () => {
       try {
         const res = await fetch(`${API}/profile`, {
-          headers: authHeaders(token),
+          headers,
           cache: "no-store",
         });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
@@ -149,48 +174,53 @@ export default function UserDashboardPage() {
             </div>
           </div>
 
-          {/* 🔥 Programs Section */}
+          {/* 🔥 Programs Section — uses linear ProgressBar (rounded like doughnut) */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {programs.length > 0 ? (
-              programs.map((program) => (
-                <div key={program.programId} className="program-card">
-                  <ProgramCard
-                    name={program.name}
-                    description={program.description}
-                    duration={typeof program.duration === "number" ? program.duration : 0}
-                    progressPercentage={Number(program.progressPercentage) || 0}
-                    difficulty={""}
-                    fitnessGoal={""}
-                  />
-                  <Link href={`/dashboard/user/programs/${program.programId}`}>
-                    <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-                      Programa Git
-                    </button>
-                  </Link>
-                </div>
-              ))
+              programs.map((program) => {
+                const pct = Math.min(100, Math.max(0, Math.round(Number(program.progressPercentage) || 0)));
+                return (
+                  <div
+                    key={program.programId}
+                    className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col"
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold">{program.name}</h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1 line-clamp-2">
+                        {program.description}
+                      </p>
+                    </div>
+
+                    <div className="mt-4">
+                      <ProgressBar value={pct} />
+                    </div>
+
+                    <Link href={`/dashboard/user/programs/${program.programId}`} className="mt-4">
+                      <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+                        Programa Git
+                      </button>
+                    </Link>
+                  </div>
+                );
+              })
             ) : (
               <p>Atanmış programın yok.</p>
             )}
           </div>
 
-          {/* 📈 Goal Tracking */}
+          {/* 📈 Goal Tracking — also use the same ProgressBar (rounded/clamped) */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
             <h2 className="text-xl font-semibold mb-4">Hedef Takibi</h2>
             {progress?.goalTracking.length ? (
-              progress.goalTracking.map((goal) => (
-                <div key={goal.programId} className="mb-6">
-                  <p className="mb-1 text-sm font-medium">Program: {goal.programId}</p>
-                  <div className="w-full bg-gray-300 rounded-full h-2 mb-1">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${Number(goal.progressPercentage) || 0}%` }}
-                    />
+              progress.goalTracking.map((goal) => {
+                const pct = Math.min(100, Math.max(0, Math.round(Number(goal.progressPercentage) || 0)));
+                return (
+                  <div key={goal.programId} className="mb-6">
+                    <p className="mb-1 text-sm font-medium">Program: {goal.programId}</p>
+                    <ProgressBar value={pct} />
                   </div>
-                  <p className="text-sm mb-2">{Number(goal.progressPercentage) || 0}% tamamlandı</p>
-                  <ProgressChart completionPercentage={Number(goal.progressPercentage) || 0} />
-                </div>
-              ))
+                );
+              })
             ) : (
               <p>Hedef bulunamadı.</p>
             )}
