@@ -33,6 +33,11 @@ export interface PDF {
 }
 
 export interface Program {
+  missedWorkouts<T>(missedWorkouts: any): unknown;
+  feedback<T>(feedback: any): unknown;
+  progressTracking<T>(progressTracking: any): unknown;
+  announcements<T>(announcements: any): unknown;
+  nutritionPlan: any;
   _id: string;
   name: string;
   description: string;
