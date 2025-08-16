@@ -20,7 +20,7 @@ import programRoutes from './routes/programRoutes.js';
 import coachRoutes from './routes/coachRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
-
+import eventRoutes from './routes/eventRoutes.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
@@ -61,7 +61,7 @@ app.use('/coaches', coachRoutes);
 app.use("/progress", progressRoutes);
 app.use("/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+app.use('/events', eventRoutes);
 // Default Route
 app.get('/', (req, res) => {
   res.send('Welcome to the backend API!');
