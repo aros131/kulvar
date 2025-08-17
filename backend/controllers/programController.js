@@ -616,7 +616,7 @@ const unassignClient = async (req, res) => {
     res.status(500).json({ message: "Error unassigning client", error: error.message });
   }
 };
-export const startProgram = async (req, res) => {
+const startProgram = async (req, res) => {
   try {
     const userId = req.user._id;
     const { programId } = req.params;
