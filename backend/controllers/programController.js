@@ -631,15 +631,7 @@ const startProgram = async (req, res) => {
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) return res.status(400).json({ message: 'Invalid startDate' });
 
-    // create an assignment record (kept in program controller per your preference)
-    const assignment = await ProgramAssignment.create({
-      userId,
-      programId,
-      startDate: start,
-      timezone,
-      defaultTimeOfDay: defaultTimeOfDay || program.defaultTimeOfDay || '18:00',
-      status: 'active',
-    });
+    
     // create assignment for this user+program "run"
 const assignment = await ProgramAssignment.create({
   userId: req.user._id,
