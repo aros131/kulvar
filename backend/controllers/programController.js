@@ -1,7 +1,7 @@
 import Program from '../models/Program.js';
 import User from '../models/User.js';
 import Progress from '../models/Progress.js';
-
+import ProgramAssignment from '../models/ProgramAssignment.js'; // ← add this
 // 🟢 Create a new program
 const createProgram = async (req, res) => {
   try {
@@ -640,6 +640,49 @@ const startProgram = async (req, res) => {
       defaultTimeOfDay: defaultTimeOfDay || program.defaultTimeOfDay || '18:00',
       status: 'active',
     });
+    // create assignment for this user+program "run"
+const assignment = await ProgramAssignment.create({
+  userId: req.user._id,
+  programId,
+  startDate: new Date(startDate),
+  timezone: timezone || 'Europe/Istanbul',
+  defaultTimeOfDay: defaultTimeOfDay || program.defaultTimeOfDay || '18:00',
+  status: 'active',
+});
+
+// when generating events, use assignment._id to group them
+const externalKey = `${assignment._id}:${dayIndex}:${sessionIndex}`;
+
+ops.push({
+  updateOne: {
+    filter: { userId, programId, assignmentId: assignment._id, externalKey },
+    update: {
+      $setOnInsert: {
+        userId, programId,
+        assignmentId: assignment._id, // ← link
+        externalKey,
+        source: 'program',
+      },
+      $set: {
+        sessionId: sid,
+        title,
+        start: st,
+        end: en,
+        status: 'planned',
+        timezone,
+      },
+    },
+    upsert: true,
+  },
+});
+
+// return the assignment id to the client
+return res.status(201).json({
+  message: 'Program started and events generated',
+  assignmentId: String(assignment._id),
+  generatedEvents: ops.length,
+});
+
 
     const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
     const ops = [];
