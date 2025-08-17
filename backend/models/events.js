@@ -15,10 +15,15 @@ const EventSchema = new mongoose.Schema(
     source: { type: String, enum: ['manual','program','google'], default: 'manual' },
     timezone: { type: String, default: 'Europe/Istanbul' },
     googleEventId: { type: String },
+    assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProgramAssignment' },
+externalKey:  { type: String, index: true }, // e.g. `${assignmentId}:${dayIdx}:${sessionIdx}`
   },
   { timestamps: true }
 );
 
-EventSchema.index({ userId: 1, start: 1, end: 1 });
+EventSchema.index(
+  { userId: 1, programId: 1, assignmentId: 1, externalKey: 1 },
+  { unique: true, partialFilterExpression: { externalKey: { $type: 'string' } } }
+);
 
 export default mongoose.model('Event', EventSchema);

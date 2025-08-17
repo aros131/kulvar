@@ -616,8 +616,119 @@ const unassignClient = async (req, res) => {
     res.status(500).json({ message: "Error unassigning client", error: error.message });
   }
 };
+export const startProgram = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { programId } = req.params;
+    const { startDate, defaultTimeOfDay, timezone = 'Europe/Istanbul' } = req.body || {};
 
+    if (!programId) return res.status(400).json({ message: 'programId missing' });
+    if (!startDate) return res.status(400).json({ message: 'startDate missing' });
 
+    const program = await Program.findById(programId).lean();
+    if (!program) return res.status(404).json({ message: 'Program not found' });
+
+    const start = new Date(startDate);
+    if (Number.isNaN(start.getTime())) return res.status(400).json({ message: 'Invalid startDate' });
+
+    // create an assignment record (kept in program controller per your preference)
+    const assignment = await ProgramAssignment.create({
+      userId,
+      programId,
+      startDate: start,
+      timezone,
+      defaultTimeOfDay: defaultTimeOfDay || program.defaultTimeOfDay || '18:00',
+      status: 'active',
+    });
+
+    const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
+    const ops = [];
+
+    const fallbackTime = defaultTimeOfDay || program.defaultTimeOfDay || '18:00';
+    const { h: defH, m: defM } = parseHHmm(fallbackTime);
+    const programDefaultDur = toInt(program?.defaultDurationMin, 60);
+
+    for (let d = 0; d < days.length; d++) {
+      const dayDef = days[d] || {};
+      const sessions = Array.isArray(dayDef.sessions) ? dayDef.sessions : [];
+
+      // base local date for Day d
+      const date = new Date(start.getTime());
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() + d);
+
+      for (let i = 0; i < sessions.length; i++) {
+        const s = sessions[i] || {};
+        const sid = String(s.sessionId || s._id || s.id || `${d}-${i}`);
+        const title = s.name || `Seans ${i + 1}`;
+
+        // pick time + duration (session > program > fallback)
+        const t = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+        const dur = toInt(s.durationMin, programDefaultDur);
+
+        const st = new Date(date.getTime());
+        st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
+        const en = new Date(st.getTime());
+        en.setMinutes(en.getMinutes() + dur);
+
+        // idempotency key: assignment:dayIndex:sessionIndex
+        const externalKey = `${assignment._id}:${d}:${i}`;
+
+        ops.push({
+          updateOne: {
+            filter: { userId, programId, assignmentId: assignment._id, externalKey },
+            update: {
+              $setOnInsert: {
+                userId,
+                programId,
+                assignmentId: assignment._id,
+                externalKey,
+                source: 'program',
+              },
+              $set: {
+                sessionId: sid,
+                title,
+                start: st,
+                end: en,
+                status: 'planned',
+                timezone,
+              },
+            },
+            upsert: true,
+          },
+        });
+      }
+    }
+
+    if (ops.length) await Calendar.bulkWrite(ops, { ordered: false });
+
+    return res.status(201).json({
+      message: 'Program started and events generated',
+      assignment: {
+        id: assignment._id,
+        startDate: assignment.startDate,
+        timezone: assignment.timezone,
+      },
+      generatedEvents: ops.length,
+    });
+  } catch (error) {
+    console.error('startProgram error:', error);
+    return res.status(500).json({ message: 'Error starting program', error: error.message });
+  }
+};
+
+// small utils
+const toInt = (v, d = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+};
+const parseHHmm = (hhmm = '18:00') => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
+  if (!m) return { h: 18, m: 0 };
+  const h = Math.min(23, Math.max(0, Number(m[1])));
+  const mm = Math.min(59, Math.max(0, Number(m[2])));
+  return { h, m: mm };
+};
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
 export {
   createProgram,
@@ -648,7 +759,8 @@ export {
   getCoachPrograms,
   getAllClients,
   assignProgramToGroup,
-  unassignClient
+  unassignClient,
+  startProgram
 
 
 };

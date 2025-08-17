@@ -36,13 +36,15 @@ import {
   getProgramMedia,
   getCoachPrograms,
   getAllClients,
-  assignProgramToGroup
+  assignProgramToGroup,
+  startProgram
+
  
   
  
   
 } from '../controllers/programController.js';
-
+router.post('/:programId/start', protect, roleMiddleware(['user']), startProgram);
 // 🟢 Program Management Routes
 router.post("/", protect, roleMiddleware(["coach"]), upload.array("documents"), createProgram);
 router.get("/coach", protect, roleMiddleware(["coach"]), getCoachPrograms); // ✅ MUST come before /:id

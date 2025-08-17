@@ -40,28 +40,6 @@ export const addEvent = async (req, res) => {
   }
 };
 
-// GET /api/events?from=ISO&to=ISO
-export const getEvents = async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    const { from, to } = req.query;
-
-    const query = { userId };
-    if (from && to) {
-      const s = safeDate(from);
-      const e = safeDate(to);
-      if (s && e) {
-        // overlap window [from,to]
-        query.$and = [{ start: { $lt: e } }, { end: { $gt: s } }];
-      }
-    }
-
-    const events = await Event.find(query).sort({ start: 1 }).lean();
-    res.status(200).json({ events });
-  } catch (error) {
-    res.status(500).json({ message: 'Error retrieving events', error: error.message });
-  }
-};
 
 // PUT /api/events/:id
 export const updateEvent = async (req, res) => {
@@ -125,5 +103,31 @@ export const completeEvent = async (req, res) => {
     res.status(200).json({ message: 'Event completed', event: ev });
   } catch (error) {
     res.status(500).json({ message: 'Error completing event', error: error.message });
+  }
+};
+// GET /events?from=ISO&to=ISO&programId=&assignmentId=
+export const getEvents = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const { from, to, programId, assignmentId } = req.query;
+
+    const query = { userId };
+    if (programId)    query.programId = programId;
+    if (assignmentId) query.assignmentId = assignmentId;
+
+    // Overlap window: start < to && end > from
+    const s = from ? new Date(from) : null;
+    const e = to   ? new Date(to)   : null;
+    if (s && !Number.isNaN(s.getTime())) {
+      query.end = { ...(query.end || {}), $gt: s };
+    }
+    if (e && !Number.isNaN(e.getTime())) {
+      query.start = { ...(query.start || {}), $lt: e };
+    }
+
+    const events = await Event.find(query).sort({ start: 1 }).lean();
+    res.status(200).json({ events });
+  } catch (error) {
+    res.status(500).json({ message: 'Error retrieving events', error: error.message });
   }
 };
