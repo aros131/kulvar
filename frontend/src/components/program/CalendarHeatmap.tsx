@@ -1,13 +1,15 @@
 // src/components/program/CalendarHeatmap.tsx
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
 
 type Status = 'completed' | 'missed' | 'planned' | 'none';
-type Day = { date: string; status: Status };
 type CalEvent = {
+  _id?: string;
+  title?: string;
   start: string;
   end?: string;
   status?: 'planned' | 'completed' | 'missed';
@@ -15,58 +17,82 @@ type CalEvent = {
   assignmentId?: string;
 };
 
+type DayCell = {
+  date: Date;
+  ymd: string;
+  inMonth: boolean;
+  status: Status;
+  events: CalEvent[];
+};
+
 function token() {
   if (typeof window === 'undefined') return null;
   const t = localStorage.getItem('token');
   return t ? t.replace(/^"+|"+$/g, '').replace(/^Bearer\s+/i, '') : null;
 }
+const pad = (n: number) => String(n).padStart(2, '0');
+const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const localFloorISO = (d: Date) => {
+  const k = new Date(d);
+  k.setHours(0, 0, 0, 0);
+  return new Date(k.getTime() - k.getTimezoneOffset() * 60000).toISOString();
+};
 
-function ymd(d: Date) {
-  const z = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+function statusMerge(a: Status, b: Status): Status {
+  const rank: Record<Status, number> = { completed: 3, missed: 2, planned: 1, none: 0 };
+  return rank[a] >= rank[b] ? a : b;
 }
 
-function toLocalISOFloor(d: Date) {
-  const dd = new Date(d);
-  dd.setHours(0, 0, 0, 0);
-  return new Date(dd.getTime() - dd.getTimezoneOffset() * 60000).toISOString();
-}
+function buildMonthGrid(base: Date) {
+  // Monday-first grid (TR locale style)
+  const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+  const lastOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
 
-function mergeDayStatus(a: Status, b: Status): Status {
-  const order: Record<Status, number> = { completed: 3, missed: 2, planned: 1, none: 0 };
-  return order[a] >= order[b] ? a : b;
+  // JS getDay(): 0 Sun ... 6 Sat. We want Mon=0..Sun=6
+  const js = firstOfMonth.getDay();           // 0..6
+  const monIdx = (js + 6) % 7;                // 0..6
+  const gridStart = new Date(firstOfMonth);
+  gridStart.setDate(firstOfMonth.getDate() - monIdx);
+
+  // 6 full weeks (42 days) for consistent layout
+  const days: { date: Date; ymd: string; inMonth: boolean }[] = [];
+  const cur = new Date(gridStart);
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(cur);
+    days.push({ date: d, ymd: ymd(d), inMonth: d.getMonth() === base.getMonth() });
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  // query bounds
+  const endOfGrid = new Date(gridStart);
+  endOfGrid.setDate(gridStart.getDate() + 42); // exclusive upper bound (next day after last cell)
+  return { days, fromISO: localFloorISO(gridStart), toISO: localFloorISO(endOfGrid) };
 }
 
 export default function CalendarHeatmap({
   programId,
   assignmentId,
+  month, // optional yyyy-mm to view a specific month
 }: {
   programId: string | 'all';
   assignmentId?: string;
+  month?: string; // e.g., "2025-08"
 }) {
-  const [days, setDays] = useState<Day[]>([]);
+  const router = useRouter();
+  const [cells, setCells] = useState<DayCell[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
-  // last 30 days, inclusive of today (to = tomorrow 00:00 local)
-  const { fromISO, toISO, rangeDates } = useMemo(() => {
-    const now = new Date();
-    const from = new Date(now);
-    from.setHours(0, 0, 0, 0);
-    from.setDate(from.getDate() - 29);
-
-    const to = new Date(now);
-    to.setHours(24, 0, 0, 0); // tomorrow local midnight
-
-    const arr: Date[] = [];
-    const cur = new Date(from);
-    for (let i = 0; i < 30; i++) {
-      arr.push(new Date(cur));
-      cur.setDate(cur.getDate() + 1);
+  // which month to render (defaults to current)
+  const baseDate = useMemo(() => {
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const [yy, mm] = month.split('-').map(Number);
+      return new Date(yy, (mm || 1) - 1, 1);
     }
-    return { fromISO: toLocalISOFloor(from), toISO: toLocalISOFloor(to), rangeDates: arr };
-  }, []);
+    return new Date();
+  }, [month]);
+
+  const { days, fromISO, toISO } = useMemo(() => buildMonthGrid(baseDate), [baseDate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,23 +117,27 @@ export default function CalendarHeatmap({
         const json = text ? JSON.parse(text) : {};
         const evs: CalEvent[] = Array.isArray(json?.events) ? json.events : [];
 
-        const map = new Map<string, Status>();
         const now = new Date();
-        // init
-        for (const d of rangeDates) map.set(ymd(d), 'none');
+        const map = new Map<string, DayCell>();
+        for (const d of days) {
+          map.set(d.ymd, { date: d.date, ymd: d.ymd, inMonth: d.inMonth, status: 'none', events: [] });
+        }
 
         for (const e of evs) {
           const st = new Date(e.start);
           const en = new Date(e.end || e.start);
           const key = ymd(st);
+          if (!map.has(key)) continue;
+          const cell = map.get(key)!;
+          cell.events.push(e);
           let s: Status = 'planned';
           if (e.status === 'completed') s = 'completed';
           else if (en < now) s = 'missed';
-          map.set(key, mergeDayStatus(map.get(key) || 'none', s));
+          cell.status = statusMerge(cell.status, s);
         }
 
-        const out: Day[] = rangeDates.map((d) => ({ date: ymd(d), status: map.get(ymd(d)) || 'none' }));
-        if (!cancelled) setDays(out);
+        const out = days.map((d) => map.get(d.ymd)!);
+        if (!cancelled) setCells(out);
       } catch (e: any) {
         if (!cancelled) setErr(e?.message || String(e));
       } finally {
@@ -117,56 +147,172 @@ export default function CalendarHeatmap({
     return () => {
       cancelled = true;
     };
-  }, [API, programId, assignmentId, fromISO, toISO, rangeDates]);
+  }, [API, programId, assignmentId, fromISO, toISO, days]);
+
+  // hover/click dialog
+  const [openDay, setOpenDay] = useState<DayCell | null>(null);
+  const [hoverDay, setHoverDay] = useState<DayCell | null>(null);
+  const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
+  const handleEnter = (cell: DayCell, ev: React.MouseEvent) => {
+    setHoverDay(cell);
+    const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+    setPopoverPos({ x: r.left + r.width / 2, y: r.top });
+  };
+  const handleLeave = () => {
+    setHoverDay(null);
+    setPopoverPos(null);
+  };
+
+  const statusColor = (s: Status) =>
+    s === 'completed' ? 'bg-green-500'
+    : s === 'missed'   ? 'bg-amber-500'
+    : s === 'planned'  ? 'bg-sky-400'
+    :                    'bg-zinc-300 dark:bg-zinc-700';
+
+  const wk = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
 
   return (
-    <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-medium">Son 30 Gün</h3>
+    <div className="rounded-xl border bg-white dark:bg-zinc-900 p-4 relative">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium">
+          {baseDate.getFullYear()} / {pad(baseDate.getMonth() + 1)}
+        </h3>
         <div className="flex items-center gap-3 text-xs text-zinc-500">
-          <span className="inline-flex items-center gap-1">
-            <span className="h-3 w-3 rounded bg-green-500 inline-block" /> Tamamlandı
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-3 w-3 rounded bg-amber-500 inline-block" /> Kaçırıldı
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-3 w-3 rounded bg-sky-400 inline-block" /> Planlı
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-3 w-3 rounded bg-zinc-300 dark:bg-zinc-700 inline-block" /> Boş
-          </span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-green-500 inline-block" /> Tamamlandı</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-amber-500 inline-block" /> Kaçırıldı</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-sky-400 inline-block" /> Planlı</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-zinc-300 dark:bg-zinc-700 inline-block" /> Boş</span>
         </div>
       </div>
 
-      {loading && <div className="text-sm text-zinc-500">Yükleniyor…</div>}
-      {err && <div className="text-sm text-red-600">Hata: {String(err)}</div>}
+      {/* Weekday header */}
+      <div className="grid grid-cols-7 text-[11px] text-zinc-500 mb-1 px-1">
+        {wk.map((w) => <div key={w} className="text-center">{w}</div>)}
+      </div>
 
-      {!loading && !err && (
-        <div className="grid grid-cols-10 gap-1">
-          {days.map((d, i) => {
-            const status = d?.status || 'none';
-            const cls =
-              status === 'completed'
-                ? 'bg-green-500'
-                : status === 'missed'
-                ? 'bg-amber-500'
-                : status === 'planned'
-                ? 'bg-sky-400'
-                : 'bg-zinc-300 dark:bg-zinc-700';
+      {/* Month grid */}
+      <div ref={gridRef} className="grid grid-cols-7 gap-1">
+        {cells.map((c, i) => (
+          <button
+            key={`${c.ymd}-${i}`}
+            onClick={() => setOpenDay(c)} // click opens dialog (mobile-friendly)
+            onMouseEnter={(ev) => handleEnter(c, ev)}
+            onMouseLeave={handleLeave}
+            title={`${c.ymd}`}
+            className={[
+              'relative h-8 w-8 rounded-md flex items-center justify-center',
+              statusColor(c.status),
+              c.inMonth ? '' : 'opacity-40',
+              'focus:outline-none focus:ring-2 focus:ring-offset-1'
+            ].join(' ')}
+            aria-label={`${c.ymd} ${c.status}`}
+          >
+            {/* tiny day number */}
+            <span className="absolute -top-1 -left-1 text-[10px] px-0.5 rounded bg-white/80 dark:bg-black/30 text-zinc-700 dark:text-zinc-200">
+              {c.date.getDate()}
+            </span>
+          </button>
+        ))}
+      </div>
 
-            return (
-              <button
-                key={`${d?.date ?? i}`}
-                title={`${String(d?.date ?? '')} - ${status}`}
-                onClick={() => router.push(`/takvim?date=${encodeURIComponent(d?.date ?? '')}`)}
-                className={`h-4 w-4 rounded ${cls} focus:outline-none focus:ring-2 focus:ring-offset-1`}
-                aria-label={`${d?.date ?? ''} ${status}`}
-              />
-            );
-          })}
+      {/* Hover popover (desktop) */}
+      {hoverDay && popoverPos && (
+        <div
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-xl border bg-white dark:bg-zinc-900 shadow p-3 text-xs w-64"
+          style={{ left: popoverPos.x, top: popoverPos.y - 8 }}
+        >
+          <div className="font-medium mb-1">{hoverDay.ymd}</div>
+          {hoverDay.events.length === 0 ? (
+            <div className="text-zinc-500">Etkinlik yok.</div>
+          ) : (
+            <ul className="space-y-1">
+              {hoverDay.events.map((e, idx) => (
+                <li key={e._id || idx} className="flex items-start justify-between gap-2">
+                  <div className="text-zinc-800 dark:text-zinc-200">
+                    {e.title || 'Seans'}
+                  </div>
+                  <span className={[
+                    'px-1.5 py-0.5 rounded text-[10px]',
+                    e.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                    : new Date(e.end || e.start) < new Date() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                    : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+                  ].join(' ')}>
+                    {e.status === 'completed' ? 'Tamamlandı' : (new Date(e.end || e.start) < new Date() ? 'Kaçırıldı' : 'Planlı')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-2">
+            <a
+              href={`/takvim?date=${encodeURIComponent(hoverDay.ymd)}`}
+              className="underline text-zinc-600 dark:text-zinc-300"
+            >
+              Günü aç →
+            </a>
+          </div>
         </div>
       )}
+
+      {/* Click dialog (mobile / accessible) */}
+      {openDay && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-2"
+          onClick={() => setOpenDay(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border bg-white dark:bg-zinc-900 shadow-lg p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold">{openDay.ymd}</div>
+              <button onClick={() => setOpenDay(null)} className="text-sm px-2 py-1 rounded border">Kapat</button>
+            </div>
+            {openDay.events.length === 0 ? (
+              <div className="text-sm text-zinc-500">Etkinlik yok.</div>
+            ) : (
+              <ul className="space-y-2">
+                {openDay.events.map((e, idx) => (
+                  <li key={e._id || idx} className="rounded border p-2">
+                    <div className="text-sm font-medium">{e.title || 'Seans'}</div>
+                    <div className="text-[12px] text-zinc-500">
+                      {new Date(e.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(e.end || e.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div className="mt-1 text-[11px]">
+                      <span className={[
+                        'px-1.5 py-0.5 rounded',
+                        e.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        : new Date(e.end || e.start) < new Date() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                        : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+                      ].join(' ')}>
+                        {e.status === 'completed' ? 'Tamamlandı' : (new Date(e.end || e.start) < new Date() ? 'Kaçırıldı' : 'Planlı')}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-3 text-right">
+              <button
+                onClick={() => {
+                  setOpenDay(null);
+                  router.push(`/takvim?date=${encodeURIComponent(openDay.ymd)}`);
+                }}
+                className="text-sm px-3 py-1.5 rounded-lg border"
+              >
+                Günü aç
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading && <div className="mt-2 text-sm text-zinc-500">Yükleniyor…</div>}
+      {err && <div className="mt-2 text-sm text-red-600">Hata: {String(err)}</div>}
     </div>
   );
 }
