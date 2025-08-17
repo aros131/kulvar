@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
 
-type Status = 'completed' | 'missed' | 'none';
+type Status = 'completed' | 'missed' | 'planned' | 'none';
 type Day = { date: string; status: Status };
 type CalEvent = {
   start: string;
@@ -27,16 +27,14 @@ function ymd(d: Date) {
 }
 
 function toLocalISOFloor(d: Date) {
-  // local midnight-safe ISO for query building if you need strict ranges
   const dd = new Date(d);
   dd.setHours(0, 0, 0, 0);
   return new Date(dd.getTime() - dd.getTimezoneOffset() * 60000).toISOString();
 }
 
 function mergeDayStatus(a: Status, b: Status): Status {
-  if (a === 'completed' || b === 'completed') return 'completed';
-  if (a === 'missed' || b === 'missed') return 'missed';
-  return 'none';
+  const order: Record<Status, number> = { completed: 3, missed: 2, planned: 1, none: 0 };
+  return order[a] >= order[b] ? a : b;
 }
 
 export default function CalendarHeatmap({
@@ -51,12 +49,16 @@ export default function CalendarHeatmap({
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // last 30 days window
+  // last 30 days, inclusive of today (to = tomorrow 00:00 local)
   const { fromISO, toISO, rangeDates } = useMemo(() => {
-    const to = new Date(); // now
-    const from = new Date();
-    from.setDate(to.getDate() - 29);
-    // build array of Date objects (ascending)
+    const now = new Date();
+    const from = new Date(now);
+    from.setHours(0, 0, 0, 0);
+    from.setDate(from.getDate() - 29);
+
+    const to = new Date(now);
+    to.setHours(24, 0, 0, 0); // tomorrow local midnight
+
     const arr: Date[] = [];
     const cur = new Date(from);
     for (let i = 0; i < 30; i++) {
@@ -89,23 +91,18 @@ export default function CalendarHeatmap({
         const json = text ? JSON.parse(text) : {};
         const evs: CalEvent[] = Array.isArray(json?.events) ? json.events : [];
 
-        // Build day buckets
         const map = new Map<string, Status>();
         const now = new Date();
-
-        // initialize all days to 'none'
-        for (const d of rangeDates) {
-          map.set(ymd(d), 'none');
-        }
+        // init
+        for (const d of rangeDates) map.set(ymd(d), 'none');
 
         for (const e of evs) {
           const st = new Date(e.start);
           const en = new Date(e.end || e.start);
           const key = ymd(st);
-          let s: Status = 'none';
+          let s: Status = 'planned';
           if (e.status === 'completed') s = 'completed';
           else if (en < now) s = 'missed';
-          // merge with existing
           map.set(key, mergeDayStatus(map.get(key) || 'none', s));
         }
 
@@ -134,6 +131,9 @@ export default function CalendarHeatmap({
             <span className="h-3 w-3 rounded bg-amber-500 inline-block" /> Kaçırıldı
           </span>
           <span className="inline-flex items-center gap-1">
+            <span className="h-3 w-3 rounded bg-sky-400 inline-block" /> Planlı
+          </span>
+          <span className="inline-flex items-center gap-1">
             <span className="h-3 w-3 rounded bg-zinc-300 dark:bg-zinc-700 inline-block" /> Boş
           </span>
         </div>
@@ -151,6 +151,8 @@ export default function CalendarHeatmap({
                 ? 'bg-green-500'
                 : status === 'missed'
                 ? 'bg-amber-500'
+                : status === 'planned'
+                ? 'bg-sky-400'
                 : 'bg-zinc-300 dark:bg-zinc-700';
 
             return (
