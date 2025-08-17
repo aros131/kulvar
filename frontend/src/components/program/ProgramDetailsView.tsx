@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { JSX, useEffect, useMemo, useRef, useState } from "react";
 import type { Program } from "@/types/program";
 import { completeSession } from "@/utils/completeSession";
 
@@ -111,6 +111,34 @@ export default function ProgramDetailsView({ program, programId, completedSessio
   // 4) normalize schedule
   const days = useMemo(() => arr<DSDay>(program.dailySchedule), [program.dailySchedule]);
 
+  // ---- Week logic: derive week count from program.duration or day count ----
+  const weekCount = useMemo(() => {
+    const durationWeeks = Number((program as any)?.duration);
+    if (Number.isFinite(durationWeeks) && durationWeeks > 0) return durationWeeks;
+    return Math.max(1, Math.ceil(days.length / 7));
+  }, [days.length, program]);
+
+  const [week, setWeek] = useState<number>(1);
+
+  const renderedDays = useMemo(() => {
+    const start = (week - 1) * 7;
+    return days.slice(start, start + 7);
+  }, [days, week]);
+
+  const wkNames = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const weekChips = (w: number) => {
+    const start = (w - 1) * 7;
+    const items: JSX.Element[] = [];
+    for (let i = 0; i < 7; i++) {
+      const di = start + i;
+      const has = !!days[di] && arr<DSSession>(days[di]?.sessions).length > 0;
+      items.push(
+        <span key={i} className={`px-1.5 py-0.5 rounded text-[10px] border ${has ? 'bg-sky-50 border-sky-300 text-sky-700 dark:bg-sky-900/30 dark:border-sky-700' : 'bg-zinc-50 border-zinc-300 text-zinc-500 dark:bg-zinc-900/30 dark:border-zinc-700'}`}>{wkNames[i]}</span>
+      );
+    }
+    return <div className="hidden sm:flex gap-1.5">{items}</div>;
+  };
+
   const isDone = (s: DSSession, fallbackKey: string) => {
     if (s?.completed === true) return true; // baked in
     const candidates = [s?.sessionId, s?._id, s?.id, s?.name, fallbackKey].map(norm).filter(Boolean);
@@ -160,14 +188,31 @@ export default function ProgramDetailsView({ program, programId, completedSessio
       {/* DAILY SCHEDULE as HORIZONTAL CARDS (no vertical list) */}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Günlük Program</h3>
-        {days.length === 0 ? (
+        {/* Week selector */}
+        {weekCount > 1 && (
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            {Array.from({ length: weekCount }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setWeek(i + 1)}
+                className={`px-3 py-1.5 rounded-xl border text-sm flex items-center gap-2 ${week === i + 1 ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'bg-white dark:bg-zinc-900'}`}
+                aria-pressed={week === i + 1}
+              >
+                <span className="whitespace-nowrap">{i + 1}. Hafta</span>
+                {weekChips(i + 1)}
+              </button>
+            ))}
+          </div>
+        )}
+        {renderedDays.length === 0 ? (
           <p className="text-sm text-zinc-500">Plan yok.</p>
         ) : (
           <div
             ref={scrollerRef}
             className="relative flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:thin]"
           >
-            {days.map((day, dIdx) => {
+            {renderedDays.map((day, dIdx) => { const globalIdx = (week - 1) * 7 + dIdx;
               const dayLabel = day?.day || `Gün ${dIdx + 1}`;
               const sessions = arr<DSSession>(day?.sessions);
               return (
@@ -185,7 +230,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {sessions.map((s, sIdx) => {
-                        const fallbackKey = `day-${dIdx + 1}-s-${sIdx + 1}`;
+                        const fallbackKey = `day-${globalIdx + 1}-s-${sIdx + 1}`;
                         const sid = s.sessionId ?? s._id ?? s.id ?? fallbackKey;
                         const done = isDone(s, fallbackKey);
                         return (
