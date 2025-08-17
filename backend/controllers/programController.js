@@ -1,5 +1,7 @@
 import Program from '../models/Program.js';
 import User from '../models/User.js';
+import Event from '../models/events.js'; // ✅ make sure the path/case matches your file name
+
 import Progress from '../models/Progress.js';
 import ProgramAssignment from '../models/ProgramAssignment.js'; // ← add this
 // 🟢 Create a new program
@@ -185,18 +187,21 @@ const updateWorkoutVideo = async (req, res) => {
     const program = await Program.findById(id);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const workoutDay = program.dailySchedule.find(d => d.day === day);
+    const workoutDay = (program.dailySchedule || []).find(d => d.day === day);
     if (!workoutDay) return res.status(400).json({ message: "Invalid day" });
 
+    // optional day-level field
     workoutDay.videoUrl = videoUrl;
-    await program.save();
-    workoutDay.sessions.forEach(session => {
-      session.exercises.forEach(exercise => {
-        if (!exercise.videoUrls) exercise.videoUrls = [];
+
+    for (const session of workoutDay.sessions || []) {
+      for (const exercise of session.exercises || []) {
+        if (!Array.isArray(exercise.videoUrls)) exercise.videoUrls = [];
         exercise.videoUrls.push({ url: videoUrl, description: "New Video" });
-      });
-    });
-    
+      }
+    }
+
+    program.markModified('dailySchedule');
+    await program.save();
 
     res.status(200).json({ message: "Video link updated", program });
   } catch (error) {
@@ -204,20 +209,23 @@ const updateWorkoutVideo = async (req, res) => {
   }
 };
 
+
 // 🟢 Get session completion data (FIXED)
 const getSessionCompletionData = async (req, res) => {
   try {
     const { id } = req.params;
     const program = await Program.findById(id);
-
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const userProgress = program.progressTracking.find(entry => entry.user?.toString() === req.user._id);
+    const list = Array.isArray(program.progressTracking) ? program.progressTracking : [];
+    const userIdStr = req.user._id.toString();
+    const userProgress = list.find(entry => entry?.user?.toString() === userIdStr);
+
     const completedSessions = userProgress?.completedSessions || 0;
-    const totalSessions = program.dailySchedule?.reduce(
-      (total, day) => total + (day.sessions?.length || 0),
+    const totalSessions = (program.dailySchedule || []).reduce(
+      (total, day) => total + ((day.sessions || []).length),
       0
-    ) || 0;
+    );
 
     res.status(200).json({ completedSessions, totalSessions });
   } catch (error) {
@@ -225,27 +233,32 @@ const getSessionCompletionData = async (req, res) => {
   }
 };
 
+
 // 🟢 Submit session feedback
 const submitSessionFeedback = async (req, res) => {
   try {
     const { programId, session, feedback } = req.body;
     const userId = req.user._id;
 
-    const program = await Program.findByIdAndUpdate(
-      programId,
-      { $push: { sessionFeedback: { session, userId, feedback, date: new Date() } } },
-      { new: true }
-    );
+    const program = await Program.findById(programId);
+    if (!program) return res.status(404).json({ message: "Program not found." });
 
-    if (!program) {
-      return res.status(404).json({ message: "Program not found." });
-    }
+    if (!Array.isArray(program.feedback)) program.feedback = [];
+    program.feedback.push({
+      userId,
+      comment: feedback,
+      rating: undefined,
+      session,
+      createdAt: new Date(),
+    });
 
+    await program.save();
     res.status(201).json({ message: "Session feedback submitted successfully!" });
   } catch (error) {
     res.status(500).json({ message: "Error submitting feedback", error: error.message });
   }
 };
+
 
 // 🟢 Get program documents
 const getProgramDocuments = async (req, res) => {
@@ -440,16 +453,21 @@ const resetProgress = async (req, res) => {
       { completedSessions: [] },
       { new: true }
     );
-    program.progressTracking = program.progressTracking.map(entry => 
-      entry.user.toString() === userId.toString()
-        ? { ...entry, completedSessions: 0, progressPercentage: 0 }
-        : entry
-    );
-    await program.save();
-    
 
     if (!progress) {
       return res.status(404).json({ message: "Progress not found for this program." });
+    }
+
+    const program = await Program.findById(programId);
+    if (program) {
+      const list = Array.isArray(program.progressTracking) ? program.progressTracking : [];
+      const next = list.map((entry) =>
+        entry?.user?.toString() === userId.toString()
+          ? { ...entry.toObject?.() ?? entry, completedSessions: 0, progressPercentage: 0 }
+          : entry
+      );
+      program.progressTracking = next;
+      await program.save();
     }
 
     res.status(200).json({ message: "Progress reset successfully", progress });
@@ -457,6 +475,7 @@ const resetProgress = async (req, res) => {
     res.status(500).json({ message: "Error resetting progress", error: error.message });
   }
 };
+
 const updateAdaptiveAdjustments = async (req, res) => {
   try {
     const { programId } = req.params;
@@ -502,25 +521,42 @@ const getProgramFeedback = async (req, res) => {
   }
 };
 
-
 const trackSessionCompletion = async (req, res) => {
   try {
-    const { programId, session } = req.body;
+    const { programId } = req.body;
     const userId = req.user._id;
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    program.progressTracking.completedSessions += 1;
-    program.progressTracking.completionRate =
-      (program.progressTracking.completedSessions / program.progressTracking.totalSessions) * 100;
+    if (!Array.isArray(program.progressTracking)) program.progressTracking = [];
 
+    // ensure an entry for this user
+    let row = program.progressTracking.find(e => e?.user?.toString() === userId.toString());
+    if (!row) {
+      row = { user: userId, completedSessions: 0, progressPercentage: 0 };
+      program.progressTracking.push(row);
+    }
+
+    // increment and recompute percentage
+    row.completedSessions = (row.completedSessions || 0) + 1;
+    const totalSessions = (program.dailySchedule || []).reduce(
+      (acc, d) => acc + ((d.sessions || []).length),
+      0
+    );
+    row.progressPercentage = totalSessions > 0
+      ? Math.round((row.completedSessions / totalSessions) * 100)
+      : 0;
+
+    program.markModified('progressTracking');
     await program.save();
-    res.status(200).json({ message: "Session completion tracked", program });
+
+    res.status(200).json({ message: "Session completion tracked", progress: row });
   } catch (error) {
     res.status(500).json({ message: "Error tracking session completion", error: error.message });
   }
 };
+
 // 🟢 Get combined program media (documents + video URLs)
 const getProgramMedia = async (req, res) => {
   try {
@@ -616,6 +652,18 @@ const unassignClient = async (req, res) => {
     res.status(500).json({ message: "Error unassigning client", error: error.message });
   }
 };
+const toInt = (v, d = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+};
+const parseHHmm = (hhmm = '18:00') => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
+  if (!m) return { h: 18, m: 0 };
+  const h = Math.min(23, Math.max(0, Number(m[1])));
+  const mm = Math.min(59, Math.max(0, Number(m[2])));
+  return { h, m: mm };
+};
+
 const startProgram = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -631,51 +679,17 @@ const startProgram = async (req, res) => {
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) return res.status(400).json({ message: 'Invalid startDate' });
 
-    
-    // create assignment for this user+program "run"
-const assignment = await ProgramAssignment.create({
-  userId: req.user._id,
-  programId,
-  startDate: new Date(startDate),
-  timezone: timezone || 'Europe/Istanbul',
-  defaultTimeOfDay: defaultTimeOfDay || program.defaultTimeOfDay || '18:00',
-  status: 'active',
-});
+    // 1) Create the assignment that represents this "run"
+    const assignment = await ProgramAssignment.create({
+      userId,
+      programId,
+      startDate: start,
+      timezone,
+      defaultTimeOfDay: defaultTimeOfDay || program.defaultTimeOfDay || '18:00',
+      status: 'active',
+    });
 
-// when generating events, use assignment._id to group them
-const externalKey = `${assignment._id}:${dayIndex}:${sessionIndex}`;
-
-ops.push({
-  updateOne: {
-    filter: { userId, programId, assignmentId: assignment._id, externalKey },
-    update: {
-      $setOnInsert: {
-        userId, programId,
-        assignmentId: assignment._id, // ← link
-        externalKey,
-        source: 'program',
-      },
-      $set: {
-        sessionId: sid,
-        title,
-        start: st,
-        end: en,
-        status: 'planned',
-        timezone,
-      },
-    },
-    upsert: true,
-  },
-});
-
-// return the assignment id to the client
-return res.status(201).json({
-  message: 'Program started and events generated',
-  assignmentId: String(assignment._id),
-  generatedEvents: ops.length,
-});
-
-
+    // 2) Materialize events from dailySchedule
     const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
     const ops = [];
 
@@ -687,26 +701,23 @@ return res.status(201).json({
       const dayDef = days[d] || {};
       const sessions = Array.isArray(dayDef.sessions) ? dayDef.sessions : [];
 
-      // base local date for Day d
-      const date = new Date(start.getTime());
-      date.setHours(0, 0, 0, 0);
-      date.setDate(date.getDate() + d);
+      const baseDate = new Date(start.getTime());
+      baseDate.setHours(0, 0, 0, 0);
+      baseDate.setDate(baseDate.getDate() + d); // Day 1 = start, Day 2 = +1 …
 
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i] || {};
-        const sid = String(s.sessionId || s._id || s.id || `${d}-${i}`);
+        const sid   = String(s.sessionId || s._id || s.id || `${d}-${i}`);
         const title = s.name || `Seans ${i + 1}`;
+        const t     = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+        const dur   = toInt(s.durationMin, programDefaultDur);
 
-        // pick time + duration (session > program > fallback)
-        const t = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
-        const dur = toInt(s.durationMin, programDefaultDur);
-
-        const st = new Date(date.getTime());
+        const st = new Date(baseDate);
         st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
-        const en = new Date(st.getTime());
+        const en = new Date(st);
         en.setMinutes(en.getMinutes() + dur);
 
-        // idempotency key: assignment:dayIndex:sessionIndex
+        // idempotency per assignment + day + session
         const externalKey = `${assignment._id}:${d}:${i}`;
 
         ops.push({
@@ -735,7 +746,7 @@ return res.status(201).json({
       }
     }
 
-    if (ops.length) await Calendar.bulkWrite(ops, { ordered: false });
+    if (ops.length) await Event.bulkWrite(ops, { ordered: false }); // ✅ use Event model
 
     return res.status(201).json({
       message: 'Program started and events generated',
@@ -744,6 +755,7 @@ return res.status(201).json({
         startDate: assignment.startDate,
         timezone: assignment.timezone,
       },
+      assignmentId: String(assignment._id),
       generatedEvents: ops.length,
     });
   } catch (error) {
@@ -752,18 +764,6 @@ return res.status(201).json({
   }
 };
 
-// small utils
-const toInt = (v, d = 0) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : d;
-};
-const parseHHmm = (hhmm = '18:00') => {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
-  if (!m) return { h: 18, m: 0 };
-  const h = Math.min(23, Math.max(0, Number(m[1])));
-  const mm = Math.min(59, Math.max(0, Number(m[2])));
-  return { h, m: mm };
-};
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
 export {
   createProgram,
