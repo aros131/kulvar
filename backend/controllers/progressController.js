@@ -1,7 +1,6 @@
 import Progress from '../models/Progress.js';
 import Program from '../models/Program.js';
-// If your calendar model is named Calendar, change the next line accordingly:
-import Event from '../models/Event.js';
+import Event from '../models/Event.js'; // ✅ correct file name
 
 // ------- small utils -------
 const toISODate = (d) => {
@@ -41,15 +40,15 @@ const computeStreaksFromDates = (dateStringsSet /* Set<string> */) => {
   return { currentStreak: current, longestStreak: longest };
 };
 
-// ------- calendar helpers (new) -------
+// ------- calendar helpers -------
 const NOW = () => new Date();
 
 /**
  * Mark the most relevant calendar event for this (user, program, sessionId)
  * as completed. Prefers an event within [-36h, +7d], otherwise the most recent past.
- * Returns the updated event or null.
+ * If none exists, creates a tiny ad-hoc completed event for today.
  */
-async function completeMatchingCalendarEvent({ userId, programId, sessionId }) {
+async function completeMatchingCalendarEvent({ userId, programId, sessionId, title }) {
   try {
     if (!Event || !sessionId) return null;
 
@@ -57,6 +56,7 @@ async function completeMatchingCalendarEvent({ userId, programId, sessionId }) {
     const startWindow = new Date(now.getTime() - 36 * 60 * 60 * 1000);
     const endWindow   = new Date(now.getTime() + 7  * 24 * 60 * 60 * 1000);
 
+    // 1) prefer a nearby planned event
     let ev = await Event.findOne({
       userId,
       programId,
@@ -65,6 +65,7 @@ async function completeMatchingCalendarEvent({ userId, programId, sessionId }) {
       start: { $gte: startWindow, $lte: endWindow },
     }).sort({ start: 1 });
 
+    // 2) else most recent past planned event
     if (!ev) {
       ev = await Event.findOne({
         userId,
@@ -75,10 +76,27 @@ async function completeMatchingCalendarEvent({ userId, programId, sessionId }) {
       }).sort({ start: -1 });
     }
 
-    if (!ev) return null;
+    // 3) if none found, create ad-hoc 'completed' event pinned to now
+    if (!ev) {
+      const st = new Date(now); st.setSeconds(0, 0);
+      const en = new Date(st); en.setMinutes(en.getMinutes() + 1);
+      const created = await Event.create({
+        userId,
+        programId,
+        sessionId,
+        title: title || 'Completed Session',
+        start: st,
+        end: en,
+        status: 'completed',
+        source: 'manual',
+        completedAt: now,
+      });
+      return created;
+    }
 
+    // 4) otherwise flip it to completed
     ev.status = 'completed';
-    ev.completedAt = NOW();
+    ev.completedAt = now;
     await ev.save();
     return ev;
   } catch (e) {
@@ -87,17 +105,23 @@ async function completeMatchingCalendarEvent({ userId, programId, sessionId }) {
   }
 }
 
-// Use events to compute per-day status over a window
+/**
+ * Build day cells (‘completed’ | ‘missed’ | ‘none’) from Events between [from..to] inclusive.
+ * completed: any event with status=completed (uses completedAt day if present, else start day)
+ * missed: any past event that ended before now and is not completed (uses start day)
+ */
 async function computeDailyStatusesFromEvents({ userId, programId, from, to }) {
-  // overlap window: event.start < (to + 1d) && event.end > (from)
+  const pidFilter = (programId && programId !== 'all') ? { programId } : {};
+
+  // overlap: start < (to + 1d) and (no end || end > from)
+  const toPlus1d = new Date(new Date(to).getTime() + 24 * 60 * 60 * 1000);
   const events = await Event.find({
     userId,
-    ...(programId ? { programId } : {}),
-    start: { $lt: new Date(new Date(to).getTime() + 24 * 60 * 60 * 1000) },
-    end:   { $gt: from },
+    ...pidFilter,
+    start: { $lt: toPlus1d },
+    $or: [{ end: { $gt: from } }, { end: { $exists: false } }],
   }).lean();
 
-  // Build day map
   const map = Object.create(null);
   const add = (date, field) => {
     map[date] ||= { completed: false, missed: false };
@@ -108,15 +132,14 @@ async function computeDailyStatusesFromEvents({ userId, programId, from, to }) {
 
   for (const ev of events) {
     const startDay = toISODate(ev.start);
-    const endDay = toISODate(ev.end);
-    const compDay = ev.completedAt ? toISODate(ev.completedAt) : null;
+    const endDate  = ev.end ? new Date(ev.end) : new Date(ev.start);
+    const compDay  = ev.completedAt ? toISODate(ev.completedAt) : null;
 
     if (ev.status === 'completed') {
-      // prefer completedAt’s day; otherwise the start day
-      add(compDay || startDay, 'completed');
+      add(compDay || startDay, 'completed'); // completed has priority
     } else {
-      // A scheduled event that already ended but not completed counts as missed on its start day
-      if (new Date(ev.end) < today) add(startDay, 'missed');
+      // planned/pending event that already ended counts as missed on its start day
+      if (endDate < today) add(startDay, 'missed');
     }
   }
 
@@ -180,7 +203,7 @@ const getProgressReport = async (req, res) => {
   }
 };
 
-// 🟢 Mark a workout as completed (by session name) — now also updates the matching Calendar Event
+// 🟢 Mark a workout as completed (by session name) — also updates the matching Calendar Event
 const markWorkoutCompleted = async (req, res) => {
   try {
     const { programId, sessionName } = req.body;
@@ -240,7 +263,9 @@ const markWorkoutCompleted = async (req, res) => {
     await progress.save();
 
     // 🔁 ALSO: mark the related calendar event as completed
-    const updatedEvent = await completeMatchingCalendarEvent({ userId, programId, sessionId: resolvedSessionId });
+    const updatedEvent = await completeMatchingCalendarEvent({
+      userId, programId, sessionId: resolvedSessionId, title: sessionName
+    });
 
     res.status(200).json({
       message: exists ? "Bu seans daha önce tamamlanmış." : "Workout marked as completed",
@@ -312,7 +337,7 @@ const restartProgram = async (req, res) => {
   }
 };
 
-// 🟢 Get user workout streaks (SAFE) — computes from completedSessions.dateCompleted
+// 🟢 Get user workout streaks
 const getUserStreaks = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -397,11 +422,9 @@ const getUserProgress = async (req, res) => {
       totalSessions > 0 ? Number(((completedCount / totalSessions) * 100).toFixed(2)) : 0;
 
     res.status(200).json({
-      progressPercentage,                                   // number
-      completedSessions: completedArr.map(s => ({           // array of { sessionId }
-        sessionId: s?.sessionId,
-      })),
-      totalSessions,                                        // number
+      progressPercentage,
+      completedSessions: completedArr.map(s => ({ sessionId: s?.sessionId })),
+      totalSessions,
       streakTracking: progress.streakTracking || { current: 0, longest: 0 },
       achievementBadges: Array.isArray(progress.achievementBadges) ? progress.achievementBadges : [],
       goalTracking: progress.goalTracking || {},
@@ -433,7 +456,7 @@ const getProgressTrend = async (req, res) => {
   }
 };
 
-// 🟢 Mark a session as completed (idempotent, accepts sessionId or sessionName) — now updates matching Calendar Event
+// 🟢 Mark a session as completed — also updates matching Calendar Event
 const markSessionCompleted = async (req, res) => {
   try {
     const { programId, sessionId, sessionName, feedback, rating } = req.body;
@@ -497,7 +520,7 @@ const markSessionCompleted = async (req, res) => {
       ? Math.min(100, Math.round((completedCount / totalSessions) * 100))
       : 0;
 
-    // Recompute streaks from completion dates
+    // Recompute streaks
     const completedDates = new Set(
       progress.completedSessions.map(s => toISODate(s?.dateCompleted)).filter(Boolean)
     );
@@ -506,7 +529,9 @@ const markSessionCompleted = async (req, res) => {
     await progress.save();
 
     // 🔁 ALSO: mark the related calendar event as completed
-    const updatedEvent = await completeMatchingCalendarEvent({ userId, programId, sessionId: resolvedSessionId });
+    const updatedEvent = await completeMatchingCalendarEvent({
+      userId, programId, sessionId: resolvedSessionId, title: sessionName
+    });
 
     return res.status(200).json({
       message: already ? "Bu seans daha önce tamamlanmış." : "Seans başarıyla tamamlandı",
@@ -569,7 +594,7 @@ const getAllProgramProgress = async (req, res) => {
 // 🟢 Calendar heatmap (last 30 days) — prefers Events; falls back to Progress-only
 const getCalendarHeatmap = async (req, res) => {
   try {
-    const { programId } = req.params;
+    const { programId } = req.params;               // can be a specific id OR 'all'
     const userId = req.user._id;
 
     // Window: last 30 days (inclusive)
@@ -584,32 +609,39 @@ const getCalendarHeatmap = async (req, res) => {
       console.warn('Heatmap via events failed, falling back to Progress:', e?.message || e);
     }
 
-    // Fallback: Progress-only (completed = green; missed = not derivable reliably -> keep "none")
-    const progress = await Progress.findOne({ programId, userId });
-    if (!progress) {
-      // no data → all none
-      const arr = [];
-      const cur = new Date(start);
+    // Fallback: Progress-only
+    const out = [];
+    const cur = new Date(start);
+
+    if (programId === 'all') {
+      const docs = await Progress.find({ userId }).lean();
+      const completedSet = new Set();
+      (docs || []).forEach(doc => {
+        (Array.isArray(doc.completedSessions) ? doc.completedSessions : []).forEach(s => {
+          const ds = toISODate(s?.dateCompleted);
+          if (ds) completedSet.add(ds);
+        });
+      });
       while (cur <= end) {
-        arr.push({ date: toISODate(cur), status: 'none' });
+        const ds = toISODate(cur);
+        out.push({ date: ds, status: completedSet.has(ds) ? 'completed' : 'none' });
         cur.setDate(cur.getDate() + 1);
       }
-      return res.status(200).json({ days: arr });
+      return res.status(200).json({ days: out });
+    } else {
+      const progress = await Progress.findOne({ programId, userId }).lean();
+      const completedSet = new Set(
+        (Array.isArray(progress?.completedSessions) ? progress.completedSessions : [])
+          .map(s => toISODate(s?.dateCompleted))
+          .filter(Boolean)
+      );
+      while (cur <= end) {
+        const ds = toISODate(cur);
+        out.push({ date: ds, status: completedSet.has(ds) ? 'completed' : 'none' });
+        cur.setDate(cur.getDate() + 1);
+      }
+      return res.status(200).json({ days: out });
     }
-
-    const completed = Array.isArray(progress.completedSessions) ? progress.completedSessions : [];
-    const completedSet = new Set(completed.map(s => toISODate(s?.dateCompleted)).filter(Boolean));
-
-    const days = [];
-    const cur = new Date(start);
-    while (cur <= end) {
-      const ds = toISODate(cur);
-      const status = completedSet.has(ds) ? 'completed' : 'none';
-      days.push({ date: ds, status });
-      cur.setDate(cur.getDate() + 1);
-    }
-
-    res.status(200).json({ days });
   } catch (error) {
     res.status(500).json({ message: "Error fetching calendar heatmap", error: error.message });
   }

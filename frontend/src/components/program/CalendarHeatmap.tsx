@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import type React from 'react';
 const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
 
 type Status = 'completed' | 'missed' | 'planned' | 'none';
@@ -44,17 +44,15 @@ function statusMerge(a: Status, b: Status): Status {
 }
 
 function buildMonthGrid(base: Date) {
-  // Monday-first grid (TR locale style)
+  // Monday-first grid (TR style)
   const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
-  const lastOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+  const js = firstOfMonth.getDay();           // 0..6 (Sun..Sat)
+  const monIdx = (js + 6) % 7;                // Mon=0..Sun=6
 
-  // JS getDay(): 0 Sun ... 6 Sat. We want Mon=0..Sun=6
-  const js = firstOfMonth.getDay();           // 0..6
-  const monIdx = (js + 6) % 7;                // 0..6
+  // start of 6-week grid
   const gridStart = new Date(firstOfMonth);
   gridStart.setDate(firstOfMonth.getDate() - monIdx);
 
-  // 6 full weeks (42 days) for consistent layout
   const days: { date: Date; ymd: string; inMonth: boolean }[] = [];
   const cur = new Date(gridStart);
   for (let i = 0; i < 42; i++) {
@@ -63,11 +61,17 @@ function buildMonthGrid(base: Date) {
     cur.setDate(cur.getDate() + 1);
   }
 
-  // query bounds
-  const endOfGrid = new Date(gridStart);
-  endOfGrid.setDate(gridStart.getDate() + 42); // exclusive upper bound (next day after last cell)
-  return { days, fromISO: localFloorISO(gridStart), toISO: localFloorISO(endOfGrid) };
+  // inclusive upper bound = last cell’s date (not the day after)
+  const lastCell = new Date(gridStart);
+  lastCell.setDate(gridStart.getDate() + 41);
+
+  return {
+    days,
+    fromISO: localFloorISO(gridStart),
+    toISO:   localFloorISO(lastCell), // 👈 inclusive
+  };
 }
+
 
 export default function CalendarHeatmap({
   programId,
