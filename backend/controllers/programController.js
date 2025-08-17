@@ -1,6 +1,6 @@
 import Program from '../models/Program.js';
 import User from '../models/User.js';
-import Event from '../models/events.js'; // ✅ make sure the path/case matches your file name
+import Event from '../models/Event.js'; // ✅ make sure the path/case matches your file name
 
 import Progress from '../models/Progress.js';
 import ProgramAssignment from '../models/ProgramAssignment.js'; // ← add this
