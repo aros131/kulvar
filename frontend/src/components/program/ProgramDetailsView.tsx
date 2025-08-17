@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Program } from "@/types/program";
 import { completeSession } from "@/utils/completeSession";
 
@@ -43,12 +43,7 @@ type Props = {
   completedSessions?: CompletedRaw[];
 };
 
-export default function ProgramDetailsView({
-  program,
-  programId,
-  completedSessionIds,
-  completedSessions,
-}: Props) {
+export default function ProgramDetailsView({ program, programId, completedSessionIds, completedSessions, }: Props) {
   // ✅ derive a safe program id automatically
   const pid = useMemo(
     () => String((programId || (program as any)?._id || (program as any)?.id || "")).trim(),
@@ -127,35 +122,60 @@ export default function ProgramDetailsView({
     setLocalDone(next);
   };
 
+  // ---------- NEW: Day Cards Carousel (horizontal, scroll-snap) ----------
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current; if (!el) return;
+    const delta = Math.round(el.clientWidth * 0.85) * dir;
+    el.scrollBy({ left: delta, behavior: 'smooth' });
+  };
+
   return (
     <section className="space-y-8">
-      {/* SUMMARY (no createdAt, no coachId, no assignedClients) */}
+      {/* SUMMARY */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold">{program.name ?? "Program"}</h2>
-        {program.description && <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1">{program.description}</p>}
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Info label="Süre (hafta)" value={String((program as any).duration ?? "—")} />
-          <Info label="Zorluk" value={String((program as any).difficulty ?? "—")} />
-          <Info label="Hedef" value={String((program as any).fitnessGoal ?? "—")} />
-          <Info label="Durum" value={String((program as any).status ?? "—")} />
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">{program.name ?? "Program"}</h2>
+            {program.description && <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1">{program.description}</p>}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Info label="Süre (hafta)" value={String((program as any).duration ?? "—")} />
+              <Info label="Zorluk" value={String((program as any).difficulty ?? "—")} />
+              <Info label="Hedef" value={String((program as any).fitnessGoal ?? "—")} />
+              <Info label="Durum" value={String((program as any).status ?? "—")} />
+            </div>
+          </div>
+          {/* Carousel controls */}
+          {days.length > 0 && (
+            <div className="hidden sm:flex items-center gap-2">
+              <button onClick={() => scrollBy(-1)} className="px-3 py-1 rounded-lg border">◀</button>
+              <button onClick={() => scrollBy(1)} className="px-3 py-1 rounded-lg border">▶</button>
+            </div>
+          )}
         </div>
       </Card>
 
       <Separator />
 
-      {/* DAILY SCHEDULE + COMPLETE */}
-      <section className="space-y-4">
+      {/* DAILY SCHEDULE as HORIZONTAL CARDS (no vertical list) */}
+      <section className="space-y-3">
         <h3 className="text-lg font-semibold">Günlük Program</h3>
         {days.length === 0 ? (
           <p className="text-sm text-zinc-500">Plan yok.</p>
         ) : (
-          <div className="space-y-4">
+          <div
+            ref={scrollerRef}
+            className="relative flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:thin]"
+          >
             {days.map((day, dIdx) => {
               const dayLabel = day?.day || `Gün ${dIdx + 1}`;
               const sessions = arr<DSSession>(day?.sessions);
               return (
-                <Card key={dIdx} className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
+                <Card
+                  key={dIdx}
+                  className="snap-start shrink-0 w-[86vw] sm:w-[520px] xl:w-[640px] p-4"
+                >
+                  <div className="flex items-center justify-between mb-3">
                     <div className="font-semibold">{dayLabel}</div>
                     {day?.notes && <div className="text-xs text-zinc-500">Not: {day.notes}</div>}
                   </div>
@@ -163,68 +183,34 @@ export default function ProgramDetailsView({
                   {sessions.length === 0 ? (
                     <div className="text-sm text-zinc-500">Seans yok.</div>
                   ) : (
-                    <ul className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {sessions.map((s, sIdx) => {
                         const fallbackKey = `day-${dIdx + 1}-s-${sIdx + 1}`;
                         const sid = s.sessionId ?? s._id ?? s.id ?? fallbackKey;
                         const done = isDone(s, fallbackKey);
                         return (
-                          <li key={`${fallbackKey}-${sid}`} className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium">{s?.name || `Seans ${sIdx + 1}`}</div>
-
-                              {!done ? (
-                                <CompleteButton
-                                  programId={pid}               // ✅ always use derived pid
-                                  sessionId={String(sid)}
-                                  sessionName={s?.name}
-                                  onOk={() => markLocal(s, fallbackKey)}
-                                />
-                              ) : (
-                                <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                                  Tamamlandı
-                                </span>
+                          <div key={`${fallbackKey}-${sid}`} className={`rounded-xl border p-3 ${tileClass(done)}`}>
+                            <div className="text-sm font-medium truncate" title={s?.name || `Seans ${sIdx + 1}`}>
+                              {s?.name || `Seans ${sIdx + 1}`}
+                            </div>
+                            <div className="mt-1 text-[11px] text-zinc-500">
+                              {tileMeta(arr<DSExercise>(s?.exercises))}
+                            </div>
+                            <div className="mt-2 flex items-center justify-between">
+                              <span className={done ? "px-2 py-0.5 rounded-full text-[10px] bg-green-100 text-green-700" : "px-2 py-0.5 rounded-full text-[10px] bg-sky-100 text-sky-700"}>
+                                {done ? "Tamamlandı" : "Planlandı"}
+                              </span>
+                              {!done && (
+                                <button
+                                  onClick={async () => { try { markLocal(s, fallbackKey); await completeSession(pid, String(sid), s?.name); } catch (e) {} }}
+                                  className="text-xs px-2 py-1 rounded-lg border bg-white hover:bg-zinc-50 dark:bg-zinc-900"
+                                >Tamamla</button>
                               )}
                             </div>
-
-                            {/* Exercises */}
-                            {arr<DSExercise>(s?.exercises).length === 0 ? (
-                              <div className="text-sm text-zinc-500">Egzersiz yok.</div>
-                            ) : (
-                              <ul className="space-y-2 text-sm">
-                                {arr<DSExercise>(s?.exercises).map((ex, eIdx) => (
-                                  <li key={`${sid}-ex-${eIdx}`} className="space-y-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className="font-semibold">{ex?.name ?? `Egzersiz ${eIdx + 1}`}</span>
-                                      {typeof ex?.sets === "number" && <span>• {ex.sets} set</span>}
-                                      {typeof ex?.reps === "number" && <span>• {ex.reps} tekrar</span>}
-                                      {ex?.duration && <span>• {ex.duration}</span>}
-                                      {typeof ex?.restTime === "number" && <span>• Dinlenme: {ex.restTime}s</span>}
-                                    </div>
-                                    {arr<DSVideoUrl>(ex?.videoUrls).length > 0 && (
-                                      <ul className="list-disc pl-5 text-xs text-zinc-600 dark:text-zinc-300 space-y-1">
-                                        {arr<DSVideoUrl>(ex?.videoUrls).map((v, vi) => (
-                                          <li key={`${sid}-ex-${eIdx}-v-${vi}`}>
-                                            {v?.url ? (
-                                              <a className="underline" href={v.url} target="_blank" rel="noreferrer">
-                                                {v.url}
-                                              </a>
-                                            ) : (
-                                              <span>Link</span>
-                                            )}
-                                            {v?.description ? <span className="ml-2 text-zinc-500">({v.description})</span> : null}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    )}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
+                          </div>
                         );
                       })}
-                    </ul>
+                    </div>
                   )}
                 </Card>
               );
@@ -369,52 +355,19 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CompleteButton({
-  programId,
-  sessionId,
-  sessionName,
-  onOk,
-}: {
-  programId: string;
-  sessionId?: string;
-  sessionName?: string;
-  onOk?: () => void;
-}) {
-  const [pending, setPending] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+function tileClass(done: boolean) {
+  return done
+    ? "border-green-300 bg-green-50 dark:bg-green-900/30 dark:border-green-700"
+    : "border-sky-300 bg-sky-50 dark:bg-sky-900/30 dark:border-sky-700";
+}
 
-  const handleClick = async () => {
-    if (!programId) {
-      setErr("Program ID bulunamadı");
-      return;
-    }
-    try {
-      setPending(true);
-      setErr(null);
-      await completeSession(programId, sessionId, sessionName);
-      onOk?.(); // optimistic mark
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setErr(msg);
-    } finally {
-      setPending(false);
-    }
-  };
-
-  return (
-    <div className="inline-flex flex-col items-end">
-      <button
-        type="button"
-        className="px-3 py-1 rounded bg-green-600 text-white disabled:opacity-60"
-        onClick={handleClick}
-        disabled={pending || !programId}
-        aria-busy={pending}
-        aria-label="Seansı tamamla"
-        title={!programId ? "Program ID bulunamadı" : undefined}
-      >
-        {pending ? "Kaydediliyor…" : "Tamamla"}
-      </button>
-      {err && <div className="text-sm text-red-600 mt-1" role="alert">{err}</div>}
-    </div>
-  );
+function tileMeta(exs: DSExercise[]) {
+  if (!exs || exs.length === 0) return "";
+  const first = exs[0];
+  const bits: string[] = [];
+  if (first.name) bits.push(first.name);
+  if (typeof first.sets === "number") bits.push(`${first.sets} set`);
+  if (typeof first.reps === "number") bits.push(`${first.reps} tekrar`);
+  if (first.duration) bits.push(first.duration);
+  return bits.join(" • ");
 }
