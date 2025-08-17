@@ -44,12 +44,10 @@ function statusMerge(a: Status, b: Status): Status {
 }
 
 function buildMonthGrid(base: Date) {
-  // Monday-first grid
   const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
   const js = firstOfMonth.getDay();           // 0..6 (Sun..Sat)
   const monIdx = (js + 6) % 7;                // Mon=0..Sun=6
 
-  // start of 6-week grid
   const gridStart = new Date(firstOfMonth);
   gridStart.setDate(firstOfMonth.getDate() - monIdx);
 
@@ -61,14 +59,14 @@ function buildMonthGrid(base: Date) {
     cur.setDate(cur.getDate() + 1);
   }
 
-  // inclusive upper bound = last cell
-  const lastCell = new Date(gridStart);
-  lastCell.setDate(gridStart.getDate() + 41);
+  // exclusive upper bound = day after the last cell
+  const endExclusive = new Date(gridStart);
+  endExclusive.setDate(gridStart.getDate() + 42);
 
   return {
     days,
     fromISO: localFloorISO(gridStart),
-    toISO:   localFloorISO(lastCell), // inclusive
+    toISO:   localFloorISO(endExclusive), // EXCLUSIVE
   };
 }
 
@@ -111,12 +109,13 @@ export default function CalendarHeatmap({
         let source: CalEvent[] = [];
         if (Array.isArray(events)) {
           // filter to the grid window (inclusive)
-          const from = new Date(fromISO);
-          const to   = new Date(toISO);
-          source = events.filter(e => {
-            const st = new Date(e.start);
-            return st >= from && st <= to;
-          });
+         const from = new Date(fromISO);
+const to   = new Date(toISO); // exclusive
+source = events.filter(e => {
+  const st = new Date(e.start);
+  return st >= from && st < to;   // ← strictly less than `to`
+});
+
         } else {
           // fallback: fetch from API
           const t = token();

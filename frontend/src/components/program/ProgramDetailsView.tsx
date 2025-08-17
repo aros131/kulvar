@@ -5,7 +5,7 @@
 import React, { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { Program } from "@/types/program";
 import { completeSession } from "@/utils/completeSession";
-import CalendarHeatmap, { CalEvent } from "./CalendarHeatmap";
+import CalendarHeatmap from "./CalendarHeatmap";
 
 // ---------- small UI bits ----------
 const Card: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
@@ -41,6 +41,17 @@ type DSVideoUrl = { url?: string; description?: string };
 type DSExercise = { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number; videoUrls?: DSVideoUrl[] };
 type DSSession = { name?: string; completed?: boolean; sessionId?: string; _id?: string; id?: string; exercises?: DSExercise[] };
 type DSDay = { day?: string; notes?: string; sessions?: DSSession[] };
+
+// Local mirror of the calendar event shape (keeps this file decoupled)
+type CalEvent = {
+  _id?: string;
+  title?: string;
+  start: string;
+  end?: string;
+  status?: 'planned' | 'completed' | 'missed';
+  programId?: string;
+  assignmentId?: string;
+};
 
 // incoming “completed” shapes you *might* pass from the page
 type CompletedRaw =
@@ -133,6 +144,9 @@ const startDate = useMemo(() => {
 
 const defaultTimeOfDay = (program as any)?.defaultTimeOfDay || "18:00";
 const defaultDurationMin = Number((program as any)?.defaultDurationMin) || 60;
+
+// helpers used by calendar & UI
+// (moved isDone/markLocal earlier to avoid TDZ/hoisting issues)
 
 const calEvents = useMemo<CalEvent[]>(() => {
   const evs: CalEvent[] = [];
