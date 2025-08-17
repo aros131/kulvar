@@ -2,9 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { JSX, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { Program } from "@/types/program";
 import { completeSession } from "@/utils/completeSession";
+import CalendarHeatmap, { CalEvent } from "./CalendarHeatmap";
 
 // ---------- small UI bits ----------
 const Card: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
@@ -23,6 +24,17 @@ const fmtDate = (d?: string | Date) => {
   return `${dt.getFullYear()}-${z(dt.getMonth() + 1)}-${z(dt.getDate())} ${z(dt.getHours())}:${z(dt.getMinutes())}`;
 };
 const norm = (s?: string) => (s ?? "").toString().trim().toLowerCase();
+
+// small time parser for building calendar events
+const parseHHmm = (hhmm = "18:00") => {
+  const [hStr, mStr] = String(hhmm).trim().split(":");
+  const hNum = Number(hStr);
+  const mNum = Number(mStr);
+  if (!Number.isFinite(hNum) || !Number.isFinite(mNum)) return { h: 18, m: 0 };
+  const h = Math.min(23, Math.max(0, hNum));
+  const m = Math.min(59, Math.max(0, mNum));
+  return { h, m };
+};
 
 // ---------- schedule types ----------
 type DSVideoUrl = { url?: string; description?: string };
@@ -111,6 +123,51 @@ export default function ProgramDetailsView({ program, programId, completedSessio
   // 4) normalize schedule
   const days = useMemo(() => arr<DSDay>(program.dailySchedule), [program.dailySchedule]);
 
+// --- calendar synthesis from the local schedule ---
+const startDate = useMemo(() => {
+  const raw = (program as any)?.startDate || (program as any)?.startedAt || (program as any)?.assignmentStartDate || null;
+  const d = raw ? new Date(raw) : new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}, [program]);
+
+const defaultTimeOfDay = (program as any)?.defaultTimeOfDay || "18:00";
+const defaultDurationMin = Number((program as any)?.defaultDurationMin) || 60;
+
+const calEvents = useMemo<CalEvent[]>(() => {
+  const evs: CalEvent[] = [];
+  const now = new Date();
+  const { h: defH, m: defM } = parseHHmm(defaultTimeOfDay);
+
+  days.forEach((day, dIdx) => {
+    const base = new Date(startDate);
+    base.setDate(base.getDate() + dIdx);
+
+    const sessions = arr<DSSession>(day?.sessions);
+    sessions.forEach((s, sIdx) => {
+      const t = typeof (s as any)?.timeOfDay === "string" ? parseHHmm((s as any).timeOfDay) : { h: defH, m: defM };
+      const dur = Number((s as any)?.durationMin) || defaultDurationMin;
+
+      const st = new Date(base);
+      st.setHours(t.h, t.m, 0, 0);
+      const en = new Date(st);
+      en.setMinutes(en.getMinutes() + dur);
+
+      const fallbackKey = `day-${dIdx + 1}-s-${sIdx + 1}`;
+      const done = isDone(s, fallbackKey);
+
+      evs.push({
+        title: s?.name || `Seans ${sIdx + 1}`,
+        start: st.toISOString(),
+        end: en.toISOString(),
+        status: done ? "completed" : (en < now ? "missed" : "planned"),
+        programId: pid,
+      });
+    });
+  });
+  return evs;
+}, [days, pid, startDate, defaultTimeOfDay, defaultDurationMin, completedTokens, localDone]);
+
   // ---- Week logic: derive week count from program.duration or day count ----
   const weekCount = useMemo(() => {
     const durationWeeks = Number((program as any)?.duration);
@@ -181,6 +238,11 @@ export default function ProgramDetailsView({ program, programId, completedSessio
             </div>
           )}
         </div>
+      </Card>
+      {/* CALENDAR (month grid) */}
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold mb-2">Takvim</h3>
+        <CalendarHeatmap programId={pid} events={calEvents} />
       </Card>
 
       <Separator />
@@ -266,7 +328,38 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       <Separator />
 
-      
+      {/* STANDALONE EXERCISES */}
+      <section className="space-y-3">
+        <h3 className="text-lg font-semibold">Bağımsız Egzersizler</h3>
+        {arr<any>(program.exercises).length === 0 ? (
+          <p className="text-sm text-zinc-500">Egzersiz yok.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {arr<any>(program.exercises).map((ex, i) => (
+              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3">
+                <div className="font-medium">{ex?.name || `Egzersiz ${i + 1}`}</div>
+                <div className="text-zinc-600 dark:text-zinc-300">
+                  {typeof ex?.sets === "number" && <span className="mr-2">{ex.sets} set</span>}
+                  {typeof ex?.reps === "number" && <span className="mr-2">{ex.reps} tekrar</span>}
+                  {ex?.duration && <span className="mr-2">{ex.duration}</span>}
+                </div>
+                {arr<DSVideoUrl>(ex?.videoUrls).length > 0 && (
+                  <div className="mt-1 text-xs">
+                    {arr<DSVideoUrl>(ex?.videoUrls).map((v, vi) => (
+                      <div key={vi}>
+                        {v?.url ? (
+                          <a className="underline" href={v.url} target="_blank" rel="noreferrer">{v.url}</a>
+                        ) : "Link"}
+                        {v?.description ? <span className="ml-1 text-zinc-500">({v.description})</span> : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <Separator />
 
@@ -301,11 +394,61 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       <Separator />
 
-      
+      {/* MEDIA */}
+      <section className="space-y-4">
+        <h3 className="text-lg font-semibold">Videolar (URL)</h3>
+        {arr<any>(program.videos).length === 0 ? (
+          <p className="text-sm text-zinc-500">Video yok.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {arr<any>(program.videos).map((v, i) => (
+              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{v?.name || `Video ${i + 1}`}</div>
+                  {v?.description && <div className="text-zinc-500">{v.description}</div>}
+                </div>
+                {v?.url ? <a className="underline text-sm" href={v.url} target="_blank" rel="noreferrer">Aç</a> : <span className="text-xs text-zinc-400">—</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <h3 className="text-lg font-semibold">PDF’ler (URL)</h3>
+        {arr<any>(program.pdfs).length === 0 ? (
+          <p className="text-sm text-zinc-500">PDF yok.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {arr<any>(program.pdfs).map((v, i) => (
+              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{v?.name || `PDF ${i + 1}`}</div>
+                  {v?.description && <div className="text-zinc-500">{v.description}</div>}
+                </div>
+                {v?.url ? <a className="underline text-sm" href={v.url} target="_blank" rel="noreferrer">Aç</a> : <span className="text-xs text-zinc-400">—</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <Separator />
 
-     
+      {/* ANNOUNCEMENTS */}
+      <section className="space-y-3">
+        <h3 className="text-lg font-semibold">Duyurular</h3>
+        {arr<any>(program.announcements).length === 0 ? (
+          <p className="text-sm text-zinc-500">Duyuru yok.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {arr<any>(program.announcements).map((a, i) => (
+              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between">
+                <span className="text-zinc-700 dark:text-zinc-300">{a?.message || "-"}</span>
+                <span className="text-xs text-zinc-500">{fmtDate(a?.date)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </section>
   );
 }

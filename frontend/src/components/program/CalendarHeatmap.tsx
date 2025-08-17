@@ -3,15 +3,15 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type React from 'react';
+
 const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
 
 type Status = 'completed' | 'missed' | 'planned' | 'none';
-type CalEvent = {
+export type CalEvent = {
   _id?: string;
   title?: string;
-  start: string;
-  end?: string;
+  start: string; // ISO
+  end?: string;  // ISO
   status?: 'planned' | 'completed' | 'missed';
   programId?: string;
   assignmentId?: string;
@@ -44,7 +44,7 @@ function statusMerge(a: Status, b: Status): Status {
 }
 
 function buildMonthGrid(base: Date) {
-  // Monday-first grid (TR style)
+  // Monday-first grid
   const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
   const js = firstOfMonth.getDay();           // 0..6 (Sun..Sat)
   const monIdx = (js + 6) % 7;                // Mon=0..Sun=6
@@ -61,26 +61,27 @@ function buildMonthGrid(base: Date) {
     cur.setDate(cur.getDate() + 1);
   }
 
-  // inclusive upper bound = last cell’s date (not the day after)
+  // inclusive upper bound = last cell
   const lastCell = new Date(gridStart);
   lastCell.setDate(gridStart.getDate() + 41);
 
   return {
     days,
     fromISO: localFloorISO(gridStart),
-    toISO:   localFloorISO(lastCell), // 👈 inclusive
+    toISO:   localFloorISO(lastCell), // inclusive
   };
 }
-
 
 export default function CalendarHeatmap({
   programId,
   assignmentId,
-  month, // optional yyyy-mm to view a specific month
+  month,           // optional yyyy-mm
+  events,          // 👈 if provided, we use these instead of fetching
 }: {
   programId: string | 'all';
   assignmentId?: string;
-  month?: string; // e.g., "2025-08"
+  month?: string;
+  events?: CalEvent[];
 }) {
   const router = useRouter();
   const [cells, setCells] = useState<DayCell[]>([]);
@@ -104,38 +105,55 @@ export default function CalendarHeatmap({
       setLoading(true);
       setErr(null);
       try {
-        const t = token();
-        const q = new URLSearchParams();
-        q.set('from', fromISO);
-        q.set('to', toISO);
-        if (programId && programId !== 'all') q.set('programId', String(programId));
-        if (assignmentId) q.set('assignmentId', String(assignmentId));
-
-        const res = await fetch(`${API}/events?${q.toString()}`, {
-          headers: { Accept: 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
-          cache: 'no-store',
-          credentials: 'include',
-        });
-        const text = await res.text();
-        if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
-        const json = text ? JSON.parse(text) : {};
-        const evs: CalEvent[] = Array.isArray(json?.events) ? json.events : [];
-
         const now = new Date();
+
+        // 1) choose source events
+        let source: CalEvent[] = [];
+        if (Array.isArray(events)) {
+          // filter to the grid window (inclusive)
+          const from = new Date(fromISO);
+          const to   = new Date(toISO);
+          source = events.filter(e => {
+            const st = new Date(e.start);
+            return st >= from && st <= to;
+          });
+        } else {
+          // fallback: fetch from API
+          const t = token();
+          const q = new URLSearchParams();
+          q.set('from', fromISO);
+          q.set('to', toISO);
+          if (programId && programId !== 'all') q.set('programId', String(programId));
+          if (assignmentId) q.set('assignmentId', String(assignmentId));
+
+          const res = await fetch(`${API}/events?${q.toString()}`, {
+            headers: { Accept: 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+            cache: 'no-store',
+            credentials: 'include',
+          });
+          const text = await res.text();
+          if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+          const json = text ? JSON.parse(text) : {};
+          source = Array.isArray(json?.events) ? json.events : [];
+        }
+
+        // 2) build cells
         const map = new Map<string, DayCell>();
         for (const d of days) {
           map.set(d.ymd, { date: d.date, ymd: d.ymd, inMonth: d.inMonth, status: 'none', events: [] });
         }
 
-        for (const e of evs) {
+        for (const e of source) {
           const st = new Date(e.start);
           const en = new Date(e.end || e.start);
           const key = ymd(st);
           if (!map.has(key)) continue;
           const cell = map.get(key)!;
           cell.events.push(e);
+
           let s: Status = 'planned';
           if (e.status === 'completed') s = 'completed';
+          else if (e.status === 'missed') s = 'missed';
           else if (en < now) s = 'missed';
           cell.status = statusMerge(cell.status, s);
         }
@@ -148,26 +166,20 @@ export default function CalendarHeatmap({
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [API, programId, assignmentId, fromISO, toISO, days]);
+    return () => { cancelled = true; };
+  }, [events, API, programId, assignmentId, fromISO, toISO, days]);
 
   // hover/click dialog
   const [openDay, setOpenDay] = useState<DayCell | null>(null);
   const [hoverDay, setHoverDay] = useState<DayCell | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
-  const gridRef = useRef<HTMLDivElement | null>(null);
 
   const handleEnter = (cell: DayCell, ev: React.MouseEvent) => {
     setHoverDay(cell);
     const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
     setPopoverPos({ x: r.left + r.width / 2, y: r.top });
   };
-  const handleLeave = () => {
-    setHoverDay(null);
-    setPopoverPos(null);
-  };
+  const handleLeave = () => { setHoverDay(null); setPopoverPos(null); };
 
   const statusColor = (s: Status) =>
     s === 'completed' ? 'bg-green-500'
@@ -191,20 +203,18 @@ export default function CalendarHeatmap({
         </div>
       </div>
 
-      {/* Weekday header */}
       <div className="grid grid-cols-7 text-[11px] text-zinc-500 mb-1 px-1">
         {wk.map((w) => <div key={w} className="text-center">{w}</div>)}
       </div>
 
-      {/* Month grid */}
-      <div ref={gridRef} className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1">
         {cells.map((c, i) => (
           <button
             key={`${c.ymd}-${i}`}
-            onClick={() => setOpenDay(c)} // click opens dialog (mobile-friendly)
+            onClick={() => setOpenDay(c)}
             onMouseEnter={(ev) => handleEnter(c, ev)}
             onMouseLeave={handleLeave}
-            title={`${c.ymd}`}
+            title={c.ymd}
             className={[
               'relative h-8 w-8 rounded-md flex items-center justify-center',
               statusColor(c.status),
@@ -213,7 +223,6 @@ export default function CalendarHeatmap({
             ].join(' ')}
             aria-label={`${c.ymd} ${c.status}`}
           >
-            {/* tiny day number */}
             <span className="absolute -top-1 -left-1 text-[10px] px-0.5 rounded bg-white/80 dark:bg-black/30 text-zinc-700 dark:text-zinc-200">
               {c.date.getDate()}
             </span>
@@ -221,11 +230,13 @@ export default function CalendarHeatmap({
         ))}
       </div>
 
-      {/* Hover popover (desktop) */}
       {hoverDay && popoverPos && (
         <div
           className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-xl border bg-white dark:bg-zinc-900 shadow p-3 text-xs w-64"
-          style={{ left: popoverPos.x, top: popoverPos.y - 8 }}
+          style={{
+            left: Math.max(120, Math.min((typeof window !== 'undefined' ? window.innerWidth : 9999) - 120, popoverPos.x)),
+            top: popoverPos.y - 8
+          }}
         >
           <div className="font-medium mb-1">{hoverDay.ymd}</div>
           {hoverDay.events.length === 0 ? (
@@ -250,17 +261,13 @@ export default function CalendarHeatmap({
             </ul>
           )}
           <div className="mt-2">
-            <a
-              href={`/takvim?date=${encodeURIComponent(hoverDay.ymd)}`}
-              className="underline text-zinc-600 dark:text-zinc-300"
-            >
+            <a href={`/takvim?date=${encodeURIComponent(hoverDay.ymd)}`} className="underline text-zinc-600 dark:text-zinc-300">
               Günü aç →
             </a>
           </div>
         </div>
       )}
 
-      {/* Click dialog (mobile / accessible) */}
       {openDay && (
         <div
           role="dialog"
@@ -301,15 +308,12 @@ export default function CalendarHeatmap({
               </ul>
             )}
             <div className="mt-3 text-right">
-              <button
-                onClick={() => {
-                  setOpenDay(null);
-                  router.push(`/takvim?date=${encodeURIComponent(openDay.ymd)}`);
-                }}
-                className="text-sm px-3 py-1.5 rounded-lg border"
+              <a
+                href={`/takvim?date=${encodeURIComponent(openDay.ymd)}`}
+                className="text-sm px-3 py-1.5 rounded-lg border inline-block"
               >
                 Günü aç
-              </button>
+              </a>
             </div>
           </div>
         </div>
