@@ -1,20 +1,31 @@
 // app/api/coaches/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const CANDIDATE_PATHS = ['/coaches', '/api/coaches', '/v1/coaches', '/api/v1/coaches'];
-let workingPath: string | null = null;
+function baseUrl() {
+  const raw =
+    process.env.KULVAR_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_API_URL || // fallback
+    '';
+  if (!raw) throw new Error('KULVAR_BACKEND_URL env değişkeni eksik.');
+  return raw.replace(/\/+$/, '');
+}
+
+function configuredPaths(): string[] {
+  const fromEnv = (process.env.KULVAR_COACHES_PATHS || '').trim();
+  if (fromEnv) {
+    return fromEnv
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(p => (p.startsWith('/') ? p : `/${p}`));
+  }
+  // Varsayılan denemeler
+  return ['/coaches', '/api/coaches', '/v1/coaches', '/api/v1/coaches'];
+}
 
 function isJson(res: Response) {
   const ct = res.headers.get('content-type') || '';
   return ct.includes('application/json');
-}
-
-function baseUrl() {
-  const raw =
-    process.env.KULVAR_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    'https://kulvar-qb7t.onrender.com';
-  return raw.replace(/\/+$/, '');
 }
 
 async function tryFetch(path: string, qs: string, signal: AbortSignal) {
@@ -22,46 +33,53 @@ async function tryFetch(path: string, qs: string, signal: AbortSignal) {
   const res = await fetch(url, { signal, cache: 'no-store' });
   if (!res.ok || !isJson(res)) {
     const t = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status} ${res.statusText}${t ? ` - ${t.slice(0, 120)}` : ''}`);
+    throw new Error(
+      `GET ${url} -> HTTP ${res.status} ${res.statusText}${t ? ` - ${t.slice(0, 120)}` : ''}`
+    );
   }
   const json = await res.json();
-  return { json, url };
+  // Düz dizi veya {data: []} normalize et
+  const arr = Array.isArray(json) ? json : Array.isArray((json as any)?.data) ? (json as any).data : [];
+  return { arr, url };
 }
+
+let workingPath: string | null = null;
 
 export async function GET(req: NextRequest) {
   const { search } = new URL(req.url);
+  const paths = configuredPaths();
   const controller = new AbortController();
 
-  // if we’ve already found a good path, reuse it
+  // daha önce çalışan yol varsa önce onu dene
   if (workingPath) {
     try {
-      const { json } = await tryFetch(workingPath, search, controller.signal);
-      const arr = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
+      const { arr } = await tryFetch(workingPath, search, controller.signal);
       return NextResponse.json(arr, { status: 200 });
-    } catch (e) {
-      // fall through and re-detect
-      workingPath = null;
+    } catch {
+      workingPath = null; // tekrar keşfet
     }
   }
 
-  // detect a working endpoint
-  let lastErr = '';
-  for (const p of CANDIDATE_PATHS) {
+  // yolları sırayla dene
+  const errors: string[] = [];
+  for (const p of paths) {
     try {
-      const { json } = await tryFetch(p, search, controller.signal);
+      const { arr } = await tryFetch(p, search, controller.signal);
       workingPath = p;
-      const arr = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
       return NextResponse.json(arr, { status: 200 });
     } catch (e: any) {
-      lastErr = `${p}: ${e?.message || e}`;
+      errors.push(String(e?.message || e));
     }
   }
 
   return NextResponse.json(
     {
       message:
-        `No working /coaches endpoint found at ${baseUrl()}. Last error: ${lastErr}. ` +
-        `Set KULVAR_BACKEND_URL to your backend base URL and ensure it exposes GET /coaches.`,
+        `Backend'de çalışan bir /coaches endpointi bulunamadı.\n` +
+        `Base: ${baseUrl()}\n` +
+        `Denediğim yollar:\n- ${paths.join('\n- ')}\n\n` +
+        `Hatalar:\n- ${errors.join('\n- ')}\n\n` +
+        `Çözüm: KULVAR_COACHES_PATHS env değişkenini, doğru yolu içerecek şekilde ayarlayın (ör. "/coaches" veya "/api/coaches").`,
     },
     { status: 502 }
   );
