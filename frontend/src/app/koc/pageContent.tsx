@@ -156,46 +156,49 @@ export default function CoachesPageContent() {
     router.replace(qs ? `?${qs}` : '', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, debouncedSearch]);
+// ... keep all your imports/state as-is
 
-  // fetch coaches (smart endpoint, handles HTML 404)
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
+// fetch coaches via Next proxy (always JSON)
+useEffect(() => {
+  const controller = new AbortController();
+  setLoading(true);
+  setError(null);
 
-    const qs = filter !== 'all' ? `?specialization=${encodeURIComponent(filter)}` : '';
+  const qs = filter !== 'all' ? `?specialization=${encodeURIComponent(filter)}` : '';
 
-    fetchCoachesSmart(qs, controller.signal)
-      .then(({ json, usedUrl }) => {
-        console.log('Fetched from:', usedUrl);
+  fetch(`/api/coaches${qs}`, { signal: controller.signal, cache: 'no-store' })
+    .then(async (res) => {
+      if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} ${res.statusText}${t ? ` - ${t.slice(0,120)}` : ''}`);
+      }
+      return res.json();
+    })
+    .then((data: any[]) => {
+      const formatted: Coach[] = (Array.isArray(data) ? data : []).map((c) => ({
+        id: c._id || c.id,
+        name: c.name || 'İsimsiz Koç',
+        email: c.email,
+        role: 'coach',
+        specialization: c.specialization,
+        profilePicture: c.profilePicture,
+        rating: c.rating,
+        priceFrom: c.priceFrom,
+        isOnline: c.isOnline,
+        isVerified: c.isVerified,
+        languages: c.languages,
+      }));
+      formatted.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+      setCoaches(formatted);
+    })
+    .catch((err: any) => {
+      if (err?.name !== 'AbortError') setError(err?.message || 'Veriler alınırken bir hata oluştu.');
+    })
+    .finally(() => setLoading(false));
 
-        // accept both array or { data: [...] }
-        const raw = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
+  return () => controller.abort();
+}, [filter, reloadKey]);
 
-        const formatted: Coach[] = (raw as any[]).map((c) => ({
-          id: c._id || c.id,
-          name: c.name || 'İsimsiz Koç',
-          email: c.email,
-          role: 'coach',
-          specialization: c.specialization,
-          profilePicture: c.profilePicture,
-          rating: c.rating,
-          priceFrom: c.priceFrom,
-          isOnline: c.isOnline,
-          isVerified: c.isVerified,
-          languages: c.languages,
-        }));
-
-        formatted.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-        setCoaches(formatted);
-      })
-      .catch((err: any) => {
-        if (err?.name !== 'AbortError') setError(err?.message || 'Veriler alınırken bir hata oluştu.');
-      })
-      .finally(() => setLoading(false));
-
-    return () => controller.abort();
-  }, [filter, reloadKey]);
 
   // dynamic specialization options (from API + defaults)
   const dynamicSpecs = useMemo(() => {
