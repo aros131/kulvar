@@ -145,8 +145,7 @@ const startDate = useMemo(() => {
 const defaultTimeOfDay = (program as any)?.defaultTimeOfDay || "18:00";
 const defaultDurationMin = Number((program as any)?.defaultDurationMin) || 60;
 
-// helpers used by calendar & UI
-// (moved isDone/markLocal earlier to avoid TDZ/hoisting issues)
+// helpers used by calendar & UI (moved isDone/markLocal earlier to avoid TDZ/hoisting issues)
 
 const calEvents = useMemo<CalEvent[]>(() => {
   const evs: CalEvent[] = [];
