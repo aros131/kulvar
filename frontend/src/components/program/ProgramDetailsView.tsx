@@ -37,8 +37,7 @@ const parseHHmm = (hhmm = "18:00") => {
 };
 
 // ---------- schedule types ----------
-type DSVideoUrl = { url?: string; description?: string };
-type DSExercise = { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number; videoUrls?: DSVideoUrl[] };
+type DSExercise = { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number };
 type DSSession = { name?: string; completed?: boolean; sessionId?: string; _id?: string; id?: string; exercises?: DSExercise[] };
 type DSDay = { day?: string; notes?: string; sessions?: DSSession[] };
 
@@ -342,41 +341,6 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       <Separator />
 
-      {/* STANDALONE EXERCISES */}
-      <section className="space-y-3">
-        <h3 className="text-lg font-semibold">Bağımsız Egzersizler</h3>
-        {arr<any>(program.exercises).length === 0 ? (
-          <p className="text-sm text-zinc-500">Egzersiz yok.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {arr<any>(program.exercises).map((ex, i) => (
-              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3">
-                <div className="font-medium">{ex?.name || `Egzersiz ${i + 1}`}</div>
-                <div className="text-zinc-600 dark:text-zinc-300">
-                  {typeof ex?.sets === "number" && <span className="mr-2">{ex.sets} set</span>}
-                  {typeof ex?.reps === "number" && <span className="mr-2">{ex.reps} tekrar</span>}
-                  {ex?.duration && <span className="mr-2">{ex.duration}</span>}
-                </div>
-                {arr<DSVideoUrl>(ex?.videoUrls).length > 0 && (
-                  <div className="mt-1 text-xs">
-                    {arr<DSVideoUrl>(ex?.videoUrls).map((v, vi) => (
-                      <div key={vi}>
-                        {v?.url ? (
-                          <a className="underline" href={v.url} target="_blank" rel="noreferrer">{v.url}</a>
-                        ) : "Link"}
-                        {v?.description ? <span className="ml-1 text-zinc-500">({v.description})</span> : null}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <Separator />
-
       {/* NUTRITION PLAN */}
       <section className="space-y-4">
         <h3 className="text-lg font-semibold">Beslenme Planı</h3>
@@ -403,45 +367,6 @@ export default function ProgramDetailsView({ program, programId, completedSessio
               ))}
             </ul>
           </div>
-        )}
-      </section>
-
-      <Separator />
-
-      {/* MEDIA */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold">Videolar (URL)</h3>
-        {arr<any>(program.videos).length === 0 ? (
-          <p className="text-sm text-zinc-500">Video yok.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {arr<any>(program.videos).map((v, i) => (
-              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{v?.name || `Video ${i + 1}`}</div>
-                  {v?.description && <div className="text-zinc-500">{v.description}</div>}
-                </div>
-                {v?.url ? <a className="underline text-sm" href={v.url} target="_blank" rel="noreferrer">Aç</a> : <span className="text-xs text-zinc-400">—</span>}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <h3 className="text-lg font-semibold">PDF’ler (URL)</h3>
-        {arr<any>(program.pdfs).length === 0 ? (
-          <p className="text-sm text-zinc-500">PDF yok.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {arr<any>(program.pdfs).map((v, i) => (
-              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{v?.name || `PDF ${i + 1}`}</div>
-                  {v?.description && <div className="text-zinc-500">{v.description}</div>}
-                </div>
-                {v?.url ? <a className="underline text-sm" href={v.url} target="_blank" rel="noreferrer">Aç</a> : <span className="text-xs text-zinc-400">—</span>}
-              </li>
-            ))}
-          </ul>
         )}
       </section>
 

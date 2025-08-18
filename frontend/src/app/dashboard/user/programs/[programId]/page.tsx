@@ -119,13 +119,8 @@ export default function ProgramContentPage() {
 
        
 
-        <div className="mb-8">
-          <CalendarHeatmap programId={program._id} />
-        </div>
-
-        <div className="mb-8">
-          <FeedbackHistory programId={program._id} />
-        </div>
+       
+        
       </div>
     </div>
   );
