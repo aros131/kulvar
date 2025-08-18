@@ -12,24 +12,19 @@ interface Coach {
   role: RoleCoach;
   specialization?: string;
   profilePicture?: string;
-  // optional fields (shown if present)
   rating?: number;
   priceFrom?: number;
   isOnline?: boolean;
   isVerified?: boolean;
   languages?: string[];
 }
+interface CoachFromAPI extends Omit<Coach, 'id'> { _id: string; }
 
-interface CoachFromAPI extends Omit<Coach, 'id'> {
-  _id: string;
-}
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 function useDebouncedValue<T>(value: T, delay = 300) {
   const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
+  useEffect(() => { const t = setTimeout(() => setDebounced(value), delay); return () => clearTimeout(t); }, [value, delay]);
   return debounced;
 }
 
@@ -37,7 +32,6 @@ export default function CoachesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // read initial state from URL
   const initialFilter = searchParams.get('specialization') || 'all';
   const initialQuery = searchParams.get('q') || '';
 
@@ -50,45 +44,43 @@ export default function CoachesPageContent() {
 
   const debouncedSearch = useDebouncedValue(searchTerm, 250);
 
-  // keep URL in sync (q + specialization)
   useEffect(() => {
     const next = new URLSearchParams(searchParams.toString());
-    if (filter && filter !== 'all') next.set('specialization', filter);
-    else next.delete('specialization');
-
-    if (debouncedSearch) next.set('q', debouncedSearch);
-    else next.delete('q');
-
+    if (filter && filter !== 'all') next.set('specialization', filter); else next.delete('specialization');
+    if (debouncedSearch) next.set('q', debouncedSearch); else next.delete('q');
     router.replace(next.toString() ? `?${next.toString()}` : '', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, debouncedSearch]);
 
-  // fetch coaches from SAME-ORIGIN /coaches (this is the ONLY route we hit)
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError(null);
 
     const qs = filter !== 'all' ? `?specialization=${encodeURIComponent(filter)}` : '';
-    const url = `/coaches${qs}`; // ⬅️ fixed: removed API_BASE
+    if (!API_BASE) {
+      setError('NEXT_PUBLIC_API_URL boş. .env.local içine backend URL’inizi koyun.');
+      setLoading(false);
+      return;
+    }
+    const url = `${API_BASE}/coaches${qs}`;
 
     fetch(url, { signal: controller.signal })
       .then(async (res) => {
         const ct = res.headers.get('content-type') || '';
+        const text = await res.text().catch(() => '');
         if (!res.ok) {
-          const text = await res.text().catch(() => '');
-          throw new Error(`HTTP ${res.status} ${res.statusText}${text ? ` - ${text.slice(0, 120)}` : ''}`);
+          throw new Error(`Backend ${url} -> HTTP ${res.status} ${res.statusText}${text ? ` | ${text.slice(0,120)}` : ''}`);
         }
         if (!ct.includes('application/json')) {
-          const text = await res.text().catch(() => '');
-          throw new Error(`'${url}' JSON döndürmedi. Örnek: ${text.slice(0, 120)}`);
+          throw new Error(`Backend ${url} JSON değil (ct=${ct}). Örnek: ${text.slice(0,120)}`);
         }
-        return res.json();
+        try { return JSON.parse(text); } catch { throw new Error('JSON parse hatası.'); }
       })
       .then((data: any) => {
         const raw = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
         const formatted: Coach[] = raw.map((c: CoachFromAPI | any) => ({
-          id: (c as any)._id || c.id,
+          id: c._id || c.id,
           name: c.name || 'İsimsiz Koç',
           email: c.email,
           role: 'coach',
@@ -111,11 +103,10 @@ export default function CoachesPageContent() {
     return () => controller.abort();
   }, [filter, reloadKey]);
 
-  // specialization dropdown options (defaults + from API)
   const dynamicSpecs = useMemo(() => {
-    const set = new Set<string>();
-    coaches.forEach((c) => c.specialization && set.add(c.specialization));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'tr'));
+    const s = new Set<string>();
+    coaches.forEach((c) => c.specialization && s.add(c.specialization));
+    return Array.from(s).sort((a, b) => a.localeCompare(b, 'tr'));
   }, [coaches]);
 
   const specializationOptions = useMemo(() => {
@@ -123,7 +114,6 @@ export default function CoachesPageContent() {
     return Array.from(new Set([...defaults, ...dynamicSpecs]));
   }, [dynamicSpecs]);
 
-  // client-side search by name
   const filteredCoaches = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     let list = coaches;
@@ -131,8 +121,6 @@ export default function CoachesPageContent() {
     if (q) list = list.filter((c) => c.name.toLowerCase().includes(q));
     return list;
   }, [coaches, filter, debouncedSearch]);
-
-  const handleRetry = () => setReloadKey((k) => k + 1);
 
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
@@ -171,10 +159,7 @@ export default function CoachesPageContent() {
         </span>
         {(searchTerm || filter !== 'all') && (
           <button
-            onClick={() => {
-              setSearchTerm('');
-              setFilter('all');
-            }}
+            onClick={() => { setSearchTerm(''); setFilter('all'); }}
             className="text-sm underline text-zinc-600 dark:text-zinc-300"
           >
             Filtreleri temizle
@@ -182,19 +167,22 @@ export default function CoachesPageContent() {
         )}
       </div>
 
-      {/* Grid */}
+      {error && (
+        <div className="max-w-6xl mx-auto mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/40 dark:border-red-900 dark:text-red-200">
+          <p className="mb-1">Bir hata oluştu:</p>
+          <pre className="whitespace-pre-wrap text-xs">{error}</pre>
+          <button onClick={() => setReloadKey(k => k + 1)} className="mt-3 px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700">
+            Tekrar dene
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => <CoachCardSkeleton key={i} />)
         ) : filteredCoaches.length > 0 ? (
           filteredCoaches.map((coach) => (
-            <CoachCard
-              key={coach.id}
-              id={coach.id}
-              name={coach.name}
-              specialization={coach.specialization}
-              profilePicture={coach.profilePicture}
-            />
+            <CoachCard key={coach.id} id={coach.id} name={coach.name} specialization={coach.specialization} profilePicture={coach.profilePicture} />
           ))
         ) : (
           <p className="text-center text-zinc-500 dark:text-zinc-400 col-span-full">

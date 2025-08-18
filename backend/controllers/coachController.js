@@ -3,23 +3,17 @@ import Coach from '../models/Coach.js';
 
 export async function listCoaches(req, res) {
   try {
-    const { specialization } = req.query;
-
+    const { specialization } = req.query || {};
     const where = { role: 'coach' };
-    if (specialization && specialization !== 'all') {
-      where.specialization = specialization;
-    }
-
+    if (specialization && specialization !== 'all') where.specialization = specialization;
     const docs = await Coach.find(where)
       .select('_id name email role specialization profilePicture rating priceFrom isOnline isVerified languages')
-      .collation({ locale: 'tr', strength: 1 }) // proper A–Z in Turkish
+      .collation({ locale: 'tr', strength: 1 })
       .sort({ name: 1 })
       .lean();
-
-    // IMPORTANT: return a plain array (frontend maps Array.isArray(data) ? data : [])
-    return res.json(docs);
+    res.json(docs);
   } catch (err) {
     console.error('listCoaches error:', err);
-    return res.status(500).json({ message: 'Server error listing coaches.' });
+    res.status(500).json({ message: err.message });
   }
 }
