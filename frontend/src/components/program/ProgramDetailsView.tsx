@@ -134,52 +134,63 @@ export default function ProgramDetailsView({ program, programId, completedSessio
   // 4) normalize schedule
   const days = useMemo(() => arr<DSDay>(program.dailySchedule), [program.dailySchedule]);
 
-// --- calendar synthesis from the local schedule ---
-const startDate = useMemo(() => {
-  const raw = (program as any)?.startDate || (program as any)?.startedAt || (program as any)?.assignmentStartDate || null;
-  const d = raw ? new Date(raw) : new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}, [program]);
+  // --- helpers that must exist BEFORE they’re used anywhere ---
+  const isDone = (s: DSSession, fallbackKey: string) => {
+    if (s?.completed === true) return true; // baked in
+    const candidates = [s?.sessionId, s?._id, s?.id, s?.name, fallbackKey].map(norm).filter(Boolean);
+    return candidates.some((c) => completedTokens.has(c) || localDone.has(c));
+  };
+  const markLocal = (s: DSSession, fallbackKey: string) => {
+    const next = new Set(localDone);
+    [s?.sessionId, s?._id, s?.id, s?.name, fallbackKey].map(norm).filter(Boolean).forEach((k) => next.add(k!));
+    setLocalDone(next);
+  };
 
-const defaultTimeOfDay = (program as any)?.defaultTimeOfDay || "18:00";
-const defaultDurationMin = Number((program as any)?.defaultDurationMin) || 60;
+  // --- calendar synthesis from the local schedule ---
+  const startDate = useMemo(() => {
+    const raw = (program as any)?.startDate || (program as any)?.startedAt || (program as any)?.assignmentStartDate || null;
+    const d = raw ? new Date(raw) : new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [program]);
 
-// helpers used by calendar & UI (moved isDone/markLocal earlier to avoid TDZ/hoisting issues)
+  const defaultTimeOfDay = (program as any)?.defaultTimeOfDay || "18:00";
+  const defaultDurationMin = Number((program as any)?.defaultDurationMin) || 60;
 
-const calEvents = useMemo<CalEvent[]>(() => {
-  const evs: CalEvent[] = [];
-  const now = new Date();
-  const { h: defH, m: defM } = parseHHmm(defaultTimeOfDay);
+  // Build events that the CalendarHeatmap can render
+  const calEvents = useMemo<CalEvent[]>(() => {
+    const evs: CalEvent[] = [];
+    const now = new Date();
+    const { h: defH, m: defM } = parseHHmm(defaultTimeOfDay);
 
-  days.forEach((day, dIdx) => {
-    const base = new Date(startDate);
-    base.setDate(base.getDate() + dIdx);
+    days.forEach((day, dIdx) => {
+      const base = new Date(startDate);
+      base.setDate(base.getDate() + dIdx);
 
-    const sessions = arr<DSSession>(day?.sessions);
-    sessions.forEach((s, sIdx) => {
-      const t = typeof (s as any)?.timeOfDay === "string" ? parseHHmm((s as any).timeOfDay) : { h: defH, m: defM };
-      const dur = Number((s as any)?.durationMin) || defaultDurationMin;
+      const sessions = arr<DSSession>(day?.sessions);
+      sessions.forEach((s, sIdx) => {
+        const t = typeof (s as any)?.timeOfDay === "string" ? parseHHmm((s as any).timeOfDay) : { h: defH, m: defM };
+        const dur = Number((s as any)?.durationMin) || defaultDurationMin;
 
-      const st = new Date(base);
-      st.setHours(t.h, t.m, 0, 0);
-      const en = new Date(st);
-      en.setMinutes(en.getMinutes() + dur);
+        const st = new Date(base);
+        st.setHours(t.h, t.m, 0, 0);
+        const en = new Date(st);
+        en.setMinutes(en.getMinutes() + dur);
 
-      const fallbackKey = `day-${dIdx + 1}-s-${sIdx + 1}`;
-      const done = isDone(s, fallbackKey);
+        const fallbackKey = `day-${dIdx + 1}-s-${sIdx + 1}`;
+        const done = isDone(s, fallbackKey);
 
-      evs.push({
-        title: s?.name || `Seans ${sIdx + 1}`,
-        start: st.toISOString(),
-        end: en.toISOString(),
-        status: done ? "completed" : (en < now ? "missed" : "planned"),
-        programId: pid,
+        evs.push({
+          title: s?.name || `Seans ${sIdx + 1}`,
+          start: st.toISOString(),
+          end: en.toISOString(),
+          status: done ? "completed" : (en < now ? "missed" : "planned"),
+          programId: pid,
+        });
       });
     });
-  });
-  return evs;
-}, [days, pid, startDate, defaultTimeOfDay, defaultDurationMin, completedTokens, localDone]);
+    return evs;
+  }, [days, pid, startDate, defaultTimeOfDay, defaultDurationMin, completedTokens, localDone]);
 
   // ---- Week logic: derive week count from program.duration or day count ----
   const weekCount = useMemo(() => {
@@ -209,18 +220,7 @@ const calEvents = useMemo<CalEvent[]>(() => {
     return <div className="hidden sm:flex gap-1.5">{items}</div>;
   };
 
-  const isDone = (s: DSSession, fallbackKey: string) => {
-    if (s?.completed === true) return true; // baked in
-    const candidates = [s?.sessionId, s?._id, s?.id, s?.name, fallbackKey].map(norm).filter(Boolean);
-    return candidates.some((c) => completedTokens.has(c) || localDone.has(c));
-  };
-  const markLocal = (s: DSSession, fallbackKey: string) => {
-    const next = new Set(localDone);
-    [s?.sessionId, s?._id, s?.id, s?.name, fallbackKey].map(norm).filter(Boolean).forEach((k) => next.add(k!));
-    setLocalDone(next);
-  };
-
-  // ---------- NEW: Day Cards Carousel (horizontal, scroll-snap) ----------
+  // ---------- Day Cards Carousel ----------
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const scrollBy = (dir: 1 | -1) => {
     const el = scrollerRef.current; if (!el) return;
@@ -252,6 +252,7 @@ const calEvents = useMemo<CalEvent[]>(() => {
           )}
         </div>
       </Card>
+
       {/* CALENDAR (month grid) */}
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-2">Takvim</h3>
@@ -260,7 +261,7 @@ const calEvents = useMemo<CalEvent[]>(() => {
 
       <Separator />
 
-      {/* DAILY SCHEDULE as HORIZONTAL CARDS (no vertical list) */}
+      {/* DAILY SCHEDULE as HORIZONTAL CARDS */}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Günlük Program</h3>
         {/* Week selector */}
