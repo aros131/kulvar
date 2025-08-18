@@ -1,7 +1,13 @@
-import express from 'express';
-const router = express.Router();
-import { getCoaches } from '../controllers/coachController.js';
+// routes/coachRoutes.js
+import { Router } from 'express';
+import { listCoaches, getCoach } from '../controllers/coachController.js';
 
-router.get("/", getCoaches);
+const router = Router();
+
+// GET /coaches
+router.get('/coaches', listCoaches);
+
+// GET /coaches/:id
+router.get('/coaches/:id', getCoach);
 
 export default router;
