@@ -29,7 +29,7 @@ interface Coach {
   specialization?: string;
   profilePicture?: string;
 
-  // optional future fields (safe to keep even if API doesn't return them yet)
+  // optional future fields (safe even if API doesn't return them yet)
   rating?: number;
   priceFrom?: number;
   isOnline?: boolean;
@@ -41,7 +41,54 @@ interface CoachFromAPI extends Omit<Coach, 'id'> {
   _id: string;
 }
 
-const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
+// ===== API smart endpoint detection (fixes HTML 404) =====
+const RAW_API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
+const CANDIDATE_PATHS = ['/coaches', '/api/coaches', '/v1/coaches', '/api/v1/coaches'];
+const workingEndpointRef: { current: string | null } = { current: null };
+
+function isJsonResponse(res: Response) {
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json');
+}
+
+async function fetchCoachesSmart(qs: string, signal: AbortSignal) {
+  // Reuse a previously working endpoint
+  if (workingEndpointRef.current) {
+    const url = `${RAW_API}${workingEndpointRef.current}${qs}`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${res.statusText}${t ? ` - ${t.slice(0, 120)}` : ''}`);
+    }
+    if (!isJsonResponse(res)) {
+      throw new Error(
+        `Endpoint '${url}' returned non-JSON (likely HTML). Check NEXT_PUBLIC_API_URL (should be your backend host).`
+      );
+    }
+    return { json: await res.json(), usedUrl: url };
+  }
+
+  // Try common API prefixes until one returns JSON 2xx
+  let lastErr = '';
+  for (const path of CANDIDATE_PATHS) {
+    const url = `${RAW_API}${path}${qs}`;
+    try {
+      const res = await fetch(url, { signal });
+      if (!res.ok || !isJsonResponse(res)) {
+        const txt = await res.text().catch(() => '');
+        lastErr = `Tried ${url} → HTTP ${res.status} ${res.statusText}${txt ? ` – ${txt.slice(0, 120)}` : ''}`;
+        continue;
+      }
+      const json = await res.json();
+      workingEndpointRef.current = path; // lock for future calls
+      console.log('[koc] using endpoint:', path);
+      return { json, usedUrl: url };
+    } catch (e: any) {
+      lastErr = `Fetch ${url} failed: ${e?.message || e}`;
+    }
+  }
+  throw new Error(`No working /coaches endpoint on ${RAW_API}. ${lastErr}`);
+}
 
 function useDebouncedValue<T>(value: T, delay = 300) {
   const [debounced, setDebounced] = useState(value);
@@ -54,7 +101,7 @@ function useDebouncedValue<T>(value: T, delay = 300) {
 
 // ----- Filters state -----
 type Filters = {
-  price: [number, number];   // ₺min, ₺max (client-side only for now)
+  price: [number, number];   // ₺min, ₺max
   ratingMin: number;         // 0..5
   languages: string[];       // ['TR','EN']
   onlineOnly: boolean;
@@ -110,26 +157,23 @@ export default function CoachesPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, debouncedSearch]);
 
-  // fetch coaches (server-side filtering by single specialization)
+  // fetch coaches (smart endpoint, handles HTML 404)
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError(null);
 
     const qs = filter !== 'all' ? `?specialization=${encodeURIComponent(filter)}` : '';
-    const url = `${API}/coaches${qs}`;
 
-    fetch(url, { signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text().catch(() => '');
-          throw new Error(`HTTP ${res.status} ${res.statusText} ${text ? `- ${text}` : ''}`);
-        }
-        return res.json();
-      })
-      .then((data: CoachFromAPI[]) => {
-        const formatted: Coach[] = (Array.isArray(data) ? data : []).map((c) => ({
-          id: c._id,
+    fetchCoachesSmart(qs, controller.signal)
+      .then(({ json, usedUrl }) => {
+        console.log('Fetched from:', usedUrl);
+
+        // accept both array or { data: [...] }
+        const raw = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
+
+        const formatted: Coach[] = (raw as any[]).map((c) => ({
+          id: c._id || c.id,
           name: c.name || 'İsimsiz Koç',
           email: c.email,
           role: 'coach',
@@ -141,6 +185,7 @@ export default function CoachesPageContent() {
           isVerified: c.isVerified,
           languages: c.languages,
         }));
+
         formatted.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
         setCoaches(formatted);
       })
@@ -172,7 +217,6 @@ export default function CoachesPageContent() {
     } catch {
       return new Set<string>();
     }
-    // re-evaluate when list changes or toggle changes for immediate feel
   }, [onlyFavs, coaches]);
 
   // apply search + filters + sort
@@ -197,7 +241,7 @@ export default function CoachesPageContent() {
     // favorites only
     if (onlyFavs) list = list.filter((c) => favSet.has(c.id));
 
-    // (optional) languages / online / verified / rating / price — will apply only if data exists
+    // optional: languages / online / verified / rating / price — apply only if data exists
     if (filters.languages.length > 0) {
       list = list.filter((c) => {
         if (!c.languages || c.languages.length === 0) return false;
@@ -208,7 +252,7 @@ export default function CoachesPageContent() {
     if (filters.verifiedOnly) list = list.filter((c) => c.isVerified);
     if (filters.ratingMin > 0) list = list.filter((c) => (c.rating ?? 0) >= filters.ratingMin);
 
-    // price range (client-side placeholder)
+    // price range
     list = list.filter((c) => {
       const price = c.priceFrom ?? Number.POSITIVE_INFINITY;
       return price >= filters.price[0] && price <= filters.price[1];
