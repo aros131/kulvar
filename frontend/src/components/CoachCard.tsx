@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, MouseEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Star, CheckCircle2, MessageCircle, Bookmark, BookmarkCheck, CircleDashed } from 'lucide-react';
 // shadcn/ui hover card
@@ -14,7 +15,6 @@ interface CoachCardProps {
   specialization?: string;
   profilePicture?: string;
 
-  // ⬇️ optional niceties
   rating?: number;            // 0..5
   reviewCount?: number;       // total reviews
   isVerified?: boolean;
@@ -39,21 +39,23 @@ export default function CoachCard({
   bio,
   tags = [],
 }: CoachCardProps) {
+  const router = useRouter();
   const [imgError, setImgError] = useState(false);
 
   // ⭐ favorites in localStorage
   const [fav, setFav] = useState(false);
   useEffect(() => {
-    const raw = localStorage.getItem('fav_coaches');
-    if (!raw) return;
     try {
-      const arr: string[] = JSON.parse(raw);
+      const raw = localStorage.getItem('fav_coaches');
+      const arr: string[] = raw ? JSON.parse(raw) : [];
       setFav(arr.includes(id));
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, [id]);
 
-  const toggleFav = (e: React.MouseEvent) => {
-    e.preventDefault(); // keep Link from navigating
+  const toggleFav = (e: MouseEvent) => {
+    e.preventDefault(); // keep the outer Link from navigating
     setFav((prev) => {
       const next = !prev;
       try {
@@ -61,9 +63,17 @@ export default function CoachCard({
         const arr: string[] = raw ? JSON.parse(raw) : [];
         const updated = next ? Array.from(new Set([...arr, id])) : arr.filter((x) => x !== id);
         localStorage.setItem('fav_coaches', JSON.stringify(updated));
-      } catch {}
+      } catch {
+        /* ignore */
+      }
       return next;
     });
+  };
+
+  const handleMessage = (e: MouseEvent) => {
+    e.preventDefault(); // prevent card link navigation
+    e.stopPropagation();
+    router.push(`/mesaj?to=${id}`);
   };
 
   const initials = useMemo(() => {
@@ -77,10 +87,24 @@ export default function CoachCard({
     return Math.round(rating * 10) / 10;
   }, [rating]);
 
+  const formattedPrice = useMemo(() => {
+    if (typeof priceFrom !== 'number') return null;
+    try {
+      return new Intl.NumberFormat('tr-TR').format(priceFrom);
+    } catch {
+      return String(priceFrom);
+    }
+  }, [priceFrom]);
+
   return (
-    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 shadow-sm hover:shadow-md transition">
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 shadow-sm hover:shadow-md transition"
+    >
       <HoverCard openDelay={100} closeDelay={100}>
         <HoverCardTrigger asChild>
+          {/* Outer link for the whole card */}
           <Link
             href={`/koc/${id}`}
             aria-label={`${name} profiline git`}
@@ -88,7 +112,7 @@ export default function CoachCard({
             prefetch
           >
             <div className="p-5">
-              {/* Top row: actions */}
+              {/* Top row: name + actions */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-semibold text-zinc-800 dark:text-white flex items-center gap-1">
@@ -164,26 +188,28 @@ export default function CoachCard({
                       </span>
                     )}
 
-                    {typeof priceFrom === 'number' && (
+                    {formattedPrice && (
                       <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200">
-                        ₺{Intl.NumberFormat('tr-TR').format(priceFrom)}+
+                        ₺{formattedPrice}+
                       </span>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* CTA row */}
+              {/* CTA row (button now, no nested link) */}
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">Profili Gör</span>
-                <Link
-                  href={`/mesaj?to=${id}`}
-                  onClick={(e) => e.stopPropagation()}
+                <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">
+                  Profili Gör
+                </span>
+                <button
+                  type="button"
+                  onClick={handleMessage}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Mesaj
-                </Link>
+                </button>
               </div>
             </div>
           </Link>
@@ -196,15 +222,16 @@ export default function CoachCard({
             {tags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {tags.slice(0, 6).map((t) => (
-                  <span key={t} className="text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200">
+                  <span
+                    key={t}
+                    className="text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200"
+                  >
                     #{t}
                   </span>
                 ))}
               </div>
             )}
-            <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-              İpucu: Profili açmadan hızlı önizleme.
-            </div>
+            <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">İpucu: Profili açmadan hızlı önizleme.</div>
           </HoverCardContent>
         )}
       </HoverCard>
@@ -220,7 +247,13 @@ function Stars({ value = 0 }: { value?: number }) {
     <span className="inline-flex">
       {Array.from({ length: 5 }).map((_, i) => {
         const filled = i < full || (i === full && half);
-        return <Star key={i} className={`h-4 w-4 ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-zinc-400'}`} />;
+        return (
+          <Star
+            key={i}
+            className={`h-4 w-4 ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-zinc-400'}`}
+            aria-hidden="true"
+          />
+        );
       })}
     </span>
   );

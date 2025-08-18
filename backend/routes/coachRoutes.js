@@ -4,8 +4,8 @@ import { listCoaches, getCoach } from '../controllers/coachController.js';
 
 const router = Router();
 
-// ✅ These are the exact routes your frontend wants:
-router.get('/coaches', listCoaches);
-router.get('/coaches/:id', getCoach);
+// base will be /coaches
+router.get('/', listCoaches);      // GET /coaches
+router.get('/:id', getCoach);      // GET /coaches/:id
 
 export default router;

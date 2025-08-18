@@ -58,22 +58,26 @@ export default function CoachesPageContent() {
     setError(null);
 
     const qs = filter !== 'all' ? `?specialization=${encodeURIComponent(filter)}` : '';
+
     if (!API_BASE) {
       setError('NEXT_PUBLIC_API_URL boş. .env.local içine backend URL’inizi koyun.');
       setLoading(false);
       return;
     }
-    const url = `${API_BASE}/coaches${qs}`;
 
-    fetch(url, { signal: controller.signal })
+    const url = `${API_BASE}/coaches${qs}`;
+    // Debug:
+    // console.log('Fetching:', url);
+
+    fetch(url, { signal: controller.signal, cache: 'no-store' })
       .then(async (res) => {
         const ct = res.headers.get('content-type') || '';
         const text = await res.text().catch(() => '');
         if (!res.ok) {
-          throw new Error(`Backend ${url} -> HTTP ${res.status} ${res.statusText}${text ? ` | ${text.slice(0,120)}` : ''}`);
+          throw new Error(`GET ${url} -> HTTP ${res.status} ${res.statusText}${text ? ` | ${text.slice(0, 180)}` : ''}`);
         }
         if (!ct.includes('application/json')) {
-          throw new Error(`Backend ${url} JSON değil (ct=${ct}). Örnek: ${text.slice(0,120)}`);
+          throw new Error(`GET ${url} JSON değil (ct=${ct}). Örnek: ${text.slice(0, 180)}`);
         }
         try { return JSON.parse(text); } catch { throw new Error('JSON parse hatası.'); }
       })
