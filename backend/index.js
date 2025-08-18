@@ -21,48 +21,54 @@ import coachRoutes from './routes/coachRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    callback(null, origin); // ✅ dynamically reflect allowed origin
-  },
-  credentials: true // ✅ allow cookies/headers
-}));
-
+app.use(
+  cors({
+    origin: true,           // reflect request origin
+    credentials: true,      // allow cookies/headers
+  })
+);
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    // Mongoose v7+ ignores these but harmless if present:
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/content', contentRoutes);
-app.use("/notifications", notificationRoutes); // 🔁 Eski kullanıcı bildirimleri için
-app.use("/dashboard/notifications", notificationRoutes); // 🔁 Koç paneli için uyumlu
-
+app.use('/notifications', notificationRoutes);            // Eski kullanıcı bildirimleri
+app.use('/dashboard/notifications', notificationRoutes);  // Koç paneli için uyumlu
 app.use('/exercise-templates', exerciseTemplateRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/groups', clientGroupRoutes);
 app.use('/profile', profileRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/programs', programRoutes);
-app.use('/coaches', coachRoutes);
-app.use("/progress", progressRoutes);
-app.use("/users", userRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ✅ FIX: Mount at root because coachRoutes already defines '/coaches' inside.
+//    (Previously using app.use('/coaches', coachRoutes) caused /coaches/coaches.)
+app.use('/', coachRoutes);
+
+app.use('/progress', progressRoutes);
+app.use('/users', userRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/events', eventRoutes);
-// Default Route
+
+// Health/default
 app.get('/', (req, res) => {
   res.send('Welcome to the backend API!');
 });
