@@ -29,13 +29,16 @@ export default function CoachesPageBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = (searchParams?.get("q") || "").trim();
+  const debug = searchParams?.get("debug") === "1";
 
   const [query, setQuery] = useState<string>(initialQuery);
   const [loading, setLoading] = useState<boolean>(true);
   const [fetching, setFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [debugInfo, setDebugInfo] = useState<{ url?: string; status?: number; shape?: string; count?: number } | null>(null);
 
+  // keep ?q= in the URL
   useEffect(() => {
     const sp = new URLSearchParams(Array.from(searchParams?.entries() || []));
     if (query) sp.set("q", query);
@@ -44,27 +47,27 @@ export default function CoachesPageBody() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
+  // initial load
   useEffect(() => {
     let active = true;
     (async () => {
       setLoading(true);
       setError(null);
-      const ok = await fetchCoaches(initialQuery, setCoaches, setError);
+      const ok = await fetchCoaches(initialQuery, setCoaches, setError, setDebugInfo);
       if (active) setLoading(false);
       if (!ok && active) setError("Koçlar yüklenemedi.");
     })();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // live search (debounced)
   useEffect(() => {
     if (loading) return;
     const t = setTimeout(async () => {
       setFetching(true);
       setError(null);
-      const ok = await fetchCoaches(query, setCoaches, setError);
+      const ok = await fetchCoaches(query, setCoaches, setError, setDebugInfo);
       setFetching(false);
       if (!ok) setError("Arama sırasında bir sorun oluştu.");
     }, 400);
@@ -75,7 +78,7 @@ export default function CoachesPageBody() {
   const handleManualSearch = async () => {
     setFetching(true);
     setError(null);
-    const ok = await fetchCoaches(query, setCoaches, setError);
+    const ok = await fetchCoaches(query, setCoaches, setError, setDebugInfo);
     setFetching(false);
     if (!ok) setError("Arama sırasında bir sorun oluştu.");
   };
@@ -126,6 +129,16 @@ export default function CoachesPageBody() {
           </Button>
         </div>
       </div>
+
+      {/* Optional debug panel */}
+      {debug && debugInfo && (
+        <div className="mb-4 rounded-lg border p-3 text-xs">
+          <div><b>Last URL:</b> {debugInfo.url}</div>
+          <div><b>Status:</b> {debugInfo.status}</div>
+          <div><b>Shape:</b> {debugInfo.shape}</div>
+          <div><b>Items:</b> {debugInfo.count ?? "-"}</div>
+        </div>
+      )}
 
       {/* Result meta */}
       <div className="flex items-center justify-between mb-4">
@@ -257,41 +270,56 @@ function CoachSkeletonGrid() {
   );
 }
 
-/* ------- Data fetch ------- */
+/* ------- Data fetch (robust) ------- */
 async function fetchCoaches(
   q: string,
   setCoaches: (c: Coach[]) => void,
-  setError: (e: string | null) => void
+  setError: (e: string | null) => void,
+  setDebug?: (d: any) => void
 ): Promise<boolean> {
-  try {
-    let url = `${API}/coaches`;
-    const params: Record<string, string> = {};
-    if (q) params.search = q;
-    const qs = new URLSearchParams(params).toString();
-    if (qs) url += `?${qs}`;
-
-    let res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      const fallbackUrl = `${API}/users?role=coach${q ? `&search=${encodeURIComponent(q)}` : ""}`;
-      res = await fetch(fallbackUrl, { cache: "no-store" });
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const data = await res.json();
-    const items: Coach[] = Array.isArray(data?.coaches)
-      ? data.coaches
-      : Array.isArray(data?.users)
-      ? data.users
-      : Array.isArray(data)
-      ? data
-      : [];
-
-    setCoaches(items);
-    setError(null);
-    return true;
-  } catch (err: any) {
-    setError(err?.message || "Beklenmeyen bir hata oluştu.");
-    setCoaches([]);
-    return false;
+  // try both endpoints and multiple possible query keys
+  const keys = q ? ["search", "q", "name"] : [""];
+  const candidates: string[] = [];
+  for (const key of keys) {
+    const suffix = key ? `?${key}=${encodeURIComponent(q)}` : "";
+    candidates.push(`${API}/coaches${suffix}`);
+    candidates.push(`${API}/users?role=coach${key ? `&${key}=${encodeURIComponent(q)}` : ""}`);
   }
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      const status = res.status;
+      if (!res.ok) {
+        setDebug?.({ url, status, shape: "HTTP error" });
+        continue;
+      }
+      const json = await res.json().catch(() => ({} as any));
+
+      const items: Coach[] =
+        (Array.isArray((json as any)?.coaches) && (json as any).coaches) ||
+        (Array.isArray((json as any)?.users) && (json as any).users) ||
+        (Array.isArray((json as any)?.data?.coaches) && (json as any).data.coaches) ||
+        (Array.isArray((json as any)?.data?.users) && (json as any).data.users) ||
+        (Array.isArray((json as any)?.results) && (json as any).results) ||
+        (Array.isArray((json as any)?.data?.results) && (json as any).data.results) ||
+        (Array.isArray(json) ? (json as any) : []);
+
+      const shape = Array.isArray(json) ? "array-root" : Object.keys(json || {}).join(",") || "unknown";
+      setDebug?.({ url, status, shape, count: items?.length ?? 0 });
+
+      if (Array.isArray(items)) {
+        setCoaches(items);
+        setError(null);
+        return true;
+      }
+    } catch (e: any) {
+      setDebug?.({ url, status: 0, shape: e?.message || "network error" });
+      continue;
+    }
+  }
+
+  setCoaches([]);
+  setError("Veri alınamadı (URL, CORS veya JSON şeması).");
+  return false;
 }
