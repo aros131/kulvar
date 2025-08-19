@@ -1,12 +1,32 @@
-// GET /coaches
+import { Router } from "express";
+import User from "../models/User.js";
+
+const router = Router();
+
+// normalize specialization to an array (handles string, array, missing)
+const toArray = (x) => Array.isArray(x)
+  ? x
+  : (typeof x === "string" ? x.split(",").map(s => s.trim()).filter(Boolean) : []);
+
+// helpers
+const qParam = (req) => (req.query.search || req.query.q || req.query.name || "").toString().trim();
+const paginate = (req) => {
+  const limit = Math.min(parseInt(req.query.limit) || 30, 100);
+  const page = Math.max(parseInt(req.query.page) || 1, 1);
+  const skip = (page - 1) * limit;
+  return { limit, page, skip };
+};
+
+/** GET /coaches (because mounted at '/coaches')
+ *  Optional: ?search=, ?q=, ?name=, ?limit=, ?page=
+ *  Response: { coaches: [...], total }
+ */
 router.get("/", async (req, res) => {
   try {
-    const q = (req.query.search || req.query.q || req.query.name || "").trim();
-    const limit = Math.min(parseInt(req.query.limit) || 30, 100);
-    const page = Math.max(parseInt(req.query.page) || 1, 1);
-    const skip = (page - 1) * limit;
+    const q = qParam(req);
+    const { limit, skip } = paginate(req);
 
-    // ⬅️ ensure ONLY coaches (case-insensitive, covers bad data)
+    // only coaches (case-insensitive)
     const roleFilter = { role: { $regex: /^coach$/i } };
 
     const filters = q
@@ -17,8 +37,8 @@ router.get("/", async (req, res) => {
               $or: [
                 { name: { $regex: q, $options: "i" } },
                 { city: { $regex: q, $options: "i" } },
-                { specialization: { $regex: q, $options: "i" } }, // string
-                { specialization: { $elemMatch: { $regex: q, $options: "i" } } }, // array
+                { specialization: { $regex: q, $options: "i" } }, // when string
+                { specialization: { $elemMatch: { $regex: q, $options: "i" } } }, // when array
               ],
             },
           ],
@@ -35,9 +55,6 @@ router.get("/", async (req, res) => {
       User.countDocuments(filters),
     ]);
 
-    const toArray = (x) =>
-      Array.isArray(x) ? x : typeof x === "string" ? x.split(",").map((s) => s.trim()).filter(Boolean) : [];
-
     const coaches = docs.map((d) => ({ ...d, specialization: toArray(d.specialization) }));
     res.json({ coaches, total });
   } catch (e) {
@@ -45,3 +62,21 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+/** GET /coaches/:id  -> { coach } */
+router.get("/:id", async (req, res) => {
+  try {
+    const coach = await User.findOne({ _id: req.params.id, role: { $regex: /^coach$/i } })
+      .select("name profilePicture avatar specialization city rating bio programsCount role")
+      .lean();
+
+    if (!coach) return res.status(404).json({ message: "Coach not found" });
+    coach.specialization = toArray(coach.specialization);
+    res.json({ coach });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+export default router;   // ⬅⬅⬅ IMPORTANT

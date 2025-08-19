@@ -16,6 +16,7 @@ const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.co
 type Coach = {
   _id: string;
   name: string;
+  role?: string; // ⬅️ used for final client-side filter
   avatar?: string;
   profilePicture?: string;
   specialization?: string | string[];
@@ -270,21 +271,33 @@ function CoachSkeletonGrid() {
   );
 }
 
-/* ------- Data fetch (robust) ------- */
+/* ------- Data fetch (robust + coach-only) ------- */
 async function fetchCoaches(
   q: string,
   setCoaches: (c: Coach[]) => void,
   setError: (e: string | null) => void,
   setDebug?: (d: any) => void
 ): Promise<boolean> {
-  // try both endpoints and multiple possible query keys
-  const keys = q ? ["search", "q", "name"] : [""];
-  const candidates: string[] = [];
-  for (const key of keys) {
-    const suffix = key ? `?${key}=${encodeURIComponent(q)}` : "";
-    candidates.push(`${API}/coaches${suffix}`);
-    candidates.push(`${API}/users?role=coach${key ? `&${key}=${encodeURIComponent(q)}` : ""}`);
-  }
+  const qs = (key?: string) => {
+    const p = new URLSearchParams();
+    if (key && q) p.set(key, q);
+    p.set("role", "coach"); // force server-side filter when supported
+    return `?${p.toString()}`;
+  };
+
+  const candidates = [
+    `${API}/users${qs("search")}`,
+    `${API}/users${qs("q")}`,
+    `${API}/users${qs("name")}`,
+    `${API}/coaches${qs("search")}`,
+    `${API}/coaches${qs("q")}`,
+    `${API}/coaches${qs("name")}`,
+    `${API}/users${qs()}`,
+    `${API}/coaches${qs()}`,
+  ];
+
+  const onlyCoaches = (arr: any[]): Coach[] =>
+    (arr || []).filter((it) => String((it?.role ?? "coach")).toLowerCase() === "coach");
 
   for (const url of candidates) {
     try {
@@ -294,25 +307,27 @@ async function fetchCoaches(
         setDebug?.({ url, status, shape: "HTTP error" });
         continue;
       }
+
       const json = await res.json().catch(() => ({} as any));
+      const items: any[] =
+        (Array.isArray(json?.coaches) && json.coaches) ||
+        (Array.isArray(json?.users) && json.users) ||
+        (Array.isArray(json?.data?.coaches) && json.data.coaches) ||
+        (Array.isArray(json?.data?.users) && json.data.users) ||
+        (Array.isArray(json?.results) && json.results) ||
+        (Array.isArray(json?.data?.results) && json.data.results) ||
+        (Array.isArray(json) ? json : []);
 
-      const items: Coach[] =
-        (Array.isArray((json as any)?.coaches) && (json as any).coaches) ||
-        (Array.isArray((json as any)?.users) && (json as any).users) ||
-        (Array.isArray((json as any)?.data?.coaches) && (json as any).data.coaches) ||
-        (Array.isArray((json as any)?.data?.users) && (json as any).data.users) ||
-        (Array.isArray((json as any)?.results) && (json as any).results) ||
-        (Array.isArray((json as any)?.data?.results) && (json as any).data.results) ||
-        (Array.isArray(json) ? (json as any) : []);
+      const shape = Array.isArray(json)
+        ? "array-root"
+        : Object.keys(json || {}).join(",") || "unknown";
 
-      const shape = Array.isArray(json) ? "array-root" : Object.keys(json || {}).join(",") || "unknown";
-      setDebug?.({ url, status, shape, count: items?.length ?? 0 });
+      const filtered = onlyCoaches(items);
+      setDebug?.({ url, status, shape, count: filtered.length });
 
-      if (Array.isArray(items)) {
-        setCoaches(items);
-        setError(null);
-        return true;
-      }
+      setCoaches(filtered);
+      setError(null);
+      return true;
     } catch (e: any) {
       setDebug?.({ url, status: 0, shape: e?.message || "network error" });
       continue;
