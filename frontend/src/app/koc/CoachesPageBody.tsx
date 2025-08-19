@@ -9,14 +9,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MapPin, Star, Dumbbell, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, MapPin, Star, Dumbbell, Loader2, Filter } from "lucide-react";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
 type Coach = {
   _id: string;
   name: string;
-  role?: string; // ⬅️ used for final client-side filter
+  role?: string; // used for final client-side filter
   avatar?: string;
   profilePicture?: string;
   specialization?: string | string[];
@@ -30,23 +37,31 @@ export default function CoachesPageBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = (searchParams?.get("q") || "").trim();
+  const initialSpec = (searchParams?.get("spec") || "").trim();
   const debug = searchParams?.get("debug") === "1";
 
   const [query, setQuery] = useState<string>(initialQuery);
+  const [specFilter, setSpecFilter] = useState<string>(initialSpec);
   const [loading, setLoading] = useState<boolean>(true);
   const [fetching, setFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // raw fetched list (only coaches), and the filtered list to render
+  const [coachesRaw, setCoachesRaw] = useState<Coach[]>([]);
   const [coaches, setCoaches] = useState<Coach[]>([]);
+
   const [debugInfo, setDebugInfo] = useState<{ url?: string; status?: number; shape?: string; count?: number } | null>(null);
 
-  // keep ?q= in the URL
+  // keep ?q= and ?spec= in the URL
   useEffect(() => {
     const sp = new URLSearchParams(Array.from(searchParams?.entries() || []));
     if (query) sp.set("q", query);
     else sp.delete("q");
+    if (specFilter) sp.set("spec", specFilter);
+    else sp.delete("spec");
     router.replace(`/koc?${sp.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query, specFilter]);
 
   // initial load
   useEffect(() => {
@@ -54,9 +69,18 @@ export default function CoachesPageBody() {
     (async () => {
       setLoading(true);
       setError(null);
-      const ok = await fetchCoaches(initialQuery, setCoaches, setError, setDebugInfo);
-      if (active) setLoading(false);
-      if (!ok && active) setError("Koçlar yüklenemedi.");
+      const items = await fetchCoaches(initialQuery, setError, setDebugInfo);
+      if (active) {
+        setLoading(false);
+        if (items) {
+          setCoachesRaw(items);
+          setCoaches(applySpecFilter(items, initialSpec));
+        } else {
+          setCoachesRaw([]);
+          setCoaches([]);
+          if (!error) setError("Koçlar yüklenemedi.");
+        }
+      }
     })();
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,25 +92,54 @@ export default function CoachesPageBody() {
     const t = setTimeout(async () => {
       setFetching(true);
       setError(null);
-      const ok = await fetchCoaches(query, setCoaches, setError, setDebugInfo);
+      const items = await fetchCoaches(query, setError, setDebugInfo);
       setFetching(false);
-      if (!ok) setError("Arama sırasında bir sorun oluştu.");
+      if (items) {
+        setCoachesRaw(items);
+        setCoaches(applySpecFilter(items, specFilter));
+      } else {
+        setCoachesRaw([]);
+        setCoaches([]);
+        setError("Arama sırasında bir sorun oluştu.");
+      }
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
+  // when dropdown changes, re-filter without refetch
+  useEffect(() => {
+    setCoaches(applySpecFilter(coachesRaw, specFilter));
+  }, [specFilter, coachesRaw]);
+
   const handleManualSearch = async () => {
     setFetching(true);
     setError(null);
-    const ok = await fetchCoaches(query, setCoaches, setError, setDebugInfo);
+    const items = await fetchCoaches(query, setError, setDebugInfo);
     setFetching(false);
-    if (!ok) setError("Arama sırasında bir sorun oluştu.");
+    if (items) {
+      setCoachesRaw(items);
+      setCoaches(applySpecFilter(items, specFilter));
+    } else {
+      setCoachesRaw([]);
+      setCoaches([]);
+      setError("Arama sırasında bir sorun oluştu.");
+    }
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
     if (e.key === "Enter") handleManualSearch();
   };
+
+  const specOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of coachesRaw) {
+      for (const sp of toArray(c.specialization)) {
+        if (sp) s.add(sp);
+      }
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "tr"));
+  }, [coachesRaw]);
 
   const resultCountText = useMemo(() => {
     if (loading) return "";
@@ -105,7 +158,7 @@ export default function CoachesPageBody() {
           </p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search & Filter */}
         <div className="flex w-full md:w-auto gap-2">
           <div className="relative flex-1 md:w-[360px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -118,6 +171,25 @@ export default function CoachesPageBody() {
               aria-label="Koç ara"
             />
           </div>
+
+          {/* Specialization dropdown */}
+          <Select value={specFilter} onValueChange={(v) => setSpecFilter(v)}>
+            <SelectTrigger className="w-[180px]" aria-label="Uzmanlık filtresi">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <SelectValue placeholder="Uzmanlık" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Tümü</SelectItem>
+              {specOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Button onClick={handleManualSearch} disabled={fetching}>
             {fetching ? (
               <>
@@ -138,6 +210,7 @@ export default function CoachesPageBody() {
           <div><b>Status:</b> {debugInfo.status}</div>
           <div><b>Shape:</b> {debugInfo.shape}</div>
           <div><b>Items:</b> {debugInfo.count ?? "-"}</div>
+          {specFilter && <div><b>Spec filter:</b> {specFilter}</div>}
         </div>
       )}
 
@@ -237,6 +310,13 @@ function toArray(x?: string | string[]) {
   if (!x) return [];
   return Array.isArray(x) ? x : [x];
 }
+function applySpecFilter(items: Coach[], spec: string) {
+  const s = spec.trim().toLowerCase();
+  if (!s) return items;
+  return items.filter((c) =>
+    toArray(c.specialization).some((sp) => sp?.toLowerCase() === s)
+  );
+}
 function CoachSkeletonGrid() {
   return (
     <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -271,18 +351,18 @@ function CoachSkeletonGrid() {
   );
 }
 
-/* ------- Data fetch (robust + coach-only) ------- */
+/* ------- Data fetch (returns only coaches) ------- */
 async function fetchCoaches(
   q: string,
-  setCoaches: (c: Coach[]) => void,
   setError: (e: string | null) => void,
   setDebug?: (d: any) => void
-): Promise<boolean> {
+): Promise<Coach[] | null> {
   const qs = (key?: string) => {
     const p = new URLSearchParams();
     if (key && q) p.set(key, q);
-    p.set("role", "coach"); // force server-side filter when supported
+    p.set("role", "coach"); // ask server to filter if supported
     return `?${p.toString()}`;
+    // server may ignore; we still filter client-side below
   };
 
   const candidates = [
@@ -325,16 +405,14 @@ async function fetchCoaches(
       const filtered = onlyCoaches(items);
       setDebug?.({ url, status, shape, count: filtered.length });
 
-      setCoaches(filtered);
       setError(null);
-      return true;
+      return filtered;
     } catch (e: any) {
       setDebug?.({ url, status: 0, shape: e?.message || "network error" });
       continue;
     }
   }
 
-  setCoaches([]);
   setError("Veri alınamadı (URL, CORS veya JSON şeması).");
-  return false;
+  return null;
 }
