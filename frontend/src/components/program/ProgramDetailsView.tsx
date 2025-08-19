@@ -25,7 +25,7 @@ const fmtDate = (d?: string | Date) => {
 };
 const norm = (s?: string) => (s ?? "").toString().trim().toLowerCase();
 
-// small time parser for building calendar events
+// parse "HH:mm" safely (no regex TDZ surprises after bundling)
 const parseHHmm = (hhmm = "18:00") => {
   const [hStr, mStr] = String(hhmm).trim().split(":");
   const hNum = Number(hStr);
@@ -37,11 +37,12 @@ const parseHHmm = (hhmm = "18:00") => {
 };
 
 // ---------- schedule types ----------
-type DSExercise = { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number };
-type DSSession = { name?: string; completed?: boolean; sessionId?: string; _id?: string; id?: string; exercises?: DSExercise[] };
+type DSVideoUrl = { url?: string; description?: string };
+type DSExercise = { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number; videoUrls?: DSVideoUrl[] };
+type DSSession = { name?: string; completed?: boolean; sessionId?: string; _id?: string; id?: string; timeOfDay?: string; durationMin?: number; exercises?: DSExercise[] };
 type DSDay = { day?: string; notes?: string; sessions?: DSSession[] };
 
-// Local mirror of the calendar event shape (keeps this file decoupled)
+// Local mirror of calendar event shape
 type CalEvent = {
   _id?: string;
   title?: string;
@@ -59,13 +60,12 @@ type CompletedRaw =
 
 type Props = {
   program: Program;
-  /** optional now — will fall back to program._id */
-  programId?: string;
+  programId?: string;                  // optional now — will fall back to program._id
   completedSessionIds?: string[] | Set<string>;
   completedSessions?: CompletedRaw[];
 };
 
-export default function ProgramDetailsView({ program, programId, completedSessionIds, completedSessions, }: Props) {
+export default function ProgramDetailsView({ program, programId, completedSessionIds, completedSessions }: Props) {
   // ✅ derive a safe program id automatically
   const pid = useMemo(
     () => String((programId || (program as any)?._id || (program as any)?.id || "")).trim(),
@@ -97,7 +97,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
     return () => { aborted = true; };
   }, [pid, completedSessionIds, completedSessions]);
 
-  // 2) Build a set of “completed tokens” (ids + names) we can match quickly
+  // 2) Build a set of “completed tokens” (ONLY ids, not names)
   const completedTokens = useMemo(() => {
     const tokens = new Set<string>();
 
@@ -107,16 +107,15 @@ export default function ProgramDetailsView({ program, programId, completedSessio
       source.forEach((v) => { const n = norm(v); if (n) tokens.add(n); });
     }
 
-    // b) from raw objects prop
+    // b) from raw objects prop (prefer sessionId; ignore name to avoid cross-week collisions)
     arr<CompletedRaw>(completedSessions).forEach((r) => {
       if (typeof r === "string") {
+        // if someone passed a raw string, accept it but it SHOULD be a unique id
         const n = norm(r);
         if (n) tokens.add(n);
       } else if (r && typeof r === "object") {
         const a = norm((r as any).sessionId);
-        const b = norm((r as any).name);
         if (a) tokens.add(a);
-        if (b) tokens.add(b);
       }
     });
 
@@ -133,30 +132,53 @@ export default function ProgramDetailsView({ program, programId, completedSessio
   // 4) normalize schedule
   const days = useMemo(() => arr<DSDay>(program.dailySchedule), [program.dailySchedule]);
 
-  // --- helpers that must exist BEFORE they’re used anywhere ---
-  const isDone = (s: DSSession, fallbackKey: string) => {
-    if (s?.completed === true) return true; // baked in
-    const candidates = [s?.sessionId, s?._id, s?.id, s?.name, fallbackKey].map(norm).filter(Boolean);
-    return candidates.some((c) => completedTokens.has(c) || localDone.has(c));
-  };
-  const markLocal = (s: DSSession, fallbackKey: string) => {
-    const next = new Set(localDone);
-    [s?.sessionId, s?._id, s?.id, s?.name, fallbackKey].map(norm).filter(Boolean).forEach((k) => next.add(k!));
-    setLocalDone(next);
-  };
+  // --- anchor date logic: use program.startDate if present; else Monday of current week ---
+  const mondayOfThisWeek = useMemo(() => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const js = today.getDay();           // 0..6 (Sun..Sat)
+    const monIdx = (js + 6) % 7;         // 0 for Monday
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - monIdx);
+    return monday;
+  }, []);
 
-  // --- calendar synthesis from the local schedule ---
   const startDate = useMemo(() => {
-    const raw = (program as any)?.startDate || (program as any)?.startedAt || (program as any)?.assignmentStartDate || null;
-    const d = raw ? new Date(raw) : new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, [program]);
+    const raw =
+      (program as any)?.startDate ||
+      (program as any)?.startedAt ||
+      (program as any)?.assignmentStartDate ||
+      null;
+
+    if (raw) {
+      const d = new Date(raw);
+      if (!Number.isNaN(d.getTime())) {
+        d.setHours(0,0,0,0);
+        return d;
+      }
+    }
+    // fallback: align Day 1 to Monday of the current week (keeps labels matching calendar)
+    return mondayOfThisWeek;
+  }, [program, mondayOfThisWeek]);
 
   const defaultTimeOfDay = (program as any)?.defaultTimeOfDay || "18:00";
   const defaultDurationMin = Number((program as any)?.defaultDurationMin) || 60;
 
-  // Build events that the CalendarHeatmap can render
+  // ---- completion helpers (MUST be defined before calEvents to avoid TDZ) ----
+  const isDone = (s: DSSession, fallbackKey: string) => {
+    if (s?.completed === true) return true; // baked in
+    // Only use stable identifiers (no name!)
+    const candidates = [s?.sessionId, s?._id, s?.id, fallbackKey].map(norm).filter(Boolean);
+    return candidates.some((c) => completedTokens.has(c) || localDone.has(c));
+  };
+
+  const markLocal = (s: DSSession, fallbackKey: string) => {
+    const next = new Set(localDone);
+    [s?.sessionId, s?._id, s?.id, fallbackKey].map(norm).filter(Boolean).forEach((k) => next.add(k!));
+    setLocalDone(next);
+  };
+
+  // --- calendar synthesis from the local schedule (uses startDate anchor) ---
   const calEvents = useMemo<CalEvent[]>(() => {
     const evs: CalEvent[] = [];
     const now = new Date();
@@ -168,8 +190,8 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       const sessions = arr<DSSession>(day?.sessions);
       sessions.forEach((s, sIdx) => {
-        const t = typeof (s as any)?.timeOfDay === "string" ? parseHHmm((s as any).timeOfDay) : { h: defH, m: defM };
-        const dur = Number((s as any)?.durationMin) || defaultDurationMin;
+        const t = typeof s?.timeOfDay === "string" ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+        const dur = Number(s?.durationMin) || defaultDurationMin;
 
         const st = new Date(base);
         st.setHours(t.h, t.m, 0, 0);
@@ -242,7 +264,6 @@ export default function ProgramDetailsView({ program, programId, completedSessio
               <Info label="Durum" value={String((program as any).status ?? "—")} />
             </div>
           </div>
-          {/* Carousel controls */}
           {days.length > 0 && (
             <div className="hidden sm:flex items-center gap-2">
               <button onClick={() => scrollBy(-1)} className="px-3 py-1 rounded-lg border">◀</button>
@@ -252,7 +273,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
         </div>
       </Card>
 
-      {/* CALENDAR (month grid) */}
+      {/* CALENDAR */}
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-2">Takvim</h3>
         <CalendarHeatmap programId={pid} events={calEvents} />
@@ -260,10 +281,9 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       <Separator />
 
-      {/* DAILY SCHEDULE as HORIZONTAL CARDS */}
+      {/* DAILY SCHEDULE */}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Günlük Program</h3>
-        {/* Week selector */}
         {weekCount > 1 && (
           <div className="flex flex-wrap items-center gap-2 mb-2">
             {Array.from({ length: weekCount }).map((_, i) => (
@@ -287,14 +307,12 @@ export default function ProgramDetailsView({ program, programId, completedSessio
             ref={scrollerRef}
             className="relative flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:thin]"
           >
-            {renderedDays.map((day, dIdx) => { const globalIdx = (week - 1) * 7 + dIdx;
+            {renderedDays.map((day, dIdx) => {
+              const globalIdx = (week - 1) * 7 + dIdx;
               const dayLabel = day?.day || `Gün ${dIdx + 1}`;
               const sessions = arr<DSSession>(day?.sessions);
               return (
-                <Card
-                  key={dIdx}
-                  className="snap-start shrink-0 w-[86vw] sm:w-[520px] xl:w-[640px] p-4"
-                >
+                <Card key={dIdx} className="snap-start shrink-0 w-[86vw] sm:w-[520px] xl:w-[640px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="font-semibold">{dayLabel}</div>
                     {day?.notes && <div className="text-xs text-zinc-500">Not: {day.notes}</div>}
@@ -322,9 +340,16 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                               </span>
                               {!done && (
                                 <button
-                                  onClick={async () => { try { markLocal(s, fallbackKey); await completeSession(pid, String(sid), s?.name); } catch (e) {} }}
+                                  onClick={async () => {
+                                    try {
+                                      markLocal(s, fallbackKey);        // optimistic UI
+                                      await completeSession(pid, String(sid)); // send only id
+                                    } catch {}
+                                  }}
                                   className="text-xs px-2 py-1 rounded-lg border bg-white hover:bg-zinc-50 dark:bg-zinc-900"
-                                >Tamamla</button>
+                                >
+                                  Tamamla
+                                </button>
                               )}
                             </div>
                           </div>
@@ -341,38 +366,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       <Separator />
 
-      {/* NUTRITION PLAN */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold">Beslenme Planı</h3>
-        {arr<string>(program?.nutritionPlan?.tips).length > 0 && (
-          <div>
-            <div className="text-sm font-medium mb-1">İpuçları</div>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              {arr<string>(program?.nutritionPlan?.tips).map((t, i) => <li key={i}>{t}</li>)}
-            </ul>
-          </div>
-        )}
-        {arr<any>(program?.nutritionPlan?.meals).length > 0 && (
-          <div>
-            <div className="text-sm font-medium mb-1">Öğünler</div>
-            <ul className="space-y-2 text-sm">
-              {arr<any>(program?.nutritionPlan?.meals).map((m, i) => (
-                <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{m?.name || `Öğün ${i + 1}`}</div>
-                    {m?.description && <div className="text-zinc-500">{m.description}</div>}
-                  </div>
-                  <div className="text-xs text-zinc-500">{m?.time || "-"}</div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
-
-      <Separator />
-
-      {/* ANNOUNCEMENTS */}
+      {/* ANNOUNCEMENTS (kept) */}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Duyurular</h3>
         {arr<any>(program.announcements).length === 0 ? (
