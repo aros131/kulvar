@@ -206,7 +206,11 @@ export default function HomePage() {
       
 
       {/* FEATURES */}
-      <section id="features" className="container mx-auto px-6 md:px-10 pb-14 md:pb-24">
+     <section
+  id="features"
+  className="container mx-auto px-6 md:px-10 pt-28 pb-14 md:pt-36 md:pb-24"
+>
+
         <div className="max-w-2xl" data-animate="fade-up">
           <h2 className="text-3xl md:text-4xl font-bold">Koçlar ve Kullanıcılar için güçlü özellikler</h2>
           <p className="mt-3 text-muted-foreground">
