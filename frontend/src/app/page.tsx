@@ -1,339 +1,315 @@
 "use client";
-import dynamic from "next/dynamic";
-const LottieTopluluk = dynamic(() => import("@/components/LottieTopluluk"), { ssr: false });
-const LottieIlerleme = dynamic(() => import("@/components/LottieIlerleme"), { ssr: false });
-const LottieHero = dynamic(() => import("@/components/LottieHero"), { ssr: false });
 
-// en üste ekle
-import { DM_Serif_Display } from 'next/font/google';
-import AnimatedText from "@/components/AnimatedText";
-const dmSerif = DM_Serif_Display({
-  subsets: ['latin'],
-  weight: '400',
-});
-
-import { useEffect, useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Moon, Sun, Menu, X } from "lucide-react";
-import { Gym, Yoga, Stretching, Apple } from "iconoir-react";
-import { motion } from "framer-motion";
-import { useSwipeable } from "react-swipeable";
+import { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import RevealOnScroll from "@/components/RevealOnScroll";
-
-
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Footer from "@/components/Footer";
-
-const products = [
-  {
-    title: "Fitness",
-    description: "Güçlü bir vücut için kişiselleştirilmiş planlar.",
-    icon: <Gym width={40} height={40} />,
-    link: "/koc?specialization=fitness",
-  },
-  {
-    title: "Yoga",
-    description: "Esneklik ve mindfulness için uzman rehberliği.",
-    icon: <Yoga width={40} height={40} />,
-    link: "/koc?specialization=yoga",
-  },
-  {
-    title: "Pilates",
-    description: "Denge, esneklik ve güç için pilates programları.",
-    icon: <Stretching width={40} height={40} />,
-    link: "/koc?specialization=pilates",
-  },
-  {
-    title: "Beslenme",
-    description: "Sağlıklı bir yaşam için kişisel diyet planları.",
-    icon: <Apple width={40} height={40} />,
-    link: "/koc?specialization=beslenme",
-  },
-];
+import Navbar from "@/components/Navbar";
+// If you use custom fonts, keep your existing font imports. Example:
+// import { DM_Serif_Display } from "next/font/google";
+// const dmSerif = DM_Serif_Display({ subsets: ["latin"], weight: "400" });
 
 export default function HomePage() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTag, setActiveTag] = useState("Tümü");
-
-  const allTags = ["Tümü", "Fitness", "Yoga", "Pilates", "Beslenme"];
-
-  const filteredProducts =
-    activeTag === "Tümü"
-      ? products
-      : products.filter((p) => p.title.toLowerCase() === activeTag.toLowerCase());
+  const root = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("darkMode");
-    if (stored) setDarkMode(stored === "true");
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Use gsap.context so selectors are scoped and cleanup is automatic
+    const ctx = gsap.context(() => {
+      // HERO intro timeline
+      const tl = gsap.timeline();
+      tl.from([".hero-eyebrow", ".hero-title", ".hero-subtitle", ".hero-cta"], {
+        opacity: 0,
+        y: 24,
+        duration: 0.9,
+        ease: "power3.out",
+        stagger: 0.12,
+      });
+
+      // Parallax on hero background
+      gsap.to(".hero-bg", {
+        yPercent: 12,
+        ease: "none",
+        scrollTrigger: {
+          trigger: "#hero",
+          start: "top top",
+          end: "+=60%",
+          scrub: true,
+        },
+      });
+
+      // Generic fade-up reveal for anything with data-animate="fade-up"
+      gsap.utils.toArray<HTMLElement>("[data-animate='fade-up']").forEach((el, i) => {
+        gsap.from(el, {
+          autoAlpha: 0,
+          y: 36,
+          duration: 0.9,
+          ease: "power3.out",
+          delay: i * 0.03,
+          scrollTrigger: {
+            trigger: el,
+            start: "top 80%",
+            toggleActions: "play none none reverse",
+          },
+        });
+      });
+
+      // Stagger cards in features grid
+      const featureCards = gsap.utils.toArray<HTMLElement>(".feature-card");
+      gsap.from(featureCards, {
+        autoAlpha: 0,
+        y: 24,
+        duration: 0.7,
+        ease: "power3.out",
+        stagger: 0.08,
+        scrollTrigger: {
+          trigger: "#features",
+          start: "top 70%",
+        },
+      });
+
+      // Counter-up animation for stats
+      gsap.utils.toArray<HTMLElement>("[data-counter]").forEach((node) => {
+        const end = Number(node.getAttribute("data-counter")) || 0;
+        const obj = { value: 0 };
+        ScrollTrigger.create({
+          trigger: node,
+          start: "top 85%",
+          once: true,
+          onEnter: () => {
+            gsap.to(obj, {
+              value: end,
+              duration: 1.2,
+              ease: "power2.out",
+              onUpdate: () => {
+                node.innerText = Math.round(obj.value).toString();
+              },
+            });
+          },
+        });
+      });
+
+      // Subtle horizontal marquee for badge row
+      const marquee = document.querySelector(".marquee-track");
+      if (marquee) {
+        const width = (marquee as HTMLElement).scrollWidth / 2; // assuming duplicated content for seamless loop
+        gsap.to(marquee, {
+          x: -width,
+          repeat: -1,
+          ease: "none",
+          duration: 30,
+        });
+      }
+    }, root);
+
+    return () => ctx.revert();
   }, []);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    localStorage.setItem("darkMode", darkMode.toString());
-  }, [darkMode]);
-
-  const swipeHandlers = useSwipeable({
-    onSwipedUp: () => {
-      setActiveTag((prev) => {
-        const currentIndex = allTags.indexOf(prev);
-        return allTags[(currentIndex + 1) % allTags.length];
-      });
-    },
-    onSwipedDown: () => {
-      setActiveTag((prev) => {
-        const currentIndex = allTags.indexOf(prev);
-        return allTags[(currentIndex - 1 + allTags.length) % allTags.length];
-      });
-    },
-    trackTouch: true,
-  });
-
-  // ✅ Move hooks INSIDE the component
-const vantaRef = useRef<HTMLDivElement | null>(null);
-
-type VantaInstance = { destroy: () => void };
-const vantaEffect = useRef<VantaInstance | null>(null);
-
-useEffect(() => {
-  let destroyed = false;
-
-  (async () => {
-    if (!vantaRef.current || vantaEffect.current) return;
-
-    // load THREE, expose globally for Vanta
-    window.THREE = (await import("three"));
-
-    const { default: DOTS } = await import("vanta/dist/vanta.dots.min");
-    if (destroyed) return;
-
-    vantaEffect.current = DOTS({
-      el: vantaRef.current,
-      THREE: window.THREE,
-      mouseControls: true,
-      touchControls: true,
-      gyroControls: false,
-      minHeight: 200.0,
-      minWidth: 200.0,
-      scale: 1.0,
-      scaleMobile: 1.0,
-      backgroundColor: darkMode ? 0x000000 : 0xffffff, 
-      color: 0xff8820,
-      color2: 0xff8820,
-      size: 3,
-      spacing: 35,
-      showLines: false,
-    });
-  })();
-
- return () => {
-  destroyed = true;
-  vantaEffect.current?.destroy();
-  vantaEffect.current = null;
-};
-}, [darkMode]); // ✅ only this dependency array
-
-
   return (
-    <main className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-poppins transition-colors duration-500">
-      {/* NAVBAR */}
-      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
-  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
-  <div className="absolute bottom-1 left-0 w-full h-[2px] bg-white/40 z-10" />
-
-  <div className="flex items-center justify-between w-full relative">
-    {/* PerSe. text instead of logo */}
-    <div className={`${dmSerif.className} text-2xl sm:text-3xl text-white`} style={{ color: "#8A2B13" }}>
-      PerSe.
-    </div>
-
-    {/* Desktop nav links */}
-    <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-6 text-white items-center">
-      <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
-      <li><Link href="/koc?specialization=all" className="hover:underline">Koçlarımız</Link></li>
-      <li><Link href="/contact" className="hover:underline">İletişim</Link></li>
-      <li><Link href="/login" className="hover:underline">Giriş Yap</Link></li>
-    </ul>
-
-    {/* Right controls: dark mode always visible, hamburger only on mobile */}
-    <div className="flex items-center gap-3 relative z-50">
-      <Button
-        variant="ghost"
-        onClick={() => setDarkMode(!darkMode)}
-        aria-label="Toggle dark mode"
-        className="text-white"
-      >
-        {darkMode ? <Sun /> : <Moon />}
-      </Button>
-
-      <button
-        onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden text-white"
-        aria-label="Toggle mobile menu"
-      >
-        {isMobileMenuOpen ? <X /> : <Menu />}
-      </button>
-    </div>
-  </div> {/* ← this closing div is required */}
-
-  {/* Mobile dropdown menu */}
-  {isMobileMenuOpen && (
-    <motion.ul
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="md:hidden absolute top-full left-0 w-full bg-black/80 backdrop-blur-md flex flex-col items-center gap-4 py-4 text-white z-40"
-    >
-      <li><a href="#hero" onClick={() => setMobileMenuOpen(false)}>Anasayfa</a></li>
-      <li><Link href="/koc?specialization=all" onClick={() => setMobileMenuOpen(false)}>Koçlarımız</Link></li>
-      <li><Link href="/contact" onClick={() => setMobileMenuOpen(false)}>İletişim</Link></li>
-      <li><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş Yap</Link></li>
-    </motion.ul>
-  )}
-</nav>
-
-
+    <div ref={root} className="min-h-screen bg-background text-foreground">
+      
+<Navbar />
       {/* HERO */}
       <section
         id="hero"
-        className="relative min-h-[90vh] bg-cover bg-center bg-no-repeat flex items-center overflow-hidden"
-        style={{ backgroundImage: "url('/images/herobackground.jpg')" }}
+        className="relative isolate min-h-[88dvh] overflow-hidden flex items-center"
       >
-        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 md:pt-12 pb-12 w-full flex flex-col md:flex-row items-center justify-between gap-8">
-          {/* LEFT: LottieHero */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="transform scale-[1.1] sm:scale-[1.25] md:scale-[1.5] ml-2 sm:ml-6 md:ml-12 lg:ml-16"
-          >
-            <LottieHero />
-          </motion.div>
+        {/* Background image + gradient */}
+        <div className="hero-bg absolute inset-0 -z-10">
+          <Image
+            src="/images/herobackground.jpg"
+            alt="PerSe Coaching background"
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-background/80" />
+        </div>
 
-          {/* RIGHT: Text and buttons */}
-          <div className="w-full md:w-1/2 text-white text-center md:text-left">
-            {/* Heading and subtitle wrapper */}
-            <div className="-ml-2 sm:-ml-6 md:-ml-10 lg:-ml-16 text-left">
-              <motion.h1
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className={`${dmSerif.className} text-3xl sm:text-4xl md:text-6xl font-normal mb-2`}
-              >
-                PerSe.
-              </motion.h1>
-
-              <div className="text-white/90 mb-6 max-w-xl space-y-2 text-left">
-                <AnimatedText text="Hazırsan başlıyoruz!" className="text-sm sm:text-base" delay={0.1} />
-                <AnimatedText text="PerSe ile her gün bir adım daha güçlü, daha sağlıklı, daha sen." className="text-sm sm:text-base" delay={0.3} />
-                <AnimatedText text="Kişiye özel programlar, gerçek zamanlı takip, %100 motivasyon." className="text-sm sm:text-base" delay={0.5} />
-                <AnimatedText text="Hedefin varsa, PerSe yanında." className="text-sm sm:text-base" delay={0.7} />
-              </div>
+        <div className="container mx-auto px-6 md:px-10">
+          <div className="max-w-3xl">
+            <p className="hero-eyebrow inline-block mb-3 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs tracking-wider text-white/80 backdrop-blur">
+              PERSE COACHING
+            </p>
+            <h1 className={`hero-title text-5xl md:text-7xl font-extrabold text-white leading-[1.05]`}>
+              PerSe. <span className="opacity-90">Başla,</span> bırakma.
+            </h1>
+            <p className="hero-subtitle mt-4 text-lg md:text-xl text-white/80">
+              Türkiye merkezli modern koçluk platformu: program paylaş, ilerlemeyi takip et, müşterilerinle bağ kur.
+            </p>
+            <div className="hero-cta mt-8 flex flex-wrap gap-3">
+              <Button asChild size="lg" className="rounded-2xl">
+                <Link href="/signup">Hemen Başla</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/30 text-white hover:bg-white/10">
+                <Link href="#features">Özelliklere Göz At</Link>
+              </Button>
             </div>
+          </div>
+        </div>
 
-            {/* Buttons */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="flex gap-4 flex-col sm:flex-row justify-center md:justify-start"
-            >
-              <Button onClick={() => window.location.href = '/koc'}>
-                Koçlarla Tanış
-              </Button>
-              <Button
-                variant="outline"
-                className="border-white text-black hover:bg-white hover:text-black"
-                onClick={() => window.location.href = '#features'}
-              >
-                Daha Fazla Bilgi
-              </Button>
-            </motion.div>
+        {/* Floating badges */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 select-none">
+          <div className="marquee relative overflow-hidden">
+            <div className="marquee-track flex gap-8 whitespace-nowrap will-change-transform px-6 text-sm text-white/70">
+              <span>Program Paylaşımı</span>
+              <span>•</span>
+              <span>İlerleme Takibi</span>
+              <span>•</span>
+              <span>Mesajlaşma</span>
+              <span>•</span>
+              <span>Bildirimler</span>
+              <span>•</span>
+              <span>Beslenme Planları</span>
+              <span>•</span>
+              <span>Geri Bildirim</span>
+              <span>•</span>
+              {/* duplicate for seamless loop */}
+              <span>Program Paylaşımı</span>
+              <span>•</span>
+              <span>İlerleme Takibi</span>
+              <span>•</span>
+              <span>Mesajlaşma</span>
+              <span>•</span>
+              <span>Bildirimler</span>
+              <span>•</span>
+              <span>Beslenme Planları</span>
+              <span>•</span>
+              <span>Geri Bildirim</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FEATURES + CATEGORIES with Vanta Background */}
-      <RevealOnScroll>
-        <div ref={vantaRef} className="relative w-full py-20 overflow-hidden">
-          <div className="relative z-10">
-            {/* FEATURES */}
-            <section id="features" className="py-16 px-6 max-w-5xl mx-auto">
-              <h2 className="text-3xl font-semibold text-center mb-4">Neden Kullanmalısın?</h2>
-              <p className="text-center text-zinc-600 dark:text-zinc-300 mb-12">
-                Doğru programı bulmakta ve motive olmakta zorlandığını biliyoruz. Buna son vermek için buradayız.
-              </p>
-              <div className="grid md:grid-cols-2 gap-10">
-                <div className="text-center">
-                  <LottieTopluluk />
-                  <h3 className="text-xl font-semibold mt-4">Topluluk</h3>
-                  <p className="text-zinc-600 dark:text-zinc-300">Diğer sporcular ve koçlar ile iletişim kurun.</p>
-                </div>
-                <div className="text-center">
-                  <LottieIlerleme />
-                  <h3 className="text-xl font-semibold mt-4">İlerleme Takibi</h3>
-                  <p className="text-zinc-600 dark:text-zinc-300">Performansınızı ve hedeflerinizi kolayca takip edin.</p>
-                </div>
-              </div>
-            </section>
-
-            {/* CATEGORIES */}
-            <section className="py-16 px-4" {...swipeHandlers}>
-              <h2 className="text-2xl font-bold text-center mb-6">Kategoriler</h2>
-              <div className="flex flex-wrap justify-center gap-3 mb-10">
-                {allTags.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => setActiveTag(tag)}
-                    className={`px-4 py-1 rounded-full text-sm border transition ${
-                      tag === activeTag
-                        ? "bg-zinc-800 text-white border-zinc-800"
-                        : "bg-white dark:bg-zinc-700 text-zinc-700 dark:text-white border-zinc-300 dark:border-zinc-600"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                {filteredProducts.map((product) => (
-                  <motion.div
-                    key={product.title}
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-white dark:bg-zinc-700 p-5 rounded-xl shadow-md flex flex-col items-center text-center"
-                  >
-                    <div className="text-zinc-800 dark:text-white mb-3">{product.icon}</div>
-                    <h3 className="text-lg font-semibold">{product.title}</h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-300 mb-3">{product.description}</p>
-                    <Link
-                      href={product.link}
-                      className="text-sm font-medium text-white bg-zinc-800 px-3 py-1.5 rounded-md hover:bg-zinc-900"
-                    >
-                      Koçları Gör
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-
-              <p className="text-center text-xs text-zinc-500 mt-6 md:hidden">
-                Yukarı/Aşağı kaydırarak kategoriler arasında geçiş yapabilirsin
-              </p>
-            </section>
+      {/* QUICK STATS */}
+      <section className="container mx-auto px-6 md:px-10 py-14 md:py-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
+            <div className="text-4xl font-bold" data-counter="120">0</div>
+            <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
+          </div>
+          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
+            <div className="text-4xl font-bold" data-counter="3400">0</div>
+            <p className="text-sm text-muted-foreground mt-1">Toplam Kullanıcı</p>
+          </div>
+          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
+            <div className="text-4xl font-bold" data-counter="89">0</div>
+            <p className="text-sm text-muted-foreground mt-1">Paylaşılan Program</p>
+          </div>
+          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
+            <div className="text-4xl font-bold" data-counter="97">0</div>
+            <p className="text-sm text-muted-foreground mt-1">Memnuniyet Skoru</p>
           </div>
         </div>
-      </RevealOnScroll>
+      </section>
+
+      {/* FEATURES */}
+      <section id="features" className="container mx-auto px-6 md:px-10 pb-14 md:pb-24">
+        <div className="max-w-2xl" data-animate="fade-up">
+          <h2 className="text-3xl md:text-4xl font-bold">Koçlar ve Kullanıcılar için güçlü özellikler</h2>
+          <p className="mt-3 text-muted-foreground">
+            Modern, hızlı ve esnek. Programları oluştur, paylaş, ilerlemeyi anında takip et.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            {
+              title: "Program Oluşturma",
+              desc: "Seans, egzersiz, beslenme planı ve videoları tek yerden yönetin.",
+              img: "/images/feature-program.jpg",
+            },
+            {
+              title: "İlerleme Takibi",
+              desc: "Streak, ısı haritası ve grafiklerle gelişimi görün.",
+              img: "/images/feature-progress.jpg",
+            },
+            {
+              title: "Mesajlaşma",
+              desc: "Koç ve kullanıcılar arasında hızlı iletişim.",
+              img: "/images/feature-chat.jpg",
+            },
+            {
+              title: "Bildirimler",
+              desc: "Atanan seanslar, geri bildirimler ve duyurular tek yerde.",
+              img: "/images/feature-notify.jpg",
+            },
+            {
+              title: "Program Paylaşımı",
+              desc: "Koç sayfaları ve keşfet akışıyla görünürlük kazanın.",
+              img: "/images/feature-share.jpg",
+            },
+            {
+              title: "Çokdilli Destek",
+              desc: "TR/EN arayüz, modern UI/UX ve karanlık mod.",
+              img: "/images/feature-i18n.jpg",
+            },
+          ].map((f, i) => (
+            <Card key={i} className="feature-card rounded-2xl overflow-hidden">
+              <CardHeader>
+                <CardTitle>{f.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-muted">
+                  {/* Replace placeholder with your screenshots */}
+                  <Image src={f.img} alt={f.title} fill className="object-cover" />
+                </div>
+                <p className="text-sm text-muted-foreground">{f.desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="container mx-auto px-6 md:px-10 pb-16 md:pb-24">
+        <div className="max-w-2xl" data-animate="fade-up">
+          <h2 className="text-3xl md:text-4xl font-bold">Nasıl Çalışır?</h2>
+          <p className="mt-3 text-muted-foreground">3 adımda başlayın.</p>
+        </div>
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {[
+            { step: 1, title: "Hesap Oluştur", desc: "Koç veya kullanıcı olarak ücretsiz kaydol." },
+            { step: 2, title: "Programları Keşfet", desc: "Hedefine uygun programı bul veya oluştur." },
+            { step: 3, title: "Takip Et & Büyü", desc: "İlerlemeni takip et, geri bildirim al, gelişimini hızlandır." },
+          ].map((s) => (
+            <div key={s.step} className="rounded-2xl border p-6" data-animate="fade-up">
+              <div className="text-sm text-muted-foreground">Adım {s.step}</div>
+              <h3 className="mt-1 text-xl font-semibold">{s.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative overflow-hidden">
+        <div className="container mx-auto px-6 md:px-10 py-16 md:py-24">
+          <div className="rounded-3xl bg-gradient-to-br from-primary/90 to-primary/60 p-10 md:p-14 text-primary-foreground" data-animate="fade-up">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl md:text-4xl font-bold">Hazır mısın?</h2>
+              <p className="mt-2 text-primary-foreground/90">
+                PerSe ile koçluk deneyimini bir üst seviyeye taşı.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button asChild size="lg" variant="secondary" className="rounded-2xl">
+                  <Link href="/signup">Ücretsiz Başla</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="rounded-2xl bg-transparent border-white/40 text-white hover:bg-white/10">
+                  <Link href="/koc">Koçları Keşfet</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <Footer />
-
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed bottom-6 right-6 bg-zinc-700 hover:bg-zinc-800 text-white p-2 rounded-full shadow-lg"
-        aria-label="Back to top"
-      >
-        ⬆
-      </button>
-    </main>
+    </div>
   );
 }
