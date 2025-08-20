@@ -2,54 +2,52 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 type Panel = {
   title: string;
   desc: string;
   cta: { text: string; href: string };
-  canvaSrc?: string; // "https://www.canva.com/design/XXXX/view?embed"
-  bg?: string;       // "url('/images/...')" veya gradient
+  img: string;       // küçük durum görseli
+  imgHover: string;  // hover/aktif durum görseli
 };
 
 const PANELS: Panel[] = [
   {
-    title: "Programlar",
-    desc: "Hedefine göre kişisel planlar. Başla, bırakma.",
-    cta: { text: "Keşfet", href: "/koc" },
-    bg: "url('/images/panel-program.jpg')",
+    title: "Kendine Uygun Koçu Bul",
+    desc: "",
+    cta: { text: "Koçları Gör", href: "/koc" },
+    img: "/images/panel-program-sm.jpg",
+    imgHover: "/images/panel-program-lg.jpg",
   },
   {
-    title: "Tanıtım",
-    desc: "Kısa bir önizleme izle ve dene.",
-    cta: { text: "Uygulamayı Dene", href: "/kayit" },
+    title: "İlerlemeni Takip Et",
+    desc: "",
+    cta: { text: "Hemen Başla", href: "/kayit" },
+    img: "/images/panel-teaser-sm.jpg",
+    imgHover: "/images/panel-teaser-lg.jpg",
     // canvaSrc: "https://www.canva.com/design/XXXX/view?embed",
-    bg: "linear-gradient(135deg,#161616,#2a2a2a)",
   },
   {
-    title: "İlerleme",
-    desc: "Grafikler, seriler ve geri bildirim tek ekranda.",
+    title: "Topluluğa Katıl",
+    desc: "",
     cta: { text: "Giriş Yap", href: "/login" },
-    bg: "url('/images/panel-progress.jpg')",
+    img: "/images/panel-progress-sm.jpg",
+    imgHover: "/images/panel-progress-lg.jpg",
   },
 ];
 
-type Props = {
-  height?: number;      // satır yüksekliği (px)
-  className?: string;   // dışarıdan ek class
-};
 
-export default function HoverOverlayTriptych({ height = 560, className }: Props) {
+export default function HoverOverlayTriptych() {
   const [active, setActive] = useState<number | null>(null);
 
   return (
-    <section
-      className={`relative w-full ${className ?? ""}`}
-      style={{ height }}
-      onMouseLeave={() => setActive(null)}
-    >
-      {/* 3 kolon, boşluksuz, tam yükseklik */}
-      <div className="grid grid-cols-3 gap-0 h-full">
+    <section className="relative mx-auto max-w-7xl px-4">
+      <div
+        className="relative flex gap-4 h-[420px] md:h-[520px]"
+        onMouseLeave={() => setActive(null)}
+      >
         {PANELS.map((p, i) => {
           const isActive = active === i;
           return (
@@ -57,31 +55,45 @@ export default function HoverOverlayTriptych({ height = 560, className }: Props)
               key={i}
               role="button"
               aria-pressed={isActive}
-              onMouseEnter={() => setActive(i)}                 // desktop hover
-              onClick={() => setActive(isActive ? null : i)}    // mobile tap
+              onMouseEnter={() => setActive(i)}              // desktop hover
+              onClick={() => setActive(isActive ? null : i)} // mobile tap
               className={[
-                // temel
-                "h-full overflow-hidden cursor-pointer",
-                // hover overlay: aktifse tüm satırı kapla
-                isActive ? "absolute inset-0 z-20" : "relative z-0",
-                // pürüzsüz animasyon
-                "transform-gpu will-change-[transform,opacity,filter]",
-                "transition-[transform,opacity,filter] duration-800 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                // pasif kartlar soluk/küçük
+                "relative overflow-hidden rounded-2xl shadow-lg cursor-pointer",
+                "will-change-transform transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                isActive ? "absolute inset-0 z-20" : "flex-1 z-0 hover:scale-[1.02]",
                 active !== null && !isActive ? "opacity-60" : "opacity-100",
-                active !== null && !isActive ? "scale-[0.985]" : "scale-100",
               ].join(" ")}
-              style={{
-                background: p.bg ?? "linear-gradient(135deg,#0f172a,#1e293b)",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
             >
-              {/* Okunabilirlik için alt kısımda gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              {/* Görsel katmanları: küçük ve hover görseli cross-fade */}
+              <div className="absolute inset-0">
+                <Image
+                  src={p.img}
+                  alt={p.title}
+                  fill
+                  sizes="(min-width:1024px) 33vw, 100vw"
+                  priority={i === 0}
+                  className={[
+                    "object-cover transition-opacity duration-500 ease-out",
+                    isActive ? "opacity-0" : "opacity-100",
+                  ].join(" ")}
+                />
+                <Image
+                  src={p.imgHover}
+                  alt={`${p.title} (aktif)`}
+                  fill
+                  sizes="100vw"
+                  loading="lazy"
+                  className={[
+                    "object-cover transition-opacity duration-500 ease-out",
+                    isActive ? "opacity-100" : "opacity-0",
+                  ].join(" ")}
+                />
+                {/* Alt kısım okunabilirlik gradyanı */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              </div>
 
-              {/* İçerik (sol-alt) */}
-              <div className="absolute left-6 right-6 bottom-6 z-10 text-white select-none">
+              {/* İçerik */}
+              <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8 text-white">
                 <p className="text-sm opacity-80">{p.desc}</p>
                 <h3 className="mt-2 text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow">
                   {p.title.toUpperCase()}
@@ -97,21 +109,14 @@ export default function HoverOverlayTriptych({ height = 560, className }: Props)
                   </Link>
                 </div>
               </div>
-
-              {/* Canva embed istersen */}
-              {p.canvaSrc && (
-                <iframe
-                  title={p.title}
-                  src={p.canvaSrc}
-                  className="absolute inset-0 w-full h-full border-0"
-                  loading="lazy"
-                  allow="fullscreen"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              )}
             </div>
           );
         })}
+      </div>
+
+      {/* Mobil ipucu */}
+      <div className="mt-3 text-center text-sm text-neutral-500 md:hidden">
+        Bir karta dokunarak aç/kapat.
       </div>
     </section>
   );
