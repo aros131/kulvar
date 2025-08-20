@@ -146,7 +146,7 @@ export default function HomePage() {
               <Button asChild size="lg" className="rounded-2xl">
                 <Link href="/signup">Hemen Başla</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/30 text-white hover:bg-white/10">
+              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/30 text-black  hover:bg-white/10">
                 <Link href="#features">Özelliklere Göz At</Link>
               </Button>
             </div>
@@ -186,27 +186,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* QUICK STATS */}
-      <section className="container mx-auto px-6 md:px-10 py-14 md:py-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="120">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
-          </div>
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="3400">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Toplam Kullanıcı</p>
-          </div>
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="89">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Paylaşılan Program</p>
-          </div>
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="97">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Memnuniyet Skoru</p>
-          </div>
-        </div>
-      </section>
+      
 
       {/* FEATURES */}
       <section id="features" className="container mx-auto px-6 md:px-10 pb-14 md:pb-24">
