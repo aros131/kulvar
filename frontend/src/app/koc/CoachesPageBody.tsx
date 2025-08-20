@@ -23,7 +23,7 @@ const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.co
 type Coach = {
   _id: string;
   name: string;
-  role?: string; // used for final client-side filter
+  role?: string;
   avatar?: string;
   profilePicture?: string;
   specialization?: string | string[];
@@ -36,45 +36,45 @@ type Coach = {
 export default function CoachesPageBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const rawSpec = (searchParams?.get("spec") || "").trim();
+  const initialSpec = rawSpec === "all" ? "" : rawSpec; // normalize ?spec=all
   const initialQuery = (searchParams?.get("q") || "").trim();
-  const initialSpec = (searchParams?.get("spec") || "").trim();
   const debug = searchParams?.get("debug") === "1";
 
   const [query, setQuery] = useState<string>(initialQuery);
   const [specFilter, setSpecFilter] = useState<string>(initialSpec);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [fetching, setFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // raw fetched list (only coaches), and the filtered list to render
   const [coachesRaw, setCoachesRaw] = useState<Coach[]>([]);
   const [coaches, setCoaches] = useState<Coach[]>([]);
 
   const [debugInfo, setDebugInfo] = useState<{ url?: string; status?: number; shape?: string; count?: number } | null>(null);
 
-  // keep ?q= and ?spec= in the URL
+  // sync ?q= and ?spec= in the URL
   useEffect(() => {
     const sp = new URLSearchParams(Array.from(searchParams?.entries() || []));
-    if (query) sp.set("q", query);
-    else sp.delete("q");
-    if (specFilter) sp.set("spec", specFilter);
-    else sp.delete("spec");
+    if (query) sp.set("q", query); else sp.delete("q");
+    if (specFilter) sp.set("spec", specFilter); else sp.delete("spec");
     router.replace(`/koc?${sp.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, specFilter]);
 
-  // initial load
+  // first load
   useEffect(() => {
     let active = true;
     (async () => {
       setLoading(true);
       setError(null);
-      const items = await fetchCoaches(initialQuery, setError, setDebugInfo);
+      const items = await fetchCoaches(initialQuery, initialSpec, setError, setDebugInfo);
       if (active) {
         setLoading(false);
         if (items) {
           setCoachesRaw(items);
-          setCoaches(applySpecFilter(items, initialSpec));
+          setCoaches(items); // server already filtered by spec
         } else {
           setCoachesRaw([]);
           setCoaches([]);
@@ -92,11 +92,11 @@ export default function CoachesPageBody() {
     const t = setTimeout(async () => {
       setFetching(true);
       setError(null);
-      const items = await fetchCoaches(query, setError, setDebugInfo);
+      const items = await fetchCoaches(query, specFilter, setError, setDebugInfo);
       setFetching(false);
       if (items) {
         setCoachesRaw(items);
-        setCoaches(applySpecFilter(items, specFilter));
+        setCoaches(items);
       } else {
         setCoachesRaw([]);
         setCoaches([]);
@@ -105,21 +105,16 @@ export default function CoachesPageBody() {
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
-
-  // when dropdown changes, re-filter without refetch
-  useEffect(() => {
-    setCoaches(applySpecFilter(coachesRaw, specFilter));
-  }, [specFilter, coachesRaw]);
+  }, [query, specFilter]);
 
   const handleManualSearch = async () => {
     setFetching(true);
     setError(null);
-    const items = await fetchCoaches(query, setError, setDebugInfo);
+    const items = await fetchCoaches(query, specFilter, setError, setDebugInfo);
     setFetching(false);
     if (items) {
       setCoachesRaw(items);
-      setCoaches(applySpecFilter(items, specFilter));
+      setCoaches(items);
     } else {
       setCoachesRaw([]);
       setCoaches([]);
@@ -131,12 +126,11 @@ export default function CoachesPageBody() {
     if (e.key === "Enter") handleManualSearch();
   };
 
+  // derive dropdown options from raw list
   const specOptions = useMemo(() => {
     const s = new Set<string>();
     for (const c of coachesRaw) {
-      for (const sp of toArray(c.specialization)) {
-        if (sp) s.add(sp);
-      }
+      for (const sp of toArray(c.specialization)) if (sp) s.add(sp);
     }
     return Array.from(s).sort((a, b) => a.localeCompare(b, "tr"));
   }, [coachesRaw]);
@@ -172,8 +166,11 @@ export default function CoachesPageBody() {
             />
           </div>
 
-          {/* Specialization dropdown */}
-          <Select value={specFilter} onValueChange={(v) => setSpecFilter(v)}>
+          {/* Specialization dropdown ('all' sentinel, not empty string) */}
+          <Select
+            value={specFilter || "all"}
+            onValueChange={(v) => setSpecFilter(v === "all" ? "" : v)}
+          >
             <SelectTrigger className="w-[180px]" aria-label="Uzmanlık filtresi">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
@@ -181,29 +178,20 @@ export default function CoachesPageBody() {
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tümü</SelectItem>
+              <SelectItem value="all">Tümü</SelectItem>
               {specOptions.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           <Button onClick={handleManualSearch} disabled={fetching}>
-            {fetching ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Aranıyor
-              </>
-            ) : (
-              "Ara"
-            )}
+            {fetching ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Aranıyor</>) : "Ara"}
           </Button>
         </div>
       </div>
 
-      {/* Optional debug panel */}
+      {/* Optional debug */}
       {debug && debugInfo && (
         <div className="mb-4 rounded-lg border p-3 text-xs">
           <div><b>Last URL:</b> {debugInfo.url}</div>
@@ -248,18 +236,8 @@ export default function CoachesPageBody() {
                     <div className="min-w-0">
                       <CardTitle className="truncate group-hover:underline">{c.name}</CardTitle>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {c.city && (
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {c.city}
-                          </span>
-                        )}
-                        {typeof c.rating === "number" && (
-                          <span className="inline-flex items-center gap-1">
-                            <Star className="h-3.5 w-3.5" />
-                            {c.rating.toFixed(1)}
-                          </span>
-                        )}
+                        {c.city && (<span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.city}</span>)}
+                        {typeof c.rating === "number" && (<span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5" />{c.rating.toFixed(1)}</span>)}
                       </div>
                     </div>
                   </CardHeader>
@@ -275,18 +253,12 @@ export default function CoachesPageBody() {
                         <Badge variant="outline">+{toArray(c.specialization).length - 3}</Badge>
                       )}
                     </div>
-
-                    {c.bio && (
-                      <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{c.bio}</p>
-                    )}
-
+                    {c.bio && (<p className="text-sm text-muted-foreground line-clamp-3 mb-3">{c.bio}</p>)}
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
                         {c.programsCount ? `${c.programsCount} program` : "Program bilgisi yok"}
                       </span>
-                      <Button size="sm" variant="secondary">
-                        Profili Gör
-                      </Button>
+                      <Button size="sm" variant="secondary">Profili Gör</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -309,13 +281,6 @@ function initials(name?: string) {
 function toArray(x?: string | string[]) {
   if (!x) return [];
   return Array.isArray(x) ? x : [x];
-}
-function applySpecFilter(items: Coach[], spec: string) {
-  const s = spec.trim().toLowerCase();
-  if (!s) return items;
-  return items.filter((c) =>
-    toArray(c.specialization).some((sp) => sp?.toLowerCase() === s)
-  );
 }
 function CoachSkeletonGrid() {
   return (
@@ -351,30 +316,24 @@ function CoachSkeletonGrid() {
   );
 }
 
-/* ------- Data fetch (returns only coaches) ------- */
+/* ------- Data fetch (includes spec => server filters) ------- */
 async function fetchCoaches(
   q: string,
+  spec: string,
   setError: (e: string | null) => void,
   setDebug?: (d: any) => void
 ): Promise<Coach[] | null> {
-  const qs = (key?: string) => {
-    const p = new URLSearchParams();
-    if (key && q) p.set(key, q);
-    p.set("role", "coach"); // ask server to filter if supported
-    return `?${p.toString()}`;
-    // server may ignore; we still filter client-side below
+  const p = (key?: string) => {
+    const params = new URLSearchParams();
+    if (key && q) params.set(key, q);       // search | q | name
+    if (spec) params.set("spec", spec);     // ⬅️ NEW: send specialization to API
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
   };
 
-  const candidates = [
-    `${API}/users${qs("search")}`,
-    `${API}/users${qs("q")}`,
-    `${API}/users${qs("name")}`,
-    `${API}/coaches${qs("search")}`,
-    `${API}/coaches${qs("q")}`,
-    `${API}/coaches${qs("name")}`,
-    `${API}/users${qs()}`,
-    `${API}/coaches${qs()}`,
-  ];
+  const keys = q ? ["search", "q", "name"] : [""];
+  const candidates = keys.map((k) => `${API}/coaches${p(k || undefined)}`);
+  candidates.push(`${API}/coaches${p()}`);  // plain fallback
 
   const onlyCoaches = (arr: any[]): Coach[] =>
     (arr || []).filter((it) => String((it?.role ?? "coach")).toLowerCase() === "coach");
@@ -387,24 +346,17 @@ async function fetchCoaches(
         setDebug?.({ url, status, shape: "HTTP error" });
         continue;
       }
-
       const json = await res.json().catch(() => ({} as any));
       const items: any[] =
         (Array.isArray(json?.coaches) && json.coaches) ||
-        (Array.isArray(json?.users) && json.users) ||
         (Array.isArray(json?.data?.coaches) && json.data.coaches) ||
-        (Array.isArray(json?.data?.users) && json.data.users) ||
         (Array.isArray(json?.results) && json.results) ||
         (Array.isArray(json?.data?.results) && json.data.results) ||
         (Array.isArray(json) ? json : []);
 
-      const shape = Array.isArray(json)
-        ? "array-root"
-        : Object.keys(json || {}).join(",") || "unknown";
-
+      const shape = Array.isArray(json) ? "array-root" : Object.keys(json || {}).join(",") || "unknown";
       const filtered = onlyCoaches(items);
       setDebug?.({ url, status, shape, count: filtered.length });
-
       setError(null);
       return filtered;
     } catch (e: any) {
