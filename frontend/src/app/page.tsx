@@ -113,7 +113,24 @@ export default function HomePage() {
   return (
     <div ref={root} className="min-h-screen bg-background text-foreground">
       
-<Navbar />
+{/* NAVBAR overlay on hero */}
+<nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
+  {/* subtle gradient overlay behind navbar */}
+  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
+  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/30" />
+
+  <div className="flex items-center justify-between w-full">
+    <div className="text-2xl font-bold text-white">PerSe.</div>
+
+    <ul className="hidden md:flex gap-6 text-white">
+      <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+      <li><Link href="/koc">Koçlarımız</Link></li>
+      <li><Link href="/contact">İletişim</Link></li>
+      <li><Link href="/login">Giriş Yap</Link></li>
+    </ul>
+  </div>
+</nav>
+
       {/* HERO */}
       <section
         id="hero"
