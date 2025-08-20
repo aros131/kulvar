@@ -10,7 +10,7 @@ type Panel = {
   desc: string;
   cta: { text: string; href: string };
   img: string;       // küçük durum görseli
-  imgHover: string;  // hover/aktif durum görseli
+  imgHover: string;  // hover/aktif görsel
 };
 
 const PANELS: Panel[] = [
@@ -42,7 +42,7 @@ export default function HoverOverlayTriptych() {
 
   return (
     <section className="relative mx-auto max-w-7xl px-4">
-      {/* ✅ Mobile: vertical stack; Desktop: row with overlay */}
+      {/* Mobile: dikey; md+: yatay ve büyüyen kart */}
       <div
         className="relative flex flex-col md:flex-row gap-3 md:gap-4 h-auto md:h-[520px]"
         onMouseLeave={() => setActive(null)}
@@ -56,23 +56,26 @@ export default function HoverOverlayTriptych() {
               role="button"
               aria-pressed={isActive}
               tabIndex={0}
-              onMouseEnter={() => setActive(i)}               // desktop hover
-              onClick={() => setActive(isActive ? null : i)}   // mobile tap
+              onMouseEnter={() => setActive(i)}                // desktop hover
+              onClick={() => setActive(isActive ? null : i)}    // mobile tap
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(isActive ? null : i)}
               className={[
                 "relative overflow-hidden rounded-2xl shadow-lg cursor-pointer select-none",
                 "transform-gpu will-change-[transform,opacity,filter]",
-                "transition-[transform,opacity,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                "motion-reduce:transition-none motion-reduce:transform-none",
-                // overlay only on md+
-                isActive ? "md:absolute md:inset-0 md:z-20" : "md:flex-1 md:z-0 md:hover:scale-[1.02]",
-                // heights: fixed on mobile, full on desktop row
+                // yumuşak animasyonlar
+                "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                "motion-reduce:transition-none",
+                // layout
                 "w-full h-[280px] sm:h-[320px] md:h-full",
-                // dim other panels only on md+
-                active !== null && !isActive ? "md:opacity-60" : "opacity-100",
+                "md:basis-0 md:grow", // flex-basis:0; grow animasyonunu inline style ile kontrol edeceğiz
+                // scale/dim sadece md+
+                isActive ? "md:scale-[1.02] md:z-10" : "md:hover:scale-[1.01]",
+                active !== null && !isActive ? "md:opacity-70" : "opacity-100",
               ].join(" ")}
+              // büyüme: aktif 2x grow, pasif 1x
+              style={{ flexGrow: isActive ? 2 : 1 }}
             >
-              {/* Background images — small vs hover (cross-fade) */}
+              {/* Arkaplan görselleri: cross-fade */}
               <div className="absolute inset-0">
                 <Image
                   src={p.img}
@@ -96,28 +99,24 @@ export default function HoverOverlayTriptych() {
                     isActive ? "opacity-100" : "opacity-0 md:opacity-0",
                   ].join(" ")}
                 />
-
-                {/* Readability gradient */}
+                {/* okunabilirlik gradyanı */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
               </div>
 
-              {/* Content */}
+              {/* İçerik */}
               <div className="relative z-10 h-full flex flex-col justify-end p-4 md:p-8 text-white">
-                {/* Hide empty descs to save space */}
-                {p.desc ? (
-                  <p className="text-xs sm:text-sm opacity-80 max-w-[30ch] md:max-w-none [text-wrap:balance] leading-relaxed">
+                {!!p.desc && (
+                  <p className="text-xs sm:text-sm opacity-80 max-w-[30ch] md:max-w-none leading-relaxed [text-wrap:balance]">
                     {p.desc}
                   </p>
-                ) : null}
-
+                )}
                 <h3 className="mt-1 md:mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow leading-tight [text-wrap:balance] break-words">
                   {p.title.toUpperCase()}
                 </h3>
-
                 <div className="mt-3 md:mt-5">
                   <Link
                     href={p.cta.href}
-                    onClick={(e) => e.stopPropagation()} // prevent card toggle
+                    onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center justify-center rounded-full bg-white text-gray-900 px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base font-medium hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/60"
                     aria-label={`${p.title} - ${p.cta.text}`}
                   >
@@ -130,7 +129,7 @@ export default function HoverOverlayTriptych() {
         })}
       </div>
 
-      {/* Mobile hint */}
+      {/* Mobil ipucu */}
       <div className="mt-3 text-center text-xs md:text-sm text-neutral-500 md:hidden">
         Kartı aç/kapatmak için dokun.
       </div>
