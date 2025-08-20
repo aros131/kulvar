@@ -1,45 +1,25 @@
-import { notFound } from "next/navigation";
+// app/koc/[coachId]/page.tsx
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
-export const revalidate = 0; // always fresh while iterating
-
-type Coach = {
-  _id: string;
-  name: string;
-  email?: string;
-  role?: string;
-  profilePicture?: string;
-  specialization?: string | string[];
-  city?: string;
-  rating?: number;
-  bio?: string;
-  programsCount?: number;
-};
-
-async function getCoach(id: string): Promise<Coach | null> {
-  try {
-    const res = await fetch(`${API}/coaches/${id}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const json = await res.json().catch(() => null);
-    // expect { coach: {...} }
-    const coach: Coach | undefined = json?.coach ?? (Array.isArray(json) ? json[0] : undefined);
-    return coach ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export default async function CoachPage({ params }: { params: { id: string } }) {
-  const coach = await getCoach(params.id);
-  if (!coach) notFound();
+import CoachProfileClient from "@/components/CoachProfileClient";
+export default async function CoachPage({ params }: { params: { coachId: string } }) {
+  // fetch your data here from Render API
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/coaches/${params.coachId}`, { cache: "no-store" });
+  const coach = await res.json();
+  const programs = coach.programs ?? [];
+  const reviews = coach.reviewsSummary ?? { average: 4.9, count: 128, distribution: {5:100,4:20,3:6,2:1,1:1} };
+  const availability = coach.availability ?? []; // [{date:'2025-08-21', timezone:'Europe/Istanbul', slots:[{time:'10:00',available:true}, ...]}]
 
   return (
-    <div className="mx-auto max-w-xl md:max-w-2xl px-4 md:px-6 py-8">
-      <a href="/koc" className="text-sm text-muted-foreground hover:underline">← Geri</a>
-      {/* Client UI */}
-      <CoachProfileClient coach={coach} />
-    </div>
+    <CoachProfileClient
+      coach={coach}
+      programs={programs}
+      reviews={reviews}
+      availability={availability}
+      locale="tr"
+      isFollowing={coach.isFollowing}
+      onFollowToggle={async (next) => { await fetch(`/api/follow`, { method: next ? "POST" : "DELETE", body: JSON.stringify({ coachId: coach.id }) }); }}
+      onBook={async ({ day, time }) => { await fetch(`/api/book`, { method: "POST", body: JSON.stringify({ coachId: coach.id, day, time }) }); }}
+      onMessage={() => { window.location.href = `/messages?to=${coach.id}`; }}
+    />
   );
 }
-
-import CoachProfileClient from "@/components/CoachProfileClient"; 
