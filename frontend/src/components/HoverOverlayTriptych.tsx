@@ -10,7 +10,7 @@ type Panel = {
   desc: string;
   cta: { text: string; href: string };
   img: string;       // küçük durum görseli
-  imgHover: string;  // hover/aktif görsel
+  imgHover: string;  // hover/aktif durum görseli
 };
 
 const PANELS: Panel[] = [
@@ -42,9 +42,18 @@ export default function HoverOverlayTriptych() {
 
   return (
     <section className="relative mx-auto max-w-7xl px-4">
-      {/* Mobile: dikey; md+: yatay ve büyüyen kart */}
+      {/* Mobile: yatay kaydırmalı sıra (snap) — Desktop: klasik 3lü büyüme */}
       <div
-        className="relative flex flex-col md:flex-row gap-3 md:gap-4 h-auto md:h-[520px]"
+        className={[
+          // row everywhere
+          "relative flex gap-3 md:gap-4",
+          // heights
+          "h-[320px] sm:h-[360px] md:h-[520px]",
+          // mobile horizontal scroll + snap
+          "overflow-x-auto md:overflow-visible snap-x snap-mandatory",
+          // hide scrollbars (supported)
+          "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+        ].join(" ")}
         onMouseLeave={() => setActive(null)}
       >
         {PANELS.map((p, i) => {
@@ -56,36 +65,37 @@ export default function HoverOverlayTriptych() {
               role="button"
               aria-pressed={isActive}
               tabIndex={0}
-              onMouseEnter={() => setActive(i)}                // desktop hover
-              onClick={() => setActive(isActive ? null : i)}    // mobile tap
+              onMouseEnter={() => setActive(i)}                 // desktop hover
+              onClick={() => setActive(isActive ? null : i)}     // mobile tap
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(isActive ? null : i)}
               className={[
-                "relative overflow-hidden rounded-2xl shadow-lg cursor-pointer select-none",
+                "relative h-full overflow-hidden rounded-2xl shadow-lg cursor-pointer select-none",
                 "transform-gpu will-change-[transform,opacity,filter]",
-                // yumuşak animasyonlar
                 "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
                 "motion-reduce:transition-none",
-                // layout
-                "w-full h-[280px] sm:h-[320px] md:h-full",
-                "md:basis-0 md:grow", // flex-basis:0; grow animasyonunu inline style ile kontrol edeceğiz
-                // scale/dim sadece md+
-                isActive ? "md:scale-[1.02] md:z-10" : "md:hover:scale-[1.01]",
-                active !== null && !isActive ? "md:opacity-70" : "opacity-100",
+                // 🟢 Mobile widths (side-by-side): grow a bit when active
+                isActive ? "w-[88vw] sm:w-[84vw]" : "w-[85vw] sm:w-[80vw]",
+                "flex-none snap-center",
+                // 🟢 Desktop layout: flex grow logic (no overlay)
+                "md:w-auto md:flex-1 md:basis-0",
+                // depth + dimming
+                isActive ? "scale-[1.02] md:z-10" : "hover:scale-[1.01]",
+                active !== null && !isActive ? "opacity-70" : "opacity-100",
               ].join(" ")}
-              // büyüme: aktif 2x grow, pasif 1x
+              // desktop growth via flexGrow (mobile uses width above)
               style={{ flexGrow: isActive ? 2 : 1 }}
             >
-              {/* Arkaplan görselleri: cross-fade */}
+              {/* BG images — cross-fade */}
               <div className="absolute inset-0">
                 <Image
                   src={p.img}
                   alt={p.title}
                   fill
-                  sizes="(min-width: 768px) 33vw, 100vw"
+                  sizes="(min-width: 768px) 33vw, 90vw"
                   priority={i === 0}
                   className={[
                     "object-cover transition-opacity duration-500 ease-out",
-                    isActive ? "opacity-0 md:opacity-0" : "opacity-100",
+                    isActive ? "opacity-0" : "opacity-100",
                   ].join(" ")}
                 />
                 <Image
@@ -96,17 +106,16 @@ export default function HoverOverlayTriptych() {
                   loading="lazy"
                   className={[
                     "object-cover transition-opacity duration-500 ease-out",
-                    isActive ? "opacity-100" : "opacity-0 md:opacity-0",
+                    isActive ? "opacity-100" : "opacity-0",
                   ].join(" ")}
                 />
-                {/* okunabilirlik gradyanı */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
               </div>
 
-              {/* İçerik */}
+              {/* Content */}
               <div className="relative z-10 h-full flex flex-col justify-end p-4 md:p-8 text-white">
                 {!!p.desc && (
-                  <p className="text-xs sm:text-sm opacity-80 max-w-[30ch] md:max-w-none leading-relaxed [text-wrap:balance]">
+                  <p className="text-xs sm:text-sm opacity-80 max-w-[32ch] md:max-w-none leading-relaxed [text-wrap:balance]">
                     {p.desc}
                   </p>
                 )}
@@ -129,9 +138,9 @@ export default function HoverOverlayTriptych() {
         })}
       </div>
 
-      {/* Mobil ipucu */}
+      {/* Mobile hint */}
       <div className="mt-3 text-center text-xs md:text-sm text-neutral-500 md:hidden">
-        Kartı aç/kapatmak için dokun.
+        Kaydır ya da dokunarak kartı odakla.
       </div>
     </section>
   );
