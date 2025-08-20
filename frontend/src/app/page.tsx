@@ -1,5 +1,6 @@
 "use client";
 
+import HoverOverlayTriptych from "@/components/HoverOverlayTriptych";
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,10 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
-// If you use custom fonts, keep your existing font imports. Example:
-// import { DM_Serif_Display } from "next/font/google";
-// const dmSerif = DM_Serif_Display({ subsets: ["latin"], weight: "400" });
+// import Navbar from "@/components/Navbar"; // Kullanmadığın için yoruma aldım
 
 export default function HomePage() {
   const root = useRef<HTMLDivElement | null>(null);
@@ -19,9 +17,8 @@ export default function HomePage() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Use gsap.context so selectors are scoped and cleanup is automatic
     const ctx = gsap.context(() => {
-      // HERO intro timeline
+      // HERO intro
       const tl = gsap.timeline();
       tl.from([".hero-eyebrow", ".hero-title", ".hero-subtitle", ".hero-cta"], {
         opacity: 0,
@@ -31,7 +28,7 @@ export default function HomePage() {
         stagger: 0.12,
       });
 
-      // Parallax on hero background
+      // Parallax
       gsap.to(".hero-bg", {
         yPercent: 12,
         ease: "none",
@@ -43,7 +40,7 @@ export default function HomePage() {
         },
       });
 
-      // Generic fade-up reveal for anything with data-animate="fade-up"
+      // Fade-up
       gsap.utils.toArray<HTMLElement>("[data-animate='fade-up']").forEach((el, i) => {
         gsap.from(el, {
           autoAlpha: 0,
@@ -51,15 +48,11 @@ export default function HomePage() {
           duration: 0.9,
           ease: "power3.out",
           delay: i * 0.03,
-          scrollTrigger: {
-            trigger: el,
-            start: "top 80%",
-            toggleActions: "play none none reverse",
-          },
+          scrollTrigger: { trigger: el, start: "top 80%", toggleActions: "play none none reverse" },
         });
       });
 
-      // Stagger cards in features grid
+      // Feature cards
       const featureCards = gsap.utils.toArray<HTMLElement>(".feature-card");
       gsap.from(featureCards, {
         autoAlpha: 0,
@@ -67,13 +60,10 @@ export default function HomePage() {
         duration: 0.7,
         ease: "power3.out",
         stagger: 0.08,
-        scrollTrigger: {
-          trigger: "#features",
-          start: "top 70%",
-        },
+        scrollTrigger: { trigger: "#features", start: "top 70%" },
       });
 
-      // Counter-up animation for stats
+      // Sayılar
       gsap.utils.toArray<HTMLElement>("[data-counter]").forEach((node) => {
         const end = Number(node.getAttribute("data-counter")) || 0;
         const obj = { value: 0 };
@@ -86,24 +76,21 @@ export default function HomePage() {
               value: end,
               duration: 1.2,
               ease: "power2.out",
-              onUpdate: () => {
-                node.innerText = Math.round(obj.value).toString();
-              },
+              // DOĞRU (void döner)
+onUpdate: () => {
+  node.textContent = String(Math.round(obj.value));
+},
+
             });
           },
         });
       });
 
-      // Subtle horizontal marquee for badge row
+      // Marquee
       const marquee = document.querySelector(".marquee-track");
       if (marquee) {
-        const width = (marquee as HTMLElement).scrollWidth / 2; // assuming duplicated content for seamless loop
-        gsap.to(marquee, {
-          x: -width,
-          repeat: -1,
-          ease: "none",
-          duration: 30,
-        });
+        const width = (marquee as HTMLElement).scrollWidth / 2;
+        gsap.to(marquee, { x: -width, repeat: -1, ease: "none", duration: 30 });
       }
     }, root);
 
@@ -112,31 +99,24 @@ export default function HomePage() {
 
   return (
     <div ref={root} className="min-h-screen bg-background text-foreground">
-      
-{/* NAVBAR overlay on hero */}
-<nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
-  {/* subtle gradient overlay behind navbar */}
-  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
-  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/30" />
-
-  <div className="flex items-center justify-between w-full">
-    <div className="text-2xl font-bold text-white">PerSe.</div>
-
-    <ul className="hidden md:flex gap-6 text-white">
-      <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
-      <li><Link href="/koc">Koçlarımız</Link></li>
-      <li><Link href="/contact">İletişim</Link></li>
-      <li><Link href="/login">Giriş Yap</Link></li>
-    </ul>
-  </div>
-</nav>
+      {/* NAVBAR (hero üstünde şeffaf) */}
+      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-4 bg-transparent">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-[-1]" />
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/30" />
+        <div className="flex items-center justify-between w-full">
+          <div className="text-2xl font-bold text-white">PerSe.</div>
+          <ul className="hidden md:flex gap-6 text-white">
+            <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+            <li><Link href="/koc">Koçlarımız</Link></li>
+            <li><Link href="/contact">İletişim</Link></li>
+            <li><Link href="/login">Giriş Yap</Link></li>
+          </ul>
+        </div>
+      </nav>
 
       {/* HERO */}
-      <section
-        id="hero"
-        className="relative isolate min-h-[88dvh] overflow-hidden flex items-center"
-      >
-        {/* Background image + gradient */}
+      <section id="hero" className="relative isolate min-h-[88dvh] overflow-hidden flex items-center">
+        {/* Background */}
         <div className="hero-bg absolute inset-0 -z-10">
           <Image
             src="/images/herobackground.jpg"
@@ -153,7 +133,7 @@ export default function HomePage() {
             <p className="hero-eyebrow inline-block mb-3 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs tracking-wider text-white/80 backdrop-blur">
               PERSE COACHING
             </p>
-            <h1 className={`hero-title text-5xl md:text-7xl font-extrabold text-white leading-[1.05]`}>
+            <h1 className="hero-title text-5xl md:text-7xl font-extrabold text-white leading-[1.05]">
               PerSe. <span className="opacity-90">Başla,</span> bırakma.
             </h1>
             <p className="hero-subtitle mt-4 text-lg md:text-xl text-white/80">
@@ -163,7 +143,12 @@ export default function HomePage() {
               <Button asChild size="lg" className="rounded-2xl">
                 <Link href="/signup">Hemen Başla</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/30 text-black  hover:bg-white/10">
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="rounded-2xl border-white/30 text-white hover:bg-white/10"
+              >
                 <Link href="#features">Özelliklere Göz At</Link>
               </Button>
             </div>
@@ -174,43 +159,31 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-x-0 bottom-6 select-none">
           <div className="marquee relative overflow-hidden">
             <div className="marquee-track flex gap-8 whitespace-nowrap will-change-transform px-6 text-sm text-white/70">
-              <span>Program Paylaşımı</span>
-              <span>•</span>
-              <span>İlerleme Takibi</span>
-              <span>•</span>
-              <span>Mesajlaşma</span>
-              <span>•</span>
-              <span>Bildirimler</span>
-              <span>•</span>
-              <span>Beslenme Planları</span>
-              <span>•</span>
-              <span>Geri Bildirim</span>
-              <span>•</span>
+              <span>Program Paylaşımı</span><span>•</span>
+              <span>İlerleme Takibi</span><span>•</span>
+              <span>Mesajlaşma</span><span>•</span>
+              <span>Bildirimler</span><span>•</span>
+              <span>Beslenme Planları</span><span>•</span>
+              <span>Geri Bildirim</span><span>•</span>
               {/* duplicate for seamless loop */}
-              <span>Program Paylaşımı</span>
-              <span>•</span>
-              <span>İlerleme Takibi</span>
-              <span>•</span>
-              <span>Mesajlaşma</span>
-              <span>•</span>
-              <span>Bildirimler</span>
-              <span>•</span>
-              <span>Beslenme Planları</span>
-              <span>•</span>
+              <span>Program Paylaşımı</span><span>•</span>
+              <span>İlerleme Takibi</span><span>•</span>
+              <span>Mesajlaşma</span><span>•</span>
+              <span>Bildirimler</span><span>•</span>
+              <span>Beslenme Planları</span><span>•</span>
               <span>Geri Bildirim</span>
             </div>
           </div>
         </div>
       </section>
 
-      
+      {/* TRIPTYCH (Hover overlay üçlü blok) */}
+      <section id="triptych" className="container mx-auto px-6 md:px-10 py-16 md:py-24">
+        <HoverOverlayTriptych />
+      </section>
 
       {/* FEATURES */}
-     <section
-  id="features"
-  className="container mx-auto px-6 md:px-10 pt-28 pb-14 md:pt-36 md:pb-24"
->
-
+      <section id="features" className="container mx-auto px-6 md:px-10 pt-6 pb-14 md:pt-6 md:pb-24">
         <div className="max-w-2xl" data-animate="fade-up">
           <h2 className="text-3xl md:text-4xl font-bold">Koçlar ve Kullanıcılar için güçlü özellikler</h2>
           <p className="mt-3 text-muted-foreground">
@@ -220,36 +193,12 @@ export default function HomePage() {
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            {
-              title: "Program Oluşturma",
-              desc: "Seans, egzersiz, beslenme planı ve videoları tek yerden yönetin.",
-              img: "/images/feature-program.jpg",
-            },
-            {
-              title: "İlerleme Takibi",
-              desc: "Streak, ısı haritası ve grafiklerle gelişimi görün.",
-              img: "/images/feature-progress.jpg",
-            },
-            {
-              title: "Mesajlaşma",
-              desc: "Koç ve kullanıcılar arasında hızlı iletişim.",
-              img: "/images/feature-chat.jpg",
-            },
-            {
-              title: "Bildirimler",
-              desc: "Atanan seanslar, geri bildirimler ve duyurular tek yerde.",
-              img: "/images/feature-notify.jpg",
-            },
-            {
-              title: "Program Paylaşımı",
-              desc: "Koç sayfaları ve keşfet akışıyla görünürlük kazanın.",
-              img: "/images/feature-share.jpg",
-            },
-            {
-              title: "Çokdilli Destek",
-              desc: "TR/EN arayüz, modern UI/UX ve karanlık mod.",
-              img: "/images/feature-i18n.jpg",
-            },
+            { title: "Program Oluşturma", desc: "Seans, egzersiz, beslenme planı ve videoları tek yerden yönetin.", img: "/images/feature-program.jpg" },
+            { title: "İlerleme Takibi", desc: "Streak, ısı haritası ve grafiklerle gelişimi görün.", img: "/images/feature-progress.jpg" },
+            { title: "Mesajlaşma", desc: "Koç ve kullanıcılar arasında hızlı iletişim.", img: "/images/feature-chat.jpg" },
+            { title: "Bildirimler", desc: "Atanan seanslar, geri bildirimler ve duyurular tek yerde.", img: "/images/feature-notify.jpg" },
+            { title: "Program Paylaşımı", desc: "Koç sayfaları ve keşfet akışıyla görünürlük kazanın.", img: "/images/feature-share.jpg" },
+            { title: "Çokdilli Destek", desc: "TR/EN arayüz, modern UI/UX ve karanlık mod.", img: "/images/feature-i18n.jpg" },
           ].map((f, i) => (
             <Card key={i} className="feature-card rounded-2xl overflow-hidden">
               <CardHeader>
@@ -257,7 +206,6 @@ export default function HomePage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-muted">
-                  {/* Replace placeholder with your screenshots */}
                   <Image src={f.img} alt={f.title} fill className="object-cover" />
                 </div>
                 <p className="text-sm text-muted-foreground">{f.desc}</p>
@@ -294,9 +242,7 @@ export default function HomePage() {
           <div className="rounded-3xl bg-gradient-to-br from-primary/90 to-primary/60 p-10 md:p-14 text-primary-foreground" data-animate="fade-up">
             <div className="max-w-2xl">
               <h2 className="text-3xl md:text-4xl font-bold">Hazır mısın?</h2>
-              <p className="mt-2 text-primary-foreground/90">
-                PerSe ile koçluk deneyimini bir üst seviyeye taşı.
-              </p>
+              <p className="mt-2 text-primary-foreground/90">PerSe ile koçluk deneyimini bir üst seviyeye taşı.</p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button asChild size="lg" variant="secondary" className="rounded-2xl">
                   <Link href="/signup">Ücretsiz Başla</Link>
