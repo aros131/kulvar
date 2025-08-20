@@ -177,43 +177,14 @@ onUpdate: () => {
         </div>
       </section>
 
-      {/* TRIPTYCH (Hover overlay üçlü blok) */}
-      <section id="triptych" className="container mx-auto px-6 md:px-10 py-16 md:py-24">
-        <HoverOverlayTriptych />
-      </section>
+      <section
+  id="triptych"
+  className="relative w-screen left-1/2 right-1/2 -mx-[50vw]" // full-bleed
+>
+  <HoverOverlayTriptych height={560} />
+</section>
 
-      {/* FEATURES */}
-      <section id="features" className="container mx-auto px-6 md:px-10 pt-6 pb-14 md:pt-6 md:pb-24">
-        <div className="max-w-2xl" data-animate="fade-up">
-          <h2 className="text-3xl md:text-4xl font-bold">Koçlar ve Kullanıcılar için güçlü özellikler</h2>
-          <p className="mt-3 text-muted-foreground">
-            Modern, hızlı ve esnek. Programları oluştur, paylaş, ilerlemeyi anında takip et.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { title: "Program Oluşturma", desc: "Seans, egzersiz, beslenme planı ve videoları tek yerden yönetin.", img: "/images/feature-program.jpg" },
-            { title: "İlerleme Takibi", desc: "Streak, ısı haritası ve grafiklerle gelişimi görün.", img: "/images/feature-progress.jpg" },
-            { title: "Mesajlaşma", desc: "Koç ve kullanıcılar arasında hızlı iletişim.", img: "/images/feature-chat.jpg" },
-            { title: "Bildirimler", desc: "Atanan seanslar, geri bildirimler ve duyurular tek yerde.", img: "/images/feature-notify.jpg" },
-            { title: "Program Paylaşımı", desc: "Koç sayfaları ve keşfet akışıyla görünürlük kazanın.", img: "/images/feature-share.jpg" },
-            { title: "Çokdilli Destek", desc: "TR/EN arayüz, modern UI/UX ve karanlık mod.", img: "/images/feature-i18n.jpg" },
-          ].map((f, i) => (
-            <Card key={i} className="feature-card rounded-2xl overflow-hidden">
-              <CardHeader>
-                <CardTitle>{f.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-muted">
-                  <Image src={f.img} alt={f.title} fill className="object-cover" />
-                </div>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+     
 
       {/* HOW IT WORKS */}
       <section className="container mx-auto px-6 md:px-10 pb-16 md:pb-24">
