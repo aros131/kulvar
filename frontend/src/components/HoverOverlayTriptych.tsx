@@ -6,16 +6,18 @@ import Image from "next/image";
 import { useState } from "react";
 
 type Panel = {
-  title: string;
-  desc: string;
+  title: string;      // full title (shown on md+ and on active)
+  short: string;      // short mobile label (shown on inactive mobile)
+  desc: string;       // optional
   cta: { text: string; href: string };
-  img: string;       // küçük durum görseli
-  imgHover: string;  // hover/aktif durum görseli
+  img: string;        // small state image
+  imgHover: string;   // active/hover image
 };
 
 const PANELS: Panel[] = [
   {
     title: "Kendine Uygun Koçu Bul",
+    short: "Koçlar",
     desc: "",
     cta: { text: "Koçları Gör", href: "/koc" },
     img: "/images/panel-program-sm.jpg",
@@ -23,6 +25,7 @@ const PANELS: Panel[] = [
   },
   {
     title: "İlerlemeni Takip Et",
+    short: "İlerleme",
     desc: "",
     cta: { text: "Hemen Başla", href: "/kayit" },
     img: "/images/panel-teaser-sm.jpg",
@@ -30,6 +33,7 @@ const PANELS: Panel[] = [
   },
   {
     title: "Topluluğa Katıl",
+    short: "Topluluk",
     desc: "",
     cta: { text: "Giriş Yap", href: "/login" },
     img: "/images/panel-progress-sm.jpg",
@@ -42,18 +46,9 @@ export default function HoverOverlayTriptych() {
 
   return (
     <section className="relative mx-auto max-w-7xl px-4">
-      {/* Mobile: yatay kaydırmalı sıra (snap) — Desktop: klasik 3lü büyüme */}
+      {/* Always a single row — no swipe. Active grows, others shrink a bit. */}
       <div
-        className={[
-          // row everywhere
-          "relative flex gap-3 md:gap-4",
-          // heights
-          "h-[320px] sm:h-[360px] md:h-[520px]",
-          // mobile horizontal scroll + snap
-          "overflow-x-auto md:overflow-visible snap-x snap-mandatory",
-          // hide scrollbars (supported)
-          "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-        ].join(" ")}
+        className="relative flex gap-3 md:gap-4 h-[260px] sm:h-[300px] md:h-[520px]"
         onMouseLeave={() => setActive(null)}
       >
         {PANELS.map((p, i) => {
@@ -65,33 +60,29 @@ export default function HoverOverlayTriptych() {
               role="button"
               aria-pressed={isActive}
               tabIndex={0}
-              onMouseEnter={() => setActive(i)}                 // desktop hover
-              onClick={() => setActive(isActive ? null : i)}     // mobile tap
+              onMouseEnter={() => setActive(i)}                   // desktop hover
+              onClick={() => setActive(isActive ? null : i)}       // mobile tap
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(isActive ? null : i)}
               className={[
                 "relative h-full overflow-hidden rounded-2xl shadow-lg cursor-pointer select-none",
                 "transform-gpu will-change-[transform,opacity,filter]",
                 "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
                 "motion-reduce:transition-none",
-                // 🟢 Mobile widths (side-by-side): grow a bit when active
-                isActive ? "w-[88vw] sm:w-[84vw]" : "w-[85vw] sm:w-[80vw]",
-                "flex-none snap-center",
-                // 🟢 Desktop layout: flex grow logic (no overlay)
-                "md:w-auto md:flex-1 md:basis-0",
-                // depth + dimming
-                isActive ? "scale-[1.02] md:z-10" : "hover:scale-[1.01]",
-                active !== null && !isActive ? "opacity-70" : "opacity-100",
+                // row layout — no wrap, no scroll
+                "basis-0 flex-1",
+                // subtle depth
+                isActive ? "scale-[1.02] z-10" : "hover:scale-[1.01]",
+                active !== null && !isActive ? "opacity-75" : "opacity-100",
               ].join(" ")}
-              // desktop growth via flexGrow (mobile uses width above)
-              style={{ flexGrow: isActive ? 2 : 1 }}
+              style={{ flexGrow: isActive ? 2 : 1 }}               // grow the active card
             >
-              {/* BG images — cross-fade */}
+              {/* Background images — cross-fade */}
               <div className="absolute inset-0">
                 <Image
                   src={p.img}
                   alt={p.title}
                   fill
-                  sizes="(min-width: 768px) 33vw, 90vw"
+                  sizes="(min-width: 768px) 33vw, 34vw"
                   priority={i === 0}
                   className={[
                     "object-cover transition-opacity duration-500 ease-out",
@@ -114,15 +105,56 @@ export default function HoverOverlayTriptych() {
 
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col justify-end p-4 md:p-8 text-white">
-                {!!p.desc && (
-                  <p className="text-xs sm:text-sm opacity-80 max-w-[32ch] md:max-w-none leading-relaxed [text-wrap:balance]">
+                {/* Description:
+                   - Mobile: show only when active
+                   - Desktop: always show if provided */}
+                {p.desc ? (
+                  <p
+                    className={[
+                      "opacity-80 leading-relaxed [text-wrap:balance]",
+                      isActive ? "block" : "hidden",
+                      "md:block",
+                      "text-xs sm:text-sm md:text-sm",
+                      "max-w-[30ch] md:max-w-none",
+                    ].join(" ")}
+                  >
                     {p.desc}
                   </p>
-                )}
-                <h3 className="mt-1 md:mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow leading-tight [text-wrap:balance] break-words">
-                  {p.title.toUpperCase()}
+                ) : null}
+
+                {/* Title:
+                   - Mobile inactive: SHORT label
+                   - Mobile active or any md+: FULL title */}
+                <h3 className="mt-1 md:mt-2 font-extrabold tracking-tight drop-shadow leading-tight break-words">
+                  {/* full title */}
+                  <span
+                    className={[
+                      "hidden",            // default hidden
+                      isActive ? "inline" : "hidden", // mobile active = show
+                      "md:inline",         // md+ always show full
+                      "text-2xl sm:text-3xl md:text-4xl",
+                    ].join(" ")}
+                  >
+                    {p.title.toUpperCase()}
+                  </span>
+                  {/* spacer between variants */}
+                  <span className="inline md:hidden">&nbsp;</span>
+                  {/* short label (only mobile inactive) */}
+                  <span
+                    className={[
+                      "inline md:hidden",  // only mobile
+                      isActive ? "hidden" : "inline",
+                      "text-xl sm:text-2xl",
+                    ].join(" ")}
+                  >
+                    {p.short.toUpperCase()}
+                  </span>
                 </h3>
-                <div className="mt-3 md:mt-5">
+
+                {/* CTA:
+                   - Mobile: show only when active
+                   - Desktop: always show */}
+                <div className={[(isActive ? "block" : "hidden"), "md:block mt-3 md:mt-5"].join(" ")}>
                   <Link
                     href={p.cta.href}
                     onClick={(e) => e.stopPropagation()}
@@ -138,9 +170,9 @@ export default function HoverOverlayTriptych() {
         })}
       </div>
 
-      {/* Mobile hint */}
+      {/* Mobile hint (optional) */}
       <div className="mt-3 text-center text-xs md:text-sm text-neutral-500 md:hidden">
-        Kaydır ya da dokunarak kartı odakla.
+        Kartı odaklamak için dokun.
       </div>
     </section>
   );
