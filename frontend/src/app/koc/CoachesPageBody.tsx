@@ -20,6 +20,19 @@ import { Search, MapPin, Star, Dumbbell, Loader2, Filter } from "lucide-react";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
+/** Fixed specialization options:
+ *  - UI label: capitalized
+ *  - value sent to server: lowercase
+ */
+const SPEC_OPTIONS = [
+  { value: "yoga", label: "Yoga" },
+  { value: "fitness", label: "Fitness" },
+  { value: "pilates", label: "Pilates" },
+  { value: "beslenme", label: "Beslenme" },
+] as const;
+
+type SpecValue = (typeof SPEC_OPTIONS)[number]["value"];
+
 type Coach = {
   _id: string;
   name: string;
@@ -33,17 +46,28 @@ type Coach = {
   programsCount?: number;
 };
 
+const toTRLower = (s: string) => s.toLocaleLowerCase("tr");
+const toArray = (x?: string | string[]) => (!x ? [] : Array.isArray(x) ? x : [x]);
+const capFirst = (s: string) =>
+  s ? s.charAt(0).toLocaleUpperCase("tr") + s.slice(1).toLocaleLowerCase("tr") : s;
+
+const allowedSpec = new Set<SpecValue>(SPEC_OPTIONS.map((o) => o.value));
+const normalizeSpecParam = (s: string): SpecValue | "" => {
+  const v = toTRLower(s) as SpecValue;
+  return allowedSpec.has(v) ? v : "";
+};
+
 export default function CoachesPageBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const rawSpec = (searchParams?.get("spec") || "").trim();
-  const initialSpec = rawSpec === "all" ? "" : rawSpec; // normalize ?spec=all
+  const initialSpec = normalizeSpecParam(rawSpec === "all" ? "" : rawSpec); // sanitize ?spec
   const initialQuery = (searchParams?.get("q") || "").trim();
   const debug = searchParams?.get("debug") === "1";
 
   const [query, setQuery] = useState<string>(initialQuery);
-  const [specFilter, setSpecFilter] = useState<string>(initialSpec);
+  const [specFilter, setSpecFilter] = useState<SpecValue | "">(initialSpec);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [fetching, setFetching] = useState<boolean>(false);
@@ -70,23 +94,22 @@ export default function CoachesPageBody() {
       setLoading(true);
       setError(null);
       const items = await fetchCoaches(initialQuery, initialSpec, setError, setDebugInfo);
-      if (active) {
-        setLoading(false);
-        if (items) {
-          setCoachesRaw(items);
-          setCoaches(items); // server already filtered by spec
-        } else {
-          setCoachesRaw([]);
-          setCoaches([]);
-          if (!error) setError("Koçlar yüklenemedi.");
-        }
+      if (!active) return;
+      setLoading(false);
+      if (items) {
+        setCoachesRaw(items);
+        setCoaches(applySpecFilter(items, initialSpec)); // server + client safety
+      } else {
+        setCoachesRaw([]);
+        setCoaches([]);
+        if (!error) setError("Koçlar yüklenemedi.");
       }
     })();
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // live search (debounced)
+  // live search or spec change (debounced)
   useEffect(() => {
     if (loading) return;
     const t = setTimeout(async () => {
@@ -96,7 +119,7 @@ export default function CoachesPageBody() {
       setFetching(false);
       if (items) {
         setCoachesRaw(items);
-        setCoaches(items);
+        setCoaches(applySpecFilter(items, specFilter)); // server + client safety
       } else {
         setCoachesRaw([]);
         setCoaches([]);
@@ -114,7 +137,7 @@ export default function CoachesPageBody() {
     setFetching(false);
     if (items) {
       setCoachesRaw(items);
-      setCoaches(items);
+      setCoaches(applySpecFilter(items, specFilter));
     } else {
       setCoachesRaw([]);
       setCoaches([]);
@@ -125,15 +148,6 @@ export default function CoachesPageBody() {
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
     if (e.key === "Enter") handleManualSearch();
   };
-
-  // derive dropdown options from raw list
-  const specOptions = useMemo(() => {
-    const s = new Set<string>();
-    for (const c of coachesRaw) {
-      for (const sp of toArray(c.specialization)) if (sp) s.add(sp);
-    }
-    return Array.from(s).sort((a, b) => a.localeCompare(b, "tr"));
-  }, [coachesRaw]);
 
   const resultCountText = useMemo(() => {
     if (loading) return "";
@@ -169,7 +183,7 @@ export default function CoachesPageBody() {
           {/* Specialization dropdown ('all' sentinel, not empty string) */}
           <Select
             value={specFilter || "all"}
-            onValueChange={(v) => setSpecFilter(v === "all" ? "" : v)}
+            onValueChange={(v) => setSpecFilter(v === "all" ? "" : normalizeSpecParam(v))}
           >
             <SelectTrigger className="w-[180px]" aria-label="Uzmanlık filtresi">
               <div className="flex items-center gap-2">
@@ -179,8 +193,10 @@ export default function CoachesPageBody() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tümü</SelectItem>
-              {specOptions.map((opt) => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              {SPEC_OPTIONS.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -226,7 +242,7 @@ export default function CoachesPageBody() {
         <ul className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {coaches.map((c) => (
             <li key={c._id}>
-              <Link href={`/koc/${c._id}`} className="block group">
+              <Link href={`/koc/${c._id}`} prefetch={false} className="block group">
                 <Card className="transition hover:shadow-lg">
                   <CardHeader className="flex flex-row items-center gap-3 pb-2">
                     <Avatar className="h-12 w-12">
@@ -246,7 +262,7 @@ export default function CoachesPageBody() {
                       {toArray(c.specialization).slice(0, 3).map((spec) => (
                         <Badge key={spec} variant="secondary" className="capitalize">
                           <Dumbbell className="h-3.5 w-3.5 mr-1" />
-                          {spec}
+                          {capFirst(spec)}
                         </Badge>
                       ))}
                       {toArray(c.specialization).length > 3 && (
@@ -277,10 +293,6 @@ function initials(name?: string) {
   const parts = name.trim().split(/\s+/);
   const two = (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
   return two.toUpperCase() || parts[0]?.[0]?.toUpperCase() || "KÇ";
-}
-function toArray(x?: string | string[]) {
-  if (!x) return [];
-  return Array.isArray(x) ? x : [x];
 }
 function CoachSkeletonGrid() {
   return (
@@ -316,6 +328,16 @@ function CoachSkeletonGrid() {
   );
 }
 
+/* ------- Spec filtering (client safety net) ------- */
+function applySpecFilter(items: Coach[], spec: string) {
+  const s = normalizeSpecParam(spec);
+  if (!s) return items;
+  const sv = toTRLower(s);
+  return items.filter((c) =>
+    toArray(c.specialization).some((sp) => toTRLower(sp || "") === sv)
+  );
+}
+
 /* ------- Data fetch (includes spec => server filters) ------- */
 async function fetchCoaches(
   q: string,
@@ -326,7 +348,8 @@ async function fetchCoaches(
   const p = (key?: string) => {
     const params = new URLSearchParams();
     if (key && q) params.set(key, q);       // search | q | name
-    if (spec) params.set("spec", spec);     // ⬅️ NEW: send specialization to API
+    const s = normalizeSpecParam(spec);
+    if (s) params.set("spec", s);           // send sanitized spec to backend
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
@@ -336,7 +359,9 @@ async function fetchCoaches(
   candidates.push(`${API}/coaches${p()}`);  // plain fallback
 
   const onlyCoaches = (arr: any[]): Coach[] =>
-    (arr || []).filter((it) => String((it?.role ?? "coach")).toLowerCase() === "coach");
+    (arr || []).filter(
+      (it) => String(it?.role ?? "coach").toLocaleLowerCase("tr") === "coach"
+    );
 
   for (const url of candidates) {
     try {
