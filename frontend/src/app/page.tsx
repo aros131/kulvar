@@ -5,11 +5,9 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Footer from "@/components/Footer";
-// import Navbar from "@/components/Navbar"; // Kullanmadığın için yoruma aldım
 
 export default function HomePage() {
   const root = useRef<HTMLDivElement | null>(null);
@@ -52,18 +50,7 @@ export default function HomePage() {
         });
       });
 
-      // Feature cards
-      const featureCards = gsap.utils.toArray<HTMLElement>(".feature-card");
-      gsap.from(featureCards, {
-        autoAlpha: 0,
-        y: 24,
-        duration: 0.7,
-        ease: "power3.out",
-        stagger: 0.08,
-        scrollTrigger: { trigger: "#features", start: "top 70%" },
-      });
-
-      // Sayılar
+      // Numbers (counter-up)
       gsap.utils.toArray<HTMLElement>("[data-counter]").forEach((node) => {
         const end = Number(node.getAttribute("data-counter")) || 0;
         const obj = { value: 0 };
@@ -76,11 +63,9 @@ export default function HomePage() {
               value: end,
               duration: 1.2,
               ease: "power2.out",
-              // DOĞRU (void döner)
-onUpdate: () => {
-  node.textContent = String(Math.round(obj.value));
-},
-
+              onUpdate: () => {
+                node.textContent = String(Math.round(obj.value));
+              },
             });
           },
         });
@@ -134,7 +119,8 @@ onUpdate: () => {
               PERSE COACHING
             </p>
             <h1 className="hero-title text-5xl md:text-7xl font-extrabold text-white leading-[1.05]">
-              PerSe. <span className="opacity-90">Başla,</span> bırakma.
+              PerSe. <span className="opacity-90">
+                Başla,</span> bırakma.
             </h1>
             <p className="hero-subtitle mt-4 text-lg md:text-xl text-white/80">
               Türkiye merkezli modern koçluk platformu: program paylaş, ilerlemeyi takip et, müşterilerinle bağ kur.
@@ -147,9 +133,9 @@ onUpdate: () => {
                 asChild
                 size="lg"
                 variant="outline"
-                className="rounded-2xl border-white/30 text-white hover:bg-white/10"
+                className="rounded-2xl border-white/30 text-black hover:bg-white/10"
               >
-                <Link href="#features">Özelliklere Göz At</Link>
+                <Link href="#triptych">Özelliklere Göz At</Link>
               </Button>
             </div>
           </div>
@@ -177,17 +163,13 @@ onUpdate: () => {
         </div>
       </section>
 
-      <section
-  id="triptych"
-  className="relative w-screen left-1/2 right-1/2 -mx-[50vw]" // full-bleed
->
-  <HoverOverlayTriptych height={560} />
-</section>
-
-     
+      {/* TRIPTYCH (contained) */}
+      <section id="triptych" className="my-16 md:my-24">
+        <HoverOverlayTriptych />
+      </section>
 
       {/* HOW IT WORKS */}
-      <section className="container mx-auto px-6 md:px-10 pb-16 md:pb-24">
+      <section className="container mx-auto px-6 md:px-10 mt-16 md:mt-24 pb-16 md:pb-24">
         <div className="max-w-2xl" data-animate="fade-up">
           <h2 className="text-3xl md:text-4xl font-bold">Nasıl Çalışır?</h2>
           <p className="mt-3 text-muted-foreground">3 adımda başlayın.</p>
@@ -208,7 +190,7 @@ onUpdate: () => {
       </section>
 
       {/* CTA */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden mt-16 md:mt-24">
         <div className="container mx-auto px-6 md:px-10 py-16 md:py-24">
           <div className="rounded-3xl bg-gradient-to-br from-primary/90 to-primary/60 p-10 md:p-14 text-primary-foreground" data-animate="fade-up">
             <div className="max-w-2xl">
