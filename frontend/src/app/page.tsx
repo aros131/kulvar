@@ -1,28 +1,23 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import HoverOverlayTriptych from "@/components/HoverOverlayTriptych";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
-
-// If you use custom fonts, keep your existing font imports. Example:
-// import { DM_Serif_Display } from "next/font/google";
-// const dmSerif = DM_Serif_Display({ subsets: ["latin"], weight: "400" });
 
 export default function HomePage() {
   const root = useRef<HTMLDivElement | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Use gsap.context so selectors are scoped and cleanup is automatic
     const ctx = gsap.context(() => {
-      // HERO intro timeline
+      // HERO intro
       const tl = gsap.timeline();
       tl.from([".hero-eyebrow", ".hero-title", ".hero-subtitle", ".hero-cta"], {
         opacity: 0,
@@ -32,7 +27,7 @@ export default function HomePage() {
         stagger: 0.12,
       });
 
-      // Parallax on hero background
+      // Parallax
       gsap.to(".hero-bg", {
         yPercent: 12,
         ease: "none",
@@ -44,7 +39,7 @@ export default function HomePage() {
         },
       });
 
-      // Generic fade-up reveal for anything with data-animate="fade-up"
+      // Fade-up
       gsap.utils.toArray<HTMLElement>("[data-animate='fade-up']").forEach((el, i) => {
         gsap.from(el, {
           autoAlpha: 0,
@@ -52,29 +47,11 @@ export default function HomePage() {
           duration: 0.9,
           ease: "power3.out",
           delay: i * 0.03,
-          scrollTrigger: {
-            trigger: el,
-            start: "top 80%",
-            toggleActions: "play none none reverse",
-          },
+          scrollTrigger: { trigger: el, start: "top 80%", toggleActions: "play none none reverse" },
         });
       });
 
-      // Stagger cards in features grid
-      const featureCards = gsap.utils.toArray<HTMLElement>(".feature-card");
-      gsap.from(featureCards, {
-        autoAlpha: 0,
-        y: 24,
-        duration: 0.7,
-        ease: "power3.out",
-        stagger: 0.08,
-        scrollTrigger: {
-          trigger: "#features",
-          start: "top 70%",
-        },
-      });
-
-      // Counter-up animation for stats
+      // Numbers (counter-up)
       gsap.utils.toArray<HTMLElement>("[data-counter]").forEach((node) => {
         const end = Number(node.getAttribute("data-counter")) || 0;
         const obj = { value: 0 };
@@ -88,23 +65,18 @@ export default function HomePage() {
               duration: 1.2,
               ease: "power2.out",
               onUpdate: () => {
-                node.innerText = Math.round(obj.value).toString();
+                node.textContent = String(Math.round(obj.value));
               },
             });
           },
         });
       });
 
-      // Subtle horizontal marquee for badge row
+      // Marquee
       const marquee = document.querySelector(".marquee-track");
       if (marquee) {
-        const width = (marquee as HTMLElement).scrollWidth / 2; // assuming duplicated content for seamless loop
-        gsap.to(marquee, {
-          x: -width,
-          repeat: -1,
-          ease: "none",
-          duration: 30,
-        });
+        const width = (marquee as HTMLElement).scrollWidth / 2;
+        gsap.to(marquee, { x: -width, repeat: -1, ease: "none", duration: 30 });
       }
     }, root);
 
@@ -113,14 +85,58 @@ export default function HomePage() {
 
   return (
     <div ref={root} className="min-h-screen bg-background text-foreground">
-      <div className="relative z-50"><Navbar /></div>
+      {/* NAVBAR (hero üstünde şeffaf) */}
+      <nav className="fixed top-0 left-0 w-full z-[60] px-6 py-4 bg-transparent">
+        {/* subtle gradient to ensure contrast over hero */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 to-transparent" />
+        <div className="relative flex items-center justify-between w-full">
+          <Link href="/" className="text-2xl font-bold text-white">PerSe.</Link>
+
+          {/* Desktop */}
+          <ul className="hidden md:flex gap-6 text-white">
+            <li><a href="#hero" className="hover:underline">Anasayfa</a></li>
+            <li><Link href="/koc">Koçlarımız</Link></li>
+            <li><Link href="/contact">İletişim</Link></li>
+            <li><Link href="/login">Giriş Yap</Link></li>
+          </ul>
+
+          {/* Mobile burger */}
+          <button
+            aria-label="Menüyü aç"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white backdrop-blur border border-white/20"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+              {menuOpen ? (
+                <path fillRule="evenodd" d="M18.3 5.7a1 1 0 0 1 0 1.4L13.4 12l4.9 4.9a1 1 0 1 1-1.4 1.4L12 13.4l-4.9 4.9a1 1 0 1 1-1.4-1.4L10.6 12 5.7 7.1A1 1 0 0 1 7.1 5.7L12 10.6l4.9-4.9a1 1 0 0 1 1.4 0z" clipRule="evenodd"/>
+              ) : (
+                <><path d="M4 6h16v2H4z"/><path d="M4 11h16v2H4z"/><path d="M4 16h16v2H4z"/></>
+              )}
+            </svg>
+          </button>
+
+          {/* Mobile menu panel */}
+          {menuOpen && (
+            <div className="md:hidden absolute left-0 right-0 top-full mt-3 rounded-2xl border border-white/15 bg-black/70 backdrop-blur p-4 text-white">
+              <a href="#hero" className="block px-2 py-2 rounded-lg hover:bg-white/10" onClick={() => setMenuOpen(false)}>Anasayfa</a>
+              <Link href="/koc" className="block px-2 py-2 rounded-lg hover:bg-white/10" onClick={() => setMenuOpen(false)}>Koçlarımız</Link>
+              <Link href="/contact" className="block px-2 py-2 rounded-lg hover:bg-white/10" onClick={() => setMenuOpen(false)}>İletişim</Link>
+              <div className="mt-2 flex gap-2">
+                <Link href="/login" className="flex-1 text-center rounded-xl border border-white/20 px-3 py-2 hover:bg-white/10" onClick={() => setMenuOpen(false)}>Giriş Yap</Link>
+                <Link href="/signup" className="flex-1 text-center rounded-xl bg-white text-black px-3 py-2" onClick={() => setMenuOpen(false)}>Kaydol</Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* spacer for fixed navbar on very small screens (optional) */}
+      <div className="h-16 md:h-0" />
 
       {/* HERO */}
-      <section
-        id="hero"
-        className="relative isolate min-h-[88dvh] overflow-hidden flex items-center"
-      >
-        {/* Background image + gradient */}
+      <section id="hero" className="relative isolate min-h-[88dvh] overflow-hidden flex items-center">
+        {/* Background */}
         <div className="hero-bg absolute inset-0 -z-10">
           <Image
             src="/images/herobackground.jpg"
@@ -137,7 +153,7 @@ export default function HomePage() {
             <p className="hero-eyebrow inline-block mb-3 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs tracking-wider text-white/80 backdrop-blur">
               PERSE COACHING
             </p>
-            <h1 className={`hero-title text-5xl md:text-7xl font-extrabold text-white leading-[1.05]`}>
+            <h1 className="hero-title text-5xl md:text-7xl font-extrabold text-white leading-[1.05]">
               PerSe. <span className="opacity-90">Başla,</span> bırakma.
             </h1>
             <p className="hero-subtitle mt-4 text-lg md:text-xl text-white/80">
@@ -147,8 +163,13 @@ export default function HomePage() {
               <Button asChild size="lg" className="rounded-2xl">
                 <Link href="/signup">Hemen Başla</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/30 text-white hover:bg-white/10">
-                <Link href="#features">Özelliklere Göz At</Link>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="rounded-2xl border-white/30 text-white hover:bg-white/10"
+              >
+                <Link href="#triptych">Özelliklere Göz At</Link>
               </Button>
             </div>
           </div>
@@ -158,117 +179,31 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-x-0 bottom-6 select-none">
           <div className="marquee relative overflow-hidden">
             <div className="marquee-track flex gap-8 whitespace-nowrap will-change-transform px-6 text-sm text-white/70">
-              <span>Program Paylaşımı</span>
-              <span>•</span>
-              <span>İlerleme Takibi</span>
-              <span>•</span>
-              <span>Mesajlaşma</span>
-              <span>•</span>
-              <span>Bildirimler</span>
-              <span>•</span>
-              <span>Beslenme Planları</span>
-              <span>•</span>
-              <span>Geri Bildirim</span>
-              <span>•</span>
+              <span>Program Paylaşımı</span><span>•</span>
+              <span>İlerleme Takibi</span><span>•</span>
+              <span>Mesajlaşma</span><span>•</span>
+              <span>Bildirimler</span><span>•</span>
+              <span>Beslenme Planları</span><span>•</span>
+              <span>Geri Bildirim</span><span>•</span>
               {/* duplicate for seamless loop */}
-              <span>Program Paylaşımı</span>
-              <span>•</span>
-              <span>İlerleme Takibi</span>
-              <span>•</span>
-              <span>Mesajlaşma</span>
-              <span>•</span>
-              <span>Bildirimler</span>
-              <span>•</span>
-              <span>Beslenme Planları</span>
-              <span>•</span>
+              <span>Program Paylaşımı</span><span>•</span>
+              <span>İlerleme Takibi</span><span>•</span>
+              <span>Mesajlaşma</span><span>•</span>
+              <span>Bildirimler</span><span>•</span>
+              <span>Beslenme Planları</span><span>•</span>
               <span>Geri Bildirim</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* QUICK STATS */}
-      <section className="container mx-auto px-6 md:px-10 py-14 md:py-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="120">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
-          </div>
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="3400">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Toplam Kullanıcı</p>
-          </div>
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="89">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Paylaşılan Program</p>
-          </div>
-          <div className="rounded-2xl bg-muted p-6" data-animate="fade-up">
-            <div className="text-4xl font-bold" data-counter="97">0</div>
-            <p className="text-sm text-muted-foreground mt-1">Memnuniyet Skoru</p>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section id="features" className="container mx-auto px-6 md:px-10 pb-14 md:pb-24">
-        <div className="max-w-2xl" data-animate="fade-up">
-          <h2 className="text-3xl md:text-4xl font-bold">Koçlar ve Kullanıcılar için güçlü özellikler</h2>
-          <p className="mt-3 text-muted-foreground">
-            Modern, hızlı ve esnek. Programları oluştur, paylaş, ilerlemeyi anında takip et.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              title: "Program Oluşturma",
-              desc: "Seans, egzersiz, beslenme planı ve videoları tek yerden yönetin.",
-              img: "/images/feature-program.jpg",
-            },
-            {
-              title: "İlerleme Takibi",
-              desc: "Streak, ısı haritası ve grafiklerle gelişimi görün.",
-              img: "/images/feature-progress.jpg",
-            },
-            {
-              title: "Mesajlaşma",
-              desc: "Koç ve kullanıcılar arasında hızlı iletişim.",
-              img: "/images/feature-chat.jpg",
-            },
-            {
-              title: "Bildirimler",
-              desc: "Atanan seanslar, geri bildirimler ve duyurular tek yerde.",
-              img: "/images/feature-notify.jpg",
-            },
-            {
-              title: "Program Paylaşımı",
-              desc: "Koç sayfaları ve keşfet akışıyla görünürlük kazanın.",
-              img: "/images/feature-share.jpg",
-            },
-            {
-              title: "Çokdilli Destek",
-              desc: "TR/EN arayüz, modern UI/UX ve karanlık mod.",
-              img: "/images/feature-i18n.jpg",
-            },
-          ].map((f, i) => (
-            <Card key={i} className="feature-card rounded-2xl overflow-hidden">
-              <CardHeader>
-                <CardTitle>{f.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-muted">
-                  {/* Replace placeholder with your screenshots */}
-                  <Image src={f.img} alt={f.title} fill className="object-cover" />
-                </div>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {/* TRIPTYCH (contained) */}
+      <section id="triptych" className="my-16 md:my-24">
+        <HoverOverlayTriptych />
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="container mx-auto px-6 md:px-10 pb-16 md:pb-24">
+      <section className="container mx-auto px-6 md:px-10 mt-16 md:mt-24 pb-16 md:pb-24">
         <div className="max-w-2xl" data-animate="fade-up">
           <h2 className="text-3xl md:text-4xl font-bold">Nasıl Çalışır?</h2>
           <p className="mt-3 text-muted-foreground">3 adımda başlayın.</p>
@@ -289,14 +224,12 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden mt-16 md:mt-24">
         <div className="container mx-auto px-6 md:px-10 py-16 md:py-24">
           <div className="rounded-3xl bg-gradient-to-br from-primary/90 to-primary/60 p-10 md:p-14 text-primary-foreground" data-animate="fade-up">
             <div className="max-w-2xl">
               <h2 className="text-3xl md:text-4xl font-bold">Hazır mısın?</h2>
-              <p className="mt-2 text-primary-foreground/90">
-                PerSe ile koçluk deneyimini bir üst seviyeye taşı.
-              </p>
+              <p className="mt-2 text-primary-foreground/90">PerSe ile koçluk deneyimini bir üst seviyeye taşı.</p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button asChild size="lg" variant="secondary" className="rounded-2xl">
                   <Link href="/signup">Ücretsiz Başla</Link>
