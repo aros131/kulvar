@@ -86,7 +86,7 @@ export default function HomePage() {
   return (
     <div ref={root} className="min-h-screen bg-background text-foreground">
       {/* NAVBAR (hero üstünde şeffaf) */}
-      <nav className="fixed top-0 left-0 w-full z-[60] px-6 py-4 bg-transparent">
+      <nav className="absolute md:fixed top-0 left-0 w-full z-[60] px-6 py-4 bg-transparent">
         {/* subtle gradient to ensure contrast over hero */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 to-transparent" />
         <div className="relative flex items-center justify-between w-full">
@@ -132,7 +132,7 @@ export default function HomePage() {
       </nav>
 
       {/* spacer for fixed navbar on very small screens (optional) */}
-      <div className="h-16 md:h-0" />
+      <div className="hidden md:block h-16" />
 
       {/* HERO */}
       <section id="hero" className="relative isolate min-h-[88dvh] overflow-hidden flex items-center">
@@ -167,7 +167,7 @@ export default function HomePage() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="rounded-2xl border-white/30 text-black hover:bg-white/10"
+                className="rounded-2xl border-white/30 text-white hover:bg-white/10"
               >
                 <Link href="#triptych">Özelliklere Göz At</Link>
               </Button>
