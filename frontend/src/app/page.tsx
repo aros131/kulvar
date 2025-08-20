@@ -167,7 +167,7 @@ export default function HomePage() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="rounded-2xl border-white/30 text-white hover:bg-white/10"
+                className="rounded-2xl border-white/30 text-black hover:bg-white/10"
               >
                 <Link href="#triptych">Özelliklere Göz At</Link>
               </Button>

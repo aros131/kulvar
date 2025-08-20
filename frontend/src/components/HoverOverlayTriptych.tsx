@@ -104,7 +104,7 @@ export default function HoverOverlayTriptych() {
               </div>
 
               {/* Content */}
-              <div className="relative z-10 h-full flex flex-col justify-end p-4 md:p-8 text-white">
+              <div className="relative z-10 h-full flex flex-col justify-end p-3 md:p-8 text-white">
                 {/* Description:
                    - Mobile: show only when active
                    - Desktop: always show if provided */}
@@ -123,15 +123,15 @@ export default function HoverOverlayTriptych() {
                 ) : null}
 
                 {/* Title:
-                   - Mobile inactive: SHORT label
+                   - Mobile inactive: SHORT label (smaller)
                    - Mobile active or any md+: FULL title */}
                 <h3 className="mt-1 md:mt-2 font-extrabold tracking-tight drop-shadow leading-tight break-words">
                   {/* full title */}
                   <span
                     className={[
-                      "hidden",            // default hidden
+                      "hidden",                       // default hidden
                       isActive ? "inline" : "hidden", // mobile active = show
-                      "md:inline",         // md+ always show full
+                      "md:inline",                    // md+ always show full
                       "text-2xl sm:text-3xl md:text-4xl",
                     ].join(" ")}
                   >
@@ -139,12 +139,12 @@ export default function HoverOverlayTriptych() {
                   </span>
                   {/* spacer between variants */}
                   <span className="inline md:hidden">&nbsp;</span>
-                  {/* short label (only mobile inactive) */}
+                  {/* short label (only mobile inactive) — smaller now */}
                   <span
                     className={[
-                      "inline md:hidden",  // only mobile
-                      isActive ? "hidden" : "inline",
-                      "text-xl sm:text-2xl",
+                      "inline md:hidden",                // only mobile
+                      isActive ? "hidden" : "inline",    // hide when active
+                      "text-[11px] sm:text-xs leading-none tracking-tight whitespace-nowrap",
                     ].join(" ")}
                   >
                     {p.short.toUpperCase()}
