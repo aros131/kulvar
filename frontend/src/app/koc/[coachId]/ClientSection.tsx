@@ -1,29 +1,36 @@
-// app/koc/[coachId]/ClientSection.tsx  (Client Component)
+// app/koc/[coachId]/ClientSection.tsx
 "use client";
 
 import CoachProfileClient from "@/components/CoachProfileClient";
 
-export default function ClientSection({ coach, programs, reviews, availability }: any) {
+function apiBase() {
+  const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  return raw.replace(/\/+$/, "");
+}
+
+export default function ClientSection({
+  coach,
+  programs,
+  reviews,
+}: {
+  coach: any;
+  programs: any[];
+  reviews: any;
+}) {
+  const API = apiBase();
+
   return (
     <CoachProfileClient
       coach={coach}
       programs={programs}
       reviews={reviews}
-      availability={availability}
       locale="tr"
       isFollowing={coach?.isFollowing}
-      onFollowToggle={async (next) => {
-        await fetch("/api/follow", {
-          method: next ? "POST" : "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ coachId: coach.id }),
-        });
-      }}
-      onBook={async ({ day, time }) => {
-        await fetch("/api/book", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ coachId: coach.id, day, time }),
+      onFollowToggle={async (next: boolean) => {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        await fetch(`${API}/coaches/${coach.id}/follow`, {
+          method: next ? "PUT" : "DELETE",
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         });
       }}
       onMessage={(id: string) => {
