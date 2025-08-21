@@ -1,7 +1,8 @@
+// src/app/dashboard/user/koclarimiz/[coachId]/page.tsx
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import UserNavbar from "@/components/nav/UserNavbar";
-import CoachProfileClient from "@/components/CoachProfileClient";
+import ClientBridge from "./ClientBridge";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -14,8 +15,7 @@ function apiBase() {
 export default async function Page({ params }: { params: { coachId: string } }) {
   const API = apiBase();
   const token = (await cookies()).get("token")?.value || "";
-  const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
   const [coachRes, progsRes, revsRes] = await Promise.all([
     fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store", headers }),
@@ -30,40 +30,32 @@ export default async function Page({ params }: { params: { coachId: string } }) 
 
   const coach = await coachRes.json().catch(() => null);
   const programs = (await progsRes.json().catch(() => ({}))).items ?? [];
-  const reviewItems = (await revsRes.json().catch(() => ({}))).items ?? [];
+  const reviewItems = (await revsRes.json().catch(() => ({}))).items ?? []; // <-- ARRAY
 
-  // summarize reviews
-  const dist = { 1:0, 2:0, 3:0, 4:0, 5:0 } as Record<1|2|3|4|5, number>;
+  // derive average/count if backend doesn't provide rating
   let sum = 0, count = 0;
   for (const r of reviewItems) {
     const n = Number(r?.rating);
-    if (!Number.isFinite(n)) continue;
-    const k = Math.min(5, Math.max(1, Math.round(n))) as 1|2|3|4|5;
-    dist[k] += 1;
-    sum += n;
-    count += 1;
+    if (Number.isFinite(n)) { sum += n; count += 1; }
   }
   const average = count ? Math.round((sum / count) * 10) / 10 : null;
 
-  // If backend doesn't provide rating/reviewCount, fill from summary
   const coachForUI = {
     ...coach,
     rating: typeof coach?.rating === "number" ? coach.rating : average,
     reviewCount: typeof coach?.reviewCount === "number" ? coach.reviewCount : count,
   };
 
- return (
-  <div className="min-h-screen">
-    <UserNavbar />
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <CoachProfileClient
-        coach={coachForUI}
-        programs={programs}
-        reviews={reviewItems}  // pass an ARRAY here
-        locale="tr"
-      />
+  return (
+    <div className="min-h-screen">
+      <UserNavbar />
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <ClientBridge
+          coach={coachForUI}
+          programs={programs}
+          reviews={reviewItems}
+        />
+      </div>
     </div>
-  </div>
-);
-
+  );
 }
