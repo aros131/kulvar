@@ -1,3 +1,4 @@
+// models/User.js
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -6,13 +7,11 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
 
-    // user | coach
     role: { type: String, enum: ["coach", "user"], required: true, index: true },
 
-    // You had specialization as String; keep it BUT allow array too.
-    // This stays backward-compatible with your existing docs.
+    // String OR [String] (backward compatible)
     specialization: {
-      type: mongoose.Schema.Types.Mixed, // String OR [String]
+      type: mongoose.Schema.Types.Mixed,
       default: [],
       set: (v) => {
         if (Array.isArray(v)) return v;
@@ -26,38 +25,42 @@ const UserSchema = new mongoose.Schema(
       },
     },
 
-    // Existing for users:
     fitnessGoals: { type: String },
 
-    profilePicture: {
-      type: String,
-      default: "/images/default-user.jpg",
-    },
+    profilePicture: { type: String, default: "/images/default-user.jpg" },
+    avatar: { type: String, default: "" }, // prefer this in UI; fallback to profilePicture
 
-    // NEW (optional) fields that the coaches list uses:
-    avatar: { type: String, default: "" }, // alias-ish, some UIs use avatar
     city: { type: String, default: "" },
     rating: { type: Number, default: 0 },
     bio: { type: String, default: "" },
     programsCount: { type: Number, default: 0 },
 
-    createdAt: { type: Date, default: Date.now },
+    // ➕ new (used by profile UI later; harmless if empty)
+    tagline: { type: String, default: "" },
+    certifications: { type: [String], default: [] },
+    languages: { type: [String], default: [] },
   },
   {
     timestamps: true,
     toJSON: {
       virtuals: true,
       transform: (doc, ret) => {
-        // Hide sensitive / noisy fields
+        ret.id = ret._id?.toString();
         delete ret.password;
         delete ret.__v;
         return ret;
       },
     },
+    toObject: { virtuals: true },
   }
 );
 
-// Helpful text index for search (name/city/specialization stringified)
+UserSchema.virtual("id").get(function () {
+  return this._id.toString();
+});
+
+// Helpful indexes
 UserSchema.index({ name: "text", city: "text" });
+UserSchema.index({ role: 1, rating: -1 });
 
 export default mongoose.models.User || mongoose.model("User", UserSchema);

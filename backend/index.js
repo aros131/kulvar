@@ -47,9 +47,9 @@ app.use('/groups', clientGroupRoutes);
 app.use('/profile', profileRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/programs', programRoutes);
-
-// ✅ mount here: GET /coaches and /coaches/:id
 app.use('/coaches', coachRoutes);
+// ✅ mount here: GET /coaches and /coaches/:id
+
 
 app.use('/progress', progressRoutes);
 app.use('/users', userRoutes);
