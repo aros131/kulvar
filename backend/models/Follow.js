@@ -1,28 +1,15 @@
-// models/Follow.js
 import mongoose from "mongoose";
 
-const { Schema } = mongoose;
-
-const FollowSchema = new Schema(
+const FollowSchema = new mongoose.Schema(
   {
-    userId:  { type: Schema.Types.ObjectId, ref: "User", required: true },
-    coachId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    createdAt: { type: Date, default: Date.now },
   },
-  {
-    timestamps: true,
-    toJSON: {
-      virtuals: true,
-      transform: (_, ret) => {
-        ret.id = ret._id?.toString();
-        delete ret.__v;
-        return ret;
-      },
-    },
-    toObject: { virtuals: true },
-  }
+  { timestamps: true }
 );
 
-// Prevent duplicates (one follow per user/coach)
+// Prevent duplicates
 FollowSchema.index({ userId: 1, coachId: 1 }, { unique: true });
 
 export default mongoose.models.Follow || mongoose.model("Follow", FollowSchema);

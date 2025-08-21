@@ -1,6 +1,8 @@
-// routes/coaches.js  (ESM)
+// routes/coachRoutes.js (ESM)
 import { Router } from "express";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+
 import User from "../models/User.js";
 import Program from "../models/Program.js";
 import Review from "../models/Review.js";
@@ -9,7 +11,7 @@ import protect from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-/* --------------------------------- helpers -------------------------------- */
+/* ------------------------------ helpers ---------------------------------- */
 const isObjId = (id) => mongoose.Types.ObjectId.isValid(id);
 const toObjId = (id) => new mongoose.Types.ObjectId(id);
 
@@ -33,11 +35,26 @@ const paginate = (req) => {
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/**
+ * Soft/optional auth: if a valid Bearer token is present, attach req.userId.
+ * Never throws 401 here—use `protect` where you need strict auth.
+ */
+const maybeAuth = (req, _res, next) => {
+  try {
+    const auth = req.headers.authorization || "";
+    if (auth.startsWith("Bearer ")) {
+      const token = auth.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded?.id) req.userId = decoded.id; // string
+    }
+  } catch {
+    // ignore bad/expired token on optional auth
+  }
+  next();
+};
 
 /* ---------------------------------- LIST ---------------------------------- */
-/** GET /coaches?search=&spec=&limit=&page=
- *  -> { coaches, total, page, limit }
- */
+/** GET /coaches?search=&spec=&limit=&page=  -> { coaches, total, page, limit } */
 router.get("/", async (req, res) => {
   try {
     const q = qParam(req);
@@ -51,8 +68,8 @@ router.get("/", async (req, res) => {
         $or: [
           { name: { $regex: q, $options: "i" } },
           { city: { $regex: q, $options: "i" } },
-          { specialization: { $regex: q, $options: "i" } },                 // string field
-          { specialization: { $elemMatch: { $regex: q, $options: "i" } } }, // array field
+          { specialization: { $regex: q, $options: "i" } },                 // string
+          { specialization: { $elemMatch: { $regex: q, $options: "i" } } }, // array
         ],
       });
     }
@@ -69,7 +86,7 @@ router.get("/", async (req, res) => {
 
     const [docs, total] = await Promise.all([
       User.find(filters)
-        .select("name profilePicture avatar specialization city rating bio programsCount role")
+        .select("name profilePicture avatar specialization city rating bio programsCount role tagline certifications")
         .sort({ rating: -1, name: 1 })
         .skip(skip)
         .limit(limit)
@@ -87,7 +104,7 @@ router.get("/", async (req, res) => {
 
 /* -------------------------------- PROFILE --------------------------------- */
 /** GET /coaches/:id  -> flat coach object (not { coach }) */
-router.get("/:id", async (req, res) => {
+router.get("/:id", maybeAuth, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
@@ -101,8 +118,8 @@ router.get("/:id", async (req, res) => {
     const [reviewCount, isFollowing] = await Promise.all([
       Review.countDocuments({ coachId: id }).catch(() => 0),
       (async () => {
-        if (!req.user) return false;
-        try { return !!(await Follow.exists({ userId: req.user.id, coachId: id })); }
+        if (!req.userId) return false;
+        try { return !!(await Follow.exists({ userId: req.userId, coachId: id })); }
         catch { return false; }
       })(),
     ]);
@@ -121,7 +138,6 @@ router.get("/:id", async (req, res) => {
       certifications: Array.isArray(doc.certifications) ? doc.certifications : [],
       bio: doc.bio || "",
       isFollowing,
-      // languages intentionally omitted in v1 UI per your scope, but available here:
       languages: Array.isArray(doc.languages) ? doc.languages : [],
     };
 
@@ -133,9 +149,7 @@ router.get("/:id", async (req, res) => {
 });
 
 /* ----------------------------- PROGRAM CARDS ------------------------------- */
-/** GET /coaches/:id/programs?limit=&cursor=&status=Aktif
- *  -> { items, nextCursor }
- */
+/** GET /coaches/:id/programs?limit=&cursor=&status=Aktif  -> { items, nextCursor } */
 router.get("/:id/programs", async (req, res) => {
   try {
     const { id } = req.params;
@@ -143,7 +157,7 @@ router.get("/:id/programs", async (req, res) => {
 
     const limit = Math.min(parseInt(req.query.limit) || 12, 50);
     const cursor = req.query.cursor;
-    const status = req.query.status?.toString(); // optional: "Aktif" | "Tamamlandı" | "Durduruldu"
+    const status = req.query.status?.toString(); // optional
 
     const q = { coachId: id };
     if (status) q.status = status;
@@ -153,7 +167,7 @@ router.get("/:id/programs", async (req, res) => {
     }
 
     const docs = await Program.find(q)
-      .select("name description duration difficulty fitnessGoal assets price createdAt status")
+      .select("name description duration difficulty fitnessGoal price createdAt status") // no images
       .sort({ _id: -1 })
       .limit(limit)
       .lean();
@@ -162,11 +176,10 @@ router.get("/:id/programs", async (req, res) => {
       id: String(p._id),
       name: p.name,
       description: p.description,
-      durationWeeks: p.duration,           // your schema uses `duration` (weeks)
-      difficulty: p.difficulty,            // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
-      goal: p.fitnessGoal,                 // Turkish goal labels
-      price: p.price ?? undefined,        // if present in your schema
-           // from Firebase assets
+      durationWeeks: p.duration,  // Program schema uses `duration` (weeks)
+      difficulty: p.difficulty,   // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
+      goal: p.fitnessGoal,        // Turkish goal labels
+      price: p.price ?? undefined,
     }));
 
     res.json({
@@ -180,9 +193,7 @@ router.get("/:id/programs", async (req, res) => {
 });
 
 /* --------------------------------- REVIEWS --------------------------------- */
-/** GET /coaches/:id/reviews?limit=&cursor=
- *  -> { items, nextCursor }
- */
+/** GET /coaches/:id/reviews?limit=&cursor=  -> { items, nextCursor } */
 router.get("/:id/reviews", async (req, res) => {
   try {
     const { id } = req.params;
@@ -231,15 +242,14 @@ router.put("/:id/follow", protect, async (req, res) => {
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
     await Follow.updateOne(
-      { userId: req.user.id, coachId: id },
-      { $setOnInsert: { userId: req.user.id, coachId: id, createdAt: new Date() } },
+      { userId: req.user._id, coachId: id },  // use _id to avoid ambiguity
+      { $setOnInsert: { userId: req.user._id, coachId: id, createdAt: new Date() } },
       { upsert: true }
     );
     res.sendStatus(204);
   } catch (e) {
     console.error(e);
-    // 11000 means duplicate key — it's fine (already following)
-    if (e?.code === 11000) return res.sendStatus(204);
+    if (e?.code === 11000) return res.sendStatus(204); // already followed
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -250,7 +260,7 @@ router.delete("/:id/follow", protect, async (req, res) => {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
-    await Follow.deleteOne({ userId: req.user.id, coachId: id });
+    await Follow.deleteOne({ userId: req.user._id, coachId: id });
     res.sendStatus(204);
   } catch (e) {
     console.error(e);
@@ -264,7 +274,7 @@ router.get("/:id/follow", protect, async (req, res) => {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
-    const exists = await Follow.exists({ userId: req.user.id, coachId: id });
+    const exists = await Follow.exists({ userId: req.user._id, coachId: id });
     res.json({ isFollowing: !!exists });
   } catch (e) {
     console.error(e);
