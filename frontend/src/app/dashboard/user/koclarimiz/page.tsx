@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import UserNavbar from "@/components/nav/UserNavbar";
 import CoachesPageBody from "@/components/CoachesPageBody";
+import UserNavbar from "@/components/nav/UserNavbar"; // if you have it
 
-export const dynamic = "force-dynamic"; // avoid static prerender
-export const revalidate = 0;             // no caching, always fresh
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function DashboardKoclarimizPage() {
   return (
@@ -13,7 +13,7 @@ export default function DashboardKoclarimizPage() {
         <Suspense fallback={<div>Yükleniyor…</div>}>
           <CoachesPageBody
             basePath="/dashboard/user/koclarimiz"
-            profilePrefix="/uye/koc"
+            profilePrefix="/dashboard/user/koclarimiz"
           />
         </Suspense>
       </div>
