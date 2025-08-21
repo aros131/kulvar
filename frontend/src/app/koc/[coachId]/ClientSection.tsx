@@ -1,4 +1,3 @@
-// app/koc/[coachId]/ClientSection.tsx
 "use client";
 
 import CoachProfileClient from "@/components/CoachProfileClient";
@@ -15,22 +14,24 @@ export default function ClientSection({
 }: {
   coach: any;
   programs: any[];
-  reviews: any;
+  reviews: any[];
 }) {
   const API = apiBase();
+  const safePrograms = Array.isArray(programs) ? programs : [];
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
 
   return (
     <CoachProfileClient
       coach={coach}
-      programs={programs}
-      reviews={reviews}
+      programs={safePrograms}
+      reviews={safeReviews}
       locale="tr"
       isFollowing={coach?.isFollowing}
       onFollowToggle={async (next: boolean) => {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
         await fetch(`${API}/coaches/${coach.id}/follow`, {
           method: next ? "PUT" : "DELETE",
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
       }}
       onMessage={(id: string) => {

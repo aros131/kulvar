@@ -33,12 +33,6 @@ const paginate = (req) => {
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const pickCoverImage = (assets = []) => {
-  if (!Array.isArray(assets) || !assets.length) return "";
-  const imgWithThumb = assets.find(a => a?.kind === "image" && a?.thumbnailUrl);
-  const img = imgWithThumb || assets.find(a => a?.kind === "image");
-  return img?.thumbnailUrl || img?.url || "";
-};
 
 /* ---------------------------------- LIST ---------------------------------- */
 /** GET /coaches?search=&spec=&limit=&page=
@@ -171,8 +165,8 @@ router.get("/:id/programs", async (req, res) => {
       durationWeeks: p.duration,           // your schema uses `duration` (weeks)
       difficulty: p.difficulty,            // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
       goal: p.fitnessGoal,                 // Turkish goal labels
-      price: p.price ?? undefined,         // if present in your schema
-      image: pickCoverImage(p.assets),     // from Firebase assets
+      price: p.price ?? undefined,        // if present in your schema
+           // from Firebase assets
     }));
 
     res.json({
