@@ -22,7 +22,7 @@ import coachRoutes from "./routes/coachRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
-
+import meRoutes from './routes/meRoutes.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -71,7 +71,7 @@ app.use("/progress", progressRoutes);
 app.use("/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/events", eventRoutes);
-
+app.use('/me', meRoutes);
 /* --------------------------------- Health --------------------------------- */
 app.get("/", (_req, res) => res.send("Welcome to the backend API!"));
 

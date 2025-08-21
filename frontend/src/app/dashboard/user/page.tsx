@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
+import UserNavbar from "@/components/nav/UserNavbar";
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import Image from "next/image";
@@ -160,7 +160,7 @@ export default function UserDashboardPage() {
       <SidebarNavUser unreadCount={unreadCount} />
 
       <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
-        <Navbar />
+       <UserNavbar />
 
         <section className="max-w-6xl mx-auto px-4 py-10">
           <div className="flex items-center gap-4 mb-6">
