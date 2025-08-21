@@ -5,7 +5,7 @@ import User from "../models/User.js";
 import Program from "../models/Program.js";
 import Review from "../models/Review.js";
 import Follow from "../models/Follow.js";
-import { requireAuth } from "../middleware/auth.js";
+import protect from "../middleware/authMiddleware.js";
 
 const router = Router();
 
@@ -231,7 +231,7 @@ router.get("/:id/reviews", async (req, res) => {
 
 /* ---------------------------- FOLLOW / UNFOLLOW ---------------------------- */
 /** PUT /coaches/:id/follow   -> 204 (idempotent) */
-router.put("/:id/follow", requireAuth, async (req, res) => {
+router.put("/:id/follow", protect, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
@@ -251,7 +251,7 @@ router.put("/:id/follow", requireAuth, async (req, res) => {
 });
 
 /** DELETE /coaches/:id/follow -> 204 */
-router.delete("/:id/follow", requireAuth, async (req, res) => {
+router.delete("/:id/follow", protect, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
@@ -265,7 +265,7 @@ router.delete("/:id/follow", requireAuth, async (req, res) => {
 });
 
 /** GET /coaches/:id/follow -> { isFollowing } */
-router.get("/:id/follow", requireAuth, async (req, res) => {
+router.get("/:id/follow", protect, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
