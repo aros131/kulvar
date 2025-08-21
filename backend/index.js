@@ -28,13 +28,9 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 /* ---------------------------- CORS (TEST MODE) ---------------------------- */
-// Echo the request origin (NOT "*"), so credentials & Authorization work.
 const corsOptions = {
-  origin(origin, cb) {
-    // allow SSR/healthchecks without Origin too
-    return cb(null, true);
-  },
-  credentials: true,
+  origin: "*",                     // <- wildcard
+  credentials: false,              // <- must be false for "*"
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Content-Range", "X-Total-Count"],
@@ -43,7 +39,7 @@ const corsOptions = {
 app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // preflight for all routes
+app.options("*", cors(corsOptions)); 
 
 /* ----------------------------- Body parsing ------------------------------- */
 app.use(express.json());
