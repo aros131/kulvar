@@ -4,7 +4,6 @@ import ClientSection from "./ClientSection";
 
 type ReviewItem = { rating?: number };
 
-// small helper to build the summary your UI expects
 function summarizeReviews(items: ReviewItem[]) {
   const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<1|2|3|4|5, number>;
   let sum = 0, count = 0;
@@ -28,16 +27,13 @@ function apiBase() {
 export default async function CoachPage({ params }: { params: { coachId: string } }) {
   const API = apiBase();
 
-  // Fetch all in parallel
   const [coachRes, progsRes, revsRes] = await Promise.all([
     fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store" }),
     fetch(`${API}/coaches/${params.coachId}/programs?limit=12`, { cache: "no-store" }),
-    fetch(`${API}/coaches/${params.coachId}/reviews?limit=50`, { cache: "no-store" }), // pull enough to summarize
+    fetch(`${API}/coaches/${params.coachId}/reviews?limit=50`, { cache: "no-store" }),
   ]);
 
-  // Coach is required
   if (!coachRes.ok) {
-    // surface real details in server logs
     console.error("Coach fetch failed", coachRes.status, coachRes.statusText, {
       url: `${API}/coaches/${params.coachId}`,
       body: await coachRes.text().catch(() => "(no body)"),
@@ -48,33 +44,31 @@ export default async function CoachPage({ params }: { params: { coachId: string 
 
   const coach = await coachRes.json();
 
-  // Programs & Reviews: be graceful if they fail
   let programs: any[] = [];
   try {
     const pj = await progsRes.json();
     programs = Array.isArray(pj?.items) ? pj.items : [];
-  } catch {
-    programs = [];
-  }
+  } catch { programs = []; }
 
   let reviewItems: ReviewItem[] = [];
   try {
     const rj = await revsRes.json();
     reviewItems = Array.isArray(rj?.items) ? rj.items : [];
-  } catch {
-    reviewItems = [];
-  }
+  } catch { reviewItems = []; }
 
-  // Build the summary object your ClientSection expects
-  const reviews = summarizeReviews(reviewItems);
-  const availability: any[] = []; // not implemented yet (next step)
+  // ✅ pass the ARRAY as `reviews` (many UIs call reviews.slice(...))
+  const reviewsList = reviewItems;
+
+  // Optional: if your UI later wants a summary, pass it as a different prop
+  // const reviewsSummary = summarizeReviews(reviewItems);
 
   return (
     <ClientSection
       coach={coach}
       programs={programs}
-      reviews={reviews}
-      availability={availability}
+      reviews={reviewsList}
+      // remove `availability` for now; add only if your ClientSection/CoachProfileClient props include it
+      // reviewsSummary={reviewsSummary} // (only if your ClientSection supports it)
     />
   );
 }
