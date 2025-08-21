@@ -32,23 +32,38 @@ export default async function Page({ params }: { params: { coachId: string } }) 
   const programs = (await progsRes.json().catch(() => ({}))).items ?? [];
   const reviewItems = (await revsRes.json().catch(() => ({}))).items ?? [];
 
-  // summarize reviews (kept minimal)
-  const dist = {1:0,2:0,3:0,4:0,5:0} as Record<1|2|3|4|5, number>;
+  // summarize reviews
+  const dist = { 1:0, 2:0, 3:0, 4:0, 5:0 } as Record<1|2|3|4|5, number>;
   let sum = 0, count = 0;
   for (const r of reviewItems) {
     const n = Number(r?.rating);
     if (!Number.isFinite(n)) continue;
     const k = Math.min(5, Math.max(1, Math.round(n))) as 1|2|3|4|5;
-    dist[k] += 1; sum += n; count += 1;
+    dist[k] += 1;
+    sum += n;
+    count += 1;
   }
-  const reviews = { average: count ? Math.round((sum / count) * 10) / 10 : null, count, distribution: dist };
+  const average = count ? Math.round((sum / count) * 10) / 10 : null;
 
-  return (
-    <div className="min-h-screen">
-      <UserNavbar />
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <CoachProfileClient coach={coach} programs={programs} reviews={reviews as any} locale="tr" />
-      </div>
+  // If backend doesn't provide rating/reviewCount, fill from summary
+  const coachForUI = {
+    ...coach,
+    rating: typeof coach?.rating === "number" ? coach.rating : average,
+    reviewCount: typeof coach?.reviewCount === "number" ? coach.reviewCount : count,
+  };
+
+ return (
+  <div className="min-h-screen">
+    <UserNavbar />
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <CoachProfileClient
+        coach={coachForUI}
+        programs={programs}
+        reviews={reviewItems}  // pass an ARRAY here
+        locale="tr"
+      />
     </div>
-  );
+  </div>
+);
+
 }
