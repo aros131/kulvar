@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users } from "lucide-react";
 import FollowersDialog from "@/components/coach/FollowersDialog";
+import { useActiveClientCountFromPrograms } from "@/hooks/useActiveClientCountFromPrograms";
+
 /************************************
  * Types (trimmed for v1 scope)
  ************************************/
@@ -29,6 +31,7 @@ export type Coach = {
   certifications?: string[];
   bio?: string;
 };
+
 export type CoachProfileClientProps = {
   coach: Coach;
   programs?: Program[];
@@ -43,6 +46,7 @@ export type CoachProfileClientProps = {
   followers?: { id: string; name: string }[];
   followerCount?: number;
 };
+
 export type Program = {
   id: string;
   name: string;
@@ -63,8 +67,6 @@ export type Review = {
   keywords?: string[];
   verified?: boolean;
 };
-
-
 
 /************************************
  * i18n (only what we use in v1)
@@ -173,6 +175,12 @@ export default function CoachProfileClient({
     const y = el.getBoundingClientRect().top + window.scrollY - 72; // adjust for sticky bar
     window.scrollTo({ top: y, behavior: "smooth" });
   }, []);
+
+  // ✅ Live Active Clients from programs (unique users across all programs)
+  const {
+    count: activeClientsCount,
+    loading: loadingActiveClients,
+  } = useActiveClientCountFromPrograms(programs);
 
   const handleFollow = async () => {
     const next = !isFollowing;
@@ -295,12 +303,15 @@ export default function CoachProfileClient({
                   <Star className="h-4 w-4" />
                   {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"} ({coach.reviewCount ?? 0})
                 </span>
-                {typeof coach.clientsCount === "number" && (
-                  <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    {coach.clientsCount} {locale === "tr" ? "müşteri" : "clients"}
-                  </span>
-                )}
+                {/* ✅ Live Active Clients preview in the header row */}
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  {loadingActiveClients
+                    ? "…"
+                    : (activeClientsCount ??
+                       (typeof coach.clientsCount === "number" ? coach.clientsCount : "—"))}{" "}
+                  {locale === "tr" ? "müşteri" : "clients"}
+                </span>
               </div>
               {coach.tagline && (
                 <p className="mt-4 max-w-2xl text-sm md:text-base text-muted-foreground">{coach.tagline}</p>
@@ -318,45 +329,53 @@ export default function CoachProfileClient({
       </section>
 
       {/* Overview (text-only stats) */}
-<section id="overview" className="mx-auto max-w-6xl px-4 pt-8 md:pt-12">
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <Card className="col-span-1 md:col-span-3">
-      <CardHeader>
-        <CardTitle>{t.overview}</CardTitle>
-      </CardHeader>
+      <section id="overview" className="mx-auto max-w-6xl px-4 pt-8 md:pt-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="col-span-1 md:col-span-3">
+            <CardHeader>
+              <CardTitle>{t.overview}</CardTitle>
+            </CardHeader>
 
-      {/* 4 columns on small+ screens to include Followers */}
-      <CardContent className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm text-muted-foreground">
-        <div>
-          <div className="font-medium text-foreground">{coach.reviewCount ?? 0}</div>
-          <div>{locale === "tr" ? "Toplam Yorum" : "Total Reviews"}</div>
-        </div>
+            {/* 4 columns on small+ screens to include Followers */}
+            <CardContent className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm text-muted-foreground">
+              <div>
+                <div className="font-medium text-foreground">{coach.reviewCount ?? 0}</div>
+                <div>{locale === "tr" ? "Toplam Yorum" : "Total Reviews"}</div>
+              </div>
 
-        <div>
-          <div className="font-medium text-foreground">
-            {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"}
-          </div>
-          <div>{locale === "tr" ? "Ortalama Puan" : "Average Rating"}</div>
-        </div>
+              <div>
+                <div className="font-medium text-foreground">
+                  {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"}
+                </div>
+                <div>{locale === "tr" ? "Ortalama Puan" : "Average Rating"}</div>
+              </div>
 
-        <div>
-          <div className="font-medium text-foreground">{coach.clientsCount ?? "-"}</div>
-          <div>{locale === "tr" ? "Aktif Müşteri" : "Active Clients"}</div>
-        </div>
+              {/* ✅ Live Active Clients in Overview */}
+              <div>
+                <div className="font-medium text-foreground">
+                  {loadingActiveClients ? (
+                    <Skeleton className="h-5 w-10" />
+                  ) : (
+                    activeClientsCount ??
+                    (typeof coach.clientsCount === "number" ? coach.clientsCount : "—")
+                  )}
+                </div>
+                <div>{t.activeClients}</div>
+              </div>
 
-        {/* Followers (opens dialog, count handled inside dialog fetch) */}
-        <div className="flex items-start">
-          <FollowersDialog
-            coachId={coach.id}
-            // If you already have a follower count available, you can pass it:
-            // initialCount={someFollowerCountNumber}
-            locale={locale}
-          />
+              {/* Followers (opens dialog, count handled inside dialog fetch) */}
+              <div className="flex items-start">
+                <FollowersDialog
+                  coachId={coach.id}
+                  // If you already have a follower count available, you can pass it:
+                  // initialCount={followerCount}
+                  locale={locale}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
-  </div>
-</section>
+      </section>
 
       {/* Programs (text-only) */}
       <section id="programs" className="mx-auto max-w-6xl px-4 pt-12">
