@@ -233,37 +233,47 @@ router.get("/:id/reviews", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 /* ---------------------------- FOLLOW / UNFOLLOW ---------------------------- */
-/** PUT /coaches/:id/follow   -> 204 (idempotent) */
+
+/** PUT /coaches/:id/follow -> { ok, isFollowing, upserted, matched } */
 router.put("/:id/follow", protect, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
-    await Follow.updateOne(
-      { userId: req.user._id, coachId: id },  // use _id to avoid ambiguity
+    const result = await Follow.updateOne(
+      { userId: req.user._id, coachId: id }, // prevent duplicates by unique index
       { $setOnInsert: { userId: req.user._id, coachId: id, createdAt: new Date() } },
       { upsert: true }
     );
-    res.sendStatus(204);
+
+    // result: { acknowledged, matchedCount, modifiedCount, upsertedCount, upsertedId? }
+    return res.status(200).json({
+      ok: true,
+      isFollowing: true,
+      matched: result.matchedCount ?? 0,
+      upserted: result.upsertedCount ?? 0,
+    });
   } catch (e) {
-    console.error(e);
-    if (e?.code === 11000) return res.sendStatus(204); // already followed
+    // 11000 = duplicate key (already followed); still OK
+    if (e?.code === 11000) {
+      return res.status(200).json({ ok: true, isFollowing: true, matched: 1, upserted: 0 });
+    }
+    console.error("PUT /coaches/:id/follow error:", e);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/** DELETE /coaches/:id/follow -> 204 */
+/** DELETE /coaches/:id/follow -> { ok, isFollowing:false, deleted } */
 router.delete("/:id/follow", protect, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
-    await Follow.deleteOne({ userId: req.user._id, coachId: id });
-    res.sendStatus(204);
+    const r = await Follow.deleteOne({ userId: req.user._id, coachId: id });
+    return res.status(200).json({ ok: true, isFollowing: false, deleted: r.deletedCount || 0 });
   } catch (e) {
-    console.error(e);
+    console.error("DELETE /coaches/:id/follow error:", e);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -277,7 +287,35 @@ router.get("/:id/follow", protect, async (req, res) => {
     const exists = await Follow.exists({ userId: req.user._id, coachId: id });
     res.json({ isFollowing: !!exists });
   } catch (e) {
-    console.error(e);
+    console.error("GET /coaches/:id/follow error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/** (optional helper) GET /me/follows -> list of followed coaches */
+router.get("/me/follows", protect, async (req, res) => {
+  try {
+    const rows = await Follow.find({ userId: req.user._id })
+      .populate({ path: "coachId", select: "name avatar profilePicture city rating specialization" })
+      .lean();
+
+    const items = rows.map(r => ({
+      coachId: String(r.coachId?._id || r.coachId),
+      name: r.coachId?.name,
+      avatarUrl: r.coachId?.avatar || r.coachId?.profilePicture || "",
+      city: r.coachId?.city || "",
+      rating: typeof r.coachId?.rating === "number" ? r.coachId.rating : null,
+      specialties: Array.isArray(r.coachId?.specialization)
+        ? r.coachId.specialization
+        : (typeof r.coachId?.specialization === "string"
+            ? r.coachId.specialization.split(",").map(s => s.trim()).filter(Boolean)
+            : []),
+      followedAt: r.createdAt,
+    }));
+
+    res.json({ items, count: items.length });
+  } catch (e) {
+    console.error("GET /coaches/me/follows error:", e);
     res.status(500).json({ message: "Server error" });
   }
 });
