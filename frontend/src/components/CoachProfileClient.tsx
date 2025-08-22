@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users } from "lucide-react";
-
+import FollowersDialog from "@/components/coach/FollowersDialog";
 /************************************
  * Types (trimmed for v1 scope)
  ************************************/
@@ -318,37 +318,45 @@ export default function CoachProfileClient({
       </section>
 
       {/* Overview (text-only stats) */}
-      <section id="overview" className="mx-auto max-w-6xl px-4 pt-8 md:pt-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="col-span-1 md:col-span-3">
-            <CardHeader>
-              <CardTitle>{t.overview}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-muted-foreground">
-              <div>
-                <div className="font-medium text-foreground">{coach.reviewCount ?? 0}</div>
-                <div>{t.totalReviews}</div>
-              </div>
-              <div>
-                <div className="font-medium text-foreground">
-                  {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"}
-                </div>
-                <div>{t.avgRating}</div>
-              </div>
-              <div>
-                <div className="font-medium text-foreground">{coach.clientsCount ?? "-"}</div>
-                <div>{t.activeClients}</div>
-              </div>
-              <div>
-    <div className="font-medium text-foreground">
-      {typeof followerCount === "number" ? followerCount : followers.length}
-    </div>
-    <div>{locale === "tr" ? "Takipçi" : "Followers"}</div>
-  </div>
-            </CardContent>
-          </Card>
+<section id="overview" className="mx-auto max-w-6xl px-4 pt-8 md:pt-12">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <Card className="col-span-1 md:col-span-3">
+      <CardHeader>
+        <CardTitle>{t.overview}</CardTitle>
+      </CardHeader>
+
+      {/* 4 columns on small+ screens to include Followers */}
+      <CardContent className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm text-muted-foreground">
+        <div>
+          <div className="font-medium text-foreground">{coach.reviewCount ?? 0}</div>
+          <div>{locale === "tr" ? "Toplam Yorum" : "Total Reviews"}</div>
         </div>
-      </section>
+
+        <div>
+          <div className="font-medium text-foreground">
+            {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"}
+          </div>
+          <div>{locale === "tr" ? "Ortalama Puan" : "Average Rating"}</div>
+        </div>
+
+        <div>
+          <div className="font-medium text-foreground">{coach.clientsCount ?? "-"}</div>
+          <div>{locale === "tr" ? "Aktif Müşteri" : "Active Clients"}</div>
+        </div>
+
+        {/* Followers (opens dialog, count handled inside dialog fetch) */}
+        <div className="flex items-start">
+          <FollowersDialog
+            coachId={coach.id}
+            // If you already have a follower count available, you can pass it:
+            // initialCount={someFollowerCountNumber}
+            locale={locale}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</section>
 
       {/* Programs (text-only) */}
       <section id="programs" className="mx-auto max-w-6xl px-4 pt-12">
