@@ -1,11 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import CoachProfileClient, { Coach, Program, Review } from "@/components/CoachProfileClient";
 
 type Props = {
   coach: Coach & { isFollowing?: boolean };
   programs: Program[];
-  reviews: Review[]; // <- array
+  reviews: Review[];
 };
 
 function apiBase() {
@@ -13,7 +14,6 @@ function apiBase() {
   return raw.replace(/\/+$/, "");
 }
 
-// same helper you used elsewhere
 const cleanToken = (): string | null => {
   try {
     const raw = localStorage.getItem("token");
@@ -27,6 +27,7 @@ const cleanToken = (): string | null => {
 
 export default function ClientBridge({ coach, programs, reviews }: Props) {
   const API = apiBase();
+  const router = useRouter();
 
   return (
     <CoachProfileClient
@@ -38,7 +39,6 @@ export default function ClientBridge({ coach, programs, reviews }: Props) {
       onFollowToggle={async (next) => {
         const token = cleanToken();
         if (!token) {
-          // not logged in → send them to login (or toast)
           window.location.href = "/login";
           return;
         }
@@ -49,18 +49,21 @@ export default function ClientBridge({ coach, programs, reviews }: Props) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          // credentials not needed since you auth via Authorization header
         });
+
         if (!res.ok) {
-          // throw to let CoachProfileClient revert optimistic toggle + show toast
           const text = await res.text().catch(() => "");
           throw new Error(`Follow failed: ${res.status} ${text}`);
         }
+
+        // Optional: use server truth (if you changed backend to return JSON)
+        const json = await res.json().catch(() => null);
+        if (json && typeof json.isFollowing === "boolean") {
+          // You can force a refresh to keep SSR data aligned (nice on back/forward)
+          router.refresh();
+        }
       }}
-      onMessage={(id) => {
-        // your existing behavior
-        window.location.href = `/messages?to=${id}`;
-      }}
+      onMessage={(id) => (window.location.href = `/messages?to=${id}`)}
     />
   );
 }
