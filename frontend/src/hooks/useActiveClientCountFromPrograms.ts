@@ -40,10 +40,14 @@ export function useActiveClientCountFromPrograms(programs: MinimalProgram[] | un
         const results = await Promise.allSettled(
           programIds.map(async (pid) => {
             const res = await fetch(`${API}/programs/${pid}`, {
-              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-              signal: abort.signal,
-              credentials: "include",
-            });
+  headers: token
+    ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }     : { "Content-Type": "application/json" },
+  signal: abort.signal,
+   // Rely on Bearer; no cookies -> no credentialed CORS
+  credentials: "omit",
+  mode: "cors",
+});
+
             if (!res.ok) throw new Error(`program ${pid} HTTP ${res.status}`);
             const data = await res.json();
             const list: Client[] = data?.program?.assignedClients ?? [];

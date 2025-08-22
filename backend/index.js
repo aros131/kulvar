@@ -34,15 +34,40 @@ app.use(cookieParser());
 app.use(express.json());
 
 /* ------------------------ CORS: allow ALL (TEST MODE) ---------------------- */
-/* NOTE: Do NOT set Allow-Credentials with "*" */
+/* Reflects the request Origin (so credentials can work) */
+function setCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+
+  if (origin) {
+    // Reflect the exact Origin (so credentialed requests are allowed)
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Credentials", "true"); // only if you intend to allow cookies/credentials
+  } else {
+    // No Origin header (e.g., curl/Postman) — '*' is fine here
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+
+  // Echo requested headers when present to satisfy preflight
+  const reqHeaders = req.headers["access-control-request-headers"];
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    reqHeaders || "Content-Type, Authorization"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+  );
+  // Optional QoL: cache preflight for 10m
+  res.setHeader("Access-Control-Max-Age", "600");
+}
+
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Vary", "Origin");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  setCorsHeaders(req, res);
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
+
 
 /* ------------------------------ DB connect -------------------------------- */
 if (!process.env.MONGO_URI) {
@@ -84,18 +109,17 @@ app.get("/", (_req, res) => res.send("Welcome to the backend API!"));
 
 /* ------------------------------ 404 handler -------------------------------- */
 app.use((req, res) => {
-  // keep CORS headers on 404
-  res.header("Access-Control-Allow-Origin", "*");
+  setCorsHeaders(req, res);
   res.status(404).json({ message: "Not found" });
 });
 
 /* ---------------------------- Error handler (500) -------------------------- */
 app.use((err, req, res, _next) => {
   console.error("Unhandled error:", err);
-  // keep CORS headers on errors
-  res.header("Access-Control-Allow-Origin", "*");
+  setCorsHeaders(req, res);
   res.status(err.status || 500).json({ message: "Server error" });
 });
+
 
 /* --------------------------------- Start ---------------------------------- */
 app.listen(PORT, () => {
