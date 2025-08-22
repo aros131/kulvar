@@ -1,3 +1,4 @@
+// components/CoachProfileClient.tsx
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -78,6 +79,9 @@ const STRINGS = {
     copyLink: "Copy link",
     linkCopied: "Link copied",
     emptyPrograms: "No programs yet — follow to get updates.",
+    totalReviews: "Total Reviews",
+    avgRating: "Average Rating",
+    activeClients: "Active Clients",
   },
   tr: {
     follow: "Takip et",
@@ -92,6 +96,9 @@ const STRINGS = {
     copyLink: "Linki kopyala",
     linkCopied: "Link kopyalandı",
     emptyPrograms: "Henüz program yok — güncellemeleri almak için takip et.",
+    totalReviews: "Toplam Yorum",
+    avgRating: "Ortalama Puan",
+    activeClients: "Aktif Müşteri",
   },
 } satisfies Record<string, Record<string, string>>;
 
@@ -105,7 +112,7 @@ const SECTIONS = ["overview", "programs", "reviews", "about"] as const;
 export default function CoachProfileClient({
   coach,
   programs = [],
-  reviews = [],            // <-- no mock data
+  reviews = [],            // no mock data
   locale = "tr",
   isFollowing: isFollowingProp = false,
   loading = false,
@@ -117,7 +124,15 @@ export default function CoachProfileClient({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState<(typeof SECTIONS)[number]>("overview");
   const [scrolled, setScrolled] = useState(false);
+
+  // local state for optimistic UI
   const [isFollowing, setIsFollowing] = useState(isFollowingProp);
+
+  // 🔧 SYNC: when the parent (ClientBridge) discovers the true follow
+  // state and re-renders, pick up that change.
+  useEffect(() => {
+    setIsFollowing(isFollowingProp);
+  }, [isFollowingProp]);
 
   // observe scroll for sticky top bar & active section
   useEffect(() => {
@@ -228,7 +243,7 @@ export default function CoachProfileClient({
                 onClick={() => scrollTo(id)}
                 className={cx("relative py-2", active === id ? "text-foreground" : "text-muted-foreground")}
               >
-                <span className="capitalize">{(STRINGS[locale] as any)[id] ?? id}</span>
+                <span className="capitalize">{(t as any)[id] ?? id}</span>
                 <span
                   className={cx(
                     "absolute left-0 right-0 -bottom-[1px] h-[2px] rounded bg-primary transition-opacity",
@@ -257,7 +272,7 @@ export default function CoachProfileClient({
                 <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">{coach.name}</h1>
                 <Badge variant="secondary" className="gap-1">
                   <BadgeCheck className="h-3.5 w-3.5" />
-                  {STRINGS[locale].verified}
+                  {t.verified}
                 </Badge>
               </div>
               <p className="mt-1 text-muted-foreground">{coach.role}</p>
@@ -299,22 +314,22 @@ export default function CoachProfileClient({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="col-span-1 md:col-span-3">
             <CardHeader>
-              <CardTitle>{STRINGS[locale].overview}</CardTitle>
+              <CardTitle>{t.overview}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-muted-foreground">
               <div>
                 <div className="font-medium text-foreground">{coach.reviewCount ?? 0}</div>
-                <div>{locale === "tr" ? "Toplam Yorum" : "Total Reviews"}</div>
+                <div>{t.totalReviews}</div>
               </div>
               <div>
                 <div className="font-medium text-foreground">
                   {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"}
                 </div>
-                <div>{locale === "tr" ? "Ortalama Puan" : "Average Rating"}</div>
+                <div>{t.avgRating}</div>
               </div>
               <div>
                 <div className="font-medium text-foreground">{coach.clientsCount ?? "-"}</div>
-                <div>{locale === "tr" ? "Aktif Müşteri" : "Active Clients"}</div>
+                <div>{t.activeClients}</div>
               </div>
             </CardContent>
           </Card>
@@ -324,12 +339,12 @@ export default function CoachProfileClient({
       {/* Programs (text-only) */}
       <section id="programs" className="mx-auto max-w-6xl px-4 pt-12">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">{STRINGS[locale].programs}</h2>
+          <h2 className="text-xl font-semibold">{t.programs}</h2>
         </div>
         {programs.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              {STRINGS[locale].emptyPrograms}
+              {t.emptyPrograms}
             </CardContent>
           </Card>
         ) : (
@@ -363,7 +378,7 @@ export default function CoachProfileClient({
 
       {/* Reviews (text-only) */}
       <section id="reviews" className="mx-auto max-w-6xl px-4 pt-12">
-        <h2 className="mb-4 text-xl font-semibold">{STRINGS[locale].reviews}</h2>
+        <h2 className="mb-4 text-xl font-semibold">{t.reviews}</h2>
         {reviews.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">—</CardContent>
@@ -379,7 +394,7 @@ export default function CoachProfileClient({
 
       {/* About */}
       <section id="about" className="mx-auto max-w-6xl px-4 pt-12 pb-24">
-        <h2 className="mb-4 text-xl font-semibold">{STRINGS[locale].about}</h2>
+        <h2 className="mb-4 text-xl font-semibold">{t.about}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="md:col-span-2">
             <CardContent className="pt-6 space-y-4">
