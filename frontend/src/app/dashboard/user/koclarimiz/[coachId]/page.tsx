@@ -13,8 +13,13 @@ function apiBase() {
 
 export default async function Page({ params }: { params: { coachId: string } }) {
   const API = apiBase();
-  const token = (await cookies()).get("token")?.value || "";
-  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+  // 👀 SERVER: read token from cookies (SSR)
+  const tokenCookie = (await cookies()).get("token")?.value || "";
+  // help yourself in server logs
+  console.log("[coach page SSR] token cookie present:", !!tokenCookie, tokenCookie ? `len=${tokenCookie.length}` : "");
+
+  const headers: Record<string, string> = tokenCookie ? { Authorization: `Bearer ${tokenCookie}` } : {};
 
   const [coachRes, progsRes, revsRes] = await Promise.all([
     fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store", headers }),
@@ -52,7 +57,9 @@ export default async function Page({ params }: { params: { coachId: string } }) 
         <ClientBridge
           coach={coachForUI}
           programs={programs}
-          reviews={reviewItems}   // array (not summary)
+          reviews={reviewItems}
+          // pass SSR token info to client for display
+          debug={{ ssrHasToken: !!tokenCookie, ssrTokenLen: tokenCookie?.length || 0 }}
         />
       </div>
     </div>
