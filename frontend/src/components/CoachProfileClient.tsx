@@ -29,7 +29,20 @@ export type Coach = {
   certifications?: string[];
   bio?: string;
 };
+export type CoachProfileClientProps = {
+  coach: Coach;
+  programs?: Program[];
+  reviews?: Review[];
+  locale?: "tr" | "en";
+  isFollowing?: boolean;
+  loading?: boolean;
+  onFollowToggle?: (next: boolean) => Promise<void> | void;
+  onMessage?: (coachId: string) => void;
 
+  // ⬇️ add these
+  followers?: { id: string; name: string }[];
+  followerCount?: number;
+};
 export type Program = {
   id: string;
   name: string;
@@ -51,16 +64,7 @@ export type Review = {
   verified?: boolean;
 };
 
-export type CoachProfileClientProps = {
-  coach: Coach;
-  programs?: Program[];
-  reviews?: Review[];
-  locale?: "tr" | "en";
-  isFollowing?: boolean;
-  loading?: boolean;
-  onFollowToggle?: (next: boolean) => Promise<void> | void;
-  onMessage?: (coachId: string) => void;
-};
+
 
 /************************************
  * i18n (only what we use in v1)
@@ -112,12 +116,16 @@ const SECTIONS = ["overview", "programs", "reviews", "about"] as const;
 export default function CoachProfileClient({
   coach,
   programs = [],
-  reviews = [],            // no mock data
+  reviews = [],
   locale = "tr",
   isFollowing: isFollowingProp = false,
   loading = false,
   onFollowToggle,
   onMessage,
+
+  // ⬇️ new props
+  followers = [],
+  followerCount,
 }: CoachProfileClientProps) {
   const t = STRINGS[locale] ?? STRINGS.tr;
   const router = useRouter();
@@ -331,6 +339,12 @@ export default function CoachProfileClient({
                 <div className="font-medium text-foreground">{coach.clientsCount ?? "-"}</div>
                 <div>{t.activeClients}</div>
               </div>
+              <div>
+    <div className="font-medium text-foreground">
+      {typeof followerCount === "number" ? followerCount : followers.length}
+    </div>
+    <div>{locale === "tr" ? "Takipçi" : "Followers"}</div>
+  </div>
             </CardContent>
           </Card>
         </div>

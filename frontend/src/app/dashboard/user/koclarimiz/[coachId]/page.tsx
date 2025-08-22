@@ -13,53 +13,63 @@ function apiBase() {
 
 export default async function Page({ params }: { params: { coachId: string } }) {
   const API = apiBase();
+  const token = (await cookies()).get("token")?.value || "";
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-  // 👀 SERVER: read token from cookies (SSR)
-  const tokenCookie = (await cookies()).get("token")?.value || "";
-  // help yourself in server logs
-  console.log("[coach page SSR] token cookie present:", !!tokenCookie, tokenCookie ? `len=${tokenCookie.length}` : "");
+  // Try private bundle first (coach+programs+reviews+isFollowing+followerCount)
+  let coach: any = null;
+  let programs: any[] = [];
+  let reviewItems: any[] = [];
 
-  const headers: Record<string, string> = tokenCookie ? { Authorization: `Bearer ${tokenCookie}` } : {};
-
-  const [coachRes, progsRes, revsRes] = await Promise.all([
-    fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store", headers }),
-    fetch(`${API}/coaches/${params.coachId}/programs?limit=12`, { cache: "no-store", headers }),
-    fetch(`${API}/coaches/${params.coachId}/reviews?limit=50`, { cache: "no-store", headers }),
-  ]);
-
-  if (!coachRes.ok) {
-    if (coachRes.status === 404) notFound();
-    throw new Error(`Coach fetch failed (${coachRes.status})`);
+  if (token) {
+    const r = await fetch(`${API}/me/coaches/${params.coachId}`, { cache: "no-store", headers: authHeaders });
+    if (r.ok) {
+      const j = await r.json();
+      coach = j.coach ?? null;
+      programs = Array.isArray(j.programs) ? j.programs : [];
+      reviewItems = Array.isArray(j.reviews) ? j.reviews : [];
+    }
   }
 
-  const coach = await coachRes.json().catch(() => null);
-  const programs = ((await progsRes.json().catch(() => ({}))) as any).items ?? [];
-  const reviewItems = ((await revsRes.json().catch(() => ({}))) as any).items ?? [];
+  // Fallback to public endpoints if needed
+  if (!coach) {
+    const [coachRes, progsRes, revsRes] = await Promise.all([
+      fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store" }),
+      fetch(`${API}/coaches/${params.coachId}/programs?limit=12`, { cache: "no-store" }),
+      fetch(`${API}/coaches/${params.coachId}/reviews?limit=50`, { cache: "no-store" }),
+    ]);
 
-  // derive rating/reviewCount if backend didn’t send them
-  let sum = 0, count = 0;
-  for (const r of reviewItems) {
-    const n = Number(r?.rating);
-    if (Number.isFinite(n)) { sum += n; count += 1; }
+    if (!coachRes.ok) {
+      if (coachRes.status === 404) notFound();
+      throw new Error(`Coach fetch failed (${coachRes.status})`);
+    }
+
+    coach = await coachRes.json().catch(() => null);
+    programs = (await progsRes.json().catch(() => ({}))).items ?? [];
+    reviewItems = (await revsRes.json().catch(() => ({}))).items ?? [];
+
+    // derive rating/reviewCount if not present
+    let sum = 0, count = 0;
+    for (const r of reviewItems) {
+      const n = Number(r?.rating);
+      if (Number.isFinite(n)) { sum += n; count += 1; }
+    }
+    const average = count ? Math.round((sum / count) * 10) / 10 : null;
+    coach = {
+      ...coach,
+      rating: typeof coach?.rating === "number" ? coach.rating : average,
+      reviewCount: typeof coach?.reviewCount === "number" ? coach.reviewCount : count,
+    };
   }
-  const average = count ? Math.round((sum / count) * 10) / 10 : null;
-
-  const coachForUI = {
-    ...coach,
-    rating: typeof coach?.rating === "number" ? coach.rating : average,
-    reviewCount: typeof coach?.reviewCount === "number" ? coach.reviewCount : count,
-  };
 
   return (
     <div className="min-h-screen">
       <UserNavbar />
       <div className="mx-auto max-w-6xl px-4 py-8">
         <ClientBridge
-          coach={coachForUI}
+          coach={coach}
           programs={programs}
           reviews={reviewItems}
-          // pass SSR token info to client for display
-          debug={{ ssrHasToken: !!tokenCookie, ssrTokenLen: tokenCookie?.length || 0 }}
         />
       </div>
     </div>

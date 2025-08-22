@@ -319,5 +319,92 @@ router.get("/me/follows", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+router.get("/:id", maybeAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
+    const doc = await User.findOne({ _id: id, role: { $regex: /^coach$/i } })
+      .select("name profilePicture avatar specialization city rating bio programsCount role certifications tagline languages")
+      .lean();
+    if (!doc) return res.status(404).json({ message: "Coach not found" });
+
+    const [reviewCount, followerCount, isFollowing] = await Promise.all([
+      Review.countDocuments({ coachId: id }).catch(() => 0),
+      Follow.countDocuments({ coachId: id }).catch(() => 0),
+      (async () => {
+        if (!req.userId) return false;
+        try { return !!(await Follow.exists({ userId: req.userId, coachId: id })); }
+        catch { return false; }
+      })(),
+    ]);
+
+    const coach = {
+      id: String(doc._id),
+      name: doc.name,
+      role: doc.role || "Coach",
+      avatarUrl: doc.avatar || doc.profilePicture || "",
+      location: doc.city || "",
+      tagline: doc.tagline || "",
+      rating: typeof doc.rating === "number" ? doc.rating : null,
+      reviewCount,
+      followerCount, // <-- new
+      clientsCount: doc.programsCount ?? undefined,
+      specialties: Array.isArray(doc.specialization) ? doc.specialization : (doc.specialization ? [doc.specialization] : []),
+      certifications: Array.isArray(doc.certifications) ? doc.certifications : [],
+      bio: doc.bio || "",
+      isFollowing,
+      languages: Array.isArray(doc.languages) ? doc.languages : [],
+    };
+
+    res.json(coach);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+router.get("/:id/followers", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
+
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const cursor = req.query.cursor;
+    const withCount = req.query.withCount === "1";
+
+    const q = { coachId: id };
+    if (cursor) {
+      if (!isObjId(cursor)) return res.status(400).json({ message: "Invalid cursor" });
+      q._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+    }
+
+    const docs = await Follow.find(q)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .populate({ path: "userId", select: "name avatar profilePicture city" })
+      .lean();
+
+    const items = docs.map((f) => ({
+      id: String(f.userId?._id || ""),
+      name: f.userId?.name || "User",
+      avatarUrl: f.userId?.avatar || f.userId?.profilePicture || "",
+      city: f.userId?.city || "",
+      since: f.createdAt ? new Date(f.createdAt).toISOString() : null,
+    }));
+
+    const payload = {
+      items,
+      nextCursor: docs.length === limit ? String(docs[docs.length - 1]._id) : null,
+    };
+
+    if (withCount) {
+      payload.count = await Follow.countDocuments({ coachId: id }).catch(() => 0);
+    }
+
+    res.json(payload);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 export default router;

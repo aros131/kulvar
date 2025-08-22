@@ -18,7 +18,7 @@ router.use(protect);
 
 /**
  * GET /me/coaches/:id
- * Returns everything the private coach page needs in **one** response:
+ * Returns everything the private coach page needs in one response:
  * { coach, programs, reviews }
  */
 router.get("/coaches/:id", async (req, res) => {
@@ -26,11 +26,12 @@ router.get("/coaches/:id", async (req, res) => {
     const { id } = req.params;
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
-    const [doc, isFollowing, progs, revs] = await Promise.all([
+    const [doc, isFollowing, followerCount, progs, revs, reviewCount] = await Promise.all([
       User.findOne({ _id: id, role: { $regex: /^coach$/i } })
         .select("name profilePicture avatar specialization city rating bio programsCount role certifications tagline languages")
         .lean(),
-      Follow.exists({ userId: req.user.id, coachId: id }),
+      Follow.exists({ userId: req.user._id, coachId: id }),
+      Follow.countDocuments({ coachId: id }).catch(() => 0),
       Program.find({ coachId: id })
         .select("name description duration difficulty fitnessGoal price")
         .sort({ _id: -1 })
@@ -41,6 +42,7 @@ router.get("/coaches/:id", async (req, res) => {
         .limit(50)
         .populate({ path: "userId", select: "name" })
         .lean(),
+      Review.countDocuments({ coachId: id }).catch(() => 0),
     ]);
 
     if (!doc) return res.status(404).json({ message: "Coach not found" });
@@ -53,7 +55,8 @@ router.get("/coaches/:id", async (req, res) => {
       location: doc.city || "",
       tagline: doc.tagline || "",
       rating: typeof doc.rating === "number" ? doc.rating : null,
-      reviewCount: await Review.countDocuments({ coachId: id }).catch(() => 0),
+      reviewCount,
+      followerCount, // <- included
       clientsCount: doc.programsCount ?? undefined,
       specialties: toArray(doc.specialization),
       certifications: Array.isArray(doc.certifications) ? doc.certifications : [],
@@ -66,11 +69,10 @@ router.get("/coaches/:id", async (req, res) => {
       id: String(p._id),
       name: p.name,
       description: p.description,
-      durationWeeks: p.duration,    // your schema uses 'duration' (weeks)
-      difficulty: p.difficulty,     // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
+      durationWeeks: p.duration,     // your schema uses 'duration' (weeks)
+      difficulty: p.difficulty,      // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
       goal: p.fitnessGoal,
       price: p.price ?? undefined,
-      // no images in private page (text-only)
     }));
 
     const reviews = revs.map((r) => ({
@@ -91,29 +93,97 @@ router.get("/coaches/:id", async (req, res) => {
 });
 
 /**
- * Optional aliases (private versions) if you want:
- * GET /me/coaches/:id/follow   -> { isFollowing }
- * PUT /me/coaches/:id/follow   -> 204
- * DELETE /me/coaches/:id/follow-> 204
- * (These simply proxy to the existing /coaches/:id/follow handlers if you prefer.)
+ * Private follow endpoints (aliases under /me)
+ * GET  /me/coaches/:id/follow   -> { isFollowing }
+ * PUT  /me/coaches/:id/follow   -> 204
+ * DELETE /me/coaches/:id/follow -> 204
  */
 router.get("/coaches/:id/follow", async (req, res) => {
-  const exists = await Follow.exists({ userId: req.user.id, coachId: req.params.id });
-  res.json({ isFollowing: !!exists });
+  try {
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
+    const exists = await Follow.exists({ userId: req.user._id, coachId: id });
+    res.json({ isFollowing: !!exists });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 router.put("/coaches/:id/follow", async (req, res) => {
-  await Follow.updateOne(
-    { userId: req.user.id, coachId: req.params.id },
-    { $setOnInsert: { userId: req.user.id, coachId: req.params.id, createdAt: new Date() } },
-    { upsert: true }
-  );
-  res.sendStatus(204);
+  try {
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
+    await Follow.updateOne(
+      { userId: req.user._id, coachId: id },
+      { $setOnInsert: { userId: req.user._id, coachId: id, createdAt: new Date() } },
+      { upsert: true }
+    );
+    res.sendStatus(204);
+  } catch (e) {
+    console.error(e);
+    // duplicate key would be fine with updateOne+upsert; included for safety
+    if (e?.code === 11000) return res.sendStatus(204);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 router.delete("/coaches/:id/follow", async (req, res) => {
-  await Follow.deleteOne({ userId: req.user.id, coachId: req.params.id });
-  res.sendStatus(204);
+  try {
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
+    await Follow.deleteOne({ userId: req.user._id, coachId: id });
+    res.sendStatus(204);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/** (Optional) List coaches the current user follows */
+router.get("/following", async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 30, 100);
+    const cursor = req.query.cursor;
+
+    const q = { userId: req.user._id };
+    if (cursor) {
+      if (!isObjId(cursor)) return res.status(400).json({ message: "Invalid cursor" });
+      q._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+    }
+
+    const follows = await Follow.find(q)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .populate({
+        path: "coachId",
+        select: "name avatar profilePicture city rating tagline specialization programsCount role",
+        match: { role: { $regex: /^coach$/i } },
+      })
+      .lean();
+
+    const items = follows
+      .map((f) => f.coachId)
+      .filter(Boolean)
+      .map((c) => ({
+        id: String(c._id),
+        name: c.name,
+        avatarUrl: c.avatar || c.profilePicture || "",
+        city: c.city || "",
+        rating: typeof c.rating === "number" ? c.rating : null,
+        tagline: c.tagline || "",
+        specialties: Array.isArray(c.specialization) ? c.specialization : (c.specialization ? [c.specialization] : []),
+        programsCount: c.programsCount ?? undefined,
+      }));
+
+    res.json({
+      items,
+      nextCursor: follows.length === limit ? String(follows[follows.length - 1]._id) : null,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 export default router;
