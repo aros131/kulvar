@@ -1,4 +1,3 @@
-// src/app/dashboard/user/koclarimiz/[coachId]/page.tsx
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import UserNavbar from "@/components/nav/UserNavbar";
@@ -29,10 +28,10 @@ export default async function Page({ params }: { params: { coachId: string } }) 
   }
 
   const coach = await coachRes.json().catch(() => null);
-  const programs = (await progsRes.json().catch(() => ({}))).items ?? [];
-  const reviewItems = (await revsRes.json().catch(() => ({}))).items ?? []; // <-- ARRAY
+  const programs = ((await progsRes.json().catch(() => ({}))) as any).items ?? [];
+  const reviewItems = ((await revsRes.json().catch(() => ({}))) as any).items ?? [];
 
-  // derive average/count if backend doesn't provide rating
+  // derive rating/reviewCount if backend didn’t send them
   let sum = 0, count = 0;
   for (const r of reviewItems) {
     const n = Number(r?.rating);
@@ -53,7 +52,7 @@ export default async function Page({ params }: { params: { coachId: string } }) 
         <ClientBridge
           coach={coachForUI}
           programs={programs}
-          reviews={reviewItems}
+          reviews={reviewItems}   // array (not summary)
         />
       </div>
     </div>
