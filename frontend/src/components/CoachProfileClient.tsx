@@ -48,14 +48,14 @@ export type CoachProfileClientProps = {
 };
 
 export type Program = {
-  id: string;
+  id?: string; // allow _id fallback too
+  _id?: string;
   name: string;
   description?: string;
   durationWeeks?: number;
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
   goal?: string;
   price?: number | string;
-  // image removed for text-only UI
 };
 
 export type Review = {
@@ -88,6 +88,10 @@ const STRINGS = {
     totalReviews: "Total Reviews",
     avgRating: "Average Rating",
     activeClients: "Active Clients",
+    clientsWord: "clients",
+    location: "Location",
+    certifications: "Certifications",
+    specializations: "Specializations",
   },
   tr: {
     follow: "Takip et",
@@ -105,6 +109,10 @@ const STRINGS = {
     totalReviews: "Toplam Yorum",
     avgRating: "Ortalama Puan",
     activeClients: "Aktif Müşteri",
+    clientsWord: "müşteri",
+    location: "Konum",
+    certifications: "Sertifikalar",
+    specializations: "Uzmanlıklar",
   },
 } satisfies Record<string, Record<string, string>>;
 
@@ -138,8 +146,13 @@ export default function CoachProfileClient({
   // local state for optimistic UI
   const [isFollowing, setIsFollowing] = useState(isFollowingProp);
 
-  // 🔧 SYNC: when the parent (ClientBridge) discovers the true follow
-  // state and re-renders, pick up that change.
+  // ✅ Live Active Clients from programs (unique users across all programs)
+  const {
+    count: activeClientsCount,
+    loading: loadingActiveClients,
+  } = useActiveClientCountFromPrograms(programs);
+
+  // 🔧 SYNC: when the parent discovers the true follow state and re-renders
   useEffect(() => {
     setIsFollowing(isFollowingProp);
   }, [isFollowingProp]);
@@ -176,19 +189,13 @@ export default function CoachProfileClient({
     window.scrollTo({ top: y, behavior: "smooth" });
   }, []);
 
-  // ✅ Live Active Clients from programs (unique users across all programs)
-  const {
-    count: activeClientsCount,
-    loading: loadingActiveClients,
-  } = useActiveClientCountFromPrograms(programs);
-
   const handleFollow = async () => {
     const next = !isFollowing;
     setIsFollowing(next); // optimistic
     try {
       await onFollowToggle?.(next);
       toast.success(next ? (locale === "tr" ? "Takip edildi" : "Followed") : (locale === "tr" ? "Takipten çıkıldı" : "Unfollowed"));
-    } catch (e) {
+    } catch {
       setIsFollowing(!next);
       toast.error(locale === "tr" ? "Bir hata oluştu" : "Something went wrong");
     }
@@ -226,7 +233,14 @@ export default function CoachProfileClient({
           <div className="flex h-14 items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={coach.avatarUrl} alt={coach.name} />
+                {/* 🔒 robust avatar fallback (prevents 404 console spam) */}
+                <AvatarImage
+                  src={coach.avatarUrl || "/images/user.png"}
+                  alt={coach.name}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/images/user.png";
+                  }}
+                />
                 <AvatarFallback>{coach.name?.slice(0, 2)?.toUpperCase() ?? "C"}</AvatarFallback>
               </Avatar>
               <div className="truncate">
@@ -277,7 +291,13 @@ export default function CoachProfileClient({
         <div className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
           <div className="flex flex-col md:flex-row md:items-end gap-6">
             <Avatar className="h-28 w-28 ring-4 ring-background shadow-md">
-              <AvatarImage src={coach.avatarUrl} alt={coach.name} />
+              <AvatarImage
+                src={coach.avatarUrl || "/images/user.png"}
+                alt={coach.name}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/images/user.png";
+                }}
+              />
               <AvatarFallback className="text-xl">
                 {coach.name?.slice(0, 2)?.toUpperCase() ?? "C"}
               </AvatarFallback>
@@ -310,7 +330,7 @@ export default function CoachProfileClient({
                     ? "…"
                     : (activeClientsCount ??
                        (typeof coach.clientsCount === "number" ? coach.clientsCount : "—"))}{" "}
-                  {locale === "tr" ? "müşteri" : "clients"}
+                  {t.clientsWord}
                 </span>
               </div>
               {coach.tagline && (
@@ -340,14 +360,14 @@ export default function CoachProfileClient({
             <CardContent className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm text-muted-foreground">
               <div>
                 <div className="font-medium text-foreground">{coach.reviewCount ?? 0}</div>
-                <div>{locale === "tr" ? "Toplam Yorum" : "Total Reviews"}</div>
+                <div>{t.totalReviews}</div>
               </div>
 
               <div>
                 <div className="font-medium text-foreground">
                   {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"}
                 </div>
-                <div>{locale === "tr" ? "Ortalama Puan" : "Average Rating"}</div>
+                <div>{t.avgRating}</div>
               </div>
 
               {/* ✅ Live Active Clients in Overview */}
@@ -367,7 +387,6 @@ export default function CoachProfileClient({
               <div className="flex items-start">
                 <FollowersDialog
                   coachId={coach.id}
-                  // If you already have a follower count available, you can pass it:
                   // initialCount={followerCount}
                   locale={locale}
                 />
@@ -390,29 +409,32 @@ export default function CoachProfileClient({
           </Card>
         ) : (
           <ul className="divide-y rounded-md border">
-            {programs.map((p) => (
-              <li key={p.id} className="p-4">
-                <div className="font-medium">{p.name}</div>
-                {p.description ? (
-                  <p className="text-sm text-muted-foreground mt-1">{p.description}</p>
-                ) : null}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {p.durationWeeks ? `${p.durationWeeks} hafta` : ""}
-                  {p.difficulty ? ` • ${p.difficulty}` : ""}
-                  {p.goal ? ` • ${p.goal}` : ""}
-                  {p.price != null
-                    ? ` • ${
-                        typeof p.price === "number"
-                          ? Intl.NumberFormat(locale, {
-                              style: "currency",
-                              currency: locale === "tr" ? "TRY" : "USD",
-                            }).format(p.price)
-                          : p.price
-                      }`
-                    : ""}
-                </p>
-              </li>
-            ))}
+            {programs.map((p) => {
+              const pid = p.id || p._id || crypto.randomUUID();
+              return (
+                <li key={pid} className="p-4">
+                  <div className="font-medium">{p.name}</div>
+                  {p.description ? (
+                    <p className="text-sm text-muted-foreground mt-1">{p.description}</p>
+                  ) : null}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {p.durationWeeks ? `${p.durationWeeks} hafta` : ""}
+                    {p.difficulty ? ` • ${p.difficulty}` : ""}
+                    {p.goal ? ` • ${p.goal}` : ""}
+                    {p.price != null
+                      ? ` • ${
+                          typeof p.price === "number"
+                            ? Intl.NumberFormat(locale, {
+                                style: "currency",
+                                currency: locale === "tr" ? "TRY" : "USD",
+                              }).format(p.price)
+                            : p.price
+                        }`
+                      : ""}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -447,7 +469,7 @@ export default function CoachProfileClient({
               {coach.certifications?.length ? (
                 <div>
                   <div className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    {locale === "tr" ? "Sertifikalar" : "Certifications"}
+                    {t.certifications}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {coach.certifications.map((c) => (
@@ -465,16 +487,14 @@ export default function CoachProfileClient({
               {coach.location ? (
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4" />
-                  <span className="text-muted-foreground">
-                    {locale === "tr" ? "Konum" : "Location"}:
-                  </span>
+                  <span className="text-muted-foreground">{t.location}:</span>
                   <span>{coach.location}</span>
                 </div>
               ) : null}
               {coach.specialties?.length ? (
                 <div>
                   <div className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    {locale === "tr" ? "Uzmanlıklar" : "Specializations"}
+                    {t.specializations}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {coach.specialties.map((s) => (
