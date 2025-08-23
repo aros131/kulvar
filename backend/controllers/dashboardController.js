@@ -3,9 +3,66 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import Progress from '../models/Progress.js';
 import Feedback from '../models/Feedback.js';
-
+import Coach from "../models/Coach.js";
 // ✅ Send notification
+ const getMyCoachesForUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = Math.max(0, Math.min(100, Number(req.query.limit) || 24));
 
+    // 1) Find programs user is assigned to
+    //    Adjust the field if you store assignments differently
+    const programs = await Program.find({ assignedClients: userId })
+      .select("coach coachId createdBy owner author coachInfo")
+      .lean();
+
+    // 2) Extract coach ids from various shapes
+    const coachIdSet = new Set();
+
+    const takeCoachId = (pg) => {
+      // object shapes
+      const obj =
+        pg.coach ||
+        pg.coachInfo ||
+        pg.createdBy ||
+        pg.author ||
+        pg.owner ||
+        null;
+
+      const inlineId = obj?.id || obj?._id;
+      const directId = pg.coachId || pg.createdById || pg.ownerId;
+
+      const id = String(inlineId || directId || "");
+      if (id) coachIdSet.add(id);
+    };
+
+    for (const pg of programs) takeCoachId(pg);
+
+    const coachIds = Array.from(coachIdSet);
+    if (coachIds.length === 0) {
+      return res.json({ items: [], total: 0 });
+    }
+
+    // 3) Fetch those coach docs
+    const coaches = await Coach.find({ _id: { $in: coachIds } })
+      .select("_id name avatarUrl role")
+      .limit(limit)
+      .lean();
+
+    // 4) Normalize response
+    const items = coaches.map((c) => ({
+      id: String(c._id),
+      name: c.name || "Koç",
+      avatarUrl: c.avatarUrl || "",
+      role: c.role || "Coach",
+    }));
+
+    return res.json({ items, total: coachIds.length });
+  } catch (err) {
+    console.error("getMyCoachesForUser error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
 // ✅ Fetch Profile
 const getProfile = async (req, res) => {
@@ -273,5 +330,6 @@ export {
   replyToFeedback,
   getFullCoachAnalytics,
   getCoachAnalytics,
+  getMyCoachesForUser
   
 };

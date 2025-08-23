@@ -1,20 +1,21 @@
 // src/app/dashboard/user/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import UserNavbar from "@/components/nav/UserNavbar";
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/+$/, "");
 
 interface UserProgram {
   programId: string;
@@ -89,7 +90,7 @@ function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: st
   );
 }
 
-/* ⭐ Simple 1–5 star picker */
+/* ⭐ 1–5 star picker */
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex items-center gap-1">
@@ -101,11 +102,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
           className="p-1"
           aria-label={`${n} yıldız`}
         >
-          <Star
-            className="h-5 w-5"
-            fill={n <= value ? "currentColor" : "none"}
-            stroke="currentColor"
-          />
+          <Star className="h-5 w-5" fill={n <= value ? "currentColor" : "none"} stroke="currentColor" />
         </button>
       ))}
     </div>
@@ -113,13 +110,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
 }
 
 /* 🗨️ Review dialog */
-function ReviewDialog({
-  coach,
-  onSubmitted,
-}: {
-  coach: CoachLite;
-  onSubmitted?: () => void;
-}) {
+function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: () => void }) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -129,7 +120,8 @@ function ReviewDialog({
     const token = cleanToken();
     if (!token) {
       toast.message("Devam etmek için lütfen kayıt olun.");
-      window.location.href = `/signup?redirect=${encodeURIComponent(location.pathname + location.search)}`;
+      const back = encodeURIComponent(location.pathname + location.search);
+      window.location.href = `${SIGNUP_URL}?redirect=${back}`;
       return;
     }
     if (!rating) {
@@ -140,10 +132,7 @@ function ReviewDialog({
     try {
       const res = await fetch(`${API}/coaches/${coach.id}/reviews`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating, comment }),
       });
       if (res.ok) {
@@ -165,15 +154,10 @@ function ReviewDialog({
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        Değerlendir
-      </Button>
+      <Button variant="outline" onClick={() => setOpen(true)}>Değerlendir</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{coach.name} için Değerlendirme</DialogTitle>
-          </DialogHeader>
-
+          <DialogHeader><DialogTitle>{coach.name} için Değerlendirme</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <div className="text-sm mb-1">Puan</div>
@@ -189,14 +173,9 @@ function ReviewDialog({
               />
             </div>
           </div>
-
           <DialogFooter className="mt-4">
-            <Button variant="secondary" onClick={() => setOpen(false)} disabled={loading}>
-              İptal
-            </Button>
-            <Button onClick={submit} disabled={loading}>
-              {loading ? "Gönderiliyor..." : "Gönder"}
-            </Button>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={loading}>İptal</Button>
+            <Button onClick={submit} disabled={loading}>{loading ? "Gönderiliyor..." : "Gönder"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -210,41 +189,36 @@ export default function UserDashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // 🔹 Koçlarım state
+  // 🔹 Koçlarım (derived or fetched)
   const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
 
-  useEffect(() => {
-    const token = cleanToken();
-    const headers = makeAuthHeaders(token);
+  const token = useMemo(cleanToken, []);
+  const headers = useMemo(() => makeAuthHeaders(token), [token]);
 
+  useEffect(() => {
     const fetchPrograms = async () => {
       try {
-        // 1) Base list
         const res = await fetch(`${API}/progress/all-program-progress`, { headers, cache: "no-store" });
         const data = res.ok ? await res.json().catch(() => ({})) : {};
         const list: UserProgram[] = Array.isArray((data as any).programProgress) ? (data as any).programProgress : [];
-
-        // 2) For each program, pull the SAME number Program page uses
+        // refresh canonical % per program
         const enriched = await Promise.all(
           list.map(async (p) => {
             try {
               const r = await fetch(`${API}/progress/user/${p.programId}`, { headers, cache: "no-store" });
               if (r.ok && (r.headers.get("content-type") || "").includes("application/json")) {
                 const j = await r.json();
-                // override with the canonical percentage
                 return { ...p, progressPercentage: roundPct(j.progressPercentage) };
               }
             } catch {}
-            // fallback to whatever came from the list
             return { ...p, progressPercentage: roundPct(p.progressPercentage) };
           })
         );
-
         setPrograms(enriched);
       } catch {
         setPrograms([]);
-    }
+      }
     };
 
     const fetchProgress = async () => {
@@ -282,46 +256,131 @@ export default function UserDashboardPage() {
       }
     };
 
-    // 🔹 Fetch Koçlarım
-    const fetchCoaches = async () => {
+    fetchPrograms();
+    fetchProgress();
+    fetchUnreadNotifications();
+    fetchProfile();
+  }, [headers]);
+
+  // 🔎 Koçlarım: try fast API (/dashboard/user/coaches), fallback to derive from program details
+  useEffect(() => {
+    const run = async () => {
       setLoadingCoaches(true);
+
+      // 1) preferred: single endpoint
       try {
-        const res = await fetch(`${API}/me/coaches?limit=12`, { headers, cache: "no-store" });
-        const j: any = res.ok ? await res.json().catch(() => ({})) : {};
-        const arr = Array.isArray(j.items)
-          ? j.items
-          : Array.isArray(j.coaches)
-          ? j.coaches
-          : Array.isArray(j.data)
-          ? j.data
-          : [];
-        const normalized: CoachLite[] = arr
-          .map((c: any) => {
-            const obj = c?.coach || c;
-            const id = String(obj?.id ?? obj?._id ?? "");
-            if (!id) return null;
-            return {
-              id,
-              name: String(obj?.name ?? "Koç"),
-              avatarUrl: obj?.avatarUrl || obj?.avatar || obj?.profilePicture || "",
-              role: obj?.role || obj?.title || "Coach",
-            } as CoachLite;
-          })
-          .filter(Boolean);
-        setMyCoaches(normalized);
+        const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store" });
+        if (r.ok) {
+          const j = await r.json().catch(() => ({}));
+          if (Array.isArray(j.items)) {
+            const items: CoachLite[] = j.items.map((c: any) => ({
+              id: String(c.id || c._id),
+              name: String(c.name || "Koç"),
+              avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
+              role: c.role || "Coach",
+            }));
+            setMyCoaches(items);
+            setLoadingCoaches(false);
+            return;
+          }
+        }
       } catch {
-        setMyCoaches([]);
+        // fall through to client derivation
+      }
+
+      // 2) fallback: derive from programs
+      try {
+        if (!programs.length) {
+          setMyCoaches([]);
+          setLoadingCoaches(false);
+          return;
+        }
+
+        const programIds = [...new Set(programs.map((p) => p.programId).filter(Boolean))];
+
+        const programDetails = await Promise.all(
+          programIds.map(async (pid) => {
+            try {
+              const r = await fetch(`${API}/programs/${pid}`, { headers, cache: "no-store" });
+              if (!r.ok) return null;
+              const j = await r.json().catch(() => ({}));
+              return (j && (j.program || j)) || null;
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        type CoachDraft = { id?: string; name?: string; avatarUrl?: string; role?: string };
+        const drafts: CoachDraft[] = [];
+
+        for (const pg of programDetails) {
+          if (!pg) continue;
+          const c =
+            pg.coach ||
+            pg.createdBy ||
+            pg.author ||
+            pg.owner ||
+            pg.coachInfo ||
+            null;
+
+          const coachId =
+            c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
+
+          if (c && (c.name || c.fullName)) {
+            drafts.push({
+              id: String(coachId || c.id || c._id || ""),
+              name: String(c.name || c.fullName || "Koç"),
+              avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
+              role: c.role || c.title || "Coach",
+            });
+          } else if (coachId) {
+            drafts.push({ id: String(coachId) });
+          }
+        }
+
+        const byId = new Map<string, CoachLite>();
+        drafts.forEach((d) => {
+          if (!d.id) return;
+          if (d.name) {
+            byId.set(d.id, {
+              id: d.id,
+              name: d.name!,
+              avatarUrl: d.avatarUrl,
+              role: d.role || "Coach",
+            });
+          } else if (!byId.has(d.id)) {
+            byId.set(d.id, { id: d.id, name: "Koç", role: "Coach" });
+          }
+        });
+
+        const toFill = [...byId.values()].filter((c) => !c.name || c.name === "Koç");
+        await Promise.all(
+          toFill.map(async (c) => {
+            try {
+              const r = await fetch(`${API}/coaches/${c.id}`, { headers, cache: "no-store" });
+              if (!r.ok) return;
+              const j = await r.json().catch(() => ({}));
+              const obj = j?.coach || j;
+              if (!obj) return;
+              byId.set(c.id, {
+                id: c.id,
+                name: String(obj.name || "Koç"),
+                avatarUrl: obj.avatarUrl || obj.avatar || obj.profilePicture || "",
+                role: obj.role || obj.title || "Coach",
+              });
+            } catch {}
+          })
+        );
+
+        setMyCoaches([...byId.values()]);
       } finally {
         setLoadingCoaches(false);
       }
     };
 
-    fetchPrograms();
-    fetchProgress();
-    fetchUnreadNotifications();
-    fetchProfile();
-    fetchCoaches();
-  }, []);
+    run();
+  }, [programs, headers]);
 
   return (
     <div className="flex">
@@ -348,7 +407,7 @@ export default function UserDashboardPage() {
             </div>
           </div>
 
-          {/* 🔥 Programs Section — linear bar fed by /progress/user/:id */}
+          {/* 🔥 Programs Section */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {programs.length > 0 ? (
               programs.map((program) => (
@@ -391,26 +450,32 @@ export default function UserDashboardPage() {
             {loadingCoaches ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i}><CardContent className="py-6 space-y-3">
-                    <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-700 rounded" />
-                    <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded" />
-                    <div className="flex gap-2 pt-2">
-                      <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-700 rounded" />
-                    </div>
-                  </CardContent></Card>
+                  <Card key={i}>
+                    <CardContent className="py-6 space-y-3">
+                      <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-700 rounded" />
+                      <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded" />
+                      <div className="flex gap-2 pt-2">
+                        <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-700 rounded" />
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             ) : myCoaches.length === 0 ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3">
-                Henüz koç bulunamadı.
-              </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3">Henüz koç bulunamadı.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                 {myCoaches.map((c) => (
                   <Card key={c.id} className="hover:shadow-sm transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="text-base">{c.name}</CardTitle>
-                      <div className="text-xs text-zinc-500">{c.role || "Coach"}</div>
+                    <CardHeader className="flex flex-row items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={c.avatarUrl || "/images/user.png"} alt={c.name} />
+                        <AvatarFallback>{(c.name?.[0] || "K").toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-base">{c.name}</CardTitle>
+                        <div className="text-xs text-zinc-500">{c.role || "Coach"}</div>
+                      </div>
                     </CardHeader>
                     <CardContent className="flex items-center gap-2">
                       <ReviewDialog coach={c} />
@@ -424,7 +489,7 @@ export default function UserDashboardPage() {
             )}
           </div>
 
-          {/* 📈 Goal Tracking — reuse same number style */}
+          {/* 📈 Goal Tracking */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
             <h2 className="text-xl font-semibold mb-4">Hedef Takibi</h2>
             {progress?.goalTracking.length ? (

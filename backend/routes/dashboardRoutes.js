@@ -20,7 +20,8 @@ import {
   getUserSchedule,
   markNotificationAsRead,
   replyToFeedback,
-  getFullCoachAnalytics
+  getFullCoachAnalytics,
+   getMyCoachesForUser,
 } from '../controllers/dashboardController.js';
 
 // ✅ User Programs & Schedule
@@ -48,5 +49,10 @@ router.post("/feedbacks/reply", protect, roleMiddleware(["coach"]), replyToFeedb
 // ✅ Clients
 router.get("/clients", protect, roleMiddleware(["coach"]), getClients);
 router.get("/clients/:id", protect, roleMiddleware(["coach"]), getClientDetails); // leave dynamic last
-
+router.get(
+  "/user/coaches",
+  protect,
+  roleMiddleware(["user"]),
+  getMyCoachesForUser
+);
 export default router;
