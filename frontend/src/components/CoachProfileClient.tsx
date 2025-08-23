@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users } from "lucide-react";
 import FollowersDialog from "@/components/coach/FollowersDialog";
 import { useActiveClientCountFromPrograms } from "@/hooks/useActiveClientCountFromPrograms";
+import { useCoachReviews } from "@/hooks/useCoachReviews";
 
 /************************************
  * Types (trimmed for v1 scope)
@@ -20,7 +21,7 @@ export type Coach = {
   id: string;
   name: string;
   handle?: string;
-  avatarUrl?: string; // ONLY image we keep
+  avatarUrl?: string;
   role?: string;
   location?: string;
   tagline?: string;
@@ -42,13 +43,12 @@ export type CoachProfileClientProps = {
   onFollowToggle?: (next: boolean) => Promise<void> | void;
   onMessage?: (coachId: string) => void;
 
-  // ⬇️ add these
   followers?: { id: string; name: string }[];
   followerCount?: number;
 };
 
 export type Program = {
-  id?: string; // allow _id fallback too
+  id?: string;
   _id?: string;
   name: string;
   description?: string;
@@ -62,7 +62,7 @@ export type Review = {
   id: string;
   author: string;
   rating: number;
-  date: string; // ISO
+  date: string;
   comment: string;
   keywords?: string[];
   verified?: boolean;
@@ -92,6 +92,7 @@ const STRINGS = {
     location: "Location",
     certifications: "Certifications",
     specializations: "Specializations",
+    signupRedirect: "Please sign up to continue.",
   },
   tr: {
     follow: "Takip et",
@@ -113,15 +114,28 @@ const STRINGS = {
     location: "Konum",
     certifications: "Sertifikalar",
     specializations: "Uzmanlıklar",
+    signupRedirect: "Devam etmek için lütfen kayıt olun.",
   },
 } satisfies Record<string, Record<string, string>>;
 
+const SIGNUP_PATH = "/kayit-ol";
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(" ");
 
 /************************************
  * Sections (v1 = text-only)
  ************************************/
 const SECTIONS = ["overview", "programs", "reviews", "about"] as const;
+
+const cleanToken = (): string | null => {
+  try {
+    const raw = localStorage.getItem("token");
+    if (!raw) return null;
+    const trimmed = raw.replace(/^"+|"+$/g, "").trim();
+    return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+  } catch {
+    return null;
+  }
+};
 
 export default function CoachProfileClient({
   coach,
@@ -132,8 +146,6 @@ export default function CoachProfileClient({
   loading = false,
   onFollowToggle,
   onMessage,
-
-  // ⬇️ new props
   followers = [],
   followerCount,
 }: CoachProfileClientProps) {
@@ -143,21 +155,22 @@ export default function CoachProfileClient({
   const [active, setActive] = useState<(typeof SECTIONS)[number]>("overview");
   const [scrolled, setScrolled] = useState(false);
 
-  // local state for optimistic UI
-  const [isFollowing, setIsFollowing] = useState(isFollowingProp);
-
-  // ✅ Live Active Clients from programs (unique users across all programs)
-  const {
-    count: activeClientsCount,
-    loading: loadingActiveClients,
-  } = useActiveClientCountFromPrograms(programs);
-
-  // 🔧 SYNC: when the parent discovers the true follow state and re-renders
+  // auth state (token in localStorage)
+  const [isAuthed, setIsAuthed] = useState<boolean>(false);
   useEffect(() => {
-    setIsFollowing(isFollowingProp);
-  }, [isFollowingProp]);
+    setIsAuthed(Boolean(cleanToken()));
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") setIsAuthed(Boolean(cleanToken()));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
-  // observe scroll for sticky top bar & active section
+  // local follow optimistic
+  const [isFollowing, setIsFollowing] = useState(isFollowingProp);
+  useEffect(() => setIsFollowing(isFollowingProp), [isFollowingProp]);
+
+  // observe scroll for sticky bar highlight
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
@@ -185,21 +198,52 @@ export default function CoachProfileClient({
   const scrollTo = useCallback((id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 72; // adjust for sticky bar
+    const y = el.getBoundingClientRect().top + window.scrollY - 72;
     window.scrollTo({ top: y, behavior: "smooth" });
   }, []);
 
-  const handleFollow = async () => {
-    const next = !isFollowing;
-    setIsFollowing(next); // optimistic
-    try {
-      await onFollowToggle?.(next);
-      toast.success(next ? (locale === "tr" ? "Takip edildi" : "Followed") : (locale === "tr" ? "Takipten çıkıldı" : "Unfollowed"));
-    } catch {
-      setIsFollowing(!next);
-      toast.error(locale === "tr" ? "Bir hata oluştu" : "Something went wrong");
-    }
+  // ✅ Live Active Clients from programs
+  const {
+    count: activeClientsCount,
+    loading: loadingActiveClients,
+  } = useActiveClientCountFromPrograms(programs);
+
+  // ✅ Live Reviews (pagination, totals, average)
+  const {
+    reviews: liveReviews,
+    loading: loadingReviews,
+    error: reviewsError,
+    loadMore,
+    hasMore,
+    totalCount: totalReviews,
+    average: avgRating,
+  } = useCoachReviews(coach.id, { pageSize: 8, initial: reviews });
+
+  const requireAuth = (action: () => void) => {
+    if (isAuthed) return action();
+    toast.message(t.signupRedirect);
+    router.push(SIGNUP_PATH);
   };
+
+  const handleFollow = async () => {
+    return requireAuth(async () => {
+      const next = !isFollowing;
+      setIsFollowing(next); // optimistic
+      try {
+        await onFollowToggle?.(next);
+        toast.success(next ? (locale === "tr" ? "Takip edildi" : "Followed") : (locale === "tr" ? "Takipten çıkıldı" : "Unfollowed"));
+      } catch {
+        setIsFollowing(!next);
+        toast.error(locale === "tr" ? "Bir hata oluştu" : "Something went wrong");
+      }
+    });
+  };
+
+  const handleMessage = () =>
+    requireAuth(() => {
+      if (onMessage) return onMessage(coach.id);
+      router.push(`/messages?to=${coach.id}`);
+    });
 
   const handleShare = async () => {
     try {
@@ -210,36 +254,23 @@ export default function CoachProfileClient({
     }
   };
 
-  const handleMessage = () => {
-    if (onMessage) return onMessage(coach.id);
-    router.push(`/messages?to=${coach.id}`);
-  };
-
   if (loading) return <CoachProfileSkeleton />;
 
   return (
     <div ref={rootRef} className="relative min-h-screen">
-      {/* Cover / Header background (kept as CSS gradient, not an image) */}
+      {/* Cover / Header background */}
       <div className="absolute inset-x-0 top-0 h-[260px] bg-gradient-to-br from-primary/25 via-muted to-background [mask-image:linear-gradient(to_bottom,black,transparent)]" />
 
       {/* Sticky Top Bar */}
-      <div
-        className={cx(
-          "sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all",
-          scrolled ? "border-b border-border" : ""
-        )}
-      >
+      <div className={cx("sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all", scrolled ? "border-b border-border" : "")}>
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex h-14 items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <Avatar className="h-8 w-8">
-                {/* 🔒 robust avatar fallback (prevents 404 console spam) */}
                 <AvatarImage
                   src={coach.avatarUrl || "/images/user.png"}
                   alt={coach.name}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = "/images/user.png";
-                  }}
+                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = "/images/user.png")}
                 />
                 <AvatarFallback>{coach.name?.slice(0, 2)?.toUpperCase() ?? "C"}</AvatarFallback>
               </Avatar>
@@ -274,19 +305,14 @@ export default function CoachProfileClient({
                 className={cx("relative py-2", active === id ? "text-foreground" : "text-muted-foreground")}
               >
                 <span className="capitalize">{(t as any)[id] ?? id}</span>
-                <span
-                  className={cx(
-                    "absolute left-0 right-0 -bottom-[1px] h-[2px] rounded bg-primary transition-opacity",
-                    active === id ? "opacity-100" : "opacity-0"
-                  )}
-                />
+                <span className={cx("absolute left-0 right-0 -bottom-[1px] h-[2px] rounded bg-primary transition-opacity", active === id ? "opacity-100" : "opacity-0")} />
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Profile Hero (ONLY profile photo retained) */}
+      {/* Profile Hero */}
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
           <div className="flex flex-col md:flex-row md:items-end gap-6">
@@ -294,13 +320,9 @@ export default function CoachProfileClient({
               <AvatarImage
                 src={coach.avatarUrl || "/images/user.png"}
                 alt={coach.name}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/images/user.png";
-                }}
+                onError={(e) => ((e.currentTarget as HTMLImageElement).src = "/images/user.png")}
               />
-              <AvatarFallback className="text-xl">
-                {coach.name?.slice(0, 2)?.toUpperCase() ?? "C"}
-              </AvatarFallback>
+              <AvatarFallback className="text-xl">{coach.name?.slice(0, 2)?.toUpperCase() ?? "C"}</AvatarFallback>
             </Avatar>
 
             <div className="flex-1 min-w-0">
@@ -321,15 +343,17 @@ export default function CoachProfileClient({
                 )}
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Star className="h-4 w-4" />
-                  {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"} ({coach.reviewCount ?? 0})
+                  {/* Prefer live avg + total, fallback to coach props */}
+                  {typeof (avgRating ?? coach.rating) === "number"
+                    ? (avgRating ?? coach.rating)!.toFixed(1)
+                    : "-"}{" "}
+                  ({typeof totalReviews === "number" ? totalReviews : (coach.reviewCount ?? 0)})
                 </span>
-                {/* ✅ Live Active Clients preview in the header row */}
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Users className="h-4 w-4" />
                   {loadingActiveClients
                     ? "…"
-                    : (activeClientsCount ??
-                       (typeof coach.clientsCount === "number" ? coach.clientsCount : "—"))}{" "}
+                    : (activeClientsCount ?? (typeof coach.clientsCount === "number" ? coach.clientsCount : "—"))}{" "}
                   {t.clientsWord}
                 </span>
               </div>
@@ -348,7 +372,7 @@ export default function CoachProfileClient({
         </div>
       </section>
 
-      {/* Overview (text-only stats) */}
+      {/* Overview */}
       <section id="overview" className="mx-auto max-w-6xl px-4 pt-8 md:pt-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="col-span-1 md:col-span-3">
@@ -356,47 +380,39 @@ export default function CoachProfileClient({
               <CardTitle>{t.overview}</CardTitle>
             </CardHeader>
 
-            {/* 4 columns on small+ screens to include Followers */}
             <CardContent className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm text-muted-foreground">
               <div>
-                <div className="font-medium text-foreground">{coach.reviewCount ?? 0}</div>
+                <div className="font-medium text-foreground">
+                  {typeof totalReviews === "number" ? totalReviews : (coach.reviewCount ?? 0)}
+                </div>
                 <div>{t.totalReviews}</div>
               </div>
 
               <div>
                 <div className="font-medium text-foreground">
-                  {typeof coach.rating === "number" ? coach.rating.toFixed(1) : "-"}
+                  {typeof (avgRating ?? coach.rating) === "number"
+                    ? (avgRating ?? coach.rating)!.toFixed(1)
+                    : "-"}
                 </div>
                 <div>{t.avgRating}</div>
               </div>
 
-              {/* ✅ Live Active Clients in Overview */}
               <div>
                 <div className="font-medium text-foreground">
-                  {loadingActiveClients ? (
-                    <Skeleton className="h-5 w-10" />
-                  ) : (
-                    activeClientsCount ??
-                    (typeof coach.clientsCount === "number" ? coach.clientsCount : "—")
-                  )}
+                  {loadingActiveClients ? <Skeleton className="h-5 w-10" /> : (activeClientsCount ?? (typeof coach.clientsCount === "number" ? coach.clientsCount : "—"))}
                 </div>
                 <div>{t.activeClients}</div>
               </div>
 
-              {/* Followers (opens dialog, count handled inside dialog fetch) */}
               <div className="flex items-start">
-                <FollowersDialog
-                  coachId={coach.id}
-                  // initialCount={followerCount}
-                  locale={locale}
-                />
+                <FollowersDialog coachId={coach.id} locale={locale} />
               </div>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Programs (text-only) */}
+      {/* Programs */}
       <section id="programs" className="mx-auto max-w-6xl px-4 pt-12">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold">{t.programs}</h2>
@@ -410,13 +426,11 @@ export default function CoachProfileClient({
         ) : (
           <ul className="divide-y rounded-md border">
             {programs.map((p) => {
-              const pid = p.id || p._id || crypto.randomUUID();
+              const pid = p.id || p._id || `${p.name}-${Math.random().toString(36).slice(2)}`;
               return (
                 <li key={pid} className="p-4">
                   <div className="font-medium">{p.name}</div>
-                  {p.description ? (
-                    <p className="text-sm text-muted-foreground mt-1">{p.description}</p>
-                  ) : null}
+                  {p.description ? <p className="text-sm text-muted-foreground mt-1">{p.description}</p> : null}
                   <p className="text-xs text-muted-foreground mt-1">
                     {p.durationWeeks ? `${p.durationWeeks} hafta` : ""}
                     {p.difficulty ? ` • ${p.difficulty}` : ""}
@@ -439,19 +453,54 @@ export default function CoachProfileClient({
         )}
       </section>
 
-      {/* Reviews (text-only) */}
+      {/* Reviews */}
       <section id="reviews" className="mx-auto max-w-6xl px-4 pt-12">
         <h2 className="mb-4 text-xl font-semibold">{t.reviews}</h2>
-        {reviews.length === 0 ? (
+
+        {reviewsError ? (
+          <Card>
+            <CardContent className="py-6 text-destructive text-sm">
+              {locale === "tr" ? "Yorumlar yüklenemedi." : "Failed to load reviews."}
+            </CardContent>
+          </Card>
+        ) : loadingReviews && (liveReviews?.length ?? 0) === 0 ? (
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <Skeleton className="h-4 w-10" />
+                  </div>
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (liveReviews?.length ?? 0) === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">—</CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {reviews.slice(0, 8).map((r) => (
-              <ReviewRow key={r.id} r={r} locale={locale} />
-            ))}
-          </div>
+          <>
+            <div className="space-y-4">
+              {liveReviews.slice(0, 8).map((r) => (
+                <ReviewRow key={r.id} r={r} locale={locale} />
+              ))}
+            </div>
+
+            {hasMore && (
+              <div className="mt-4 flex justify-center">
+                <Button onClick={loadMore} disabled={loadingReviews} variant="outline">
+                  {loadingReviews ? (locale === "tr" ? "Yükleniyor..." : "Loading...") : (locale === "tr" ? "Daha Fazla Yükle" : "Load More")}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
