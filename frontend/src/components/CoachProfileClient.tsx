@@ -203,10 +203,8 @@ export default function CoachProfileClient({
   }, []);
 
   // ✅ Live Active Clients from programs
-  const {
-    count: activeClientsCount,
-    loading: loadingActiveClients,
-  } = useActiveClientCountFromPrograms(programs);
+ const { count: activeClientsCount, loading: loadingActiveClients } =
+  useActiveClientCountFromPrograms(programs, coach.id);
 
   // ✅ Live Reviews (pagination, totals, average)
   const {

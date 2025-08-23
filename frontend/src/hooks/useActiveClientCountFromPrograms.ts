@@ -3,76 +3,132 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type MinimalProgram = { id?: string; _id?: string };
-type Client = { _id?: string; id?: string; email?: string; name?: string };
+type ProgramLite = { id?: string; _id?: string };
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+function apiBase() {
+  const raw = process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com";
+  return raw.replace(/\/+$/, "");
+}
 
-export function useActiveClientCountFromPrograms(programs: MinimalProgram[] | undefined) {
-  const [count, setCount] = useState<number | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  // only keep non-empty ids to fetch
-  const programIds = useMemo(
-    () =>
-      (programs ?? [])
-        .map((p) => p?.id || p?._id)
-        .filter((x): x is string => Boolean(x)),
-    [programs]
-  );
+export function useActiveClientCountFromPrograms(
+  programs: ProgramLite[] = [],
+  coachId?: string
+) {
+  const API = useMemo(apiBase, []);
+  const [count, setCount] = useState<number | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!programIds.length) {
-      setCount(0);
-      return;
-    }
+    let aborted = false;
 
-    const abort = new AbortController();
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-    async function run() {
+    (async () => {
       setLoading(true);
-      setError(null);
-
       try {
-        // Fetch all program details in parallel; ignore failures for individual programs
-        const results = await Promise.allSettled(
-          programIds.map(async (pid) => {
-            const res = await fetch(`${API}/programs/${pid}`, {
-  headers: token
-    ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }     : { "Content-Type": "application/json" },
-  signal: abort.signal,
-   // Rely on Bearer; no cookies -> no credentialed CORS
-  credentials: "omit",
-  mode: "cors",
-});
+        // 1) Try public coach aggregate
+        if (coachId) {
+          try {
+            const r = await fetch(`${API}/coaches/${coachId}/active-clients`, {
+              cache: "no-store",
+              credentials: "omit",
+              mode: "cors",
+            });
+            if (r.ok) {
+              const j = await r.json().catch(() => ({}));
+              if (!aborted && typeof j.count === "number") {
+                setCount(j.count);
+                return;
+              }
+            }
+          } catch {
+            // fall through
+          }
+        }
 
-            if (!res.ok) throw new Error(`program ${pid} HTTP ${res.status}`);
-            const data = await res.json();
-            const list: Client[] = data?.program?.assignedClients ?? [];
-            return list.map((c) => (c?._id || c?.id || "").toString()).filter(Boolean);
+        // 2) Fallback: sum unique across each program (public)
+        const ids = Array.from(
+          new Set(
+            programs
+              .map((p) => String(p.id ?? p._id ?? ""))
+              .filter((x) => x && x !== "undefined")
+          )
+        );
+
+        if (ids.length === 0) {
+          if (!aborted) setCount(0);
+          return;
+        }
+
+        const results = await Promise.allSettled(
+          ids.map(async (pid) => {
+            // Prefer the public count endpoint if you added it
+            const tryPublic = async () => {
+              const r1 = await fetch(`${API}/programs/${pid}/assigned-count`, {
+                cache: "no-store",
+                credentials: "omit",
+                mode: "cors",
+              });
+              if (r1.ok) {
+                const j = await r1.json().catch(() => ({}));
+                if (typeof j.count === "number") return { ids: new Set<string>(), count: j.count, raw: null };
+              }
+              return null;
+            };
+
+            const viaCount = await tryPublic();
+            if (viaCount) return viaCount;
+
+            // Last resort: read full program and derive unique client ids
+            const r = await fetch(`${API}/programs/${pid}`, {
+              cache: "no-store",
+              credentials: "omit",
+              mode: "cors",
+            });
+            if (!r.ok) throw new Error("program fetch failed");
+            const j = await r.json();
+
+            const arr: any[] =
+              j?.program?.assignedClients ??
+              j?.assignedClients ??
+              [];
+
+            const set = new Set<string>(
+              arr
+                .map((c: any) => String(c?._id ?? c?.id ?? c))
+                .filter((s: string) => !!s && s !== "undefined")
+            );
+            return { ids: set, count: set.size, raw: arr };
           })
         );
 
-        const uniq = new Set<string>();
-        for (const r of results) {
-          if (r.status === "fulfilled") {
-            for (const cid of r.value) uniq.add(cid);
+        // Merge unique ids if we had to read full program docs
+        const mergedIds = new Set<string>();
+        let fastSum = 0;
+
+        for (const item of results) {
+          if (item.status !== "fulfilled" || !item.value) continue;
+          if (item.value.ids && item.value.ids.size) {
+            item.value.ids.forEach((x: string) => mergedIds.add(x));
+          } else if (typeof item.value.count === "number") {
+            // from /assigned-count — can’t dedupe, but better than nothing
+            fastSum += item.value.count;
           }
         }
-        setCount(uniq.size);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") setError(e as Error);
-        setCount(null);
+
+        const final =
+          mergedIds.size > 0
+            ? mergedIds.size
+            : fastSum; // if only per-program counts were available
+
+        if (!aborted) setCount(final);
       } finally {
-        setLoading(false);
+        if (!aborted) setLoading(false);
       }
-    }
+    })();
 
-    run();
-    return () => abort.abort();
-  }, [API, programIds.join("|")]); // stable dep: ids change triggers refetch
+    return () => {
+      aborted = true;
+    };
+  }, [API, programs, coachId]);
 
-  return { count, loading, error };
+  return { count, loading };
 }

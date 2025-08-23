@@ -407,4 +407,45 @@ router.get("/:id/followers", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+// 🔓 PUBLIC: Unique active clients across all programs for a coach
+router.get("/:id/active-clients", async (req, res) => {
+  try {
+    const coachId = req.params.id;
+    const oid = mongoose.Types.ObjectId.isValid(coachId)
+      ? new mongoose.Types.ObjectId(coachId)
+      : null;
+
+    const match = oid ? { coachId: oid } : { coachId }; // support string or ObjectId
+
+    const result = await Program.aggregate([
+      { $match: match },
+      { $project: { assignedClients: 1 } },
+      { $unwind: "$assignedClients" },
+      // Support structures: ObjectId, string, or populated { _id: ... }
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $isArray: "$assignedClients" }, // very defensive
+              { $arrayElemAt: ["$assignedClients", 0] },
+              {
+                $ifNull: [
+                  "$assignedClients._id",
+                  "$assignedClients", // if already ObjectId/string
+                ],
+              },
+            ],
+          },
+        },
+      },
+      { $count: "count" },
+    ]);
+
+    const count = result?.[0]?.count ?? 0;
+    res.json({ count });
+  } catch (e) {
+    console.error("active-clients error", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 export default router;
