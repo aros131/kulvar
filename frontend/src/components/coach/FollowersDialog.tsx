@@ -82,59 +82,80 @@ export default function FollowersDialog({
     if (typeof initialCount === "number") setCount(initialCount);
   }, [initialCount]);
 
-  // 🔹 PREFETCH ONLY THE COUNT (on mount / coachId change)
-  useEffect(() => {
-    if (!prefetch || !coachId) return;
+   // 🔹 PREFETCH COUNT (on mount / coachId change)
+useEffect(() => {
+  if (!coachId) return;
 
-    let aborted = false;
-    (async () => {
-      try {
-        const token = cleanToken();
-        const headers: HeadersInit = token
-          ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-          : { "Content-Type": "application/json" };
+  let aborted = false;
+  (async () => {
+    try {
+      const token = cleanToken();
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+        : { "Content-Type": "application/json" };
 
-        const urls = token
-          ? [
-              `${API}/me/coaches/${coachId}/followers?limit=1`,
-              `${API}/coaches/${coachId}/followers?limit=1`,
-            ]
-          : [`${API}/coaches/${coachId}/followers?limit=1`];
+      // Use the SAME endpoint shape as the open-fetch (some backends only send totals on paginated list)
+      const urls = token
+        ? [
+            `${API}/me/coaches/${coachId}/followers?limit=50`,
+            `${API}/coaches/${coachId}/followers?limit=50`,
+          ]
+        : [`${API}/coaches/${coachId}/followers?limit=50`];
 
-        for (const url of urls) {
-          try {
-            const r = await fetch(url, {
-              headers,
-              cache: "no-store",
-              credentials: "omit", // Bearer only; avoids wildcard+credentials CORS issues
-              mode: "cors",
-            });
-            if (!r.ok) continue;
-            const j = await r.json().catch(() => ({}));
-            if (aborted) return;
+      for (const url of urls) {
+        try {
+          const r = await fetch(url, {
+            headers,
+            cache: "no-store",
+            credentials: "omit",
+            mode: "cors",
+          });
+          if (!r.ok) continue;
 
-            // Only set count if API gives an explicit total, so we don't show a truncated length
-            const total =
-              (typeof j.total === "number" && j.total) ||
-              (typeof j.count === "number" && j.count) ||
-              (typeof j.totalCount === "number" && j.totalCount) ||
-              undefined;
+          // Try total from headers (common patterns)
+          const hTotal =
+            r.headers.get("x-total-count") ||
+            r.headers.get("x-total") ||
+            // e.g. "items 0-49/123"
+            (r.headers.get("content-range")?.split("/")?.[1] ?? "");
 
-            if (typeof total === "number") setCount(total);
-            return; // success (don’t break, since we want first successful URL only)
-          } catch {
-            // try next URL
-          }
+          const j = await r.json().catch(() => ({}));
+          if (aborted) return;
+
+          const bodyTotal =
+            (typeof j.total === "number" && j.total) ||
+            (typeof j.count === "number" && j.count) ||
+            (typeof j.totalCount === "number" && j.totalCount) ||
+            (typeof j.meta?.total === "number" && j.meta.total) ||
+            undefined;
+
+          const rawItems =
+            (Array.isArray(j.items) && j.items) ||
+            (Array.isArray(j.followers) && j.followers) ||
+            (Array.isArray(j.rows) && j.rows) ||
+            (Array.isArray(j.data) && j.data) ||
+            [];
+
+          // Prefer explicit totals → else at least show what we got
+          const inferred = Number(hTotal) || bodyTotal || rawItems.length;
+
+          // Don’t drop an existing non-zero count
+          setCount((prev) => (typeof prev === "number" ? Math.max(prev, inferred) : inferred));
+          return; // success, stop trying next URL
+        } catch {
+          // try next
         }
-      } catch {
-        // swallow; count just stays as-is
       }
-    })();
+    } catch {
+      // swallow; we'll keep whatever we had
+    }
+  })();
 
-    return () => {
-      aborted = true;
-    };
-  }, [API, coachId, prefetch]);
+  return () => {
+    aborted = true;
+  };
+}, [API, coachId]);
+
 
   // 🔸 Fetch full list on first open
   useEffect(() => {
