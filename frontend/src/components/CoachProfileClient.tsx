@@ -126,15 +126,27 @@ const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolea
  ************************************/
 const SECTIONS = ["overview", "programs", "reviews", "about"] as const;
 
+/** Hardened token read: treats "null"/"undefined"/"false"/"" as no token, strips 'Bearer ' */
 const cleanToken = (): string | null => {
   try {
     const raw = localStorage.getItem("token");
     if (!raw) return null;
     const trimmed = raw.replace(/^"+|"+$/g, "").trim();
-    return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+    if (!trimmed || /^(null|undefined|false)$/i.test(trimmed)) return null;
+    const val = trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+    return val.length >= 16 ? val : null; // simple sanity check
   } catch {
     return null;
   }
+};
+
+/** Force navigation to /signup with redirect back, plus hard fallback */
+const goSignup = (router: ReturnType<typeof useRouter>) => {
+  const dest = `${SIGNUP_PATH}?redirect=${encodeURIComponent(location.pathname + location.search)}`;
+  router.push(dest);
+  setTimeout(() => {
+    if (!location.pathname.startsWith(SIGNUP_PATH)) location.href = dest;
+  }, 50);
 };
 
 export default function CoachProfileClient({
@@ -154,6 +166,11 @@ export default function CoachProfileClient({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState<(typeof SECTIONS)[number]>("overview");
   const [scrolled, setScrolled] = useState(false);
+
+  // Prefetch signup for snappier redirect
+  useEffect(() => {
+    router.prefetch(SIGNUP_PATH);
+  }, [router]);
 
   // auth state (token in localStorage)
   const [isAuthed, setIsAuthed] = useState<boolean>(false);
@@ -203,8 +220,8 @@ export default function CoachProfileClient({
   }, []);
 
   // ✅ Live Active Clients from programs
- const { count: activeClientsCount, loading: loadingActiveClients } =
-  useActiveClientCountFromPrograms(programs, coach.id);
+  const { count: activeClientsCount, loading: loadingActiveClients } =
+    useActiveClientCountFromPrograms(programs, coach.id);
 
   // ✅ Live Reviews (pagination, totals, average)
   const {
@@ -217,14 +234,14 @@ export default function CoachProfileClient({
     average: avgRating,
   } = useCoachReviews(coach.id, { pageSize: 8, initial: reviews });
 
-  const requireAuth = (action: () => void) => {
+  const requireAuth = (action: () => void | Promise<void>) => {
     if (isAuthed) return action();
     toast.message(t.signupRedirect);
-    router.push(SIGNUP_PATH);
+    goSignup(router);
   };
 
-  const handleFollow = async () => {
-    return requireAuth(async () => {
+  const handleFollow = async () =>
+    requireAuth(async () => {
       const next = !isFollowing;
       setIsFollowing(next); // optimistic
       try {
@@ -235,7 +252,6 @@ export default function CoachProfileClient({
         toast.error(locale === "tr" ? "Bir hata oluştu" : "Something went wrong");
       }
     });
-  };
 
   const handleMessage = () =>
     requireAuth(() => {
