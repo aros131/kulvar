@@ -24,6 +24,8 @@ type Props = {
   locale?: "tr" | "en";
   /** Extra classes for trigger */
   className?: string;
+  /** If true, prefetch count on mount/coachId change (default: true) */
+  prefetch?: boolean;
 };
 
 function apiBase() {
@@ -59,20 +61,85 @@ const STR = {
   },
 } as const;
 
-export default function FollowersDialog({ coachId, initialCount, locale = "tr", className }: Props) {
+export default function FollowersDialog({
+  coachId,
+  initialCount,
+  locale = "tr",
+  className,
+  prefetch = true,
+}: Props) {
   const API = useMemo(apiBase, []);
   const t = STR[locale] ?? STR.tr;
 
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // list loading
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [count, setCount] = useState<number | undefined>(initialCount);
   const [error, setError] = useState<string | null>(null);
 
-  // fetch on first open
+  // keep count in sync if parent updates initialCount
+  useEffect(() => {
+    if (typeof initialCount === "number") setCount(initialCount);
+  }, [initialCount]);
+
+  // 🔹 PREFETCH ONLY THE COUNT (on mount / coachId change)
+  useEffect(() => {
+    if (!prefetch || !coachId) return;
+
+    let aborted = false;
+    (async () => {
+      try {
+        const token = cleanToken();
+        const headers: HeadersInit = token
+          ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+          : { "Content-Type": "application/json" };
+
+        const urls = token
+          ? [
+              `${API}/me/coaches/${coachId}/followers?limit=1`,
+              `${API}/coaches/${coachId}/followers?limit=1`,
+            ]
+          : [`${API}/coaches/${coachId}/followers?limit=1`];
+
+        for (const url of urls) {
+          try {
+            const r = await fetch(url, {
+              headers,
+              cache: "no-store",
+              credentials: "omit", // Bearer only; avoids wildcard+credentials CORS issues
+              mode: "cors",
+            });
+            if (!r.ok) continue;
+            const j = await r.json().catch(() => ({}));
+            if (aborted) return;
+
+            // Only set count if API gives an explicit total, so we don't show a truncated length
+            const total =
+              (typeof j.total === "number" && j.total) ||
+              (typeof j.count === "number" && j.count) ||
+              (typeof j.totalCount === "number" && j.totalCount) ||
+              undefined;
+
+            if (typeof total === "number") setCount(total);
+            return; // success (don’t break, since we want first successful URL only)
+          } catch {
+            // try next URL
+          }
+        }
+      } catch {
+        // swallow; count just stays as-is
+      }
+    })();
+
+    return () => {
+      aborted = true;
+    };
+  }, [API, coachId, prefetch]);
+
+  // 🔸 Fetch full list on first open
   useEffect(() => {
     if (!open) return;
-    if (followers.length > 0) return; // already loaded
+    if (followers.length > 0) return; // already loaded once
 
     let aborted = false;
     (async () => {
@@ -84,7 +151,6 @@ export default function FollowersDialog({ coachId, initialCount, locale = "tr", 
           ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
           : { "Content-Type": "application/json" };
 
-        // Try /me first if token exists, then public /coaches
         const urls = token
           ? [
               `${API}/me/coaches/${coachId}/followers?limit=50`,
@@ -98,7 +164,7 @@ export default function FollowersDialog({ coachId, initialCount, locale = "tr", 
             const r = await fetch(url, {
               headers,
               cache: "no-store",
-              credentials: "omit", // CORS-friendly with Bearer
+              credentials: "omit",
               mode: "cors",
             });
             if (!r.ok) continue;
@@ -106,7 +172,6 @@ export default function FollowersDialog({ coachId, initialCount, locale = "tr", 
             const j = await r.json().catch(() => ({}));
             if (aborted) return;
 
-            // Accept several possible shapes
             const rawItems =
               (Array.isArray(j.items) && j.items) ||
               (Array.isArray(j.followers) && j.followers) ||
@@ -116,7 +181,6 @@ export default function FollowersDialog({ coachId, initialCount, locale = "tr", 
 
             const mapped: Follower[] = rawItems
               .map((u: any) => {
-                // support nested user objects (e.g., Follow doc with userId populated)
                 const user = u.user || u.userId || u;
                 const id = String(user?.id || user?._id || u?.id || u?._id || "");
                 const name = String(user?.name || u?.name || "Kullanıcı");
@@ -127,22 +191,25 @@ export default function FollowersDialog({ coachId, initialCount, locale = "tr", 
               .filter((x: Follower) => x.id);
 
             setFollowers(mapped);
-            // count: prefer explicit total; else count; else length
+
             const total =
               (typeof j.total === "number" && j.total) ||
               (typeof j.count === "number" && j.count) ||
               (typeof j.totalCount === "number" && j.totalCount) ||
               undefined;
+
+            // prefer server-provided total; else fall back to mapped length
             setCount(typeof total === "number" ? total : mapped.length);
             ok = true;
             break;
           } catch {
-            // try next URL
+            // try next
           }
         }
 
         if (!ok) {
           setFollowers([]);
+          // don't zero-out count if we already have one from prefetch/prop
           if (typeof count !== "number") setCount(0);
         }
       } catch (e: any) {
@@ -172,7 +239,7 @@ export default function FollowersDialog({ coachId, initialCount, locale = "tr", 
           aria-label={t.followers}
         >
           <Users className="h-4 w-4" />
-          {loading ? "…" : computedCount} {t.followersLower}
+          {computedCount} {t.followersLower}
         </button>
       </DialogTrigger>
 
