@@ -6,6 +6,13 @@ import UserNavbar from "@/components/nav/UserNavbar";
 import Link from "next/link";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Star } from "lucide-react";
+import { toast } from "sonner";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
@@ -36,6 +43,13 @@ interface UserProfile {
   email: string;
   profilePicture: string;
 }
+
+type CoachLite = {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  role?: string;
+};
 
 const cleanToken = (): string | null => {
   if (typeof window === "undefined") return null;
@@ -75,11 +89,130 @@ function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: st
   );
 }
 
+/* ⭐ Simple 1–5 star picker */
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          className="p-1"
+          aria-label={`${n} yıldız`}
+        >
+          <Star
+            className="h-5 w-5"
+            fill={n <= value ? "currentColor" : "none"}
+            stroke="currentColor"
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* 🗨️ Review dialog */
+function ReviewDialog({
+  coach,
+  onSubmitted,
+}: {
+  coach: CoachLite;
+  onSubmitted?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    const token = cleanToken();
+    if (!token) {
+      toast.message("Devam etmek için lütfen kayıt olun.");
+      window.location.href = `/signup?redirect=${encodeURIComponent(location.pathname + location.search)}`;
+      return;
+    }
+    if (!rating) {
+      toast.message("Lütfen bir puan seçin.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/coaches/${coach.id}/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rating, comment }),
+      });
+      if (res.ok) {
+        toast.success("Yorum gönderildi!");
+        setOpen(false);
+        setComment("");
+        setRating(5);
+        onSubmitted?.();
+      } else {
+        const j = await res.json().catch(() => ({}));
+        toast.error(j?.message || "Yorum gönderilemedi.");
+      }
+    } catch {
+      toast.error("Sunucu hatası.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Değerlendir
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{coach.name} için Değerlendirme</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div>
+              <div className="text-sm mb-1">Puan</div>
+              <StarPicker value={rating} onChange={setRating} />
+            </div>
+            <div>
+              <div className="text-sm mb-1">Yorum</div>
+              <Textarea
+                placeholder="Koç hakkındaki deneyimini yaz…"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={loading}>
+              İptal
+            </Button>
+            <Button onClick={submit} disabled={loading}>
+              {loading ? "Gönderiliyor..." : "Gönder"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // 🔹 Koçlarım state
+  const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
+  const [loadingCoaches, setLoadingCoaches] = useState(true);
 
   useEffect(() => {
     const token = cleanToken();
@@ -111,7 +244,7 @@ export default function UserDashboardPage() {
         setPrograms(enriched);
       } catch {
         setPrograms([]);
-      }
+    }
     };
 
     const fetchProgress = async () => {
@@ -149,10 +282,45 @@ export default function UserDashboardPage() {
       }
     };
 
+    // 🔹 Fetch Koçlarım
+    const fetchCoaches = async () => {
+      setLoadingCoaches(true);
+      try {
+        const res = await fetch(`${API}/me/coaches?limit=12`, { headers, cache: "no-store" });
+        const j: any = res.ok ? await res.json().catch(() => ({})) : {};
+        const arr = Array.isArray(j.items)
+          ? j.items
+          : Array.isArray(j.coaches)
+          ? j.coaches
+          : Array.isArray(j.data)
+          ? j.data
+          : [];
+        const normalized: CoachLite[] = arr
+          .map((c: any) => {
+            const obj = c?.coach || c;
+            const id = String(obj?.id ?? obj?._id ?? "");
+            if (!id) return null;
+            return {
+              id,
+              name: String(obj?.name ?? "Koç"),
+              avatarUrl: obj?.avatarUrl || obj?.avatar || obj?.profilePicture || "",
+              role: obj?.role || obj?.title || "Coach",
+            } as CoachLite;
+          })
+          .filter(Boolean);
+        setMyCoaches(normalized);
+      } catch {
+        setMyCoaches([]);
+      } finally {
+        setLoadingCoaches(false);
+      }
+    };
+
     fetchPrograms();
     fetchProgress();
     fetchUnreadNotifications();
     fetchProfile();
+    fetchCoaches();
   }, []);
 
   return (
@@ -160,7 +328,7 @@ export default function UserDashboardPage() {
       <SidebarNavUser unreadCount={unreadCount} />
 
       <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
-       <UserNavbar />
+        <UserNavbar />
 
         <section className="max-w-6xl mx-auto px-4 py-10">
           <div className="flex items-center gap-4 mb-6">
@@ -208,6 +376,51 @@ export default function UserDashboardPage() {
               ))
             ) : (
               <p>Atanmış programın yok.</p>
+            )}
+          </div>
+
+          {/* 🧑‍🤝‍🧑 Koçlarım */}
+          <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow mb-10">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Koçlarım</h2>
+              {loadingCoaches ? null : myCoaches.length ? (
+                <span className="text-sm text-zinc-500">{myCoaches.length} koç</span>
+              ) : null}
+            </div>
+
+            {loadingCoaches ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i}><CardContent className="py-6 space-y-3">
+                    <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-700 rounded" />
+                    <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded" />
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-700 rounded" />
+                    </div>
+                  </CardContent></Card>
+                ))}
+              </div>
+            ) : myCoaches.length === 0 ? (
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3">
+                Henüz koç bulunamadı.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {myCoaches.map((c) => (
+                  <Card key={c.id} className="hover:shadow-sm transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="text-base">{c.name}</CardTitle>
+                      <div className="text-xs text-zinc-500">{c.role || "Coach"}</div>
+                    </CardHeader>
+                    <CardContent className="flex items-center gap-2">
+                      <ReviewDialog coach={c} />
+                      <Link href={`/coach/${c.id}`} className="ml-auto">
+                        <Button variant="ghost">Profili Gör</Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </div>
 
