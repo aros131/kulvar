@@ -448,4 +448,28 @@ router.get("/:id/active-clients", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+router.post("/sync-self", protect, roleMiddleware(["coach"]), syncSelfAsCoach);
+export const syncSelfAsCoach = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("name profilePicture role");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const coach = await Coach.findOneAndUpdate(
+      { _id: user._id }, // keep same id as User for easy joins
+      {
+        $setOnInsert: {
+          name: user.name || "Koç",
+          avatarUrl: user.profilePicture || "",
+          role: user.role || "coach",
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    return res.json({ coach });
+  } catch (e) {
+    console.error("syncSelfAsCoach error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 export default router;
