@@ -193,8 +193,16 @@ export default function UserDashboardPage() {
   const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
 
-  const token = useMemo(cleanToken, []);
-  const headers = useMemo(() => makeAuthHeaders(token), [token]);
+const [token, setToken] = useState<string | null>(null);
+ useEffect(() => {
+   setToken(cleanToken());
+   const onStorage = (e: StorageEvent) => {
+     if (e.key === "token") setToken(cleanToken());
+   };
+   window.addEventListener("storage", onStorage);
+   return () => window.removeEventListener("storage", onStorage);
+ }, []);
+ const headers = useMemo(() => makeAuthHeaders(token), [token]);
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -271,19 +279,19 @@ export default function UserDashboardPage() {
       try {
         const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store" });
         if (r.ok) {
-          const j = await r.json().catch(() => ({}));
-          if (Array.isArray(j.items)) {
-            const items: CoachLite[] = j.items.map((c: any) => ({
-              id: String(c.id || c._id),
-              name: String(c.name || "Koç"),
-              avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
-              role: c.role || "Coach",
-            }));
-            setMyCoaches(items);
-            setLoadingCoaches(false);
-            return;
-          }
-        }
+   const j = await r.json().catch(() => ({}));
+   if (Array.isArray(j.items) && j.items.length > 0) {
+     const items: CoachLite[] = j.items.map((c: any) => ({
+       id: String(c.id || c._id),
+       name: String(c.name || "Koç"),
+       avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
+       role: c.role || "Coach",
+     }));
+     setMyCoaches(items);
+     setLoadingCoaches(false);
+     return; // only return when we actually have coaches
+   }
+}
       } catch {
         // fall through to client derivation
       }
