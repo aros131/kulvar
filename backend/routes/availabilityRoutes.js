@@ -1,14 +1,13 @@
-import { Router } from "express";
-import { requireCoach } from "../middleware/authMiddleware.js";
-import * as Ctrl from "../controllers/availabilityController.js";
+// backend/routes/availabilityRoutes.js
+import express from "express";
+import protect from "../middleware/authMiddleware.js";
+import roleMiddleware from "../middleware/roleMiddleware.js";
+import { getMyRules, putMyRules } from "../controllers/availabilityController.js";
 
-const router = Router();
+const availabilityRouter = express.Router();
 
-// coach-only: manage my weekly rules
-router.get("/me/availability/rules", requireCoach, Ctrl.getMyRules);
-router.put("/me/availability/rules", requireCoach, Ctrl.putMyRules);
+// Coach weekly availability rules
+availabilityRouter.get("/me/availability/rules", protect, roleMiddleware(["coach"]), getMyRules);
+availabilityRouter.put("/me/availability/rules", protect, roleMiddleware(["coach"]), putMyRules);
 
-// public: show generated slots for a coach
-router.get("/coaches/:id/availability", Ctrl.publicListAvailability);
-
-export default router;
+export default availabilityRouter;

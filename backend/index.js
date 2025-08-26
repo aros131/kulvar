@@ -104,7 +104,8 @@ app.use("/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/events", eventRoutes);
 app.use("/me", meRoutes);
-app.use("/coaches", availabilityRoutes); // <= fixes the 404 your FE hits
+app.use("/dashboard", availabilityRoutes);
+app.use("/", availabilityRoutes);
 app.use("/", bookingRoutes);
 /* --------------------------------- Health --------------------------------- */
 app.get("/", (_req, res) => res.send("Welcome to the backend API!"));
