@@ -349,11 +349,12 @@ export default function CoachProfileClient({
                 </Badge>
               </div>
                    <div className="mt-6">
-          <BookSessionButton
-            coachId={coach.id}
-            label={locale === "tr" ? "Randevu Al" : "Book Session"}
-          />
-        </div>
+  <BookSessionButton
+    coachId={coach.id}
+    isAuthed={isAuthed}
+    label={locale === "tr" ? "Randevu Al" : "Book Session"}
+  />
+</div>
               <p className="mt-1 text-muted-foreground">{coach.role}</p>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                 {coach.location && (

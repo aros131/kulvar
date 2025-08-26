@@ -10,49 +10,65 @@ import BookSession from "./BookSession";
 type BookSessionButtonProps = {
   coachId: string;
   label?: string;
+  /** Üst componentten auth durumu gelirse direkt onu kullanırız */
+  isAuthed?: boolean;
 };
 
-const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+function cleanToken(): string | null {
+  try {
+    const raw = localStorage.getItem("token");
+    if (!raw) return null;
+    const trimmed = raw.replace(/^"+|"+$/g, "").trim();
+    const val = trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+    return val && val.length >= 16 ? val : null;
+  } catch {
+    return null;
+  }
+}
 
-export default function BookSessionButton({ coachId, label = "Randevu Al" }: BookSessionButtonProps) {
-  const [authed, setAuthed] = useState<boolean | null>(null);
-  const [openOnMount, setOpenOnMount] = useState(false);
+export default function BookSessionButton({
+  coachId,
+  label = "Randevu Al",
+  isAuthed: isAuthedProp,
+}: BookSessionButtonProps) {
   const pathname = usePathname();
+  const [openOnMount, setOpenOnMount] = useState(false);
+  const [authed, setAuthed] = useState<boolean>(
+    typeof isAuthedProp === "boolean" ? isAuthedProp : Boolean(cleanToken())
+  );
 
+  // #book ile gelindiyse dialogu otomatik aç
   useEffect(() => {
-    // #book ile geldiyse otomatik aç
     if (typeof window !== "undefined" && window.location.hash === "#book") {
       setOpenOnMount(true);
     }
   }, []);
 
+  // Parent prop değişirse güncelle
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch(`${API}/profile`, {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (mounted) setAuthed(res.ok);
-      } catch {
-        if (mounted) setAuthed(false);
-      }
-    })();
-    return () => { mounted = false; };
+    if (typeof isAuthedProp === "boolean") setAuthed(isAuthedProp);
+  }, [isAuthedProp]);
+
+  // localStorage token değişimlerini yakala (başka tabda login/logout)
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") setAuthed(Boolean(cleanToken()));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  if (authed === null) return <Button disabled>{label}</Button>;
-
   if (!authed) {
-    const next = `${pathname}#book`; // dönüşte dialog otomatik açılsın
+    const redirect = `${pathname}#book`;
     return (
       <Button asChild size="lg">
-        <Link href={`/signup?next=${encodeURIComponent(next)}`}>{label}</Link>
+        <Link href={`/signup?redirect=${encodeURIComponent(redirect)}`}>
+          {label}
+        </Link>
       </Button>
     );
   }
 
-  // Girişliyse: diyalog açma butonu + hash geldiyse otomatik açık
+  // Girişliyse: BookSession aç/kapat butonu (hash geldiyse otomatik açık)
   return <BookSession coachId={coachId} label={label} defaultOpen={openOnMount} />;
 }
