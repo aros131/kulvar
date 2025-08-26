@@ -8,6 +8,7 @@ type Props = {
   coach: Coach & { isFollowing?: boolean };
   programs: Program[];
   reviews: Review[]; // array from /coaches/:id/reviews or /me/coaches/:id
+ isAuthed?: boolean; 
 };
 
 type Follower = { id: string; name: string };
@@ -29,7 +30,9 @@ const cleanToken = (): string | null => {
   }
 };
 
-export default function ClientBridge({ coach, programs, reviews }: Props) {
+export default function ClientBridge({ coach, programs, reviews, isAuthed
+  
+ }: Props) {
   const API = useMemo(apiBase, []);
   const [isFollowing, setIsFollowing] = useState<boolean>(!!coach.isFollowing);
   const [checkingFollow, setCheckingFollow] = useState<boolean>(false);
@@ -134,6 +137,7 @@ export default function ClientBridge({ coach, programs, reviews }: Props) {
   onMessage={(id) => { window.location.href = `/messages?to=${id}`; }}
   followers={followers}
   followerCount={typeof followerCount === "number" ? followerCount : followers.length}
+  ssrAuthed={isAuthed}
 />
 
   );

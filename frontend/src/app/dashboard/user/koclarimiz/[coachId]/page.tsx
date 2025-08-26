@@ -14,6 +14,7 @@ function apiBase() {
 export default async function Page({ params }: { params: { coachId: string } }) {
   const API = apiBase();
   const token = (await cookies()).get("token")?.value || "";
+  const isAuthed = Boolean(token); 
   const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
   // Try private bundle first (coach+programs+reviews+isFollowing+followerCount)
@@ -70,6 +71,7 @@ export default async function Page({ params }: { params: { coachId: string } }) 
           coach={coach}
           programs={programs}
           reviews={reviewItems}
+          isAuthed={isAuthed}  
         />
       </div>
     </div>

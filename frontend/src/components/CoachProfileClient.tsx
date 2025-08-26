@@ -46,6 +46,7 @@ export type CoachProfileClientProps = {
 
   followers?: { id: string; name: string }[];
   followerCount?: number;
+  ssrAuthed?: boolean;  
 };
 
 export type Program = {
@@ -161,6 +162,7 @@ export default function CoachProfileClient({
   onMessage,
   followers = [],
   followerCount,
+   ssrAuthed = false,  
 }: CoachProfileClientProps) {
   const t = STRINGS[locale] ?? STRINGS.tr;
   const router = useRouter();
@@ -173,16 +175,27 @@ export default function CoachProfileClient({
     router.prefetch(SIGNUP_PATH);
   }, [router]);
 
-  // auth state (token in localStorage)
-  const [isAuthed, setIsAuthed] = useState<boolean>(false);
-  useEffect(() => {
-    setIsAuthed(Boolean(cleanToken()));
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "token") setIsAuthed(Boolean(cleanToken()));
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+// auth state (SSR cookie OR localStorage token)
+const [isAuthed, setIsAuthed] = useState<boolean>(
+  Boolean(ssrAuthed) || Boolean(cleanToken())
+);
+
+// reflect SSR changes (e.g., navigated back after login)
+useEffect(() => {
+  setIsAuthed(Boolean(ssrAuthed) || Boolean(cleanToken()));
+}, [ssrAuthed]);
+
+// react to cross-tab login/logout
+useEffect(() => {
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === "token") {
+      setIsAuthed(Boolean(ssrAuthed) || Boolean(cleanToken()));
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => window.removeEventListener("storage", onStorage);
+}, [ssrAuthed]);
+
 
   // local follow optimistic
   const [isFollowing, setIsFollowing] = useState(isFollowingProp);
