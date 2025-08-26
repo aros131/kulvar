@@ -104,19 +104,22 @@ useEffect(() => {
   });
 }, []);
 useEffect(() => {
+  // only once
   if (didInitialScroll.current) return;
   didInitialScroll.current = true;
+
+  // don’t override deep links like /#triptych
   if (window.location.hash) return;
 
+  // gentle nudge: ~8% of viewport, capped at 120px
+  const OFFSET = Math.min(120, Math.round(window.innerHeight * 0.08));
+
   requestAnimationFrame(() => {
-    const hero = document.getElementById("hero");
-    if (!hero) return;
-    const rect = hero.getBoundingClientRect();
-    const y = rect.top + window.scrollY + rect.height * 0.4; // ~40% into hero
-    window.scrollTo({ top: y, behavior: "auto" });
+    window.scrollTo({ top: OFFSET, behavior: "auto" });
     try { ScrollTrigger.refresh(); } catch {}
   });
 }, []);
+
 
   return (
     <div ref={root} className="min-h-screen bg-background text-foreground">
