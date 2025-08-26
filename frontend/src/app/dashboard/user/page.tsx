@@ -13,10 +13,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
-
+import { storage } from "@/lib/firebase";
+import { getDownloadURL, ref as sRef } from "firebase/storage";
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/+$/, "");
-
+async function resolveAvatarUrl(input?: string): Promise<string> {
+  if (!input) return "/images/user.png";                 // fallback
+  if (/^https?:\/\//i.test(input)) return input;         // already a URL
+  if (/^gs:\/\//i.test(input)) {                         // gs://bucket/path
+    const path = input.replace(/^gs:\/\/[^/]+\//, "");   // strip bucket
+    return await getDownloadURL(sRef(storage, path));
+  }
+  // assume plain storage path (e.g., profile-pictures/uid.jpg)
+  return await getDownloadURL(sRef(storage, input));
+}
 interface UserProgram {
   programId: string;
   name: string;
@@ -279,18 +289,27 @@ const [token, setToken] = useState<string | null>(null);
       try {
         const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store" });
         if (r.ok) {
-   const j = await r.json().catch(() => ({}));
-   if (Array.isArray(j.items) && j.items.length > 0) {
-     const items: CoachLite[] = j.items.map((c: any) => ({
-       id: String(c.id || c._id),
-       name: String(c.name || "Koç"),
-       avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
-       role: c.role || "Coach",
-     }));
-     setMyCoaches(items);
-     setLoadingCoaches(false);
-     return; // only return when we actually have coaches
-   }
+  const j = await r.json().catch(() => ({}));
+  if (Array.isArray(j.items)) {
+    const rawItems: CoachLite[] = j.items.map((c: any) => ({
+      id: String(c.id || c._id),
+      name: String(c.name || "Koç"),
+      avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
+      role: c.role || "Coach",
+    }));
+
+    // ✅ resolve Firebase download URLs
+    const items = await Promise.all(
+      rawItems.map(async c => ({
+        ...c,
+        avatarUrl: await resolveAvatarUrl(c.avatarUrl),
+      }))
+    );
+
+    setMyCoaches(items);
+    setLoadingCoaches(false);
+    return;
+  }
 }
       } catch {
         // fall through to client derivation
@@ -381,7 +400,12 @@ const [token, setToken] = useState<string | null>(null);
           })
         );
 
-        setMyCoaches([...byId.values()]);
+        const items = [...byId.values()];
+const withPhotos = await Promise.all(
+  items.map(async c => ({ ...c, avatarUrl: await resolveAvatarUrl(c.avatarUrl) }))
+);
+setMyCoaches(withPhotos);
+
       } finally {
         setLoadingCoaches(false);
       }
@@ -487,9 +511,9 @@ const [token, setToken] = useState<string | null>(null);
                     </CardHeader>
                     <CardContent className="flex items-center gap-2">
                       <ReviewDialog coach={c} />
-                      <Link href={`/coach/${c.id}`} className="ml-auto">
-                        <Button variant="ghost">Profili Gör</Button>
-                      </Link>
+                      <Link href={`/koclarimiz/${c.id}`} className="ml-auto">
+  <Button variant="ghost">Profili Gör</Button>
+</Link>
                     </CardContent>
                   </Card>
                 ))}
