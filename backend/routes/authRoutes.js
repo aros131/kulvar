@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import { register, login, getUserProfile, getUserProfileById } from '../controllers/authController.js';
 import User from '../models/User.js';
-import protect from '../middleware/authMiddleware.js';
+import { requireUser as protect } from '../middleware/authMiddleware.js';
 
 router.post("/register", register); // Register users and coaches
 router.post("/login", login); // Login users and coaches
