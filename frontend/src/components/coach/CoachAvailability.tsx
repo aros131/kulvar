@@ -71,7 +71,8 @@ export default function CoachAvailability() {
     let alive = true;
     (async () => {
       try {
-        const res = await authedFetch("/me/availability/rules");
+        const res = await authedFetch("/dashboard/me/availability/rules");
+
         const rules: Rule[] = res.ok ? await res.json() : [];
         if (!alive) return;
 
@@ -123,7 +124,7 @@ export default function CoachAvailability() {
         }))
         .filter((r) => r.endMin > r.startMin);
 
-      const res = await authedFetch("/me/availability/rules", {
+      const res = await authedFetch("/dashboard/me/availability/rules", {
         method: "PUT",
         body: JSON.stringify({ rules }),
       });
