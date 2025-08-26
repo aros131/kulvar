@@ -9,7 +9,7 @@ import Link from "next/link";
 interface CoachProfile {
   name: string;
   email: string;
-  profilePicture: string;
+ profilePicture : string;
   specialization?: string;
   role: "coach";
 }

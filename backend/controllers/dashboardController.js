@@ -5,64 +5,63 @@ import Progress from '../models/Progress.js';
 import Feedback from '../models/Feedback.js';
 import Coach from "../models/Coach.js";
 // ✅ Send notification
+ // controllers/dashboardController.js
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+
+// ...
+
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+
+// GET /dashboard/user/coaches?limit=12
  const getMyCoachesForUser = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id; // from protect middleware
     const limit = Math.max(0, Math.min(100, Number(req.query.limit) || 24));
 
-    // 1) Find programs user is assigned to
-    //    Adjust the field if you store assignments differently
-    const programs = await Program.find({ assignedClients: userId })
-      .select("coach coachId createdBy owner author coachInfo")
-      .lean();
+    // 1) Find programs where this user is assigned
+    const programs = await Program.find(
+      { assignedClients: userId },
+      { coachId: 1 }
+    ).lean();
 
-    // 2) Extract coach ids from various shapes
-    const coachIdSet = new Set();
-
-    const takeCoachId = (pg) => {
-      // object shapes
-      const obj =
-        pg.coach ||
-        pg.coachInfo ||
-        pg.createdBy ||
-        pg.author ||
-        pg.owner ||
-        null;
-
-      const inlineId = obj?.id || obj?._id;
-      const directId = pg.coachId || pg.createdById || pg.ownerId;
-
-      const id = String(inlineId || directId || "");
-      if (id) coachIdSet.add(id);
-    };
-
-    for (const pg of programs) takeCoachId(pg);
-
-    const coachIds = Array.from(coachIdSet);
-    if (coachIds.length === 0) {
+    if (!programs.length) {
       return res.json({ items: [], total: 0 });
     }
 
-    // 3) Fetch those coach docs
-    const coaches = await Coach.find({ _id: { $in: coachIds } })
-      .select("_id name avatarUrl role")
+    // 2) Collect unique coach ids
+    const coachIds = Array.from(
+      new Set(
+        programs
+          .map(p => (p.coachId?._id || p.coachId || null))
+          .filter(Boolean)
+          .map(x => x.toString())
+      )
+    );
+
+    if (!coachIds.length) {
+      return res.json({ items: [], total: 0 });
+    }
+
+    // 3) Load coaches from USERS (role = coach)
+    //    NOTE: do NOT include password here
+    const coaches = await User.find(
+      { _id: { $in: coachIds }, role: { $regex: /^coach$/i } }
+    )
+      .select('_id name email role specialization profilePicture createdAt updatedAt rating __v')
       .limit(limit)
       .lean();
 
-    // 4) Normalize response
-    const items = coaches.map((c) => ({
-      id: String(c._id),
-      name: c.name || "Koç",
-      avatarUrl: c.avatarUrl || "",
-      role: c.role || "Coach",
-    }));
-
-    return res.json({ items, total: coachIds.length });
+    // 4) Return raw docs so the client gets the real profilePicture URL (Firebase HTTPS)
+    return res.json({ items: coaches, total: coaches.length });
   } catch (err) {
-    console.error("getMyCoachesForUser error:", err);
-    return res.status(500).json({ message: "Server error" });
+    console.error('getMyCoachesForUser error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
+
+
 
 // ✅ Fetch Profile
 const getProfile = async (req, res) => {
