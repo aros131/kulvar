@@ -82,6 +82,41 @@ export default function HomePage() {
 
     return () => ctx.revert();
   }, []);
+// at the top with your other hooks
+const didInitialScroll = useRef(false);
+
+// AFTER your gsap setup effect
+useEffect(() => {
+  if (didInitialScroll.current) return;
+  didInitialScroll.current = true;
+
+  // don’t override deep links like /#triptych
+  if (window.location.hash) return;
+
+  // pick how far you want to start (here: ~30% of viewport)
+  const targetY = Math.round(window.innerHeight * 0.3);
+
+  // wait a tick for images/layout, then scroll
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: targetY, behavior: "auto" });
+    // keep ScrollTrigger calculations correct
+    try { ScrollTrigger.refresh(); } catch {}
+  });
+}, []);
+useEffect(() => {
+  if (didInitialScroll.current) return;
+  didInitialScroll.current = true;
+  if (window.location.hash) return;
+
+  requestAnimationFrame(() => {
+    const hero = document.getElementById("hero");
+    if (!hero) return;
+    const rect = hero.getBoundingClientRect();
+    const y = rect.top + window.scrollY + rect.height * 0.4; // ~40% into hero
+    window.scrollTo({ top: y, behavior: "auto" });
+    try { ScrollTrigger.refresh(); } catch {}
+  });
+}, []);
 
   return (
     <div ref={root} className="min-h-screen bg-background text-foreground">
