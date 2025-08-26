@@ -13,6 +13,7 @@ import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users } from "l
 import FollowersDialog from "@/components/coach/FollowersDialog";
 import { useActiveClientCountFromPrograms } from "@/hooks/useActiveClientCountFromPrograms";
 import { useCoachReviews } from "@/hooks/useCoachReviews";
+import BookSessionButton from "@/components/BookSessionButton";
 
 /************************************
  * Types (trimmed for v1 scope)
@@ -347,6 +348,12 @@ export default function CoachProfileClient({
                   {t.verified}
                 </Badge>
               </div>
+                   <div className="mt-6">
+          <BookSessionButton
+            coachId={coach.id}
+            label={locale === "tr" ? "Randevu Al" : "Book Session"}
+          />
+        </div>
               <p className="mt-1 text-muted-foreground">{coach.role}</p>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                 {coach.location && (
