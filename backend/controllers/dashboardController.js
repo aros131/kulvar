@@ -3,16 +3,9 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import Progress from '../models/Progress.js';
 import Feedback from '../models/Feedback.js';
-import Coach from "../models/Coach.js";
-// ✅ Send notification
- // controllers/dashboardController.js
-import Program from '../models/Program.js';
-import User from '../models/User.js';
 
-// ...
 
-import Program from '../models/Program.js';
-import User from '../models/User.js';
+
 
 // GET /dashboard/user/coaches?limit=12
  const getMyCoachesForUser = async (req, res) => {
