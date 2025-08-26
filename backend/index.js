@@ -23,7 +23,8 @@ import userRoutes from "./routes/userRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import meRoutes from "./routes/meRoutes.js";
-
+import availabilityRoutes from "./routes/availabilityRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
 /* --------------------------------- Setup ---------------------------------- */
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -103,7 +104,8 @@ app.use("/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/events", eventRoutes);
 app.use("/me", meRoutes);
-
+app.use("/coaches", availabilityRoutes); // <= fixes the 404 your FE hits
+app.use("/", bookingRoutes);
 /* --------------------------------- Health --------------------------------- */
 app.get("/", (_req, res) => res.send("Welcome to the backend API!"));
 

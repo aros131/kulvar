@@ -9,22 +9,45 @@ const BookingSchema = new mongoose.Schema(
     endUtc:  { type: Date, required: true },
 
     meetingMode: { type: String, enum: ["in_person", "zoom"], required: true },
-    status: { type: String, enum: ["pending", "confirmed", "declined", "expired", "cancelled"], default: "pending", index: true },
-    // We "hold" the slot while pending; after this time we consider it expired (and reopen)
-    holdUntil: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) }, // 24h hold (tweakable)
+
+    // Pick one spelling and use it everywhere (BE + FE). Here I'll use American spelling:
+    status: { type: String, enum: ["pending", "confirmed", "declined", "expired", "canceled"], default: "pending", index: true },
+
+    // only for pending holds; will be set/cleared in hook below
+    holdUntil: { type: Date, default: null },
 
     notes: String,
-    location: String,      // optional for "yüz yüze"
-    zoomJoinUrl: String,   // (phase 2: integrate Zoom)
-    zoomStartUrl: String,  // (phase 2)
+    location: String,
+    zoomJoinUrl: String,
+    zoomStartUrl: String,
   },
   { timestamps: true }
 );
 
-// Ensure only ONE pending/confirmed booking per slot:
+// Unique for identical slot *when active* (pending/confirmed)
+// NOTE: This only covers "same start/end". Overlap checks still happen in code (see route).
 BookingSchema.index(
   { coachId: 1, startUtc: 1, endUtc: 1 },
   { unique: true, partialFilterExpression: { status: { $in: ["pending", "confirmed"] } } }
 );
+// in models/Booking.js, after schema:
+BookingSchema.index({ holdUntil: 1 }, { expireAfterSeconds: 0 });
+// and ensure you ONLY set holdUntil for status === "pending"
+
+// TTL: auto-delete expired pending holds (only docs with non-null holdUntil are affected)
+BookingSchema.index({ holdUntil: 1 }, { expireAfterSeconds: 0 });
+
+// Ensure holdUntil is present ONLY for pending
+BookingSchema.pre("validate", function (next) {
+  // use function(){} for correct 'this' binding
+  if (this.status === "pending") {
+    if (!this.holdUntil) {
+      this.holdUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    }
+  } else {
+    this.holdUntil = null; // prevent TTL from deleting non-pending docs
+  }
+  next();
+});
 
 export default mongoose.model("Booking", BookingSchema);
