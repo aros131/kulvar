@@ -82,44 +82,25 @@ export default function HomePage() {
 
     return () => ctx.revert();
   }, []);
-// at the top with your other hooks
-const didInitialScroll = useRef(false);
 
-// AFTER your gsap setup effect
-useEffect(() => {
-  if (didInitialScroll.current) return;
-  didInitialScroll.current = true;
+  // --- tiny initial scroll (once) ---
+  const didInitialScroll = useRef(false);
+  useEffect(() => {
+    if (didInitialScroll.current) return;
+    didInitialScroll.current = true;
 
-  // don’t override deep links like /#triptych
-  if (window.location.hash) return;
+    // don’t override deep links like /#triptych
+    if (window.location.hash) return;
 
-  // pick how far you want to start (here: ~30% of viewport)
-  const targetY = Math.round(window.innerHeight * 0.3);
+    // gentle nudge: ~8% of viewport, capped at 120px
+    const OFFSET = Math.min(120, Math.round(window.innerHeight * 0.08));
 
-  // wait a tick for images/layout, then scroll
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: targetY, behavior: "auto" });
-    // keep ScrollTrigger calculations correct
-    try { ScrollTrigger.refresh(); } catch {}
-  });
-}, []);
-useEffect(() => {
-  // only once
-  if (didInitialScroll.current) return;
-  didInitialScroll.current = true;
-
-  // don’t override deep links like /#triptych
-  if (window.location.hash) return;
-
-  // gentle nudge: ~8% of viewport, capped at 120px
-  const OFFSET = Math.min(120, Math.round(window.innerHeight * 0.08));
-
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: OFFSET, behavior: "auto" });
-    try { ScrollTrigger.refresh(); } catch {}
-  });
-}, []);
-
+    // wait a frame so layout/images settle, then scroll
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: OFFSET, behavior: "auto" });
+      try { ScrollTrigger.refresh(); } catch {}
+    });
+  }, []);
 
   return (
     <div ref={root} className="min-h-screen bg-background text-foreground">
@@ -149,7 +130,11 @@ useEffect(() => {
               {menuOpen ? (
                 <path fillRule="evenodd" d="M18.3 5.7a1 1 0 0 1 0 1.4L13.4 12l4.9 4.9a1 1 0 1 1-1.4 1.4L12 13.4l-4.9 4.9a1 1 0 1 1-1.4-1.4L10.6 12 5.7 7.1A1 1 0 0 1 7.1 5.7L12 10.6l4.9-4.9a1 1 0 0 1 1.4 0z" clipRule="evenodd"/>
               ) : (
-                <><path d="M4 6h16v2H4z"/><path d="M4 11h16v2H4z"/><path d="M4 16h16v2H4z"/></>
+                <>
+                  <path d="M4 6h16v2H4z"/>
+                  <path d="M4 11h16v2H4z"/>
+                  <path d="M4 16h16v2H4z"/>
+                </>
               )}
             </svg>
           </button>
