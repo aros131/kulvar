@@ -15,9 +15,12 @@ import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { storage } from "@/lib/firebase";
 import { getDownloadURL, ref as sRef } from "firebase/storage";
-const avatarStorage = storage; // Fix: define avatarStorage using imported storage
+
+const avatarStorage = storage;
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/+$/, "");
+
+/** Resolve storage paths & gs:// URLs to downloadable https URLs */
 async function resolveAvatarUrl(input?: string): Promise<string> {
   const FALLBACK = "/images/user.png";
   if (!input) return FALLBACK;
@@ -26,13 +29,13 @@ async function resolveAvatarUrl(input?: string): Promise<string> {
   if (/^https?:\/\//i.test(input)) return input;
 
   try {
-    // If it's a full gs:// url, DO NOT strip the bucket — pass it straight through
+    // Accept full gs:// URL as-is
     if (/^gs:\/\//i.test(input)) {
       const ref = sRef(avatarStorage, input);
       return await getDownloadURL(ref);
     }
 
-    // Otherwise treat it as a path like "profile-pictures/uid.jpg"
+    // Otherwise treat as a storage path ("profile-pictures/uid.jpg")
     const path = input.replace(/^\/+/, "");
     const ref = sRef(avatarStorage, path);
     return await getDownloadURL(ref);
@@ -41,6 +44,7 @@ async function resolveAvatarUrl(input?: string): Promise<string> {
     return FALLBACK;
   }
 }
+
 interface UserProgram {
   programId: string;
   name: string;
@@ -49,26 +53,22 @@ interface UserProgram {
   image?: string;
   progressPercentage: number;
 }
-
 interface UserProgress {
   totalCompletedSessions: number;
   assignedPrograms: number;
   goalTracking: { programId: string; progressPercentage: number }[];
 }
-
 interface Notification {
   _id: string;
   message: string;
   isRead: boolean;
   createdAt: string;
 }
-
 interface UserProfile {
   name: string;
   email: string;
-  profilePicture: string;
+  profilePicture: string; // can be https, gs://, or storage path
 }
-
 type CoachLite = {
   id: string;
   name: string;
@@ -213,20 +213,23 @@ export default function UserDashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
+  // 🔹 resolved URL for the profile picture (Firebase-friendly)
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+
   // 🔹 Koçlarım (derived or fetched)
   const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
 
-const [token, setToken] = useState<string | null>(null);
- useEffect(() => {
-   setToken(cleanToken());
-   const onStorage = (e: StorageEvent) => {
-     if (e.key === "token") setToken(cleanToken());
-   };
-   window.addEventListener("storage", onStorage);
-   return () => window.removeEventListener("storage", onStorage);
- }, []);
- const headers = useMemo(() => makeAuthHeaders(token), [token]);
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => {
+    setToken(cleanToken());
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") setToken(cleanToken());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  const headers = useMemo(() => makeAuthHeaders(token), [token]);
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -294,6 +297,23 @@ const [token, setToken] = useState<string | null>(null);
     fetchProfile();
   }, [headers]);
 
+  // ✅ Resolve top profile image from Firebase (gs:// or storage path → https)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const input = profile?.profilePicture;
+      if (!input) {
+        if (alive) setProfilePhotoUrl(null);
+        return;
+      }
+      const url = await resolveAvatarUrl(input);
+      if (alive) setProfilePhotoUrl(url);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [profile?.profilePicture]);
+
   // 🔎 Koçlarım: try fast API (/dashboard/user/coaches), fallback to derive from program details
   useEffect(() => {
     const run = async () => {
@@ -303,28 +323,28 @@ const [token, setToken] = useState<string | null>(null);
       try {
         const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store" });
         if (r.ok) {
-  const j = await r.json().catch(() => ({}));
-  if (Array.isArray(j.items)) {
-    const rawItems: CoachLite[] = j.items.map((c: any) => ({
-      id: String(c.id || c._id),
-      name: String(c.name || "Koç"),
-      avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
-      role: c.role || "Coach",
-    }));
+          const j = await r.json().catch(() => ({}));
+          if (Array.isArray(j.items)) {
+            const rawItems: CoachLite[] = j.items.map((c: any) => ({
+              id: String(c.id || c._id),
+              name: String(c.name || "Koç"),
+              avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
+              role: c.role || "Coach",
+            }));
 
-    // ✅ resolve Firebase download URLs
-    const items = await Promise.all(
-      rawItems.map(async c => ({
-        ...c,
-        avatarUrl: await resolveAvatarUrl(c.avatarUrl),
-      }))
-    );
+            // resolve Firebase download URLs for each coach avatar
+            const items = await Promise.all(
+              rawItems.map(async (c) => ({
+                ...c,
+                avatarUrl: await resolveAvatarUrl(c.avatarUrl),
+              }))
+            );
 
-    setMyCoaches(items);
-    setLoadingCoaches(false);
-    return;
-  }
-}
+            setMyCoaches(items);
+            setLoadingCoaches(false);
+            return;
+          }
+        }
       } catch {
         // fall through to client derivation
       }
@@ -415,11 +435,10 @@ const [token, setToken] = useState<string | null>(null);
         );
 
         const items = [...byId.values()];
-const withPhotos = await Promise.all(
-  items.map(async c => ({ ...c, avatarUrl: await resolveAvatarUrl(c.avatarUrl) }))
-);
-setMyCoaches(withPhotos);
-
+        const withPhotos = await Promise.all(
+          items.map(async (c) => ({ ...c, avatarUrl: await resolveAvatarUrl(c.avatarUrl) }))
+        );
+        setMyCoaches(withPhotos);
       } finally {
         setLoadingCoaches(false);
       }
@@ -437,9 +456,11 @@ setMyCoaches(withPhotos);
 
         <section className="max-w-6xl mx-auto px-4 py-10">
           <div className="flex items-center gap-4 mb-6">
-            {profile?.profilePicture && (
+            {(
+              profilePhotoUrl || profile?.profilePicture
+            ) && (
               <Image
-                src={profile.profilePicture}
+                src={profilePhotoUrl || "/images/user.png"}
                 alt="Profil Fotoğrafı"
                 width={80}
                 height={80}
@@ -525,9 +546,10 @@ setMyCoaches(withPhotos);
                     </CardHeader>
                     <CardContent className="flex items-center gap-2">
                       <ReviewDialog coach={c} />
+                      {/* 🔗 keep your existing link path unchanged */}
                       <Link href={`/dashboard/user/koclarimiz/${c.id}`} className="ml-auto">
-  <Button variant="ghost">Profili Gör</Button>
-</Link>
+                        <Button variant="ghost">Profili Gör</Button>
+                      </Link>
                     </CardContent>
                   </Card>
                 ))}
