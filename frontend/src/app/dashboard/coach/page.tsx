@@ -6,10 +6,13 @@ import ProgramList from "@/components/coach/ProgramList";
 import SidebarNav from "@/components/ui/SidebarNavCoach";
 import Link from "next/link";
 
+// 🔹 import the availability manager
+import CoachAvailability from "@/components/coach/CoachAvailability";
+
 interface CoachProfile {
   name: string;
   email: string;
- profilePicture : string;
+  profilePicture: string;
   specialization?: string;
   role: "coach";
 }
@@ -38,13 +41,17 @@ export default function DashboardCoachPage() {
     };
 
     const fetchUnreadCount = async () => {
-      const token = localStorage.getItem("token");
-      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const unread = (data.notifications as Notification[]).filter((n) => !n.isRead);
-      setUnreadCount(unread.length);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        const unread = (data.notifications as Notification[]).filter((n) => !n.isRead);
+        setUnreadCount(unread.length);
+      } catch {
+        // ignore silently for now
+      }
     };
 
     fetchProfile();
@@ -55,11 +62,11 @@ export default function DashboardCoachPage() {
     <div className="flex">
       <SidebarNav unreadCount={unreadCount} />
 
-      <main className="ml-16 w-full p-8">
-        <h1 className="text-2xl font-bold mb-6">Koç Paneli</h1>
+      <main className="ml-16 w-full p-8 space-y-8">
+        <h1 className="text-2xl font-bold">Koç Paneli</h1>
 
         {profile && (
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4">
             <Image
               src={profile.profilePicture || "/images/default-user.jpg"}
               alt="Profil Fotoğrafı"
@@ -78,7 +85,7 @@ export default function DashboardCoachPage() {
           </div>
         )}
 
-        <div className="mb-4">
+        <div>
           <Link href="/dashboard/coach/programs/create">
             <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
               ➕ Yeni Program Oluştur
@@ -86,7 +93,17 @@ export default function DashboardCoachPage() {
           </Link>
         </div>
 
-        <ProgramList />
+        {/* 🔹 Availability manager section */}
+        <section aria-label="Uygunluk">
+          <h2 className="text-xl font-semibold mb-3">Uygunluk</h2>
+          <CoachAvailability />
+        </section>
+
+        {/* Existing programs list */}
+        <section aria-label="Programlar">
+          <h2 className="text-xl font-semibold mb-3">Programlar</h2>
+          <ProgramList />
+        </section>
       </main>
     </div>
   );
