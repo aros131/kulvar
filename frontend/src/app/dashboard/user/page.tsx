@@ -15,17 +15,31 @@ import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { storage } from "@/lib/firebase";
 import { getDownloadURL, ref as sRef } from "firebase/storage";
+const avatarStorage = storage; // Fix: define avatarStorage using imported storage
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/+$/, "");
 async function resolveAvatarUrl(input?: string): Promise<string> {
-  if (!input) return "/images/user.png";                 // fallback
-  if (/^https?:\/\//i.test(input)) return input;         // already a URL
-  if (/^gs:\/\//i.test(input)) {                         // gs://bucket/path
-    const path = input.replace(/^gs:\/\/[^/]+\//, "");   // strip bucket
-    return await getDownloadURL(sRef(storage, path));
+  const FALLBACK = "/images/user.png";
+  if (!input) return FALLBACK;
+
+  // Already an HTTP(S) url
+  if (/^https?:\/\//i.test(input)) return input;
+
+  try {
+    // If it's a full gs:// url, DO NOT strip the bucket — pass it straight through
+    if (/^gs:\/\//i.test(input)) {
+      const ref = sRef(avatarStorage, input);
+      return await getDownloadURL(ref);
+    }
+
+    // Otherwise treat it as a path like "profile-pictures/uid.jpg"
+    const path = input.replace(/^\/+/, "");
+    const ref = sRef(avatarStorage, path);
+    return await getDownloadURL(ref);
+  } catch (err) {
+    console.warn("resolveAvatarUrl failed:", input, err);
+    return FALLBACK;
   }
-  // assume plain storage path (e.g., profile-pictures/uid.jpg)
-  return await getDownloadURL(sRef(storage, input));
 }
 interface UserProgram {
   programId: string;
@@ -511,7 +525,7 @@ setMyCoaches(withPhotos);
                     </CardHeader>
                     <CardContent className="flex items-center gap-2">
                       <ReviewDialog coach={c} />
-                      <Link href={`/koclarimiz/${c.id}`} className="ml-auto">
+                      <Link href={`/dashboard/user/koclarimiz/${c.id}`} className="ml-auto">
   <Button variant="ghost">Profili Gör</Button>
 </Link>
                     </CardContent>
