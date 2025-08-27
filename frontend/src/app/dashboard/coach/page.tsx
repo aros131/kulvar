@@ -5,7 +5,7 @@ import Image from "next/image";
 import ProgramList from "@/components/coach/ProgramList";
 import SidebarNav from "@/components/ui/SidebarNavCoach";
 import Link from "next/link";
-
+import PendingBookings from "@/components/coach/PendingBookings";
 // 🔹 import the availability manager
 import CoachAvailability from "@/components/coach/CoachAvailability";
 
@@ -80,6 +80,8 @@ export default function DashboardCoachPage() {
               <p className="text-gray-600 text-sm">{profile.email}</p>
               <p className="text-gray-600 text-sm">
                 {profile.specialization || "Uzmanlık belirtilmemiş"}
+                <h2 className="text-lg font-semibold mb-2">Bekleyen Randevu İstekleri</h2>
+<PendingBookings />
               </p>
             </div>
           </div>
