@@ -5,8 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -22,6 +27,17 @@ type Props = {
   /** Sayfa #book ile açılırsa otomatik diyalog açmak için */
   defaultOpen?: boolean;
 };
+
+function cleanToken(): string | null {
+  try {
+    const raw = localStorage.getItem("token");
+    if (!raw) return null;
+    const trimmed = raw.replace(/^"+|"+$/g, "").trim();
+    return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+  } catch {
+    return null;
+  }
+}
 
 export default function BookSession({
   coachId,
@@ -50,9 +66,12 @@ export default function BookSession({
   const availableSet = useMemo(() => new Set(availableDates), [availableDates]);
 
   const startOfToday = useMemo(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return d;
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
   }, []);
 
+  // Uygun slotları yükle
   useEffect(() => {
     if (!open) return;
     setLoadingSlots(true);
@@ -62,14 +81,19 @@ export default function BookSession({
     (async () => {
       try {
         const res = await fetch(
-          `${API}/coaches/${coachId}/availability?from=${encodeURIComponent(from!)}&to=${encodeURIComponent(to!)}&serviceMin=${durationMin}`,
+          `${API}/coaches/${coachId}/availability?from=${encodeURIComponent(from!)}&to=${encodeURIComponent(
+            to!
+          )}&serviceMin=${durationMin}`,
           { credentials: "include", signal: controller.signal }
         );
         if (!res.ok) throw new Error("Uygunluk getirilemedi");
         const data: TimeSlot[] = await res.json();
-        const sorted = data.slice().sort(
-          (a, b) => DateTime.fromISO(a.startUtc).toMillis() - DateTime.fromISO(b.startUtc).toMillis()
-        );
+        const sorted = data
+          .slice()
+          .sort(
+            (a, b) =>
+              DateTime.fromISO(a.startUtc).toMillis() - DateTime.fromISO(b.startUtc).toMillis()
+          );
         setSlots(sorted);
         const days = new Set<string>();
         for (const s of sorted) {
@@ -88,10 +112,13 @@ export default function BookSession({
     return () => controller.abort();
   }, [open, coachId, durationMin, localTz]);
 
+  // Gün değişince o güne ait slotları filtrele
   useEffect(() => {
-    if (!open) return; // diyalog kapalıyken boşuna temizleme yapma
+    if (!open) return;
     if (!date) {
-      setDaySlots([]); setSelectedSlot(null); setMeetingMode(null);
+      setDaySlots([]);
+      setSelectedSlot(null);
+      setMeetingMode(null);
       return;
     }
     const sel = DateTime.fromJSDate(date).toISODate();
@@ -103,109 +130,165 @@ export default function BookSession({
     setMeetingMode(null);
   }, [open, date, slots, localTz]);
 
-  async function submit() { /* mevcut POST akışını koru */ }
+  async function submit() {
+    if (!selectedSlot || !meetingMode) {
+      toast.error("Lütfen saat ve görüşme türü seçin.");
+      return;
+    }
+    const token = cleanToken();
+    if (!token) {
+      toast.error("Devam etmek için giriş yapın.");
+      return;
+    }
+    try {
+      setPosting(true);
+      const res = await fetch(`${API}/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          coachId,
+          startUtc: selectedSlot.startUtc,
+          endUtc: selectedSlot.endUtc,
+          meetingMode,
+        }),
+      });
+
+      if (res.status === 201) {
+        toast.success("İstek gönderildi. Koç onaylayınca bildirileceksiniz.");
+        // Temizle & modalı kapa
+        setOpen(false);
+        setSelectedSlot(null);
+        setMeetingMode(null);
+        return;
+      }
+
+      const text = await res.text().catch(() => "");
+      if (res.status === 409) {
+        toast.error("Bu saat az önce alındı. Başka bir saat seçin.");
+      } else if (res.status === 400 && /too soon/i.test(text)) {
+        toast.error("Bu saat çok yakın. Daha ileri bir saat seçin.");
+      } else if (res.status === 401) {
+        toast.error("Oturum doğrulanamadı. Yeniden giriş yapın.");
+      } else {
+        console.error("Booking failed:", res.status, text);
+        toast.error("İstek gönderilemedi. Tekrar deneyin.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Bağlantı hatası. Tekrar deneyin.");
+    } finally {
+      setPosting(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* hash scroll için bir çapa bırakıyoruz */}
+      {/* hash scroll için bir çapa */}
       <div id="book" />
       <DialogTrigger asChild>
         <Button size="lg">{label}</Button>
       </DialogTrigger>
 
       <DialogContent
-  className="
-    sm:max-w-[560px]
-    w-[calc(100vw-1rem)]
-    p-0
-    overflow-hidden
-    sm:rounded-lg rounded-xl
-  "
->
-  <div className="flex flex-col max-h-[90dvh]">
-    <DialogHeader className="p-4 border-b">
-      <DialogTitle>Uygunluk & Rezervasyon</DialogTitle>
-      <DialogDescription>
-        Tüm saatler yerel saatinize göre gösterilir ({localTz}, GMT{tzOffset}).
-      </DialogDescription>
-    </DialogHeader>
+        className="
+          sm:max-w-[560px]
+          w-[calc(100vw-1rem)]
+          p-0
+          overflow-hidden
+          sm:rounded-lg rounded-xl
+        "
+      >
+        <div className="flex flex-col max-h-[90dvh]">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Uygunluk & Rezervasyon</DialogTitle>
+            <DialogDescription>
+              Tüm saatler yerel saatinize göre gösterilir ({localTz}, GMT{tzOffset}).
+            </DialogDescription>
+          </DialogHeader>
 
-    {/* Scrollable body */}
-    <div
-      className="p-4 space-y-4 overflow-y-auto"
-      style={{ WebkitOverflowScrolling: "touch" }} // iOS momentum scroll
-    >
-      <Calendar
-        mode="single"
-        selected={date}
-        onSelect={setDate}
-        numberOfMonths={1}                // keep it compact on mobile
-        disabled={[
-          () => loadingSlots,
-          { before: startOfToday },
-        ]}
-        modifiers={{
-          available: (day) =>
-            availableSet.has(DateTime.fromJSDate(day).toISODate()!),
-        }}
-      />
+          {/* Scrollable body */}
+          <div
+            className="p-4 space-y-4 overflow-y-auto"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              numberOfMonths={1}
+              disabled={[
+                () => loadingSlots,
+                { before: startOfToday },
+              ]}
+              modifiers={{
+                available: (day) =>
+                  availableSet.has(DateTime.fromJSDate(day).toISODate()!),
+              }}
+            />
 
-      <div className="grid gap-2">
-        <div className="text-sm font-medium">Saat Seçin</div>
-        {!date && <div className="text-sm text-muted-foreground">Önce bir gün seçin.</div>}
-        {date && loadingSlots && (
-          <div className="text-sm text-muted-foreground">Saatler yükleniyor…</div>
-        )}
-        {date && !loadingSlots && daySlots.length === 0 && (
-          <div className="text-sm text-muted-foreground">Bu gün için uygun saat yok.</div>
-        )}
-        {date && !loadingSlots && daySlots.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {daySlots.map((s) => {
-              const local = DateTime.fromISO(s.startUtc).setZone(localTz);
-              const active = selectedSlot?.startUtc === s.startUtc;
-              return (
-                <Button
-                  key={s.startUtc}
-                  variant={active ? "default" : "outline"}
-                  onClick={() => setSelectedSlot(s)}
-                >
-                  {local.toFormat("HH:mm")}
-                </Button>
-              );
-            })}
+            <div className="grid gap-2">
+              <div className="text-sm font-medium">Saat Seçin</div>
+              {!date && (
+                <div className="text-sm text-muted-foreground">Önce bir gün seçin.</div>
+              )}
+              {date && loadingSlots && (
+                <div className="text-sm text-muted-foreground">Saatler yükleniyor…</div>
+              )}
+              {date && !loadingSlots && daySlots.length === 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Bu gün için uygun saat yok.
+                </div>
+              )}
+              {date && !loadingSlots && daySlots.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {daySlots.map((s) => {
+                    const local = DateTime.fromISO(s.startUtc).setZone(localTz);
+                    const active = selectedSlot?.startUtc === s.startUtc;
+                    return (
+                      <Button
+                        key={s.startUtc}
+                        variant={active ? "default" : "outline"}
+                        onClick={() => setSelectedSlot(s)}
+                      >
+                        {local.toFormat("HH:mm")}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {selectedSlot && (
+              <div className="grid gap-3 border rounded-xl p-3">
+                <div className="text-sm font-medium">Görüşme Türü</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={meetingMode === "in_person" ? "default" : "outline"}
+                    onClick={() => setMeetingMode("in_person")}
+                  >
+                    Yüz yüze
+                  </Button>
+                  <Button
+                    variant={meetingMode === "zoom" ? "default" : "outline"}
+                    onClick={() => setMeetingMode("zoom")}
+                  >
+                    Zoom
+                  </Button>
+                </div>
+                <DialogFooter className="pt-1">
+                  <Button disabled={!meetingMode || posting} onClick={submit}>
+                    {posting ? "Gönderiliyor…" : "İsteği Gönder"}
+                  </Button>
+                </DialogFooter>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {selectedSlot && (
-        <div className="grid gap-3 border rounded-xl p-3">
-          <div className="text-sm font-medium">Görüşme Türü</div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant={meetingMode === "in_person" ? "default" : "outline"}
-              onClick={() => setMeetingMode("in_person")}
-            >
-              Yüz yüze
-            </Button>
-            <Button
-              variant={meetingMode === "zoom" ? "default" : "outline"}
-              onClick={() => setMeetingMode("zoom")}
-            >
-              Zoom
-            </Button>
-          </div>
-          <DialogFooter className="pt-1">
-            <Button disabled={!meetingMode || posting} onClick={submit}>
-              {posting ? "Gönderiliyor…" : "İsteği Gönder"}
-            </Button>
-          </DialogFooter>
         </div>
-      )}
-    </div>
-  </div>
-</DialogContent>
-
+      </DialogContent>
     </Dialog>
   );
 }
