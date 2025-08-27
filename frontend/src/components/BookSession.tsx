@@ -113,83 +113,99 @@ export default function BookSession({
         <Button size="lg">{label}</Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader>
-          <DialogTitle>Uygunluk & Rezervasyon</DialogTitle>
-          <DialogDescription>
-            Tüm saatler yerel saatinize göre gösterilir ({localTz}, GMT{tzOffset}).
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+  className="
+    sm:max-w-[560px]
+    w-[calc(100vw-1rem)]
+    p-0
+    overflow-hidden
+    sm:rounded-lg rounded-xl
+  "
+>
+  <div className="flex flex-col max-h-[90dvh]">
+    <DialogHeader className="p-4 border-b">
+      <DialogTitle>Uygunluk & Rezervasyon</DialogTitle>
+      <DialogDescription>
+        Tüm saatler yerel saatinize göre gösterilir ({localTz}, GMT{tzOffset}).
+      </DialogDescription>
+    </DialogHeader>
 
-        <div className="grid gap-4">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={setDate}
-            disabled={[
-              () => loadingSlots,
-              { before: startOfToday },
-            ]}
-            modifiers={{
-              available: (day) =>
-                availableSet.has(DateTime.fromJSDate(day).toISODate()!),
-            }}
-          />
+    {/* Scrollable body */}
+    <div
+      className="p-4 space-y-4 overflow-y-auto"
+      style={{ WebkitOverflowScrolling: "touch" }} // iOS momentum scroll
+    >
+      <Calendar
+        mode="single"
+        selected={date}
+        onSelect={setDate}
+        numberOfMonths={1}                // keep it compact on mobile
+        disabled={[
+          () => loadingSlots,
+          { before: startOfToday },
+        ]}
+        modifiers={{
+          available: (day) =>
+            availableSet.has(DateTime.fromJSDate(day).toISODate()!),
+        }}
+      />
 
-          <div className="grid gap-2">
-            <div className="text-sm font-medium">Saat Seçin</div>
-            {!date && <div className="text-sm text-muted-foreground">Önce bir gün seçin.</div>}
-            {date && loadingSlots && (
-              <div className="text-sm text-muted-foreground">Saatler yükleniyor…</div>
-            )}
-            {date && !loadingSlots && daySlots.length === 0 && (
-              <div className="text-sm text-muted-foreground">Bu gün için uygun saat yok.</div>
-            )}
-            {date && !loadingSlots && daySlots.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {daySlots.map((s) => {
-                  const local = DateTime.fromISO(s.startUtc).setZone(localTz);
-                  const active = selectedSlot?.startUtc === s.startUtc;
-                  return (
-                    <Button
-                      key={s.startUtc}
-                      variant={active ? "default" : "outline"}
-                      onClick={() => setSelectedSlot(s)}
-                    >
-                      {local.toFormat("HH:mm")}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
+      <div className="grid gap-2">
+        <div className="text-sm font-medium">Saat Seçin</div>
+        {!date && <div className="text-sm text-muted-foreground">Önce bir gün seçin.</div>}
+        {date && loadingSlots && (
+          <div className="text-sm text-muted-foreground">Saatler yükleniyor…</div>
+        )}
+        {date && !loadingSlots && daySlots.length === 0 && (
+          <div className="text-sm text-muted-foreground">Bu gün için uygun saat yok.</div>
+        )}
+        {date && !loadingSlots && daySlots.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {daySlots.map((s) => {
+              const local = DateTime.fromISO(s.startUtc).setZone(localTz);
+              const active = selectedSlot?.startUtc === s.startUtc;
+              return (
+                <Button
+                  key={s.startUtc}
+                  variant={active ? "default" : "outline"}
+                  onClick={() => setSelectedSlot(s)}
+                >
+                  {local.toFormat("HH:mm")}
+                </Button>
+              );
+            })}
           </div>
+        )}
+      </div>
 
-          {selectedSlot && (
-            <div className="grid gap-3 border rounded-xl p-3">
-              <div className="text-sm font-medium">Görüşme Türü</div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant={meetingMode === "in_person" ? "default" : "outline"}
-                  onClick={() => setMeetingMode("in_person")}
-                >
-                  Yüz yüze
-                </Button>
-                <Button
-                  variant={meetingMode === "zoom" ? "default" : "outline"}
-                  onClick={() => setMeetingMode("zoom")}
-                >
-                  Zoom
-                </Button>
-              </div>
-              <DialogFooter>
-                <Button disabled={!meetingMode || posting} onClick={submit}>
-                  {posting ? "Gönderiliyor…" : "İsteği Gönder"}
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
+      {selectedSlot && (
+        <div className="grid gap-3 border rounded-xl p-3">
+          <div className="text-sm font-medium">Görüşme Türü</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={meetingMode === "in_person" ? "default" : "outline"}
+              onClick={() => setMeetingMode("in_person")}
+            >
+              Yüz yüze
+            </Button>
+            <Button
+              variant={meetingMode === "zoom" ? "default" : "outline"}
+              onClick={() => setMeetingMode("zoom")}
+            >
+              Zoom
+            </Button>
+          </div>
+          <DialogFooter className="pt-1">
+            <Button disabled={!meetingMode || posting} onClick={submit}>
+              {posting ? "Gönderiliyor…" : "İsteği Gönder"}
+            </Button>
+          </DialogFooter>
         </div>
-      </DialogContent>
+      )}
+    </div>
+  </div>
+</DialogContent>
+
     </Dialog>
   );
 }
