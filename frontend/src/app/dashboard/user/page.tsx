@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star } from "lucide-react";
+import { Star, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 
 import { storage } from "@/lib/firebase";
@@ -76,7 +76,7 @@ interface UserProgram {
   name: string;
   description: string;
   duration?: number | string;
-  image?: string;
+  image?: string; // kept for compatibility (unused)
   progressPercentage: number;
 }
 interface UserProgress {
@@ -231,6 +231,30 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/* --- Program visual (no images, always clean) --- */
+function initialsFrom(name?: string) {
+  if (!name) return "PR";
+  const parts = name.trim().split(/\s+/).slice(0, 2);
+  return parts.map((p) => p[0]).join("").toUpperCase();
+}
+
+function ProgramThumb({ name }: { name?: string }) {
+  return (
+    <div className="aspect-[16/9] relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:via-emerald-800/30 dark:to-emerald-700/20">
+      {/* soft texture */}
+      <div className="absolute inset-0 opacity-30 [background:radial-gradient(60%_60%_at_20%_0%,white,transparent_60%)] dark:opacity-20" />
+      {/* icon */}
+      <Dumbbell className="absolute right-3 top-3 h-5 w-5 text-emerald-600/70 dark:text-emerald-300/70" />
+      {/* initials */}
+      <div className="absolute inset-0 grid place-items-center">
+        <span className="text-2xl font-semibold tracking-wide text-emerald-700 dark:text-emerald-200">
+          {initialsFrom(name)}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -429,8 +453,8 @@ export default function UserDashboardPage() {
             pg.coachInfo ||
             null;
 
-        const coachId =
-          c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
+          const coachId =
+            c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
 
           if (c && (c.name || c.fullName)) {
             drafts.push({
@@ -516,13 +540,13 @@ export default function UserDashboardPage() {
           >
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
                 <Image
                   src={profilePhotoUrl || "/images/user.png"}
                   alt="Profil Fotoğrafı"
                   width={84}
                   height={84}
-                  className="relative rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
+                  className="relative rounded-2xl object-cover border border-zinc-200 dark:border-zinc-800"
                   unoptimized
                 />
               </div>
@@ -551,12 +575,7 @@ export default function UserDashboardPage() {
               value={progress?.assignedPrograms ?? 0}
               hint="Aktif"
             />
-            <StatCard
-              loading={false}
-              title="Bildirim"
-              value={unreadCount}
-              hint="Okunmamış"
-            />
+            <StatCard loading={false} title="Bildirim" value={unreadCount} hint="Okunmamış" />
           </div>
 
           {/* Programs */}
@@ -574,21 +593,8 @@ export default function UserDashboardPage() {
                     transition={{ duration: 0.35 }}
                   >
                     <Card className="group overflow-hidden border-zinc-200/70 dark:border-zinc-800/70 hover:shadow-lg hover:border-emerald-500/40 transition-all rounded-2xl">
-                      <div className="aspect-[16/9] relative bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-900 dark:to-zinc-800">
-                        {program.image ? (
-                          <Image
-                            src={program.image}
-                            alt={program.name}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="absolute inset-0 grid place-items-center text-xs text-muted-foreground">
-                            Kapak görseli yok
-                          </div>
-                        )}
-                      </div>
+                      <ProgramThumb name={program.name} />
+
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base md:text-lg line-clamp-1">
                           {program.name}
@@ -602,9 +608,7 @@ export default function UserDashboardPage() {
                       <CardContent className="pt-0 space-y-4">
                         <ProgressBar value={program.progressPercentage} />
                         <Button asChild className="w-full">
-                          <Link href={`/dashboard/user/programs/${program.programId}`}>
-                            Programa Git
-                          </Link>
+                          <Link href={`/dashboard/user/programs/${program.programId}`}>Programa Git</Link>
                         </Button>
                       </CardContent>
                     </Card>
@@ -627,11 +631,13 @@ export default function UserDashboardPage() {
 
           {/* Coaches */}
           <section className="mb-12">
-            <SectionHeader title="Koçlarım" subtitle="İletişimde olduğun koçlar" right={
-              !loadingCoaches && myCoaches.length ? (
+            <SectionHeader
+              title="Koçlarım"
+              subtitle="İletişimde olduğun koçlar"
+              right={!loadingCoaches && myCoaches.length ? (
                 <span className="text-sm text-muted-foreground">{myCoaches.length} koç</span>
-              ) : null
-            }/>
+              ) : null}
+            />
 
             {loadingCoaches ? (
               <CoachGridSkeleton />
@@ -657,7 +663,7 @@ export default function UserDashboardPage() {
                   >
                     <Card className="hover:shadow-lg transition-shadow rounded-2xl">
                       <CardHeader className="flex flex-row items-center gap-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-emerald-500/20">
+                        <Avatar className="h-10 w-10 ring-2 ring-emerald-500/20 rounded-xl">
                           <AvatarImage src={c.avatarUrl || "/images/user.png"} alt={c.name} />
                           <AvatarFallback>{(c.name?.[0] || "K").toUpperCase()}</AvatarFallback>
                         </Avatar>
@@ -798,7 +804,7 @@ function CoachGridSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <Card key={i} className="rounded-2xl">
           <CardContent className="py-6 space-y-3">
-            <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+            <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
             <div className="h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
             <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
             <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800 rounded" />
