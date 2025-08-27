@@ -3,7 +3,7 @@ const router = express.Router();
 
 import protect from '../middleware/authMiddleware.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
-import { getMyRules, putMyRules } from '../controllers/availabilityController.js';
+
 import {
   
 
@@ -34,10 +34,7 @@ router.get("/analytics/coach/summary", protect, roleMiddleware(["coach"]), getCo
 router.get("/analytics/coach", protect, roleMiddleware(["coach"]), getAnalyticsForCoach);
 router.get("/analytics/user", protect, roleMiddleware(["user"]), getAnalyticsForUser);
 
-// ✅ Notifications
-// ✅ Coach Availability (WEEKLY RULES)
-router.get("/me/availability/rules", protect, roleMiddleware(["coach"]), getMyRules);
-router.put("/me/availability/rules", protect, roleMiddleware(["coach"]), putMyRules);
+
 
 router.get("/notifications/user", protect, roleMiddleware(["user"]), getNotificationsForUser);
 router.post("/notifications/read/:notificationId", protect, markNotificationAsRead);
