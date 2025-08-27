@@ -2,10 +2,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import UserNavbar from "@/components/nav/UserNavbar";
 import Link from "next/link";
-import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import Image from "next/image";
+import { motion } from "framer-motion";
+
+import UserNavbar from "@/components/nav/UserNavbar";
+import SidebarNavUser from "@/components/ui/SidebarNavUser";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,12 +16,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
+
 import { storage } from "@/lib/firebase";
 import { getDownloadURL, ref as sRef } from "firebase/storage";
+
+/* --------------------------------- Config --------------------------------- */
 
 const avatarStorage = storage;
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/+$/, "");
+
+/* ------------------------------ Helper Utils ------------------------------ */
 
 /** Resolve storage paths & gs:// URLs to downloadable https URLs */
 async function resolveAvatarUrl(input?: string): Promise<string> {
@@ -44,6 +52,24 @@ async function resolveAvatarUrl(input?: string): Promise<string> {
     return FALLBACK;
   }
 }
+
+const cleanToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("token");
+  if (!raw) return null;
+  const trimmed = raw.replace(/^"+|"+$/g, "").trim();
+  return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+};
+
+const makeAuthHeaders = (token: string | null): Headers => {
+  const h = new Headers();
+  if (token) h.set("Authorization", `Bearer ${token}`);
+  return h;
+};
+
+const roundPct = (n: unknown) => Math.min(100, Math.max(0, Math.round(Number(n) || 0)));
+
+/* --------------------------------- Types ---------------------------------- */
 
 interface UserProgram {
   programId: string;
@@ -76,39 +102,28 @@ type CoachLite = {
   role?: string;
 };
 
-const cleanToken = (): string | null => {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("token");
-  if (!raw) return null;
-  const trimmed = raw.replace(/^"+|"+$/g, "").trim();
-  return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
-};
-
-const makeAuthHeaders = (token: string | null): Headers => {
-  const h = new Headers();
-  if (token) h.set("Authorization", `Bearer ${token}`);
-  return h;
-};
-
-const roundPct = (n: unknown) => Math.min(100, Math.max(0, Math.round(Number(n) || 0)));
+/* ------------------------------- UI Pieces -------------------------------- */
 
 function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: string }) {
   const pct = roundPct(value);
   return (
     <div>
       <div className="flex justify-between text-xs mb-1">
-        <span>{label}</span>
-        <span>{pct}%</span>
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium">{pct}%</span>
       </div>
       <div
-        className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800"
+        className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pct}
         aria-label={label}
       >
-        <div className="h-2 rounded-full bg-green-500" style={{ width: `${pct}%` }} />
+        <div
+          className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -123,10 +138,14 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
           key={n}
           type="button"
           onClick={() => onChange(n)}
-          className="p-1"
+          className="p-1 rounded hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           aria-label={`${n} yıldız`}
         >
-          <Star className="h-5 w-5" fill={n <= value ? "currentColor" : "none"} stroke="currentColor" />
+          <Star
+            className="h-5 w-5"
+            fill={n <= value ? "currentColor" : "none"}
+            stroke="currentColor"
+          />
         </button>
       ))}
     </div>
@@ -178,10 +197,14 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>Değerlendir</Button>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Değerlendir
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{coach.name} için Değerlendirme</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{coach.name} için Değerlendirme</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
             <div>
               <div className="text-sm mb-1">Puan</div>
@@ -198,8 +221,12 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
             </div>
           </div>
           <DialogFooter className="mt-4">
-            <Button variant="secondary" onClick={() => setOpen(false)} disabled={loading}>İptal</Button>
-            <Button onClick={submit} disabled={loading}>{loading ? "Gönderiliyor..." : "Gönder"}</Button>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={loading}>
+              İptal
+            </Button>
+            <Button onClick={submit} disabled={loading}>
+              {loading ? "Gönderiliyor..." : "Gönder"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -207,19 +234,27 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
   );
 }
 
+/* ------------------------------ Main Component ---------------------------- */
+
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
+  // Loading states for polished skeletons
+  const [loadingPrograms, setLoadingPrograms] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
   // 🔹 resolved URL for the profile picture (Firebase-friendly)
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
 
-  // 🔹 Koçlarım (derived or fetched)
+  // 🔹 Koçlarım
   const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
 
+  // Auth header management
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
     setToken(cleanToken());
@@ -233,6 +268,7 @@ export default function UserDashboardPage() {
 
   useEffect(() => {
     const fetchPrograms = async () => {
+      setLoadingPrograms(true);
       try {
         const res = await fetch(`${API}/progress/all-program-progress`, { headers, cache: "no-store" });
         const data = res.ok ? await res.json().catch(() => ({})) : {};
@@ -253,10 +289,13 @@ export default function UserDashboardPage() {
         setPrograms(enriched);
       } catch {
         setPrograms([]);
+      } finally {
+        setLoadingPrograms(false);
       }
     };
 
     const fetchProgress = async () => {
+      setLoadingProgress(true);
       try {
         const res = await fetch(`${API}/dashboard/analytics/user`, { headers, cache: "no-store" });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
@@ -267,6 +306,8 @@ export default function UserDashboardPage() {
         });
       } catch {
         setProgress({ totalCompletedSessions: 0, assignedPrograms: 0, goalTracking: [] });
+      } finally {
+        setLoadingProgress(false);
       }
     };
 
@@ -282,12 +323,15 @@ export default function UserDashboardPage() {
     };
 
     const fetchProfile = async () => {
+      setLoadingProfile(true);
       try {
         const res = await fetch(`${API}/profile`, { headers, cache: "no-store" });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
         setProfile(data && typeof data === "object" ? data : null);
       } catch {
         setProfile(null);
+      } finally {
+        setLoadingProfile(false);
       }
     };
 
@@ -314,7 +358,7 @@ export default function UserDashboardPage() {
     };
   }, [profile?.profilePicture]);
 
-  // 🔎 Koçlarım: try fast API (/dashboard/user/coaches), fallback to derive from program details
+  // 🔎 Koçlarım
   useEffect(() => {
     const run = async () => {
       setLoadingCoaches(true);
@@ -385,8 +429,8 @@ export default function UserDashboardPage() {
             pg.coachInfo ||
             null;
 
-          const coachId =
-            c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
+        const coachId =
+          c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
 
           if (c && (c.name || c.fullName)) {
             drafts.push({
@@ -447,132 +491,340 @@ export default function UserDashboardPage() {
     run();
   }, [programs, headers]);
 
+  /* ---------------------------- Render: Page Shell --------------------------- */
+
   return (
     <div className="flex">
       <SidebarNavUser unreadCount={unreadCount} />
 
-      <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900">
+      <main className="ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
         <UserNavbar />
 
-        <section className="max-w-6xl mx-auto px-4 py-10">
-          <div className="flex items-center gap-4 mb-6">
-            {(
-              profilePhotoUrl || profile?.profilePicture
-            ) && (
-              <Image
-                src={profilePhotoUrl || "/images/user.png"}
-                alt="Profil Fotoğrafı"
-                width={80}
-                height={80}
-                className="rounded-full object-cover border"
-                unoptimized
-              />
-            )}
-            <div>
-              <h1 className="text-3xl font-bold">Hoş Geldin, {profile?.name || "Kullanıcı"}!</h1>
-              <p className="text-zinc-600 dark:text-zinc-300">Bugün de hedeflerine ulaşmak için harika bir gün.</p>
+        {/* Decorative gradient blob */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[280px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.25),rgba(16,185,129,0)_60%)]"
+        />
+
+        <section className="max-w-6xl mx-auto px-4 pb-12 pt-8 md:pt-12">
+          {/* Hero / Greeting */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mb-8"
+          >
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
+                <Image
+                  src={profilePhotoUrl || "/images/user.png"}
+                  alt="Profil Fotoğrafı"
+                  width={84}
+                  height={84}
+                  className="relative rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
+                  unoptimized
+                />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                  Hoş Geldin, {profile?.name || "Kullanıcı"}!
+                </h1>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Bugün de hedeflerine ulaşmak için harika bir gün. Hazırsan başlayalım. 💪
+                </p>
+              </div>
             </div>
+          </motion.div>
+
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <StatCard
+              loading={loadingProgress}
+              title="Tamamlanan Seans"
+              value={progress?.totalCompletedSessions ?? 0}
+              hint="Son 30 gün içinde"
+            />
+            <StatCard
+              loading={loadingProgress}
+              title="Atanmış Program"
+              value={progress?.assignedPrograms ?? 0}
+              hint="Aktif"
+            />
+            <StatCard
+              loading={false}
+              title="Bildirim"
+              value={unreadCount}
+              hint="Okunmamış"
+            />
           </div>
 
-          {/* 🔥 Programs Section */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {programs.length > 0 ? (
-              programs.map((program) => (
-                <div
-                  key={program.programId}
-                  className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col"
-                >
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold">{program.name}</h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1 line-clamp-2">
-                      {program.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-4">
-                    <ProgressBar value={program.progressPercentage} />
-                  </div>
-
-                  <Link href={`/dashboard/user/programs/${program.programId}`} className="mt-4">
-                    <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-                      Programa Git
-                    </button>
-                  </Link>
-                </div>
-              ))
+          {/* Programs */}
+          <section className="mb-12">
+            <SectionHeader title="Programların" subtitle="Takip ettiğin programlar ve ilerlemen" />
+            {loadingPrograms ? (
+              <ProgramGridSkeleton />
+            ) : programs.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {programs.map((program) => (
+                  <motion.div
+                    key={program.programId}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    <Card className="group overflow-hidden border-zinc-200/70 dark:border-zinc-800/70 hover:shadow-lg hover:border-emerald-500/40 transition-all rounded-2xl">
+                      <div className="aspect-[16/9] relative bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-900 dark:to-zinc-800">
+                        {program.image ? (
+                          <Image
+                            src={program.image}
+                            alt={program.name}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="absolute inset-0 grid place-items-center text-xs text-muted-foreground">
+                            Kapak görseli yok
+                          </div>
+                        )}
+                      </div>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base md:text-lg line-clamp-1">
+                          {program.name}
+                        </CardTitle>
+                        {program.description ? (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {program.description}
+                          </p>
+                        ) : null}
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-4">
+                        <ProgressBar value={program.progressPercentage} />
+                        <Button asChild className="w-full">
+                          <Link href={`/dashboard/user/programs/${program.programId}`}>
+                            Programa Git
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
             ) : (
-              <p>Atanmış programın yok.</p>
+              <EmptyState
+                title="Atanmış programın yok"
+                action={
+                  <Button asChild>
+                    <Link href="/koc">Koç Bul</Link>
+                  </Button>
+                }
+              >
+                Hedeflerine uygun bir programla başlamak için bir koçla eşleş.
+              </EmptyState>
             )}
-          </div>
+          </section>
 
-          {/* 🧑‍🤝‍🧑 Koçlarım */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow mb-10">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Koçlarım</h2>
-              {loadingCoaches ? null : myCoaches.length ? (
-                <span className="text-sm text-zinc-500">{myCoaches.length} koç</span>
-              ) : null}
-            </div>
+          {/* Coaches */}
+          <section className="mb-12">
+            <SectionHeader title="Koçlarım" subtitle="İletişimde olduğun koçlar" right={
+              !loadingCoaches && myCoaches.length ? (
+                <span className="text-sm text-muted-foreground">{myCoaches.length} koç</span>
+              ) : null
+            }/>
 
             {loadingCoaches ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i}>
-                    <CardContent className="py-6 space-y-3">
-                      <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-700 rounded" />
-                      <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded" />
-                      <div className="flex gap-2 pt-2">
-                        <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-700 rounded" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <CoachGridSkeleton />
             ) : myCoaches.length === 0 ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3">Henüz koç bulunamadı.</p>
+              <EmptyState
+                title="Henüz koç bulunamadı"
+                action={
+                  <Button asChild variant="secondary">
+                    <Link href="/koc">Koçları Keşfet</Link>
+                  </Button>
+                }
+              >
+                Programlarından koç bilgisi otomatik eklenecektir.
+              </EmptyState>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {myCoaches.map((c) => (
-                  <Card key={c.id} className="hover:shadow-sm transition-shadow">
-                    <CardHeader className="flex flex-row items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={c.avatarUrl || "/images/user.png"} alt={c.name} />
-                        <AvatarFallback>{(c.name?.[0] || "K").toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle className="text-base">{c.name}</CardTitle>
-                        <div className="text-xs text-zinc-500">{c.role || "Coach"}</div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex items-center gap-2">
-                      <ReviewDialog coach={c} />
-                      {/* 🔗 keep your existing link path unchanged */}
-                      <Link href={`/dashboard/user/koclarimiz/${c.id}`} className="ml-auto">
-                        <Button variant="ghost">Profili Gör</Button>
-                      </Link>
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Card className="hover:shadow-lg transition-shadow rounded-2xl">
+                      <CardHeader className="flex flex-row items-center gap-3">
+                        <Avatar className="h-10 w-10 ring-2 ring-emerald-500/20">
+                          <AvatarImage src={c.avatarUrl || "/images/user.png"} alt={c.name} />
+                          <AvatarFallback>{(c.name?.[0] || "K").toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-base">{c.name}</CardTitle>
+                          <div className="text-xs text-muted-foreground">{c.role || "Coach"}</div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex items-center gap-2">
+                        <ReviewDialog coach={c} />
+                        <div className="ml-auto">
+                          <Button variant="ghost" asChild>
+                            <Link href={`/dashboard/user/koclarimiz/${c.id}`}>Profili Gör</Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Goal Tracking */}
+          <section>
+            <SectionHeader title="Hedef Takibi" subtitle="Program bazlı ilerlemen" />
+            {loadingProgress ? (
+              <div className="grid md:grid-cols-2 gap-5">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i} className="rounded-2xl">
+                    <CardContent className="py-6 space-y-3">
+                      <div className="h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                      <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded" />
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* 📈 Goal Tracking */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Hedef Takibi</h2>
-            {progress?.goalTracking.length ? (
-              progress.goalTracking.map((goal) => (
-                <div key={goal.programId} className="mb-6">
-                  <p className="mb-1 text-sm font-medium">Program: {goal.programId}</p>
-                  <ProgressBar value={goal.progressPercentage} />
-                </div>
-              ))
+            ) : progress?.goalTracking?.length ? (
+              <div className="grid md:grid-cols-2 gap-5">
+                {progress.goalTracking.map((goal) => (
+                  <Card key={goal.programId} className="rounded-2xl">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Program: {goal.programId}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ProgressBar value={goal.progressPercentage} />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             ) : (
-              <p>Hedef bulunamadı.</p>
+              <EmptyState title="Hedef bulunamadı">
+                Koçundan hedef belirlemeni isteyebilirsin.
+              </EmptyState>
             )}
-          </div>
+          </section>
         </section>
       </main>
     </div>
+  );
+}
+
+/* ---------------------------- Small UI Helpers ---------------------------- */
+
+function SectionHeader({
+  title,
+  subtitle,
+  right,
+}: {
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-4 md:mb-6 flex items-end justify-between gap-3">
+      <div>
+        <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{title}</h2>
+        {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  hint,
+  loading,
+}: {
+  title: string;
+  value: number | string;
+  hint?: string;
+  loading?: boolean;
+}) {
+  return (
+    <Card className="rounded-2xl border-zinc-200/70 dark:border-zinc-800/70">
+      <CardContent className="py-4">
+        {loading ? (
+          <div className="space-y-2">
+            <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-7 w-20 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
+          </div>
+        ) : (
+          <>
+            <div className="text-sm text-muted-foreground">{title}</div>
+            <div className="text-2xl font-bold mt-1">{value}</div>
+            {hint ? <div className="text-xs text-muted-foreground mt-1">{hint}</div> : null}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProgramGridSkeleton() {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i} className="overflow-hidden rounded-2xl">
+          <div className="aspect-[16/9] bg-zinc-200 dark:bg-zinc-800" />
+          <CardContent className="py-5 space-y-3">
+            <div className="h-5 w-48 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-4 w-64 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-9 w-full bg-zinc-200 dark:bg-zinc-800 rounded" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function CoachGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i} className="rounded-2xl">
+          <CardContent className="py-6 space-y-3">
+            <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+            <div className="h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800 rounded" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="py-10 text-center space-y-3">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        {children ? <p className="text-sm text-muted-foreground">{children}</p> : null}
+        {action ? <div className="pt-2">{action}</div> : null}
+      </CardContent>
+    </Card>
   );
 }

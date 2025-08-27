@@ -6,9 +6,6 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function DashboardKoclarimizPage() {
-  // TODO: Replace with actual unread count logic if available
-  const unreadCount = 0;
-
   return (
     <div className="flex">
       <SidebarNavUser unreadCount={unreadCount} />
