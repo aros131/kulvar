@@ -73,79 +73,77 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
   useEffect(() => { fetchProgramsWithClients(); }, [fetchProgramsWithClients]);
 
   return (
-    <div className="space-y-4">
-      {showHeader && <h2 className="text-xl font-semibold">Programlarınız</h2>}
+    <div className="space-y-3">
+      {showHeader && <h2 className="text-lg font-semibold">Programlarınız</h2>}
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="rounded-2xl p-4 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="rounded-xl p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <Skeleton className="h-8 w-8 rounded-xl" />
-                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-6 w-6 rounded-lg" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
-              <Skeleton className="h-4 w-full" />
-              <div className="flex gap-2 pt-1 flex-wrap">
-                <Skeleton className="h-8 w-24" />
-                <Skeleton className="h-8 w-28" />
-                <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-3 w-full" />
+              <div className="flex gap-2 pt-1">
+                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-7 w-20" />
               </div>
             </Card>
           ))}
         </div>
       ) : programsWithClients.length === 0 ? (
-        <Card className="rounded-2xl">
-          <CardContent className="py-10 text-center text-muted-foreground">
+        <Card className="rounded-xl">
+          <CardContent className="py-8 text-center text-muted-foreground text-sm">
             Hiç program bulunamadı.
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {programsWithClients.map((program, idx) => {
             const assignedCount = program.assignedClients?.length ?? 0;
 
             return (
               <motion.div
                 key={program._id}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: Math.min(idx * 0.04, 0.2) }}
+                transition={{ duration: 0.22, delay: Math.min(idx * 0.03, 0.18) }}
               >
-                <Card className="rounded-2xl hover:shadow-lg transition-shadow">
+                <Card className="rounded-xl hover:shadow-md transition-shadow">
                   {/* Header */}
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 grid place-items-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-                        <Dumbbell className="h-4 w-4" />
+                  <CardHeader className="pb-1 px-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="h-6 w-6 grid place-items-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200 shrink-0">
+                        <Dumbbell className="h-3.5 w-3.5" />
                       </div>
-                      <CardTitle className="text-base md:text-lg line-clamp-1">
+                      <CardTitle className="text-sm font-medium leading-5 truncate">
                         {program.name}
                       </CardTitle>
                     </div>
                   </CardHeader>
 
                   {/* Body */}
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {program.description}
-                    </p>
+                  <CardContent className="px-3 py-2 space-y-2">
+                    {program.description ? (
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {program.description}
+                      </p>
+                    ) : null}
                     <div className="text-xs text-muted-foreground inline-flex items-center gap-1">
-                      <Users className="h-4 w-4" />
+                      <Users className="h-3.5 w-3.5" />
                       {assignedCount} atanmış danışan
                     </div>
                   </CardContent>
 
-                  {/* Footer: compact actions + clear primary */}
-                  <CardFooter className="border-t pt-3 flex flex-col sm:flex-row sm:items-center gap-2 justify-between
-                    /* Make any button rendered by child dialog components compact */
-                    [&_button]:h-9 [&_button]:px-3 [&_button]:text-sm [&_button]:rounded-lg"
+                  {/* Footer: super-compact actions + clear primary */}
+                  <CardFooter
+                    className="px-3 pt-2 border-t flex items-center justify-between
+                               [&_button]:h-8 [&_button]:px-2.5 [&_button]:text-xs [&_button]:rounded-md"
                   >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {/* These components render their own buttons internally. */}
-                      <EditProgramDialog
-                        programId={program._id}
-                        onUpdated={fetchProgramsWithClients}
-                      />
+                    <div className="flex items-center gap-1.5">
+                      {/* These components render their own buttons internally; the selector above makes them compact */}
+                      <EditProgramDialog programId={program._id} onUpdated={fetchProgramsWithClients} />
                       <AssignClientsDialog programId={program._id} />
                       <DeleteProgramDialog
                         programId={program._id}
@@ -154,10 +152,9 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
                       />
                     </div>
 
-                    {/* Primary CTA on the right */}
-                    <Button asChild size="sm" className="gap-1">
+                    <Button asChild size="sm" className="h-8 px-2.5 text-xs gap-1">
                       <Link href={`/dashboard/coach/programs/${program._id}/edit`}>
-                        Programa bak <ArrowRight size={16} />
+                        Programa bak <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
                   </CardFooter>
@@ -172,4 +169,3 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
 };
 
 export default ProgramList;
-
