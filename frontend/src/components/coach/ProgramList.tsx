@@ -134,9 +134,9 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
 
       {/* Loading skeletons */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)] items-stretch">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="min-h-[160px] flex flex-col rounded-xl p-3 space-y-2">
+            <Card key={i} className="flex flex-col rounded-xl p-3 space-y-2 overflow-hidden">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-6 w-6 rounded-lg" />
                 <Skeleton className="h-4 w-1/2" />
@@ -157,7 +157,7 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
         </Card>
       ) : (
         // IMPORTANT: removed `auto-rows-fr` to prevent overlap. Let rows auto-size.
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)] items-stretch">
           {filtered.map((program, idx) => {
             const assignedCount = program.assignedClients?.length ?? 0;
 
@@ -168,7 +168,7 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22, delay: Math.min(idx * 0.03, 0.18) }}
               >
-                <Card className="min-h-[170px] flex flex-col rounded-xl border shadow-sm hover:shadow-md transition-shadow">
+                <Card className="flex flex-col rounded-xl border shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                   {/* Header */}
                   <CardHeader className="pb-1 px-3">
                     <div className="flex items-center gap-2 min-w-0">
