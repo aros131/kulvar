@@ -1,6 +1,8 @@
+// app/dashboard/user/koclarimiz/[coachId]/page.tsx (adjust path if needed)
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import UserNavbar from "@/components/nav/UserNavbar";
+import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import ClientBridge from "./ClientBridge";
 
 export const dynamic = "force-dynamic";
@@ -11,18 +13,46 @@ function apiBase() {
   return raw.replace(/\/+$/, "");
 }
 
+// Normalize cookie token → Authorization header
+function makeAuthHeadersFromCookieToken(token: string | undefined | null): HeadersInit {
+  const h: Record<string, string> = {};
+  if (!token) return h;
+  const trimmed = token.replace(/^"+|"+$/g, "").trim();
+  const bare = trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+  if (bare) h.Authorization = `Bearer ${bare}`;
+  return h;
+}
+
 export default async function Page({ params }: { params: { coachId: string } }) {
   const API = apiBase();
   const token = (await cookies()).get("token")?.value || "";
-  const isAuthed = Boolean(token); 
-  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+  const isAuthed = Boolean(token);
+  const authHeaders = makeAuthHeadersFromCookieToken(token);
 
-  // Try private bundle first (coach+programs+reviews+isFollowing+followerCount)
+  // ----- Fetch unread notifications on the server (if authed) -----
+  let unreadCount = 0;
+  if (isAuthed) {
+    try {
+      const r = await fetch(`${API}/dashboard/notifications/user`, {
+        headers: authHeaders,
+        cache: "no-store",
+      });
+      if (r.ok) {
+        const data = await r.json().catch(() => ({} as any));
+        const list: any[] = Array.isArray(data?.notifications) ? data.notifications : [];
+        unreadCount = list.filter((n) => !n?.isRead).length;
+      }
+    } catch {
+      unreadCount = 0; // fail-safe
+    }
+  }
+
+  // ----- Try private bundle first (coach+programs+reviews+isFollowing+followerCount) -----
   let coach: any = null;
   let programs: any[] = [];
   let reviewItems: any[] = [];
 
-  if (token) {
+  if (isAuthed) {
     const r = await fetch(`${API}/me/coaches/${params.coachId}`, { cache: "no-store", headers: authHeaders });
     if (r.ok) {
       const j = await r.json();
@@ -32,7 +62,7 @@ export default async function Page({ params }: { params: { coachId: string } }) 
     }
   }
 
-  // Fallback to public endpoints if needed
+  // ----- Fallback to public endpoints if needed -----
   if (!coach) {
     const [coachRes, progsRes, revsRes] = await Promise.all([
       fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store" }),
@@ -46,8 +76,8 @@ export default async function Page({ params }: { params: { coachId: string } }) 
     }
 
     coach = await coachRes.json().catch(() => null);
-    programs = (await progsRes.json().catch(() => ({}))).items ?? [];
-    reviewItems = (await revsRes.json().catch(() => ({}))).items ?? [];
+    programs = (await progsRes.json().catch(() => ({})))?.items ?? [];
+    reviewItems = (await revsRes.json().catch(() => ({})))?.items ?? [];
 
     // derive rating/reviewCount if not present
     let sum = 0, count = 0;
@@ -64,16 +94,23 @@ export default async function Page({ params }: { params: { coachId: string } }) 
   }
 
   return (
-    <div className="min-h-screen">
-      <UserNavbar />
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <ClientBridge
-          coach={coach}
-          programs={programs}
-          reviews={reviewItems}
-          isAuthed={isAuthed}  
-        />
-      </div>
+    <div className="relative flex">
+      {/* Left sidebar with real unread count; width is reserved via md:ml-16 below */}
+      <SidebarNavUser unreadCount={unreadCount} />
+
+      {/* Reserve space so sidebar never overlays content */}
+      <main className="w-full min-h-screen ml-0 md:ml-16">
+        <UserNavbar />
+        <div className="mx-auto max-w-6xl px-4 md:px-6 py-8">
+          <ClientBridge
+            coach={coach}
+            programs={programs}
+            reviews={reviewItems}
+            isAuthed={isAuthed}
+          />
+        </div>
+      </main>
     </div>
   );
 }
+
