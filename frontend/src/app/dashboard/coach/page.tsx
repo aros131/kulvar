@@ -1,112 +1,275 @@
+// src/app/dashboard/coach/page.tsx (or wherever your route lives)
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import ProgramList from "@/components/coach/ProgramList";
-import SidebarNav from "@/components/ui/SidebarNavCoach";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+
+import SidebarNav from "@/components/ui/SidebarNavCoach";
+import ProgramList from "@/components/coach/ProgramList";
 import PendingBookings from "@/components/coach/PendingBookings";
-// 🔹 import the availability manager
 import CoachAvailability from "@/components/coach/CoachAvailability";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge"; // if you have it; otherwise remove
+import { Plus, CalendarClock, Inbox } from "lucide-react";
+
+import { storage } from "@/lib/firebase";
+import { getDownloadURL, ref as sRef } from "firebase/storage";
+
+/* --------------------------------- Config --------------------------------- */
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+
+/* ------------------------------ Helper Utils ------------------------------ */
+const cleanToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("token");
+  if (!raw) return null;
+  const trimmed = raw.replace(/^"+|"+$/g, "").trim();
+  return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+};
+
+const makeAuthHeaders = (token: string | null): Headers => {
+  const h = new Headers();
+  if (token) h.set("Authorization", `Bearer ${token}`);
+  return h;
+};
+
+/** Resolve storage paths & gs:// URLs to downloadable https URLs */
+async function resolveAvatarUrl(input?: string): Promise<string> {
+  const FALLBACK = "/images/user.png";
+  if (!input) return FALLBACK;
+
+  // Already an HTTP(S) url
+  if (/^https?:\/\//i.test(input)) return input;
+
+  try {
+    // Accept full gs:// URL as-is
+    if (/^gs:\/\//i.test(input)) {
+      const ref = sRef(storage, input);
+      return await getDownloadURL(ref);
+    }
+    // Otherwise treat as a storage path ("profile-pictures/uid.jpg")
+    const path = input.replace(/^\/+/, "");
+    const ref = sRef(storage, path);
+    return await getDownloadURL(ref);
+  } catch (err) {
+    console.warn("resolveAvatarUrl failed:", input, err);
+    return FALLBACK;
+  }
+}
+
+/* --------------------------------- Types ---------------------------------- */
 interface CoachProfile {
   name: string;
   email: string;
-  profilePicture: string;
+  profilePicture?: string;
   specialization?: string;
   role: "coach";
 }
-
 interface Notification {
   isRead: boolean;
 }
 
+/* -------------------------------- Component ------------------------------- */
 export default function DashboardCoachPage() {
   const [profile, setProfile] = useState<CoachProfile | null>(null);
+  const [profileUrl, setProfileUrl] = useState<string>("/images/user.png");
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => {
+    setToken(cleanToken());
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") setToken(cleanToken());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  const headers = useMemo(() => makeAuthHeaders(token), [token]);
 
   useEffect(() => {
     const fetchProfile = async () => {
+      setLoadingProfile(true);
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("https://kulvar-qb7t.onrender.com/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (data.role !== "coach") throw new Error("Not a coach profile");
-        setProfile(data);
-      } catch {
+        const res = await fetch(`${API}/profile`, { headers, cache: "no-store" });
+        const data: CoachProfile = await res.json();
+        if (data?.role !== "coach") throw new Error("Not a coach profile");
+        setProfile(data || null);
+        const url = await resolveAvatarUrl(data?.profilePicture);
+        setProfileUrl(url || "/images/user.png");
+      } catch (e) {
         console.error("Profil verisi alınamadı.");
+      } finally {
+        setLoadingProfile(false);
       }
     };
 
     const fetchUnreadCount = async () => {
+      setLoadingNotifications(true);
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API}/dashboard/notifications/user`, { headers, cache: "no-store" });
         const data = await res.json();
-        const unread = (data.notifications as Notification[]).filter((n) => !n.isRead);
+        const unread = (Array.isArray(data?.notifications) ? data.notifications : []).filter(
+          (n: Notification) => !n.isRead
+        );
         setUnreadCount(unread.length);
       } catch {
-        // ignore silently for now
+        // ignore silently
+      } finally {
+        setLoadingNotifications(false);
       }
     };
 
     fetchProfile();
     fetchUnreadCount();
-  }, []);
+  }, [headers]);
 
   return (
     <div className="flex">
       <SidebarNav unreadCount={unreadCount} />
 
-      <main className="ml-16 w-full p-8 space-y-8">
-        <h1 className="text-2xl font-bold">Koç Paneli</h1>
+      <main className="ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+        {/* Top navbar area is yours if needed */}
 
-        {profile && (
-          <div className="flex items-center gap-4">
-            <Image
-              src={profile.profilePicture || "/images/default-user.jpg"}
-              alt="Profil Fotoğrafı"
-              width={80}
-              height={80}
-              className="rounded-full object-cover border"
-              unoptimized
-            />
+        {/* Decorative gradient blob */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[260px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.22),rgba(16,185,129,0)_60%)]"
+        />
+
+        <section className="max-w-6xl mx-auto px-4 py-8 md:py-10 space-y-8">
+          {/* Page Title */}
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Hoş Geldin, {profile.name}!</h2>
-              <p className="text-gray-600 text-sm">{profile.email}</p>
-              <p className="text-gray-600 text-sm">
-                {profile.specialization || "Uzmanlık belirtilmemiş"}
-                <h2 className="text-lg font-semibold mb-2">Bekleyen Randevu İstekleri</h2>
-<PendingBookings />
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Koç Paneli</h1>
+              <p className="text-sm text-muted-foreground">
+                Randevularını, uygunluğunu ve programlarını tek yerden yönet.
               </p>
             </div>
+
+            <Button asChild size="sm" className="gap-2">
+              <Link href="/dashboard/coach/programs/create">
+                <Plus className="h-4 w-4" />
+                Yeni Program
+              </Link>
+            </Button>
           </div>
-        )}
 
-        <div>
-          <Link href="/dashboard/coach/programs/create">
-            <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-              ➕ Yeni Program Oluştur
-            </button>
-          </Link>
-        </div>
+          {/* Profile card */}
+          <Card className="rounded-2xl">
+            <CardContent className="py-5">
+              {loadingProfile ? (
+                <ProfileSkeleton />
+              ) : profile ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35 }}
+                  className="flex items-center gap-4"
+                >
+                  <div className="relative">
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
+                    <Image
+                      src={profileUrl || "/images/user.png"}
+                      alt="Profil Fotoğrafı"
+                      width={84}
+                      height={84}
+                      className="relative rounded-2xl object-cover border border-zinc-200 dark:border-zinc-800"
+                      unoptimized
+                    />
+                  </div>
 
-        {/* 🔹 Availability manager section */}
-        <section aria-label="Uygunluk">
-          <h2 className="text-xl font-semibold mb-3">Uygunluk</h2>
-          <CoachAvailability />
-        </section>
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-xl font-semibold leading-none">{profile.name}</h2>
+                      {profile.specialization ? (
+                        <Badge variant="secondary" className="rounded-lg">
+                          {profile.specialization}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="rounded-lg">Uzmanlık yok</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{profile.email}</p>
+                  </div>
 
-        {/* Existing programs list */}
-        <section aria-label="Programlar">
-          <h2 className="text-xl font-semibold mb-3">Programlar</h2>
-          <ProgramList />
+                  <Card className="hidden sm:block rounded-xl">
+                    <CardContent className="px-4 py-2 text-sm text-muted-foreground flex items-center gap-2">
+                      <Inbox className="h-4 w-4" /> Okunmamış bildirim:{" "}
+                      <span className="font-semibold text-foreground">{unreadCount}</span>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ) : (
+                <div className="text-sm text-muted-foreground">Profil yüklenemedi.</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Two-column: Pending Bookings & Availability */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="rounded-2xl">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Inbox className="h-4 w-4" />
+                  <CardTitle className="text-base md:text-lg">Bekleyen Randevu İstekleri</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <PendingBookings />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4" />
+                  <CardTitle className="text-base md:text-lg">Uygunluk</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <CoachAvailability />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Programs */}
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2 flex-row items-center justify-between">
+              <CardTitle className="text-base md:text-lg">Programlar</CardTitle>
+              <Button asChild variant="secondary" size="sm" className="gap-2">
+                <Link href="/dashboard/coach/programs/create">
+                  <Plus className="h-4 w-4" />
+                  Yeni Program
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ProgramList />
+            </CardContent>
+          </Card>
         </section>
       </main>
+    </div>
+  );
+}
+
+/* --------------------------------- UI Bits -------------------------------- */
+function ProfileSkeleton() {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="h-[84px] w-[84px] rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
+      <div className="space-y-2">
+        <div className="h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
+        <div className="h-4 w-56 bg-zinc-200 dark:bg-zinc-800 rounded" />
+      </div>
     </div>
   );
 }
