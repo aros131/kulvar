@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import UserNavbar from "@/components/nav/UserNavbar";
 import SidebarNavUserLoader from "@/components/SidebarNavUserLoader";
+import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
 import ClientBridge from "./ClientBridge";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function Page({ params }: { params: { coachId: string } }) 
   const isAuthed = Boolean(token);
   const authHeaders = makeAuthHeadersFromCookieToken(token);
 
-  // ----- unread count (server) -----
+  // unread count (server)
   let unreadCount = 0;
   if (isAuthed) {
     try {
@@ -41,12 +42,10 @@ export default async function Page({ params }: { params: { coachId: string } }) 
         const list: any[] = Array.isArray(data?.notifications) ? data.notifications : [];
         unreadCount = list.filter((n) => !n?.isRead).length;
       }
-    } catch {
-      unreadCount = 0;
-    }
+    } catch {}
   }
 
-  // ----- private bundle first -----
+  // private bundle first
   let coach: any = null;
   let programs: any[] = [];
   let reviewItems: any[] = [];
@@ -66,7 +65,7 @@ export default async function Page({ params }: { params: { coachId: string } }) 
     } catch {}
   }
 
-  // ----- fallback public -----
+  // fallback public
   if (!coach) {
     const [coachRes, progsRes, revsRes] = await Promise.all([
       fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store" }),
@@ -99,20 +98,23 @@ export default async function Page({ params }: { params: { coachId: string } }) 
 
   return (
     <div className="relative flex min-h-screen">
-      {/* Fixed sidebar (client) */}
-      <SidebarNavUserLoader />
+      {/* Sidebar visible only on md+ to avoid overlay on mobile */}
+      <div className="hidden md:block">
+        <SidebarNavUserLoader />
+      </div>
 
-      {/* Spacer that matches the sidebar width so content never underlaps it */}
+      {/* Spacer that matches sidebar width on md+ */}
       <div className="hidden md:block w-16 shrink-0" aria-hidden />
 
       {/* Main content */}
       <main className="w-full min-h-screen isolate">
-        {/* Sticky navbar with higher z-index so it stays above sidebar at the top */}
+        {/* Sticky navbar with higher z-index */}
         <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
           <UserNavbar unreadCount={unreadCount} />
         </div>
 
-        <div className="mx-auto max-w-6xl px-4 md:px-6 py-8">
+        {/* content (extra bottom padding so the mobile bottom bar never covers it) */}
+        <div className="mx-auto max-w-6xl px-4 md:px-6 py-8 pb-16 md:pb-8">
           <ClientBridge
             coach={coach}
             programs={programs}
@@ -120,6 +122,9 @@ export default async function Page({ params }: { params: { coachId: string } }) 
             isAuthed={isAuthed}
           />
         </div>
+
+        {/* mobile-only bottom nav */}
+        <MobileUserBottomNav />
       </main>
     </div>
   );
