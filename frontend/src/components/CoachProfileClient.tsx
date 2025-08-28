@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image"; // ⬅️ added
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,7 @@ export type CoachProfileClientProps = {
 
   followers?: { id: string; name: string }[];
   followerCount?: number;
-  ssrAuthed?: boolean;  
+  ssrAuthed?: boolean;
 };
 
 export type Program = {
@@ -136,7 +137,7 @@ const cleanToken = (): string | null => {
     const trimmed = raw.replace(/^"+|"+$/g, "").trim();
     if (!trimmed || /^(null|undefined|false)$/i.test(trimmed)) return null;
     const val = trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
-    return val.length >= 16 ? val : null; // simple sanity check
+    return val.length >= 16 ? val : null;
   } catch {
     return null;
   }
@@ -162,7 +163,7 @@ export default function CoachProfileClient({
   onMessage,
   followers = [],
   followerCount,
-   ssrAuthed = false,  
+  ssrAuthed = false,
 }: CoachProfileClientProps) {
   const t = STRINGS[locale] ?? STRINGS.tr;
   const router = useRouter();
@@ -175,27 +176,24 @@ export default function CoachProfileClient({
     router.prefetch(SIGNUP_PATH);
   }, [router]);
 
-// auth state (SSR cookie OR localStorage token)
-const [isAuthed, setIsAuthed] = useState<boolean>(
-  Boolean(ssrAuthed) || Boolean(cleanToken())
-);
+  // auth state (SSR cookie OR localStorage token)
+  const [isAuthed, setIsAuthed] = useState<boolean>(Boolean(ssrAuthed) || Boolean(cleanToken()));
 
-// reflect SSR changes (e.g., navigated back after login)
-useEffect(() => {
-  setIsAuthed(Boolean(ssrAuthed) || Boolean(cleanToken()));
-}, [ssrAuthed]);
+  // reflect SSR changes (e.g., navigated back after login)
+  useEffect(() => {
+    setIsAuthed(Boolean(ssrAuthed) || Boolean(cleanToken()));
+  }, [ssrAuthed]);
 
-// react to cross-tab login/logout
-useEffect(() => {
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === "token") {
-      setIsAuthed(Boolean(ssrAuthed) || Boolean(cleanToken()));
-    }
-  };
-  window.addEventListener("storage", onStorage);
-  return () => window.removeEventListener("storage", onStorage);
-}, [ssrAuthed]);
-
+  // react to cross-tab login/logout
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") {
+        setIsAuthed(Boolean(ssrAuthed) || Boolean(cleanToken()));
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [ssrAuthed]);
 
   // local follow optimistic
   const [isFollowing, setIsFollowing] = useState(isFollowingProp);
@@ -294,14 +292,19 @@ useEffect(() => {
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex h-14 items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <Avatar className="h-8 w-8">
-                <AvatarImage
+              {/* ⬇️ Square, rounded-2xl PP (small) */}
+              <div className="h-8 w-8 rounded-2xl overflow-hidden border bg-background shrink-0">
+                <Image
                   src={coach.avatarUrl || "/images/user.png"}
                   alt={coach.name}
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
                   onError={(e) => ((e.currentTarget as HTMLImageElement).src = "/images/user.png")}
+                  unoptimized
                 />
-                <AvatarFallback>{coach.name?.slice(0, 2)?.toUpperCase() ?? "C"}</AvatarFallback>
-              </Avatar>
+              </div>
+
               <div className="truncate">
                 <div className="text-sm font-medium leading-none truncate">{coach.name}</div>
                 <div className="text-xs text-muted-foreground truncate">{coach.role ?? "Coach"}</div>
@@ -344,14 +347,19 @@ useEffect(() => {
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
           <div className="flex flex-col md:flex-row md:items-end gap-6">
-            <Avatar className="h-28 w-28 ring-4 ring-background shadow-md">
-              <AvatarImage
+            {/* ⬇️ Square, rounded-2xl PP with subtle glow (large) */}
+            <div className="relative">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
+              <Image
                 src={coach.avatarUrl || "/images/user.png"}
                 alt={coach.name}
+                width={112}
+                height={112}
+                className="relative h-28 w-28 rounded-2xl ring-4 ring-background shadow-md object-cover border border-zinc-200 dark:border-zinc-800"
                 onError={(e) => ((e.currentTarget as HTMLImageElement).src = "/images/user.png")}
+                unoptimized
               />
-              <AvatarFallback className="text-xl">{coach.name?.slice(0, 2)?.toUpperCase() ?? "C"}</AvatarFallback>
-            </Avatar>
+            </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -361,13 +369,13 @@ useEffect(() => {
                   {t.verified}
                 </Badge>
               </div>
-                   <div className="mt-6">
-  <BookSessionButton
-    coachId={coach.id}
-    isAuthed={isAuthed}
-    label={locale === "tr" ? "Randevu Al" : "Book Session"}
-  />
-</div>
+              <div className="mt-6">
+                <BookSessionButton
+                  coachId={coach.id}
+                  isAuthed={isAuthed}
+                  label={locale === "tr" ? "Randevu Al" : "Book Session"}
+                />
+              </div>
               <p className="mt-1 text-muted-foreground">{coach.role}</p>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                 {coach.location && (
@@ -378,7 +386,6 @@ useEffect(() => {
                 )}
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Star className="h-4 w-4" />
-                  {/* Prefer live avg + total, fallback to coach props */}
                   {typeof (avgRating ?? coach.rating) === "number"
                     ? (avgRating ?? coach.rating)!.toFixed(1)
                     : "-"}{" "}
@@ -606,6 +613,7 @@ function ReviewRow({ r, locale = "tr" }: { r: Review; locale?: "tr" | "en" }) {
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {/* Review avatars can stay circular */}
             <Avatar className="h-8 w-8">
               <AvatarFallback>{r.author.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
@@ -639,7 +647,8 @@ function CoachProfileSkeleton() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
       <div className="flex items-center gap-4">
-        <Skeleton className="h-24 w-24 rounded-full" />
+        {/* Square skeleton to match new PP shape */}
+        <Skeleton className="h-24 w-24 rounded-2xl" />
         <div className="space-y-3">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-72" />

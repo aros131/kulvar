@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image"; // ⬅️ added
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -51,16 +51,15 @@ const normalizeSpecParam = (s: string): SpecValue | "" => {
 };
 
 export default function CoachesPageBody({
-  basePath = "/koc",         // where this page lives (for URL sync)
-  profilePrefix = "/koc",    // where profile opens (public /koc vs private /uye/koc)
+  basePath = "/koc",
+  profilePrefix = "/koc",
 }: { basePath?: string; profilePrefix?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const rawSpec = (searchParams?.get("spec") || "").trim();
-  const initialSpec = normalizeSpecParam(rawSpec === "all" ? "" : rawSpec); // sanitize ?spec
+  const initialSpec = normalizeSpecParam(rawSpec === "all" ? "" : rawSpec);
   const initialQuery = (searchParams?.get("q") || "").trim();
-  const debug = searchParams?.get("debug") === "1";
 
   const [query, setQuery] = useState<string>(initialQuery);
   const [specFilter, setSpecFilter] = useState<SpecValue | "">(initialSpec);
@@ -74,7 +73,7 @@ export default function CoachesPageBody({
 
   const [debugInfo, setDebugInfo] = useState<{ url?: string; status?: number; shape?: string; count?: number } | null>(null);
 
-  // sync ?q= and ?spec= in the URL (works on both paths)
+  // sync ?q= and ?spec= in the URL
   useEffect(() => {
     const sp = new URLSearchParams(Array.from(searchParams?.entries() || []));
     if (query) sp.set("q", query); else sp.delete("q");
@@ -94,7 +93,7 @@ export default function CoachesPageBody({
       setLoading(false);
       if (items) {
         setCoachesRaw(items);
-        setCoaches(applySpecFilter(items, initialSpec)); // server + client safety
+        setCoaches(applySpecFilter(items, initialSpec));
       } else {
         setCoachesRaw([]);
         setCoaches([]);
@@ -105,7 +104,7 @@ export default function CoachesPageBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // live search or spec change (debounced)
+  // live search/spec change (debounced)
   useEffect(() => {
     if (loading) return;
     const t = setTimeout(async () => {
@@ -115,7 +114,7 @@ export default function CoachesPageBody({
       setFetching(false);
       if (items) {
         setCoachesRaw(items);
-        setCoaches(applySpecFilter(items, specFilter)); // server + client safety
+        setCoaches(applySpecFilter(items, specFilter));
       } else {
         setCoachesRaw([]);
         setCoaches([]);
@@ -176,7 +175,6 @@ export default function CoachesPageBody({
             />
           </div>
 
-          {/* Specialization dropdown */}
           <Select
             value={specFilter || "all"}
             onValueChange={(v) => setSpecFilter(v === "all" ? "" : normalizeSpecParam(v))}
@@ -203,8 +201,6 @@ export default function CoachesPageBody({
         </div>
       </div>
 
-      {/* Optional debug */}
-      {/* debug panel kept as you had it */}
       {/* Result meta */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm text-muted-foreground">{resultCountText}</span>
@@ -232,18 +228,38 @@ export default function CoachesPageBody({
               <Link href={`${profilePrefix}/${c._id}`} prefetch={false} className="block group">
                 <Card className="transition hover:shadow-lg">
                   <CardHeader className="flex flex-row items-center gap-3 pb-2">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={c.avatar || c.profilePicture || ""} alt={c.name} />
-                      <AvatarFallback>{initials(c.name)}</AvatarFallback>
-                    </Avatar>
+                    {/* ⬇️ Rounded-square PP */}
+                    <div className="h-12 w-12 rounded-2xl overflow-hidden border bg-background shrink-0">
+                      <Image
+                        src={c.avatar || c.profilePicture || "/images/user.png"}
+                        alt={c.name}
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-cover"
+                        onError={(e) => ((e.currentTarget as HTMLImageElement).src = "/images/user.png")}
+                        unoptimized
+                      />
+                    </div>
+
                     <div className="min-w-0">
                       <CardTitle className="truncate group-hover:underline">{c.name}</CardTitle>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {c.city && (<span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.city}</span>)}
-                        {typeof c.rating === "number" && (<span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5" />{c.rating.toFixed(1)}</span>)}
+                        {c.city && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {c.city}
+                          </span>
+                        )}
+                        {typeof c.rating === "number" && (
+                          <span className="inline-flex items-center gap-1">
+                            <Star className="h-3.5 w-3.5" />
+                            {c.rating.toFixed(1)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
+
                   <CardContent className="pt-0">
                     <div className="flex flex-wrap gap-2 mb-3">
                       {toArray(c.specialization).slice(0, 3).map((spec) => (
@@ -256,7 +272,9 @@ export default function CoachesPageBody({
                         <Badge variant="outline">+{toArray(c.specialization).length - 3}</Badge>
                       )}
                     </div>
-                    {c.bio && (<p className="text-sm text-muted-foreground line-clamp-3 mb-3">{c.bio}</p>)}
+                    {c.bio && (
+                      <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{c.bio}</p>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
                         {c.programsCount ? `${c.programsCount} program` : "Program bilgisi yok"}
@@ -281,13 +299,15 @@ function initials(name?: string) {
   const two = (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
   return two.toUpperCase() || parts[0]?.[0]?.toUpperCase() || "KÇ";
 }
+
 function CoachSkeletonGrid() {
   return (
     <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <Card key={i}>
           <CardHeader className="flex flex-row items-center gap-3 pb-2">
-            <Skeleton className="h-12 w-12 rounded-full" />
+            {/* ⬇️ square skeleton */}
+            <Skeleton className="h-12 w-12 rounded-2xl" />
             <div className="w-full">
               <Skeleton className="h-5 w-2/3 mb-2" />
               <div className="flex gap-2">
@@ -334,16 +354,16 @@ async function fetchCoaches(
 ): Promise<Coach[] | null> {
   const p = (key?: string) => {
     const params = new URLSearchParams();
-    if (key && q) params.set(key, q);       // search | q | name
+    if (key && q) params.set(key, q);
     const s = normalizeSpecParam(spec);
-    if (s) params.set("spec", s);           // sanitized spec
+    if (s) params.set("spec", s);
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
 
   const keys = q ? ["search", "q", "name"] : [""];
   const candidates = keys.map((k) => `${API}/coaches${p(k || undefined)}`);
-  candidates.push(`${API}/coaches${p()}`);  // plain fallback
+  candidates.push(`${API}/coaches${p()}`);
 
   const onlyCoaches = (arr: any[]): Coach[] =>
     (arr || []).filter(
