@@ -46,7 +46,8 @@ const cleanToken = (): string | null => {
 
 /* ------------------------------ Page --------------------------- */
 export default function UserProfilePage() {
-  const [token, setToken] = useState<string | null>(null);
+  // undefined = not checked yet; null = checked and no token; string = token
+  const [token, setToken] = useState<string | null | undefined>(undefined);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -57,11 +58,11 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // keep token in state + react to cross-tab changes
+  // resolve token once (and on storage changes)
   useEffect(() => {
-    setToken(cleanToken());
+    setToken(cleanToken() ?? null);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "token") setToken(cleanToken());
+      if (e.key === "token") setToken(cleanToken() ?? null);
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -71,40 +72,44 @@ export default function UserProfilePage() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }, [token]);
 
-  // Fetch profile
+  // Fetch profile only after token state is known
   useEffect(() => {
-    const fetchProfile = async () => {
+    if (token === undefined) return; // wait until we know
+    if (!token) {
+      setLoading(false); // not logged in; just stop loading silently
+      return;
+    }
+    const run = async () => {
       try {
-        if (!token) {
-          toast.error("Kullanıcı giriş yapmamış.");
-          setLoading(false);
-          return;
-        }
-        const response = await axios.get(`${API}/profile`, { headers: authHeaders });
-        setProfile(response.data);
-        setEditData(response.data);
-      } catch (err) {
-        toast.error("Profil yüklenirken bir hata oluştu.");
+        const res = await axios.get(`${API}/profile`, { headers: authHeaders });
+        setProfile(res.data);
+        setEditData(res.data);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 401 || status === 403) toast.error("Oturumunuz geçersiz. Lütfen tekrar giriş yapın.");
+        else toast.error("Profil yüklenirken bir hata oluştu.");
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+    run();
   }, [token, authHeaders]);
 
   // Fetch unread notifications (for sidebar badge)
   useEffect(() => {
-    const fetchUnread = async () => {
-      if (!token) {
-        setUnreadCount(0);
-        return;
-      }
+    if (token === undefined) return;
+    if (!token) {
+      setUnreadCount(0);
+      return;
+    }
+    const run = async () => {
       try {
         const r = await fetch(`${API}/dashboard/notifications/user`, {
           headers: authHeaders as HeadersInit,
           cache: "no-store",
         });
+        if (!r.ok) throw new Error(`status_${r.status}`);
         const data = await r.json().catch(() => ({} as any));
         const list: any[] = Array.isArray(data?.notifications) ? data.notifications : [];
         setUnreadCount(list.filter((n) => !n?.isRead).length);
@@ -112,7 +117,7 @@ export default function UserProfilePage() {
         setUnreadCount(0);
       }
     };
-    fetchUnread();
+    run();
   }, [token, authHeaders]);
 
   const handleEditChange = (field: keyof UserProfile, value: string) => {
@@ -150,8 +155,10 @@ export default function UserProfilePage() {
       setProfile(res.data);
       setDialogOpen(false);
       toast.success("Profil başarıyla güncellendi.");
-    } catch (err) {
-      toast.error("Profil güncellenemedi.");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401 || status === 403) toast.error("Oturumunuz geçersiz. Lütfen tekrar giriş yapın.");
+      else toast.error("Profil güncellenemedi.");
       console.error(err);
     } finally {
       setSaving(false);
@@ -160,7 +167,7 @@ export default function UserProfilePage() {
 
   return (
     <div className="relative flex">
-      {/* Left sidebar — content offset by md:ml-16 below so it never overlays */}
+      {/* Sidebar — content is offset by md:ml-16 below */}
       <SidebarNavUser unreadCount={unreadCount} />
 
       <main className="w-full min-h-screen ml-0 md:ml-16 bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
@@ -181,7 +188,7 @@ export default function UserProfilePage() {
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="default">Profili Düzenle</Button>
+                <Button variant="default" disabled={!profile}>Profili Düzenle</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -214,7 +221,6 @@ export default function UserProfilePage() {
 
                     {editData?.profilePicture ? (
                       <div className="mt-1">
-                        {/* Rounded-square preview (NOT circle) */}
                         <Image
                           src={editData.profilePicture}
                           alt="Yeni Profil"
@@ -232,7 +238,7 @@ export default function UserProfilePage() {
                   <Button variant="secondary" onClick={() => setDialogOpen(false)} disabled={saving || uploading}>
                     İptal
                   </Button>
-                  <Button onClick={handleSave} disabled={saving || uploading}>
+                  <Button onClick={handleSave} disabled={saving || uploading || !editData}>
                     {saving ? "Kaydediliyor…" : "Kaydet"}
                   </Button>
                 </DialogFooter>
@@ -258,7 +264,6 @@ export default function UserProfilePage() {
                   transition={{ duration: 0.35 }}
                   className="flex items-center gap-4"
                 >
-                  {/* Rounded-square avatar with subtle glow */}
                   <div className="relative">
                     <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
                     <Image
