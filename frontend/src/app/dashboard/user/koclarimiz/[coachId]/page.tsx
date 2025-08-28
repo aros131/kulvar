@@ -1,8 +1,8 @@
-// app/dashboard/user/koclarimiz/[coachId]/page.tsx (adjust path if needed)
+// app/dashboard/user/koclarimiz/[coachId]/page.tsx
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import UserNavbar from "@/components/nav/UserNavbar";
-import SidebarNavUser from "@/components/ui/SidebarNavUser";
+import SidebarNavUserLoader from "@/components/SidebarNavUserLoader";
 import ClientBridge from "./ClientBridge";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,6 @@ function apiBase() {
   return raw.replace(/\/+$/, "");
 }
 
-// Normalize cookie token → Authorization header
 function makeAuthHeadersFromCookieToken(token: string | undefined | null): HeadersInit {
   const h: Record<string, string> = {};
   if (!token) return h;
@@ -29,7 +28,7 @@ export default async function Page({ params }: { params: { coachId: string } }) 
   const isAuthed = Boolean(token);
   const authHeaders = makeAuthHeadersFromCookieToken(token);
 
-  // ----- Fetch unread notifications on the server (if authed) -----
+  // ----- unread count (server) -----
   let unreadCount = 0;
   if (isAuthed) {
     try {
@@ -43,26 +42,31 @@ export default async function Page({ params }: { params: { coachId: string } }) 
         unreadCount = list.filter((n) => !n?.isRead).length;
       }
     } catch {
-      unreadCount = 0; // fail-safe
+      unreadCount = 0;
     }
   }
 
-  // ----- Try private bundle first (coach+programs+reviews+isFollowing+followerCount) -----
+  // ----- private bundle first -----
   let coach: any = null;
   let programs: any[] = [];
   let reviewItems: any[] = [];
 
   if (isAuthed) {
-    const r = await fetch(`${API}/me/coaches/${params.coachId}`, { cache: "no-store", headers: authHeaders });
-    if (r.ok) {
-      const j = await r.json();
-      coach = j.coach ?? null;
-      programs = Array.isArray(j.programs) ? j.programs : [];
-      reviewItems = Array.isArray(j.reviews) ? j.reviews : [];
-    }
+    try {
+      const r = await fetch(`${API}/me/coaches/${params.coachId}`, {
+        cache: "no-store",
+        headers: authHeaders,
+      });
+      if (r.ok) {
+        const j = await r.json();
+        coach = j.coach ?? null;
+        programs = Array.isArray(j.programs) ? j.programs : [];
+        reviewItems = Array.isArray(j.reviews) ? j.reviews : [];
+      }
+    } catch {}
   }
 
-  // ----- Fallback to public endpoints if needed -----
+  // ----- fallback public -----
   if (!coach) {
     const [coachRes, progsRes, revsRes] = await Promise.all([
       fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store" }),
@@ -79,7 +83,7 @@ export default async function Page({ params }: { params: { coachId: string } }) 
     programs = (await progsRes.json().catch(() => ({})))?.items ?? [];
     reviewItems = (await revsRes.json().catch(() => ({})))?.items ?? [];
 
-    // derive rating/reviewCount if not present
+    // derive rating/reviewCount if missing
     let sum = 0, count = 0;
     for (const r of reviewItems) {
       const n = Number(r?.rating);
@@ -94,13 +98,20 @@ export default async function Page({ params }: { params: { coachId: string } }) 
   }
 
   return (
-    <div className="relative flex">
-      {/* Left sidebar with real unread count; width is reserved via md:ml-16 below */}
-      <SidebarNavUser unreadCount={unreadCount} />
+    <div className="relative flex min-h-screen">
+      {/* Fixed sidebar (client) */}
+      <SidebarNavUserLoader />
 
-      {/* Reserve space so sidebar never overlays content */}
-      <main className="w-full min-h-screen ml-0 md:ml-16">
-        <UserNavbar />
+      {/* Spacer that matches the sidebar width so content never underlaps it */}
+      <div className="hidden md:block w-16 shrink-0" aria-hidden />
+
+      {/* Main content */}
+      <main className="w-full min-h-screen isolate">
+        {/* Sticky navbar with higher z-index so it stays above sidebar at the top */}
+        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
+          <UserNavbar unreadCount={unreadCount} />
+        </div>
+
         <div className="mx-auto max-w-6xl px-4 md:px-6 py-8">
           <ClientBridge
             coach={coach}
@@ -113,4 +124,3 @@ export default async function Page({ params }: { params: { coachId: string } }) 
     </div>
   );
 }
-
