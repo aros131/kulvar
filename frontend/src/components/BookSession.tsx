@@ -24,8 +24,15 @@ type Props = {
   coachId: string;
   label?: string;
   durationMin?: number;
-  /** Sayfa #book ile açılırsa otomatik diyalog açmak için */
   defaultOpen?: boolean;
+
+  /** Optional style hooks so it fits where you place it (hero, cards, etc.) */
+  buttonSize?: "sm" | "md" | "lg";
+  buttonVariant?: React.ComponentProps<typeof Button>["variant"];
+  className?: string;
+
+  /** Called on successful booking */
+  onBooked?: () => void;
 };
 
 function cleanToken(): string | null {
@@ -44,8 +51,11 @@ export default function BookSession({
   label = "Randevu Al",
   durationMin = 30,
   defaultOpen = false,
+  buttonSize = "sm",
+  buttonVariant = "default",
+  className,
+  onBooked,
 }: Props) {
-  // 🔽 ilk render’da auto-open
   const [open, setOpen] = useState(defaultOpen);
   useEffect(() => {
     if (defaultOpen) setOpen(true);
@@ -71,13 +81,14 @@ export default function BookSession({
     return d;
   }, []);
 
-  // Uygun slotları yükle
+  // Load availability when dialog opens
   useEffect(() => {
     if (!open) return;
     setLoadingSlots(true);
     const from = DateTime.now().toUTC().toISO();
     const to = DateTime.now().plus({ weeks: 3 }).toUTC().toISO();
     const controller = new AbortController();
+
     (async () => {
       try {
         const res = await fetch(
@@ -88,6 +99,7 @@ export default function BookSession({
         );
         if (!res.ok) throw new Error("Uygunluk getirilemedi");
         const data: TimeSlot[] = await res.json();
+
         const sorted = data
           .slice()
           .sort(
@@ -95,6 +107,7 @@ export default function BookSession({
               DateTime.fromISO(a.startUtc).toMillis() - DateTime.fromISO(b.startUtc).toMillis()
           );
         setSlots(sorted);
+
         const days = new Set<string>();
         for (const s of sorted) {
           days.add(DateTime.fromISO(s.startUtc).setZone(localTz).toISODate()!);
@@ -109,10 +122,11 @@ export default function BookSession({
         setLoadingSlots(false);
       }
     })();
+
     return () => controller.abort();
   }, [open, coachId, durationMin, localTz]);
 
-  // Gün değişince o güne ait slotları filtrele
+  // When day changes, filter slots for that day
   useEffect(() => {
     if (!open) return;
     if (!date) {
@@ -159,10 +173,10 @@ export default function BookSession({
 
       if (res.status === 201) {
         toast.success("İstek gönderildi. Koç onaylayınca bildirileceksiniz.");
-        // Temizle & modalı kapa
         setOpen(false);
         setSelectedSlot(null);
         setMeetingMode(null);
+        onBooked?.();
         return;
       }
 
@@ -187,105 +201,103 @@ export default function BookSession({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* hash scroll için bir çapa */}
       <div id="book" />
       <DialogTrigger asChild>
-        <Button size="lg">{label}</Button>
+        <Button
+          size={buttonSize === "md" ? "default" : (buttonSize as any)}
+          variant={buttonVariant}
+          className={className}
+        >
+          {label}
+        </Button>
       </DialogTrigger>
 
-      <DialogContent
-        className="
-          sm:max-w-[560px]
-          w-[calc(100vw-1rem)]
-          p-0
-          overflow-hidden
-          sm:rounded-lg rounded-xl
-        "
-      >
-        <div className="flex flex-col max-h-[90dvh]">
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle>Uygunluk & Rezervasyon</DialogTitle>
-            <DialogDescription>
-              Tüm saatler yerel saatinize göre gösterilir ({localTz}, GMT{tzOffset}).
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className="sm:max-w-[720px] w-[calc(100vw-1rem)] p-0 overflow-hidden sm:rounded-2xl rounded-xl">
+        {/* Header */}
+        <DialogHeader className="p-4 border-b">
+          <DialogTitle>Uygunluk & Rezervasyon</DialogTitle>
+          <DialogDescription>
+            Tüm saatler yerel saatinize göre gösterilir ({localTz}, GMT{tzOffset}).
+          </DialogDescription>
+        </DialogHeader>
 
-          {/* Scrollable body */}
-          <div
-            className="p-4 space-y-4 overflow-y-auto"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              numberOfMonths={1}
-              disabled={[
-                () => loadingSlots,
-                { before: startOfToday },
-              ]}
-              modifiers={{
-                available: (day) =>
-                  availableSet.has(DateTime.fromJSDate(day).toISODate()!),
-              }}
-            />
+        {/* Body */}
+        <div className="p-4">
+          {/* Responsive layout: 1 column on mobile, 2 columns on md+ */}
+          <div className="grid gap-4 md:grid-cols-[320px,1fr] max-h-[70vh] md:max-h-[64vh] overflow-y-auto pr-1">
+            {/* Left: Calendar */}
+            <div className="md:sticky md:top-0 md:self-start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                numberOfMonths={1}
+                disabled={[() => loadingSlots, { before: startOfToday }]}
+                modifiers={{
+                  available: (day) => availableSet.has(DateTime.fromJSDate(day).toISODate()!),
+                }}
+              />
+            </div>
 
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Saat Seçin</div>
-              {!date && (
-                <div className="text-sm text-muted-foreground">Önce bir gün seçin.</div>
-              )}
-              {date && loadingSlots && (
-                <div className="text-sm text-muted-foreground">Saatler yükleniyor…</div>
-              )}
-              {date && !loadingSlots && daySlots.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Bu gün için uygun saat yok.
-                </div>
-              )}
-              {date && !loadingSlots && daySlots.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {daySlots.map((s) => {
-                    const local = DateTime.fromISO(s.startUtc).setZone(localTz);
-                    const active = selectedSlot?.startUtc === s.startUtc;
-                    return (
-                      <Button
-                        key={s.startUtc}
-                        variant={active ? "default" : "outline"}
-                        onClick={() => setSelectedSlot(s)}
-                      >
-                        {local.toFormat("HH:mm")}
-                      </Button>
-                    );
-                  })}
+            {/* Right: Slots & mode */}
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <div className="text-sm font-medium">Saat Seçin</div>
+                {!date && <div className="text-sm text-muted-foreground">Önce bir gün seçin.</div>}
+                {date && loadingSlots && (
+                  <div className="text-sm text-muted-foreground">Saatler yükleniyor…</div>
+                )}
+                {date && !loadingSlots && daySlots.length === 0 && (
+                  <div className="text-sm text-muted-foreground">Bu gün için uygun saat yok.</div>
+                )}
+                {date && !loadingSlots && daySlots.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {daySlots.map((s) => {
+                      const local = DateTime.fromISO(s.startUtc).setZone(localTz);
+                      const active = selectedSlot?.startUtc === s.startUtc;
+                      return (
+                        <Button
+                          key={s.startUtc}
+                          size="sm"
+                          variant={active ? "default" : "outline"}
+                          onClick={() => setSelectedSlot(s)}
+                          className="justify-center"
+                        >
+                          {local.toFormat("HH:mm")}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {selectedSlot && (
+                <div className="grid gap-3 border rounded-xl p-3">
+                  <div className="text-sm font-medium">Görüşme Türü</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      size="sm"
+                      variant={meetingMode === "in_person" ? "default" : "outline"}
+                      onClick={() => setMeetingMode("in_person")}
+                    >
+                      Yüz yüze
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={meetingMode === "zoom" ? "default" : "outline"}
+                      onClick={() => setMeetingMode("zoom")}
+                    >
+                      Zoom
+                    </Button>
+                  </div>
+                  <DialogFooter className="pt-1">
+                    <Button size="sm" disabled={!meetingMode || posting} onClick={submit}>
+                      {posting ? "Gönderiliyor…" : "İsteği Gönder"}
+                    </Button>
+                  </DialogFooter>
                 </div>
               )}
             </div>
-
-            {selectedSlot && (
-              <div className="grid gap-3 border rounded-xl p-3">
-                <div className="text-sm font-medium">Görüşme Türü</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant={meetingMode === "in_person" ? "default" : "outline"}
-                    onClick={() => setMeetingMode("in_person")}
-                  >
-                    Yüz yüze
-                  </Button>
-                  <Button
-                    variant={meetingMode === "zoom" ? "default" : "outline"}
-                    onClick={() => setMeetingMode("zoom")}
-                  >
-                    Zoom
-                  </Button>
-                </div>
-                <DialogFooter className="pt-1">
-                  <Button disabled={!meetingMode || posting} onClick={submit}>
-                    {posting ? "Gönderiliyor…" : "İsteği Gönder"}
-                  </Button>
-                </DialogFooter>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>

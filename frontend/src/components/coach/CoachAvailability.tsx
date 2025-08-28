@@ -14,13 +14,13 @@ type Rule = { weekdays: number[]; startMin: number; endMin: number; stepMin: num
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
+/** Reads token, trims quotes, strips 'Bearer ' */
 function cleanToken(): string | null {
   try {
     const raw = localStorage.getItem("token");
     if (!raw) return null;
     const trimmed = raw.replace(/^"+|"+$/g, "").trim();
-    const val = trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
-    return val || null;
+    return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
   } catch {
     return null;
   }
@@ -55,7 +55,11 @@ function minToHHMM(min: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-export default function CoachAvailability() {
+export default function CoachAvailability({
+  embedded = false,              // ⬅️ NEW: render content-only when true
+}: {
+  embedded?: boolean;
+}) {
   const localTz = useMemo(() => DateTime.local().zoneName, []);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,7 +76,6 @@ export default function CoachAvailability() {
     (async () => {
       try {
         const res = await authedFetch("/dashboard/me/availability/rules");
-
         const rules: Rule[] = res.ok ? await res.json() : [];
         if (!alive) return;
 
@@ -89,7 +92,6 @@ export default function CoachAvailability() {
             _end[d] = minToHHMM(r.endMin);
           }
         }
-        // defaults for untouched days
         for (const d of DAYS.map((x) => x.key)) {
           if (_enabled[d] == null) _enabled[d] = false;
           if (!_start[d]) _start[d] = "10:00";
@@ -138,73 +140,100 @@ export default function CoachAvailability() {
     }
   }
 
+  // ---------- Render helpers (Card vs Embedded) ----------
+  const Content = (
+    <>
+      {/* Top meta + global slot length */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="text-sm text-muted-foreground">
+          Yerel saat: <span className="font-medium text-foreground">{localTz}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-sm text-muted-foreground">Slot uzunluğu</Label>
+          <Select value={String(stepMin)} onValueChange={(v) => setStepMin(parseInt(v, 10))}>
+            <SelectTrigger className="w-40 sm:w-48">
+              <SelectValue placeholder="Adım (dk)" />
+            </SelectTrigger>
+            <SelectContent>
+              {[15, 20, 30, 45, 60].map((m) => (
+                <SelectItem key={m} value={String(m)}>{m} dk</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Days grid */}
+      <div className="grid gap-3">
+        {DAYS.map(({ key, label }) => (
+          <div
+            key={key}
+            className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3"
+          >
+            <div className="sm:col-span-3 flex items-center gap-2">
+              <Switch
+                checked={!!enabled[key]}
+                onCheckedChange={(v) => setEnabled((s) => ({ ...s, [key]: v }))}
+                id={`day-${key}`}
+              />
+              <Label htmlFor={`day-${key}`}>{label}</Label>
+            </div>
+
+            <div className="sm:col-span-4">
+              <Label className="sr-only">Başlangıç</Label>
+              <Input
+                type="time"
+                className="w-full"
+                value={startByDay[key] ?? "10:00"}
+                onChange={(e) => setStartByDay((s) => ({ ...s, [key]: e.target.value }))}
+                disabled={!enabled[key]}
+              />
+            </div>
+
+            <div className="sm:col-span-4">
+              <Label className="sr-only">Bitiş</Label>
+              <Input
+                type="time"
+                className="w-full"
+                value={endByDay[key] ?? "18:00"}
+                onChange={(e) => setEndByDay((s) => ({ ...s, [key]: e.target.value }))}
+                disabled={!enabled[key]}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="pt-2">
+        <Button onClick={save} disabled={saving}>
+          {saving ? "Kaydediliyor…" : "Kaydet"}
+        </Button>
+      </div>
+    </>
+  );
+
   if (loading) {
-    return (
-      <Card>
-        <CardHeader><CardTitle>Uygunluk</CardTitle></CardHeader>
+    return embedded ? (
+      <div className="text-sm text-muted-foreground">Yükleniyor…</div>
+    ) : (
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle>Uygunluk</CardTitle>
+        </CardHeader>
         <CardContent>Yükleniyor…</CardContent>
       </Card>
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Haftalık Çalışma Saatleri <span className="text-muted-foreground">(Yerel saat: {localTz})</span></CardTitle>
+  return embedded ? (
+    <div className="space-y-4">{Content}</div>
+  ) : (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2">
+        <CardTitle>Haftalık Çalışma Saatleri</CardTitle>
+        <div className="text-sm text-muted-foreground">Yerel saat: {localTz}</div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3">
-          {DAYS.map(({ key, label }) => (
-            <div key={key} className="grid grid-cols-12 items-center gap-3">
-              <div className="col-span-3 sm:col-span-2 flex items-center gap-2">
-                <Switch
-                  checked={!!enabled[key]}
-                  onCheckedChange={(v) => setEnabled((s) => ({ ...s, [key]: v }))}
-                  id={`day-${key}`}
-                />
-                <Label htmlFor={`day-${key}`}>{label}</Label>
-              </div>
-              <div className="col-span-4 sm:col-span-3">
-                <Label className="sr-only">Başlangıç</Label>
-                <Input
-                  type="time"
-                  value={startByDay[key] ?? "10:00"}
-                  onChange={(e) => setStartByDay((s) => ({ ...s, [key]: e.target.value }))}
-                  disabled={!enabled[key]}
-                />
-              </div>
-              <div className="col-span-4 sm:col-span-3">
-                <Label className="sr-only">Bitiş</Label>
-                <Input
-                  type="time"
-                  value={endByDay[key] ?? "18:00"}
-                  onChange={(e) => setEndByDay((s) => ({ ...s, [key]: e.target.value }))}
-                  disabled={!enabled[key]}
-                />
-              </div>
-              <div className="col-span-12 sm:col-span-4 flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground">Slot uzunluğu</Label>
-                <Select value={String(stepMin)} onValueChange={(v) => setStepMin(parseInt(v, 10))}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Adım (dk)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[15, 20, 30, 45, 60].map((m) => (
-                      <SelectItem key={m} value={String(m)}>{m} dk</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="pt-2">
-          <Button onClick={save} disabled={saving}>
-            {saving ? "Kaydediliyor…" : "Kaydet"}
-          </Button>
-        </div>
-      </CardContent>
+      <CardContent className="space-y-4">{Content}</CardContent>
     </Card>
   );
 }

@@ -1,4 +1,4 @@
-// src/app/dashboard/coach/page.tsx (or wherever your route lives)
+// src/app/dashboard/coach/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -13,8 +13,7 @@ import CoachAvailability from "@/components/coach/CoachAvailability";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge"; // if you have it; otherwise remove
+import { Badge } from "@/components/ui/badge";
 import { Plus, CalendarClock, Inbox } from "lucide-react";
 
 import { storage } from "@/lib/firebase";
@@ -47,12 +46,10 @@ async function resolveAvatarUrl(input?: string): Promise<string> {
   if (/^https?:\/\//i.test(input)) return input;
 
   try {
-    // Accept full gs:// URL as-is
     if (/^gs:\/\//i.test(input)) {
       const ref = sRef(storage, input);
       return await getDownloadURL(ref);
     }
-    // Otherwise treat as a storage path ("profile-pictures/uid.jpg")
     const path = input.replace(/^\/+/, "");
     const ref = sRef(storage, path);
     return await getDownloadURL(ref);
@@ -80,8 +77,8 @@ export default function DashboardCoachPage() {
   const [profileUrl, setProfileUrl] = useState<string>("/images/user.png");
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const [, setLoadingNotifications] = useState(true); // we don't render the loading state, just track it internally
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
@@ -136,8 +133,6 @@ export default function DashboardCoachPage() {
       <SidebarNav unreadCount={unreadCount} />
 
       <main className="ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
-        {/* Top navbar area is yours if needed */}
-
         {/* Decorative gradient blob */}
         <div
           aria-hidden
@@ -235,7 +230,8 @@ export default function DashboardCoachPage() {
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <CoachAvailability />
+                {/* ⬇️ Use embedded to avoid card-inside-card & fit layout */}
+                <CoachAvailability embedded />
               </CardContent>
             </Card>
           </div>
@@ -252,7 +248,8 @@ export default function DashboardCoachPage() {
               </Button>
             </CardHeader>
             <CardContent className="pt-0">
-              <ProgramList />
+              {/* ⬇️ Hide internal header to avoid duplicate titles */}
+              <ProgramList showHeader={false} />
             </CardContent>
           </Card>
         </section>
