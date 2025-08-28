@@ -52,7 +52,7 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
 
       const detailedPrograms: ProgramWithClients[] = await Promise.all(
         basePrograms.map(async (program: Program) => {
-          const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${program._id}` , {
+          const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${program._id}`, {
             headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           });
@@ -94,7 +94,6 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
     return arr.sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name);
       if (sortBy === "clients") return (b.assignedClients?.length || 0) - (a.assignedClients?.length || 0);
-      // recent (fallback to name if no dates)
       const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bd - ad || a.name.localeCompare(b.name);
@@ -156,7 +155,6 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
           </CardContent>
         </Card>
       ) : (
-        // IMPORTANT: removed `auto-rows-fr` to prevent overlap. Let rows auto-size.
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)] items-stretch">
           {filtered.map((program, idx) => {
             const assignedCount = program.assignedClients?.length ?? 0;
@@ -192,9 +190,21 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
                     </div>
                   </CardContent>
 
-                  {/* Footer */}
-                  <CardFooter className="mt-auto px-3 pt-2 border-t flex items-center justify-between [&_button]:h-8 [&_button]:px-2.5 [&_button]:text-xs [&_button]:rounded-md">
-                    <div className="flex items-center gap-1.5">
+                  {/* Footer — ALWAYS stacked: three buttons on first row, CTA full-width below */}
+                  <CardFooter
+                    className="
+                      mt-auto px-3 pt-2 border-t
+                      flex flex-col gap-2
+                      [&_button]:h-8 [&_button]:px-2.5 [&_button]:text-xs [&_button]:rounded-md
+                    "
+                  >
+                    {/* Row 1: equal-width small buttons */}
+                    <div
+                      className="
+                        flex items-stretch gap-1.5 w-full
+                        [&_button]:flex-1
+                      "
+                    >
                       <EditProgramDialog programId={program._id} onUpdated={fetchProgramsWithClients} />
                       <AssignClientsDialog programId={program._id} />
                       <DeleteProgramDialog
@@ -204,9 +214,14 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
                       />
                     </div>
 
-                    <Button asChild size="sm" className="h-8 px-2.5 text-xs gap-1">
+                    {/* Row 2: full-width CTA */}
+                    <Button
+                      asChild
+                      size="sm"
+                      className="h-9 px-3 text-sm gap-1 w-full whitespace-nowrap"
+                    >
                       <Link href={`/dashboard/coach/programs/${program._id}/edit`}>
-                        Programa bak <ArrowRight className="h-3.5 w-3.5" />
+                        Programa git <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
                   </CardFooter>
