@@ -20,7 +20,14 @@ import { ArrowRight } from "lucide-react";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
-type LocalUser = { id: string; name: string; role: string; token?: string };
+/* ------------------------------- Types ------------------------------- */
+type CurrentUser = {
+  id: string;
+  name?: string;
+  email?: string;
+  role: string;
+  profilePicture?: string;
+};
 
 interface ChatItem {
   id: string;
@@ -33,29 +40,118 @@ interface ChatItem {
   unreadCount?: number;
 }
 
+/* ------------------------------ Utilities --------------------------- */
+const cleanToken = (): string | null => {
+  try {
+    const raw = localStorage.getItem("token");
+    if (!raw) return null;
+    const trimmed = raw.replace(/^"+|"+$/g, "").trim();
+    return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
+  } catch {
+    return null;
+  }
+};
+
+const initials = (name?: string) =>
+  (name || "")
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+/* -------------------------------- Page ------------------------------ */
 export default function UserMessagesPage() {
+  const [token, setToken] = useState<string | null | undefined>(undefined);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [allChats, setAllChats] = useState<ChatItem[]>([]);
-  const [user, setUser] = useState<LocalUser | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // --- helpers ---
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") || undefined : undefined;
+  // Resolve token once and keep it in sync
+  useEffect(() => {
+    setToken(cleanToken() ?? null);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") setToken(cleanToken() ?? null);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
-  async function fetchUserFromAPI(userId: string) {
-    // Try a couple of likely endpoints; adjust to your backend if different
-    const endpoints = [`${API}/users/${userId}`, `${API}/user/${userId}`, `${API}/profiles/${userId}`];
-    for (const url of endpoints) {
+  // Always return valid HeadersInit
+  const authHeaders = useMemo(() => {
+    const h = new Headers();
+    if (typeof token === "string" && token.trim() !== "") {
+      h.set("Authorization", `Bearer ${token}`);
+    }
+    return h; // type: Headers (valid HeadersInit)
+  }, [token]);
+
+  // Fetch the REAL current user from /profile (same path/logic as your profile page)
+  useEffect(() => {
+    if (token === undefined) return; // still resolving token
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    const run = async () => {
       try {
-        const res = await fetch(url, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        const res = await fetch(`${API}/profile`, {
+          headers: authHeaders,
           cache: "no-store",
         });
+        if (!res.ok) throw new Error(`status_${res.status}`);
+        const data = await res.json();
+
+        // fallbacks from localStorage "user" if backend omits fields
+        const storedRaw = localStorage.getItem("user");
+        const stored = storedRaw ? JSON.parse(storedRaw) : {};
+        const id = data?._id || data?.id || stored?.id;
+        const role = data?.role || stored?.role || "user";
+
+        if (!id) {
+          console.warn("No user id from /profile and storage.");
+          setUser(null);
+          return;
+        }
+
+        setUser({
+          id,
+          role,
+          name: data?.name || data?.fullName || data?.username || stored?.name,
+          email: data?.email || stored?.email,
+          profilePicture:
+            data?.profilePicture ||
+            data?.avatar ||
+            data?.image ||
+            data?.photoURL ||
+            stored?.profilePicture,
+        });
+      } catch (err) {
+        console.error("Profile fetch failed:", err);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+  }, [token, authHeaders]);
+
+  // Helper: fetch any user's public profile from backend first, then Firestore as fallback
+  async function fetchUserById(
+    userId: string
+  ): Promise<{ name?: string; profilePicture?: string } | null> {
+    const endpoints = [`${API}/users/${userId}`];
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, { headers: authHeaders, cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
-          // be generous with field names
           return {
             name: data?.name || data?.fullName || data?.username,
             profilePicture:
@@ -63,27 +159,25 @@ export default function UserMessagesPage() {
           };
         }
       } catch {
-        // ignore and try next
+        // try next
       }
+    }
+    // Firestore fallback
+    try {
+      const fsDoc = await getDoc(doc(db, "users", userId));
+      if (fsDoc.exists()) {
+        const d = fsDoc.data() as any;
+        return { name: d?.name, profilePicture: d?.profilePicture };
+      }
+    } catch {
+      // ignore
     }
     return null;
   }
 
-  const initials = (name?: string) =>
-    (name || "")
-      .trim()
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-
-  // --- bootstrap ---
+  // Subscribe to chats AFTER we have the real user id
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) return;
-    const parsed: LocalUser = JSON.parse(stored);
-    setUser({ ...parsed, token });
+    if (!user?.id) return;
 
     const q = query(collection(db, "chats"), orderBy("updatedAt", "desc"));
     const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -91,35 +185,36 @@ export default function UserMessagesPage() {
         .map((d) => {
           const data = d.data() as any;
           if (!Array.isArray(data.participants)) return null;
-          if (!parsed.id || !data.participants.includes(parsed.id)) return null;
+          if (!data.participants.includes(user.id)) return null;
+
+          const updatedAt: Timestamp =
+            data.updatedAt instanceof Timestamp
+              ? data.updatedAt
+              : (data.updatedAt?.seconds && data.updatedAt?.nanoseconds
+                  ? new Timestamp(data.updatedAt.seconds, data.updatedAt.nanoseconds)
+                  : Timestamp.now());
+
           return {
             id: d.id,
             participants: data.participants,
             lastMessage: data.lastMessage || "",
-            updatedAt: data.updatedAt || { seconds: 0 },
-            unreadCount: data[`unread_${parsed.id}`] || 0,
+            updatedAt,
+            unreadCount: data[`unread_${user.id}`] || 0,
           } as ChatItem;
         })
         .filter(Boolean) as ChatItem[];
 
-      // Enrich each chat with other participant's name + avatar
       const enriched = await Promise.all(
         rawChats.map(async (chat) => {
-          const otherId = chat.participants.find((pid) => pid !== parsed.id);
+          const otherId = chat.participants.find((pid) => pid !== user.id);
           if (!otherId) return { ...chat, otherUserName: "Bilinmeyen" };
 
-          // Firestore "users" doc (name fallback)
-          const fsDoc = await getDoc(doc(db, "users", otherId)).catch(() => null);
-          const fsData = fsDoc?.exists() ? (fsDoc.data() as any) : null;
-
-          // MongoDB API (real profile picture)
-          const apiUser = await fetchUserFromAPI(otherId);
-
+          const apiUser = await fetchUserById(otherId);
           return {
             ...chat,
             otherUserId: otherId,
-            otherUserName: apiUser?.name || fsData?.name || "Bilinmeyen",
-            otherUserAvatar: apiUser?.profilePicture || fsData?.profilePicture || undefined,
+            otherUserName: apiUser?.name || "Bilinmeyen",
+            otherUserAvatar: apiUser?.profilePicture || undefined,
           };
         })
       );
@@ -130,9 +225,9 @@ export default function UserMessagesPage() {
     });
 
     return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.id]); // authHeaders captured for fetchUserById
 
+  // --- UI handlers ---
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
@@ -142,8 +237,12 @@ export default function UserMessagesPage() {
   const markAllAsRead = async () => {
     if (!user) return;
     for (const chat of chats) {
-      const chatRef = doc(db, "chats", chat.id);
-      await updateDoc(chatRef, { [`unread_${user.id}`]: 0 });
+      try {
+        const chatRef = doc(db, "chats", chat.id);
+        await updateDoc(chatRef, { [`unread_${user.id}`]: 0 });
+      } catch (e) {
+        console.error("Failed to mark read:", e);
+      }
     }
   };
 
@@ -152,16 +251,32 @@ export default function UserMessagesPage() {
     [chats]
   );
 
-  if (!user) {
+  // Loading / unauth states
+  if (token === undefined || loading) {
     return (
       <div className="relative flex">
-        {/* Sidebar hidden on small screens */}
         <div className="hidden md:block">
           <SidebarNavUser unreadCount={0} />
         </div>
         <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
           <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
             <p className="text-center text-zinc-500">Yükleniyor...</p>
+          </div>
+        </main>
+        <MobileUserBottomNav />
+      </div>
+    );
+  }
+
+  if (!token) {
+    return (
+      <div className="relative flex">
+        <div className="hidden md:block">
+          <SidebarNavUser unreadCount={0} />
+        </div>
+        <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
+          <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
+            <p className="text-center text-zinc-500">Devam etmek için lütfen giriş yapın.</p>
           </div>
         </main>
         <MobileUserBottomNav />
@@ -210,20 +325,14 @@ export default function UserMessagesPage() {
           </div>
 
           {/* List */}
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="animate-pulse h-20 rounded-xl bg-muted" />
-              ))}
-            </div>
-          ) : chats.length === 0 ? (
+          {chats.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center">Hiç mesaj yok.</p>
           ) : (
             <ul className="space-y-3">
               {chats.map((chat) => (
                 <li key={chat.id}>
                   <Link
-                    href={`/dashboard/${user.role}/messages/${chat.id}`}
+                    href={`/dashboard/${user?.role || "user"}/messages/${chat.id}`}
                     className="flex items-center gap-3 rounded-xl border border-border p-4 hover:bg-muted/50 transition"
                   >
                     {/* Avatar */}
@@ -259,7 +368,7 @@ export default function UserMessagesPage() {
                         {chat.lastMessage || "Henüz mesaj yok."}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {new Date(chat.updatedAt?.seconds * 1000).toLocaleString("tr-TR", {
+                        {chat.updatedAt.toDate().toLocaleString("tr-TR", {
                           dateStyle: "short",
                           timeStyle: "short",
                         })}
