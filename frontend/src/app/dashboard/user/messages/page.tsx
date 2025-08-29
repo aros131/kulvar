@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -71,6 +71,11 @@ export default function UserMessagesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // simple in-memory cache for Firestore user lookups
+  const profileCache = useRef<Map<string, { name?: string; profilePicture?: string } | null>>(
+    new Map()
+  );
+
   // Resolve token once and keep it in sync
   useEffect(() => {
     setToken(cleanToken() ?? null);
@@ -87,12 +92,12 @@ export default function UserMessagesPage() {
     if (typeof token === "string" && token.trim() !== "") {
       h.set("Authorization", `Bearer ${token}`);
     }
-    return h; // type: Headers (valid HeadersInit)
+    return h; // Headers = valid HeadersInit
   }, [token]);
 
-  // Fetch the REAL current user from /profile (same path/logic as your profile page)
+  // Fetch the REAL current user from /profile (same logic as your profile page)
   useEffect(() => {
-    if (token === undefined) return; // still resolving token
+    if (token === undefined) return; // still resolving
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -108,14 +113,13 @@ export default function UserMessagesPage() {
         if (!res.ok) throw new Error(`status_${res.status}`);
         const data = await res.json();
 
-        // fallbacks from localStorage "user" if backend omits fields
         const storedRaw = localStorage.getItem("user");
         const stored = storedRaw ? JSON.parse(storedRaw) : {};
         const id = data?._id || data?.id || stored?.id;
         const role = data?.role || stored?.role || "user";
 
         if (!id) {
-          console.warn("No user id from /profile and storage.");
+          console.warn("No user id from /profile and local storage.");
           setUser(null);
           return;
         }
@@ -142,36 +146,29 @@ export default function UserMessagesPage() {
     run();
   }, [token, authHeaders]);
 
-  // Helper: fetch any user's public profile from backend first, then Firestore as fallback
-  async function fetchUserById(
+  // Helper: fetch other participant from Firestore only (no backend by id)
+  async function fetchOtherFromFirestore(
     userId: string
   ): Promise<{ name?: string; profilePicture?: string } | null> {
-    const endpoints = [`${API}/users/${userId}`];
-    for (const url of endpoints) {
-      try {
-        const res = await fetch(url, { headers: authHeaders, cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          return {
-            name: data?.name || data?.fullName || data?.username,
-            profilePicture:
-              data?.profilePicture || data?.avatar || data?.image || data?.photoURL || data?.photo,
-          };
-        }
-      } catch {
-        // try next
-      }
+    if (profileCache.current.has(userId)) {
+      return profileCache.current.get(userId) ?? null;
     }
-    // Firestore fallback
     try {
       const fsDoc = await getDoc(doc(db, "users", userId));
       if (fsDoc.exists()) {
         const d = fsDoc.data() as any;
-        return { name: d?.name, profilePicture: d?.profilePicture };
+        const result = {
+          name: d?.name || d?.fullName || d?.username || undefined,
+          profilePicture:
+            d?.profilePicture || d?.avatar || d?.image || d?.photoURL || d?.photo || undefined,
+        };
+        profileCache.current.set(userId, result);
+        return result;
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      console.error("fetchOtherFromFirestore error:", e);
     }
+    profileCache.current.set(userId, null);
     return null;
   }
 
@@ -190,9 +187,9 @@ export default function UserMessagesPage() {
           const updatedAt: Timestamp =
             data.updatedAt instanceof Timestamp
               ? data.updatedAt
-              : (data.updatedAt?.seconds && data.updatedAt?.nanoseconds
-                  ? new Timestamp(data.updatedAt.seconds, data.updatedAt.nanoseconds)
-                  : Timestamp.now());
+              : data.updatedAt?.seconds && data.updatedAt?.nanoseconds
+              ? new Timestamp(data.updatedAt.seconds, data.updatedAt.nanoseconds)
+              : Timestamp.now();
 
           return {
             id: d.id,
@@ -209,12 +206,12 @@ export default function UserMessagesPage() {
           const otherId = chat.participants.find((pid) => pid !== user.id);
           if (!otherId) return { ...chat, otherUserName: "Bilinmeyen" };
 
-          const apiUser = await fetchUserById(otherId);
+          const fsUser = await fetchOtherFromFirestore(otherId);
           return {
             ...chat,
             otherUserId: otherId,
-            otherUserName: apiUser?.name || "Bilinmeyen",
-            otherUserAvatar: apiUser?.profilePicture || undefined,
+            otherUserName: fsUser?.name || "Bilinmeyen",
+            otherUserAvatar: fsUser?.profilePicture || undefined,
           };
         })
       );
@@ -225,7 +222,7 @@ export default function UserMessagesPage() {
     });
 
     return () => unsubscribe();
-  }, [user?.id]); // authHeaders captured for fetchUserById
+  }, [user?.id]);
 
   // --- UI handlers ---
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
