@@ -97,6 +97,17 @@ function extractUrls(text: string | undefined) {
   return text.match(urlRegex) || [];
 }
 
+/** If value looks like a Firebase Storage path, resolve to download URL; otherwise return as-is. */
+async function resolveMaybeStorageURL(raw?: string): Promise<string | undefined> {
+  if (!raw) return undefined;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  try {
+    return await getDownloadURL(ref(storage, raw));
+  } catch {
+    return undefined;
+  }
+}
+
 /* ----------------------- Minimal Lightbox (images) ----------------------- */
 function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   useEffect(() => {
@@ -141,7 +152,7 @@ export default function ChatIdPage() {
   const [other, setOther] = useState<{
     id: string;
     name: string;
-    avatar?: string;
+    avatarUrl?: string; // resolved URL for UI
     lastSeen?: Timestamp;
   } | null>(null);
 
@@ -158,7 +169,9 @@ export default function ChatIdPage() {
 
   // composer
   const [text, setText] = useState("");
-  const [replyTo, setReplyTo] = useState<{ id: string; text?: string; imageUrl?: string; senderName?: string } | null>(null);
+  const [replyTo, setReplyTo] = useState<{ id: string; text?: string; imageUrl?: string; senderName?: string } | null>(
+    null
+  );
   const [files, setFiles] = useState<File[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -201,9 +214,13 @@ export default function ChatIdPage() {
   useEffect(() => {
     if (!otherId) return;
     (async () => {
-      // Firestore only — no backend routes
+      // Firestore "users/{otherId}" — avatar may be a STORAGE PATH; resolve it
       const fsSnap = await getDoc(doc(db, "users", otherId)).catch(() => null);
       const fsData = fsSnap?.exists() ? (fsSnap.data() as any) : null;
+
+      const rawPic: string | undefined =
+        fsData?.avatarPath || fsData?.profilePicture || fsData?.avatar || undefined;
+      const avatarUrl = await resolveMaybeStorageURL(rawPic);
 
       // chat meta (pinned, blocked, lastReadAt)
       const convSnap = await getDoc(doc(db, "chats", chatId as string)).catch(() => null as any);
@@ -218,7 +235,7 @@ export default function ChatIdPage() {
       setOther({
         id: otherId,
         name: fsData?.name || "Bilinmeyen",
-        avatar: fsData?.avatar || fsData?.profilePicture || undefined,
+        avatarUrl,
         lastSeen: fsData?.lastSeen,
       });
     })();
@@ -349,22 +366,34 @@ export default function ChatIdPage() {
     if (picked.length) setFiles((prev) => [...prev, ...picked]);
   };
 
+  /** Ensure no undefined fields are written to Firestore */
+  const buildCleanPayload = (payload: NewMessagePayload) => {
+    const out: any = { text: payload.text };
+    if (payload.imageUrl) out.imageUrl = payload.imageUrl;
+    if (payload.replyTo) out.replyTo = payload.replyTo; // only include if defined
+    if (payload.reactions) out.reactions = payload.reactions;
+    if (payload.deleted !== undefined) out.deleted = payload.deleted;
+    return out as NewMessagePayload;
+  };
+
   const sendOne = async (payload: NewMessagePayload) => {
     if (!ready) return;
 
+    const clean = buildCleanPayload(payload);
+
     const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const optimistic: Message = { id: tempId, senderId: myId, ...payload, pending: true };
+    const optimistic: Message = { id: tempId, senderId: myId, ...clean, pending: true };
     setMessages((prev) => [...prev, optimistic]);
 
     try {
       const docRef = await addDoc(collection(db, `chats/${chatId}/messages`), {
-        ...payload,
+        ...clean,
         senderId: myId,
         createdAt: serverTimestamp(),
       });
 
       await updateDoc(doc(db, "chats", chatId as string), {
-        lastMessage: payload.text || (payload.imageUrl ? "[Resim]" : ""),
+        lastMessage: clean.text || (clean.imageUrl ? "[Resim]" : ""),
         updatedAt: serverTimestamp(),
         [`unread_${otherId}`]: increment(1),
       });
@@ -392,10 +421,10 @@ export default function ChatIdPage() {
         const imageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${f.name}`);
         const snap = await uploadBytes(imageRef, f);
         const url = await getDownloadURL(snap.ref);
-        await sendOne({ text: "", imageUrl: url, replyTo: replyTo || undefined });
+        await sendOne({ text: "", imageUrl: url, ...(replyTo ? { replyTo } : {}) });
       }
       if (trimmed) {
-        await sendOne({ text: trimmed, replyTo: replyTo || undefined });
+        await sendOne({ text: trimmed, ...(replyTo ? { replyTo } : {}) });
       }
       setFiles([]);
       setReplyTo(null);
@@ -419,8 +448,8 @@ export default function ChatIdPage() {
     if (!m.error) return;
     const payload: NewMessagePayload = {
       text: m.text,
-      imageUrl: m.imageUrl,
-      replyTo: m.replyTo || undefined,
+      ...(m.imageUrl ? { imageUrl: m.imageUrl } : {}),
+      ...(m.replyTo ? { replyTo: m.replyTo } : {}),
     };
     setMessages((prev) => prev.filter((x) => x.id !== m.id));
     await sendOne(payload);
@@ -520,8 +549,15 @@ export default function ChatIdPage() {
 
               <div className="ml-auto flex items-center gap-3">
                 <div className="relative w-8 h-8 shrink-0">
-                  {other?.avatar ? (
-                    <Image src={other.avatar} alt={other.name} fill sizes="32px" className="rounded-full object-cover" />
+                  {other?.avatarUrl ? (
+                    <Image
+                      src={other.avatarUrl}
+                      alt={other.name}
+                      fill
+                      sizes="32px"
+                      className="rounded-full object-cover"
+                      unoptimized
+                    />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-zinc-800 dark:text-zinc-100 text-[11px] font-semibold flex items-center justify-center">
                       {initials(other?.name)}
@@ -531,7 +567,11 @@ export default function ChatIdPage() {
                 <div className="leading-tight">
                   <div className="text-sm font-semibold text-foreground">{other?.name || "Bilinmeyen"}</div>
                   <div className="text-[11px] text-muted-foreground">
-                    {typingOther ? "Yazıyor…" : other?.lastSeen ? `Son görülme ${other.lastSeen.toDate().toLocaleString("tr-TR")}` : "Çevrimdışı"}
+                    {typingOther
+                      ? "Yazıyor…"
+                      : other?.lastSeen
+                      ? `Son görülme ${other.lastSeen.toDate().toLocaleString("tr-TR")}`
+                      : "Çevrimdışı"}
                   </div>
                 </div>
 
@@ -804,7 +844,9 @@ function MessageBubble({
         </details>
 
         <button
-          onClick={() => onReply({ id: msg.id, text: msg.text, imageUrl: msg.imageUrl, senderName: mine ? "Siz" : otherName })}
+          onClick={() =>
+            onReply({ id: msg.id, text: msg.text, imageUrl: msg.imageUrl, senderName: mine ? "Siz" : otherName })
+          }
           className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10"
         >
           Yanıtla
