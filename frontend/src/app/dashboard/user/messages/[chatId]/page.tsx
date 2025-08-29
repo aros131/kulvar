@@ -45,11 +45,11 @@ import {
 
 /* --------------------------- Types & constants --------------------------- */
 
-type LocalUser = { id: string; name: string; role: string; token?: string };
+type LocalUser = { id: string; name: string; role: string };
 
 type MsgBase = {
   senderId: string;
-  text: string; // use "" for pure image messages
+  text: string; // "" for pure image messages
   createdAt?: Timestamp;
   imageUrl?: string;
   replyTo?: {
@@ -62,13 +62,10 @@ type MsgBase = {
   deleted?: boolean;
 };
 
-// Payload used when creating messages (senderId/createdAt are injected)
 type NewMessagePayload = Omit<MsgBase, "senderId" | "createdAt">;
-
 type Message = MsgBase & { id: string; pending?: boolean; error?: boolean };
 
 const PAGE_SIZE = 30;
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
 /* -------------------------------- Helpers -------------------------------- */
 
@@ -145,8 +142,6 @@ export default function ChatIdPage() {
     id: string;
     name: string;
     avatar?: string;
-    blockedMe?: boolean;
-    iBlocked?: boolean;
     lastSeen?: Timestamp;
   } | null>(null);
 
@@ -181,9 +176,6 @@ export default function ChatIdPage() {
   // block/report
   const [isBlocked, setIsBlocked] = useState(false);
 
-  // token for API
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") || undefined : undefined;
-
   const myId = user?.id || "";
   const otherId = useMemo(() => {
     if (!chatId || !user?.id) return null;
@@ -191,38 +183,13 @@ export default function ChatIdPage() {
     return parts.find((p) => p !== user.id) || null;
   }, [chatId, user?.id]);
 
-  // ready guard: avoid silent send failures
   const ready = !!(chatId && myId && otherId);
-
-  /* ----------------------------- Mongo API pull ----------------------------- */
-  async function fetchUserFromAPI(userId: string) {
-    const endpoints = [`${API}/users/${userId}`, `${API}/user/${userId}`, `${API}/profiles/${userId}`];
-    for (const url of endpoints) {
-      try {
-        const res = await fetch(url, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          cache: "no-store",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          return {
-            name: data?.name || data?.fullName || data?.username || "Bilinmeyen",
-            profilePicture:
-              data?.profilePicture || data?.avatar || data?.image || data?.photoURL || data?.photo,
-            blockedMe: data?.blockedUsers?.includes?.(myId) || false,
-            lastSeen: data?.lastSeen ? Timestamp.fromDate(new Date(data.lastSeen)) : undefined,
-          };
-        }
-      } catch {}
-    }
-    return null;
-  }
 
   /* ----------------------------- bootstrap user ----------------------------- */
   useEffect(() => {
     const stored = localStorage.getItem("user");
-    if (stored) setUser({ ...JSON.parse(stored), token });
-  }, [token]);
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
 
   /* ----------------------------- presence stub ----------------------------- */
   useEffect(() => {
@@ -234,33 +201,26 @@ export default function ChatIdPage() {
   useEffect(() => {
     if (!otherId) return;
     (async () => {
-      let display = await fetchUserFromAPI(otherId);
-      if (!display) {
-        const fsSnap = await getDoc(doc(db, "users", otherId)).catch(() => null);
-        const fsData = fsSnap?.exists() ? (fsSnap.data() as any) : null;
-        display = {
-          name: fsData?.name || "Bilinmeyen",
-          profilePicture: fsData?.profilePicture,
-          lastSeen: fsData?.lastSeen,
-        } as any;
-      }
+      // Firestore only — no backend routes
+      const fsSnap = await getDoc(doc(db, "users", otherId)).catch(() => null);
+      const fsData = fsSnap?.exists() ? (fsSnap.data() as any) : null;
 
-      const convSnap = await getDoc(doc(db, "chats", chatId)).catch(() => null as any);
+      // chat meta (pinned, blocked, lastReadAt)
+      const convSnap = await getDoc(doc(db, "chats", chatId as string)).catch(() => null as any);
       const convData = convSnap?.exists() ? (convSnap.data() as any) : null;
       setPinned(convData?.pinnedMessageIds || []);
       const blockedList: string[] = convData?.blockedBy || [];
       setIsBlocked(blockedList?.includes?.(myId) || false);
-
-      setOther({
-        id: otherId,
-        name: display?.name || "Bilinmeyen",
-        avatar: display?.profilePicture,
-        blockedMe: false,
-        lastSeen: display?.lastSeen,
-      });
       if (convData?.lastReadAt && convData.lastReadAt[otherId]) {
         setOtherLastReadAt(convData.lastReadAt[otherId]);
       }
+
+      setOther({
+        id: otherId,
+        name: fsData?.name || "Bilinmeyen",
+        avatar: fsData?.avatar || fsData?.profilePicture || undefined,
+        lastSeen: fsData?.lastSeen,
+      });
     })();
   }, [otherId, chatId, myId]);
 
@@ -271,7 +231,7 @@ export default function ChatIdPage() {
     const typingRef = doc(db, `chats/${chatId}/typingStates/${otherId}`);
     const unsubTyping = onSnapshot(typingRef, (snap) => setTypingOther(!!snap.data()?.isTyping));
 
-    const convRef = doc(db, "chats", chatId);
+    const convRef = doc(db, "chats", chatId as string);
     const unsubConv = onSnapshot(convRef, (snap) => {
       const d = snap.data() as any;
       if (d?.lastReadAt?.[otherId]) setOtherLastReadAt(d.lastReadAt[otherId]);
@@ -301,7 +261,7 @@ export default function ChatIdPage() {
     arr.reverse(); // ASC for UI
     setMessages(arr);
 
-    // live subscription (no auto-scroll, just merge)
+    // live subscription (merge only, no auto-scroll)
     liveUnsub?.();
     const qLive = query(col, orderBy("createdAt", "asc"));
     const unsub = onSnapshot(qLive, (live) => {
@@ -351,7 +311,10 @@ export default function ChatIdPage() {
   /* ----------------------- read my unread & lastReadAt ----------------------- */
   useEffect(() => {
     if (!chatId || !myId) return;
-    updateDoc(doc(db, "chats", chatId), { [`unread_${myId}`]: 0, [`lastReadAt.${myId}`]: serverTimestamp() }).catch(() => {});
+    updateDoc(doc(db, "chats", chatId as string), {
+      [`unread_${myId}`]: 0,
+      [`lastReadAt.${myId}`]: serverTimestamp(),
+    }).catch(() => {});
   }, [chatId, myId, messages.length]);
 
   /* --------------------------- persist draft per chat ------------------------ */
@@ -387,11 +350,10 @@ export default function ChatIdPage() {
   };
 
   const sendOne = async (payload: NewMessagePayload) => {
-    if (!ready) return; // hard guard to avoid silent failure
+    if (!ready) return;
 
     const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const optimistic: Message = { id: tempId, senderId: myId, ...payload, pending: true };
-
     setMessages((prev) => [...prev, optimistic]);
 
     try {
@@ -425,6 +387,7 @@ export default function ChatIdPage() {
 
     setSending(true);
     try {
+      // images first (each as its own message)
       for (const f of files) {
         const imageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${f.name}`);
         const snap = await uploadBytes(imageRef, f);
@@ -441,6 +404,7 @@ export default function ChatIdPage() {
       setSending(false);
     }
 
+    // stop typing
     await setDoc(doc(db, `chats/${chatId}/typingStates/${myId}`), { isTyping: false }).catch(() => {});
   };
 
@@ -541,7 +505,7 @@ export default function ChatIdPage() {
 
       {/* Content */}
       <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-        {/* IMPORTANT: min-h-0 so the inner scroll area can actually scroll */}
+        {/* min-h-0 so inner scroll can scroll */}
         <div className="mx-auto max-w-3xl px-4 md:px-6 py-4 md:py-6 flex flex-col h-[100svh] md:h-[calc(100vh-2rem)] min-h-0">
           {/* Header */}
           <div className="sticky top-0 z-20 bg-background/90 backdrop-blur border-b border-border -mx-4 md:-mx-6 px-4 md:px-6 py-3">
