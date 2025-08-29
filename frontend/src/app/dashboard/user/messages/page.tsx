@@ -155,7 +155,10 @@ export default function UserMessagesPage() {
   if (!user) {
     return (
       <div className="relative flex">
-        <SidebarNavUser unreadCount={0} />
+        {/* Sidebar hidden on small screens */}
+        <div className="hidden md:block">
+          <SidebarNavUser unreadCount={0} />
+        </div>
         <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
           <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
             <p className="text-center text-zinc-500">Yükleniyor...</p>
@@ -168,8 +171,10 @@ export default function UserMessagesPage() {
 
   return (
     <div className="relative flex">
-      {/* Sidebar on md+ */}
-      <SidebarNavUser unreadCount={unreadTotal} />
+      {/* Sidebar on md+ only */}
+      <div className="hidden md:block">
+        <SidebarNavUser unreadCount={unreadTotal} />
+      </div>
 
       {/* Content */}
       <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">

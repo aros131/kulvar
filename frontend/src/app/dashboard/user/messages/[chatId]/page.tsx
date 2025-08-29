@@ -41,7 +41,6 @@ import {
   Check,
   CheckCheck,
   Loader2,
-  ChevronDown,
 } from "lucide-react";
 
 /* --------------------------- Types & constants --------------------------- */
@@ -171,9 +170,6 @@ export default function ChatIdPage() {
 
   // ui niceties
   const listRef = useRef<HTMLDivElement | null>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-  const [atBottom, setAtBottom] = useState(true);
-  const [newCount, setNewCount] = useState(0);
 
   // search
   const [searchOpen, setSearchOpen] = useState(false);
@@ -194,6 +190,9 @@ export default function ChatIdPage() {
     const parts = (chatId as string).split("_");
     return parts.find((p) => p !== user.id) || null;
   }, [chatId, user?.id]);
+
+  // ready guard: avoid silent send failures
+  const ready = !!(chatId && myId && otherId);
 
   /* ----------------------------- Mongo API pull ----------------------------- */
   async function fetchUserFromAPI(userId: string) {
@@ -228,7 +227,6 @@ export default function ChatIdPage() {
   /* ----------------------------- presence stub ----------------------------- */
   useEffect(() => {
     if (!myId) return;
-    // mark lastSeen (simple; proper presence would use RTDB & onDisconnect)
     updateDoc(doc(db, "users", myId), { lastSeen: serverTimestamp() }).catch(() => {});
   }, [myId]);
 
@@ -247,7 +245,6 @@ export default function ChatIdPage() {
         } as any;
       }
 
-      // check block flags in conversation doc
       const convSnap = await getDoc(doc(db, "chats", chatId)).catch(() => null as any);
       const convData = convSnap?.exists() ? (convSnap.data() as any) : null;
       setPinned(convData?.pinnedMessageIds || []);
@@ -261,7 +258,6 @@ export default function ChatIdPage() {
         blockedMe: false,
         lastSeen: display?.lastSeen,
       });
-      // read receipts: observe otherLastReadAt
       if (convData?.lastReadAt && convData.lastReadAt[otherId]) {
         setOtherLastReadAt(convData.lastReadAt[otherId]);
       }
@@ -290,12 +286,11 @@ export default function ChatIdPage() {
     };
   }, [chatId, otherId, myId]);
 
-  /* ---------------------- load latest page + live append --------------------- */
+  /* ---------------------- load latest page (no auto-scroll) ------------------ */
   const [liveUnsub, setLiveUnsub] = useState<null | (() => void)>(null);
 
   const loadLatest = useCallback(async () => {
     if (!chatId) return;
-    // first page (DESC for speed, then reverse)
     const col = collection(db, `chats/${chatId}/messages`);
     const q0 = query(col, orderBy("createdAt", "desc"), limit(PAGE_SIZE));
     const snap = await getDocs(q0);
@@ -306,31 +301,22 @@ export default function ChatIdPage() {
     arr.reverse(); // ASC for UI
     setMessages(arr);
 
-    // live subscription to NEWER messages (ASC order)
+    // live subscription (no auto-scroll, just merge)
     liveUnsub?.();
     const qLive = query(col, orderBy("createdAt", "asc"));
     const unsub = onSnapshot(qLive, (live) => {
       const latest = live.docs.map((d) => ({ id: d.id, ...(d.data() as MsgBase) })) as Message[];
-      // merge: keep existing, append truly new
       setMessages((prev) => {
         const seen = new Set(prev.map((m) => m.id));
         const merged = [...prev];
-        let appended = 0;
         for (const m of latest) {
-          if (!seen.has(m.id)) {
-            merged.push(m);
-            appended++;
-          }
+          if (!seen.has(m.id)) merged.push(m);
         }
-        // if user isn't at bottom, count new
-        if (!atBottom && appended > 0) setNewCount((c) => c + appended);
         return merged;
       });
-      // autoscroll if at bottom
-      if (atBottom) requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }));
     });
     setLiveUnsub(() => unsub);
-  }, [chatId, atBottom, liveUnsub]);
+  }, [chatId, liveUnsub]);
 
   useEffect(() => {
     loadLatest();
@@ -356,11 +342,7 @@ export default function ChatIdPage() {
     const el = listRef.current;
     if (!el) return;
     const onScroll = () => {
-      const atTop = el.scrollTop <= 0;
-      if (atTop) loadOlder();
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-      setAtBottom(nearBottom);
-      if (nearBottom) setNewCount(0);
+      if (el.scrollTop <= 0) loadOlder();
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
@@ -369,7 +351,6 @@ export default function ChatIdPage() {
   /* ----------------------- read my unread & lastReadAt ----------------------- */
   useEffect(() => {
     if (!chatId || !myId) return;
-    // mark conversation-level read for me
     updateDoc(doc(db, "chats", chatId), { [`unread_${myId}`]: 0, [`lastReadAt.${myId}`]: serverTimestamp() }).catch(() => {});
   }, [chatId, myId, messages.length]);
 
@@ -388,7 +369,7 @@ export default function ChatIdPage() {
 
   const handlePickFiles = (list: FileList | null) => {
     if (!list) return;
-    const arr = Array.from(list).slice(0, 8); // keep it sane
+    const arr = Array.from(list).slice(0, 8);
     setFiles((prev) => [...prev, ...arr]);
   };
 
@@ -406,15 +387,12 @@ export default function ChatIdPage() {
   };
 
   const sendOne = async (payload: NewMessagePayload) => {
-    if (!chatId || !myId || !otherId) return;
+    if (!ready) return; // hard guard to avoid silent failure
 
     const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-    // optimistic bubble (senderId injected here)
     const optimistic: Message = { id: tempId, senderId: myId, ...payload, pending: true };
 
     setMessages((prev) => [...prev, optimistic]);
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }));
 
     try {
       const docRef = await addDoc(collection(db, `chats/${chatId}/messages`), {
@@ -423,8 +401,7 @@ export default function ChatIdPage() {
         createdAt: serverTimestamp(),
       });
 
-      // update chat meta
-      await updateDoc(doc(db, "chats", chatId), {
+      await updateDoc(doc(db, "chats", chatId as string), {
         lastMessage: payload.text || (payload.imageUrl ? "[Resim]" : ""),
         updatedAt: serverTimestamp(),
         [`unread_${otherId}`]: increment(1),
@@ -434,6 +411,7 @@ export default function ChatIdPage() {
         prev.map((m) => (m.id === tempId ? { ...m, id: docRef.id, pending: false } : m))
       );
     } catch (e) {
+      console.error("Mesaj gönderilemedi:", e);
       setMessages((prev) =>
         prev.map((m) => (m.id === tempId ? { ...m, pending: false, error: true } : m))
       );
@@ -441,13 +419,12 @@ export default function ChatIdPage() {
   };
 
   const handleSend = async () => {
-    if (sending) return;
+    if (sending || !ready) return;
     const trimmed = text.trim();
     if (!trimmed && files.length === 0) return;
 
     setSending(true);
     try {
-      // upload images (each as its own message)
       for (const f of files) {
         const imageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${f.name}`);
         const snap = await uploadBytes(imageRef, f);
@@ -464,7 +441,6 @@ export default function ChatIdPage() {
       setSending(false);
     }
 
-    // stop typing
     await setDoc(doc(db, `chats/${chatId}/typingStates/${myId}`), { isTyping: false }).catch(() => {});
   };
 
@@ -482,7 +458,6 @@ export default function ChatIdPage() {
       imageUrl: m.imageUrl,
       replyTo: m.replyTo || undefined,
     };
-    // remove failed temp and re-send
     setMessages((prev) => prev.filter((x) => x.id !== m.id));
     await sendOne(payload);
   };
@@ -509,12 +484,11 @@ export default function ChatIdPage() {
   const pinToggle = async (m: Message) => {
     const currentlyPinned = pinned.includes(m.id);
     const newPins = currentlyPinned ? pinned.filter((id) => id !== m.id) : [...pinned, m.id];
-    await updateDoc(doc(db, "chats", chatId), { pinnedMessageIds: newPins }).catch(() => {});
+    await updateDoc(doc(db, "chats", chatId as string), { pinnedMessageIds: newPins }).catch(() => {});
   };
 
   const blockToggle = async () => {
-    // toggle my block state on conversation
-    const convRef = doc(db, "chats", chatId);
+    const convRef = doc(db, "chats", chatId as string);
     const snap = await getDoc(convRef);
     const data = snap.exists() ? (snap.data() as any) : {};
     const arr: string[] = data.blockedBy || [];
@@ -525,13 +499,11 @@ export default function ChatIdPage() {
   /* --------------------------------- UI bits -------------------------------- */
 
   const grouped = useMemo(() => {
-    // filter by local search
     const base = queryText
       ? messages.filter((m) => (m.text || "").toLowerCase().includes(queryText.toLowerCase()))
       : messages;
 
-    // build date separators
-    const out: Array<{ type: "date" | "new" | "msg"; id: string; date?: string; msg?: Message }> = [];
+    const out: Array<{ type: "date" | "msg"; id: string; date?: string; msg?: Message }> = [];
     let lastDate = "";
     for (const m of base) {
       const d = m.createdAt?.toDate?.() || new Date();
@@ -552,13 +524,9 @@ export default function ChatIdPage() {
     if (m.pending) return <Loader2 className="h-3.5 w-3.5 animate-spin opacity-70" />;
     if (m.error) return <span className="text-xs text-red-500">Hata</span>;
     return isReadByOther(m) ? (
-      <span className="inline-flex items-center gap-0.5 opacity-80">
-        <CheckCheck className="h-3.5 w-3.5" />
-      </span>
+      <span className="inline-flex items-center gap-0.5 opacity-80"><CheckCheck className="h-3.5 w-3.5" /></span>
     ) : (
-      <span className="inline-flex items-center gap-0.5 opacity-60">
-        <Check className="h-3.5 w-3.5" />
-      </span>
+      <span className="inline-flex items-center gap-0.5 opacity-60"><Check className="h-3.5 w-3.5" /></span>
     );
   };
 
@@ -566,12 +534,15 @@ export default function ChatIdPage() {
 
   return (
     <div className="relative flex">
-      {/* Sidebar md+ */}
-      <SidebarNavUser unreadCount={0} />
+      {/* Sidebar md+ only */}
+      <div className="hidden md:block">
+        <SidebarNavUser unreadCount={0} />
+      </div>
 
       {/* Content */}
       <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-        <div className="mx-auto max-w-3xl px-4 md:px-6 py-4 md:py-6 flex flex-col h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)]">
+        {/* IMPORTANT: min-h-0 so the inner scroll area can actually scroll */}
+        <div className="mx-auto max-w-3xl px-4 md:px-6 py-4 md:py-6 flex flex-col h-[100svh] md:h-[calc(100vh-2rem)] min-h-0">
           {/* Header */}
           <div className="sticky top-0 z-20 bg-background/90 backdrop-blur border-b border-border -mx-4 md:-mx-6 px-4 md:px-6 py-3">
             <div className="flex items-center gap-2">
@@ -586,13 +557,7 @@ export default function ChatIdPage() {
               <div className="ml-auto flex items-center gap-3">
                 <div className="relative w-8 h-8 shrink-0">
                   {other?.avatar ? (
-                    <Image
-                      src={other.avatar}
-                      alt={other.name}
-                      fill
-                      sizes="32px"
-                      className="rounded-full object-cover"
-                    />
+                    <Image src={other.avatar} alt={other.name} fill sizes="32px" className="rounded-full object-cover" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-zinc-800 dark:text-zinc-100 text-[11px] font-semibold flex items-center justify-center">
                       {initials(other?.name)}
@@ -602,20 +567,12 @@ export default function ChatIdPage() {
                 <div className="leading-tight">
                   <div className="text-sm font-semibold text-foreground">{other?.name || "Bilinmeyen"}</div>
                   <div className="text-[11px] text-muted-foreground">
-                    {typingOther
-                      ? "Yazıyor…"
-                      : other?.lastSeen
-                      ? `Son görülme ${other.lastSeen.toDate().toLocaleString("tr-TR")}`
-                      : "Çevrimdışı"}
+                    {typingOther ? "Yazıyor…" : other?.lastSeen ? `Son görülme ${other.lastSeen.toDate().toLocaleString("tr-TR")}` : "Çevrimdışı"}
                   </div>
                 </div>
 
                 {/* Search toggle */}
-                <button
-                  className="p-2 rounded hover:bg-muted"
-                  onClick={() => setSearchOpen((s) => !s)}
-                  aria-label="Ara"
-                >
+                <button className="p-2 rounded hover:bg-muted" onClick={() => setSearchOpen((s) => !s)} aria-label="Ara">
                   <Search className="h-5 w-5" />
                 </button>
 
@@ -626,10 +583,7 @@ export default function ChatIdPage() {
                       <MoreVertical className="h-5 w-5" />
                     </summary>
                     <div className="absolute right-0 mt-1 w-48 border border-border rounded-md bg-background shadow-md p-1 z-30">
-                      <button
-                        onClick={blockToggle}
-                        className="w-full text-left px-2 py-1.5 rounded hover:bg-muted flex items-center gap-2"
-                      >
+                      <button onClick={blockToggle} className="w-full text-left px-2 py-1.5 rounded hover:bg-muted flex items-center gap-2">
                         <Ban className="h-4 w-4" /> {isBlocked ? "Engeli Kaldır" : "Engelle"}
                       </button>
                       <button className="w-full text-left px-2 py-1.5 rounded hover:bg-muted flex items-center gap-2">
@@ -680,18 +634,12 @@ export default function ChatIdPage() {
           </div>
 
           {/* Messages list */}
-          <div ref={listRef} className="flex-1 overflow-y-auto py-3 space-y-2">
+          <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 py-3 space-y-2">
             {grouped.map((row) =>
               row.type === "date" ? (
                 <div key={row.id} className="sticky top-2 z-10 flex justify-center">
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                     {row.date}
-                  </span>
-                </div>
-              ) : row.type === "new" ? (
-                <div key={row.id} className="flex justify-center">
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary-foreground">
-                    Yeni mesajlar
                   </span>
                 </div>
               ) : (
@@ -711,25 +659,10 @@ export default function ChatIdPage() {
                 />
               )
             )}
-            <div ref={bottomRef} />
           </div>
-
-          {/* Jump-to-latest when not at bottom */}
-          {!atBottom && newCount > 0 && (
-            <button
-              onClick={() => {
-                bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-                setNewCount(0);
-              }}
-              className="fixed right-4 bottom-24 md:bottom-10 z-30 inline-flex items-center gap-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-full shadow"
-            >
-              <ChevronDown className="h-4 w-4" /> {newCount} yeni
-            </button>
-          )}
 
           {/* Composer */}
           <div className="border-t border-border pt-2 mt-1">
-            {/* Reply preview */}
             {replyTo && (
               <div className="mb-2 flex items-start gap-2 bg-muted/60 rounded-lg p-2">
                 <CornerUpLeft className="h-4 w-4 mt-0.5" />
@@ -744,7 +677,6 @@ export default function ChatIdPage() {
               </div>
             )}
 
-            {/* Selected images preview */}
             {files.length > 0 && (
               <div className="mb-2 flex gap-2 overflow-x-auto">
                 {files.map((f, i) => (
@@ -777,7 +709,7 @@ export default function ChatIdPage() {
                   className="hidden"
                   onChange={(e) => handlePickFiles(e.target.files)}
                 />
-              <Paperclip className="text-primary hover:opacity-80" size={20} />
+                <Paperclip className="text-primary hover:opacity-80" size={20} />
               </label>
 
               <input
@@ -791,13 +723,13 @@ export default function ChatIdPage() {
                 }}
                 onPaste={handlePaste}
                 className="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground border-border"
-                placeholder={isBlocked ? "Bu sohbet engellendi" : "Mesaj yaz..."}
-                disabled={isBlocked}
+                placeholder={!ready ? "Sohbet yükleniyor..." : isBlocked ? "Bu sohbet engellendi" : "Mesaj yaz..."}
+                disabled={isBlocked || !ready}
               />
 
               <button
                 onClick={handleSend}
-                disabled={(text.trim() === "" && files.length === 0) || isBlocked || sending}
+                disabled={!ready || (text.trim() === "" && files.length === 0) || isBlocked || sending}
                 className="bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground rounded-full p-2"
                 aria-label="Gönder"
               >
@@ -853,7 +785,6 @@ function MessageBubble({
         mine ? "ml-auto bg-primary text-primary-foreground" : "bg-muted text-foreground"
       }`}
     >
-      {/* reply header */}
       {msg.replyTo && (
         <div className={`text-xs rounded-md px-2 py-1 mb-1 ${mine ? "bg-black/10" : "bg-white/50"}`}>
           <span className="font-medium">{msg.replyTo.senderName || "Yanıtlanan"}</span>
@@ -862,7 +793,6 @@ function MessageBubble({
         </div>
       )}
 
-      {/* image */}
       {msg.imageUrl && (
         <img
           src={msg.imageUrl}
@@ -872,10 +802,8 @@ function MessageBubble({
         />
       )}
 
-      {/* text */}
       {!!msg.text && <span>{msg.text}</span>}
 
-      {/* link previews (raw URLs for now) */}
       {urls.length > 0 && (
         <div className={`mt-2 text-xs ${mine ? "opacity-90" : "opacity-80"}`}>
           {urls.map((u) => (
@@ -886,12 +814,7 @@ function MessageBubble({
         </div>
       )}
 
-      {/* footer */}
-      <div
-        className={`mt-1 text-[10px] flex items-center gap-2 ${
-          mine ? "opacity-80" : "text-muted-foreground"
-        }`}
-      >
+      <div className={`mt-1 text-[10px] flex items-center gap-2 ${mine ? "opacity-80" : "text-muted-foreground"}`}>
         {msg.createdAt?.seconds &&
           new Date(msg.createdAt.seconds * 1000).toLocaleTimeString("tr-TR", {
             hour: "2-digit",
@@ -900,19 +823,13 @@ function MessageBubble({
         <span className="ml-auto inline-flex items-center">{readTicks}</span>
       </div>
 
-      {/* error/ retry */}
       {msg.error && (
         <button onClick={onRetry} className="text-[11px] mt-1 underline">
           Yeniden dene
         </button>
       )}
 
-      {/* bubble actions */}
-      <div
-        className={`opacity-0 group-hover:opacity-100 transition mt-1 -mb-1 flex items-center gap-1 ${
-          mine ? "justify-end" : "justify-start"
-        }`}
-      >
+      <div className={`opacity-0 group-hover:opacity-100 transition mt-1 -mb-1 flex items-center gap-1 ${mine ? "justify-end" : "justify-start"}`}>
         <details className="relative">
           <summary className="list-none text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10 cursor-pointer inline-flex items-center gap-1">
             Tepki
@@ -923,37 +840,26 @@ function MessageBubble({
         </details>
 
         <button
-          onClick={() =>
-            onReply({
-              id: msg.id,
-              text: msg.text,
-              imageUrl: msg.imageUrl,
-              senderName: mine ? "Siz" : otherName,
-            })
-          }
+          onClick={() => onReply({ id: msg.id, text: msg.text, imageUrl: msg.imageUrl, senderName: mine ? "Siz" : otherName })}
           className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10"
         >
           Yanıtla
         </button>
-
         {!!msg.text && (
           <button onClick={() => onCopy(msg.text)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10">
             Kopyala
           </button>
         )}
-
         {mine && (
           <button onClick={() => onDelete(msg)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10">
             Sil
           </button>
         )}
-
         <button onClick={() => onPin(msg)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10">
           📌 Sabitle
         </button>
       </div>
 
-      {/* reactions bar */}
       {msg.reactions && Object.keys(msg.reactions).length > 0 && (
         <div className={`mt-1 flex gap-1 ${mine ? "justify-end" : "justify-start"}`}>
           {Object.entries(msg.reactions).map(([emoji, ids]) => (

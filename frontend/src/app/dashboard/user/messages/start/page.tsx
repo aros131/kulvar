@@ -54,9 +54,7 @@ export default function StartUserChatPage() {
               data?.profilePicture || data?.avatar || data?.image || data?.photoURL || data?.photo,
           };
         }
-      } catch {
-        // ignore and try next endpoint
-      }
+      } catch {}
     }
     return null;
   }
@@ -137,8 +135,10 @@ export default function StartUserChatPage() {
 
   return (
     <div className="relative flex">
-      {/* Sidebar on md+ */}
-      <SidebarNavUser unreadCount={0} />
+      {/* Sidebar on md+ only */}
+      <div className="hidden md:block">
+        <SidebarNavUser unreadCount={0} />
+      </div>
 
       <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
         <div className="mx-auto max-w-3xl px-4 md:px-6 py-6 md:py-8">
@@ -212,3 +212,4 @@ export default function StartUserChatPage() {
     </div>
   );
 }
+
