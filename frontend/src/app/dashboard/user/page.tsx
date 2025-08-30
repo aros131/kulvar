@@ -85,10 +85,14 @@ interface Notification {
   createdAt: string;
 }
 interface UserProfile {
+  _id?: string;
+  id?: string;
   name: string;
   email: string;
   profilePicture: string;
 }
+
+type CoachLite = { id: string; name: string; avatarUrl?: string; role?: string };
 
 /* ------------------------------- UI Pieces -------------------------------- */
 
@@ -132,8 +136,6 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-type CoachLite = { id: string; name: string; avatarUrl?: string; role?: string };
-
 function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: () => void }) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(5);
@@ -154,7 +156,7 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API}/coaches/${coach.id}/reviews`, {
+      const res = await fetch(`${API}/coaches/${coach.id}/reviews`.replace("coaching", "coaches").replace("coaches", "coaches"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating, comment }),
@@ -240,10 +242,12 @@ function ProgramThumb({ name }: { name?: string }) {
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);        // notifications
-  const [unreadMessages, setUnreadMessages] = useState(0);  // messages
+
+  const [unreadCount, setUnreadCount] = useState(0);        // notifications via REST
+  const [unreadMessages, setUnreadMessages] = useState(0);  // messages via Firestore
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [userId, setUserId] = useState<string | null>(null); // for Firestore
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [loadingPrograms, setLoadingPrograms] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(true);
@@ -265,11 +269,51 @@ export default function UserDashboardPage() {
   }, []);
   const headers = useMemo(() => makeAuthHeaders(token), [token]);
 
+  // fetch profile (to get userId) + analytics + notifications + programs
   useEffect(() => {
-    if (!token) return; // wait until we have an auth token
+    if (!token) return;
 
     let alive = true;
     const ac = new AbortController();
+
+    const fetchProfile = async () => {
+      setLoadingProfile(true);
+      try {
+        const res = await fetch(`${API}/profile`, { headers, cache: "no-store", signal: ac.signal });
+        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
+        if (alive) {
+          setProfile(data && typeof data === "object" ? data : null);
+          const id = data?._id || data?.id || null;
+          setUserId(id);
+        }
+      } catch {
+        if (alive) {
+          setProfile(null);
+          setUserId(null);
+        }
+      } finally {
+        if (alive) setLoadingProfile(false);
+      }
+    };
+
+    const fetchProgress = async () => {
+      setLoadingProgress(true);
+      try {
+        const res = await fetch(`${API}/dashboard/analytics/user`, { headers, cache: "no-store", signal: ac.signal });
+        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
+        if (alive) {
+          setProgress({
+            totalCompletedSessions: Number(data.totalCompletedSessions) || 0,
+            assignedPrograms: Number(data.assignedPrograms) || 0,
+            goalTracking: Array.isArray(data.goalTracking) ? data.goalTracking : [],
+          });
+        }
+      } catch {
+        if (alive) setProgress({ totalCompletedSessions: 0, assignedPrograms: 0, goalTracking: [] });
+      } finally {
+        if (alive) setLoadingProgress(false);
+      }
+    };
 
     const fetchPrograms = async () => {
       setLoadingPrograms(true);
@@ -297,25 +341,6 @@ export default function UserDashboardPage() {
       }
     };
 
-    const fetchProgress = async () => {
-      setLoadingProgress(true);
-      try {
-        const res = await fetch(`${API}/dashboard/analytics/user`, { headers, cache: "no-store", signal: ac.signal });
-        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
-        if (alive) {
-          setProgress({
-            totalCompletedSessions: Number(data.totalCompletedSessions) || 0,
-            assignedPrograms: Number(data.assignedPrograms) || 0,
-            goalTracking: Array.isArray(data.goalTracking) ? data.goalTracking : [],
-          });
-        }
-      } catch {
-        if (alive) setProgress({ totalCompletedSessions: 0, assignedPrograms: 0, goalTracking: [] });
-      } finally {
-        if (alive) setLoadingProgress(false);
-      }
-    };
-
     const fetchUnreadNotifications = async () => {
       try {
         const res = await fetch(`${API}/dashboard/notifications/user`, { headers, cache: "no-store", signal: ac.signal });
@@ -327,91 +352,11 @@ export default function UserDashboardPage() {
       }
     };
 
-    // REST fallback for unread messages (in case Firestore isn't available yet)
-    const pickNumber = (...vals: any[]) => {
-      for (const v of vals) if (typeof v === "number" && !Number.isNaN(v)) return v;
-      return null;
-    };
-    const countUnreadInArray = (arr: any[]): number => {
-      let sum = 0;
-      for (const t of arr) {
-        const direct = pickNumber(t?.unreadCount, t?.unread, t?.countUnread);
-        if (direct !== null) { sum += direct!; continue; }
-        if (t?.unread === true || t?.isUnread === true) { sum += 1; continue; }
-        if (Array.isArray(t?.messages)) {
-          const hasUnread = t.messages.some((m: any) => m?.isRead === false || m?.read === false || m?.isSeen === false);
-          if (hasUnread) sum += 1;
-        }
-      }
-      return sum;
-    };
-    const computeUnread = (data: any): number | null => {
-      if (!data || typeof data !== "object") return null;
-      const top = pickNumber(data.unreadCount, data.unread, data.countUnread, data.totalUnread, data.unread_messages);
-      if (top !== null) return top;
-      if (Array.isArray(data.threads)) return countUnreadInArray(data.threads);
-      if (Array.isArray(data.conversations)) return countUnreadInArray(data.conversations);
-      if (Array.isArray(data.items)) return countUnreadInArray(data.items);
-      if (Array.isArray(data.messages)) {
-        return data.messages.filter((m: any) => m?.isRead === false || m?.read === false || m?.isSeen === false).length;
-      }
-      return null;
-    };
-    const unreadCandidates = [
-      `${API}/messages/unread-count`,
-      `${API}/dashboard/messages/unread-count`,
-      `${API}/messages/threads?limit=100`,
-      `${API}/messages/conversations?limit=100`,
-      `${API}/messages?unread=true&limit=100`,
-      `${API}/messages/unread?limit=100`,
-    ];
-    const smartFetchUnreadMessages = async (): Promise<number> => {
-      for (const url of unreadCandidates) {
-        try {
-          const res = await fetch(url, { headers, cache: "no-store", signal: ac.signal });
-          if (!res.ok) continue;
-          const data = await res.json().catch(() => ({}));
-          const n = computeUnread(data);
-          if (typeof n === "number" && n >= 0) return n;
-        } catch {}
-      }
-      return 0;
-    };
-
-    const fetchProfile = async () => {
-      setLoadingProfile(true);
-      try {
-        const res = await fetch(`${API}/profile`, { headers, cache: "no-store", signal: ac.signal });
-        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
-        if (alive) {
-          setProfile(data && typeof data === "object" ? data : null);
-          const id = data?._id || data?.id || null;
-          setUserId(id);
-        }
-      } catch {
-        if (alive) setProfile(null);
-      } finally {
-        if (alive) setLoadingProfile(false);
-      }
-    };
-
-    const loadCounts = async () => {
-      await Promise.allSettled([
-        fetchUnreadNotifications(),
-        (async () => {
-          const n = await smartFetchUnreadMessages();
-          if (alive) setUnreadMessages(n);
-        })(),
-      ]);
-    };
-
-    // initial load
-    fetchPrograms();
-    fetchProgress();
     fetchProfile();
-    loadCounts();
+    fetchProgress();
+    fetchPrograms();
+    fetchUnreadNotifications();
 
-    // refresh notifications periodically & on tab focus (Firestore will live-update messages)
     const interval = window.setInterval(fetchUnreadNotifications, 30000);
     const onVis = () => {
       if (document.visibilityState === "visible") fetchUnreadNotifications();
@@ -426,22 +371,7 @@ export default function UserDashboardPage() {
     };
   }, [headers, token]);
 
-  // Resolve profile photo
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      const input = profile?.profilePicture;
-      if (!input) {
-        if (alive) setProfilePhotoUrl(null);
-        return;
-      }
-      const url = await resolveAvatarUrl(input);
-      if (alive) setProfilePhotoUrl(url);
-    })();
-    return () => { alive = false; };
-  }, [profile?.profilePicture]);
-
-  // --- Real-time unread messages via Firestore
+  // real-time unread messages (Firestore)
   useEffect(() => {
     if (!userId) return;
     const q = query(collection(db, "chats"), where("participants", "array-contains", userId));
@@ -456,7 +386,22 @@ export default function UserDashboardPage() {
     return () => unsub();
   }, [userId]);
 
-  // Koçlarım
+  // resolve profile photo
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const input = profile?.profilePicture;
+      if (!input) {
+        if (alive) setProfilePhotoUrl(null);
+        return;
+      }
+      const url = await resolveAvatarUrl(input);
+      if (alive) setProfilePhotoUrl(url);
+    })();
+    return () => { alive = false; };
+  }, [profile?.profilePicture]);
+
+  // Koçlarım listesi
   useEffect(() => {
     if (!token) return;
     let alive = true;
@@ -464,7 +409,6 @@ export default function UserDashboardPage() {
 
     const run = async () => {
       setLoadingCoaches(true);
-
       try {
         const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store", signal: ac.signal });
         if (r.ok) {
@@ -487,102 +431,15 @@ export default function UserDashboardPage() {
           }
         }
       } catch { /* ignore */ }
-
-      try {
-        if (!programs.length) {
-          if (alive) {
-            setMyCoaches([]);
-            setLoadingCoaches(false);
-          }
-          return;
-        }
-
-        const programIds = [...new Set(programs.map((p) => p.programId).filter(Boolean))];
-
-        const programDetails = await Promise.all(
-          programIds.map(async (pid) => {
-            try {
-              const r = await fetch(`${API}/programs/${pid}`, { headers, cache: "no-store", signal: ac.signal });
-              if (!r.ok) return null;
-              const j = await r.json().catch(() => ({}));
-              return (j && (j.program || j)) || null;
-            } catch {
-              return null;
-            }
-          })
-        );
-
-        type CoachDraft = { id?: string; name?: string; avatarUrl?: string; role?: string };
-        const drafts: CoachDraft[] = [];
-
-        for (const pg of programDetails) {
-          if (!pg) continue;
-          const c = pg.coach || pg.createdBy || pg.author || pg.owner || pg.coachInfo || null;
-          const coachId = c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
-
-          if (c && (c.name || c.fullName)) {
-            drafts.push({
-              id: String(coachId || c.id || c._id || ""),
-              name: String(c.name || c.fullName || "Koç"),
-              avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
-              role: c.role || c.title || "Coach",
-            });
-          } else if (coachId) {
-            drafts.push({ id: String(coachId) });
-          }
-        }
-
-        const byId = new Map<string, CoachLite>();
-        drafts.forEach((d) => {
-          if (!d.id) return;
-          if (d.name) {
-            byId.set(d.id, {
-              id: d.id,
-              name: d.name!,
-              avatarUrl: d.avatarUrl,
-              role: d.role || "Coach",
-            });
-          } else if (!byId.has(d.id)) {
-            byId.set(d.id, { id: d.id, name: "Koç", role: "Coach" });
-          }
-        });
-
-        const toFill = [...byId.values()].filter((c) => !c.name || c.name === "Koç");
-        await Promise.all(
-          toFill.map(async (c) => {
-            try {
-              const r = await fetch(`${API}/coaches/${c.id}`, { headers, cache: "no-store", signal: ac.signal });
-              if (!r.ok) return;
-              const j = await r.json().catch(() => ({}));
-              const obj = j?.coach || j;
-              if (!obj) return;
-              byId.set(c.id, {
-                id: c.id,
-                name: String(obj.name || "Koç"),
-                avatarUrl: obj.avatarUrl || obj.avatar || obj.profilePicture || "",
-                role: obj.role || obj.title || "Coach",
-              });
-            } catch {}
-          })
-        );
-
-        const items = [...byId.values()];
-        const withPhotos = await Promise.all(
-          items.map(async (c) => ({ ...c, avatarUrl: await resolveAvatarUrl(c.avatarUrl) }))
-        );
-        if (alive) setMyCoaches(withPhotos);
-      } finally {
-        if (alive) setLoadingCoaches(false);
-      }
+      if (alive) setLoadingCoaches(false);
     };
 
     run();
-
     return () => {
       alive = false;
       ac.abort();
     };
-  }, [programs, headers, token]);
+  }, [headers, token]);
 
   /* ---------------------------- Render: Page Shell --------------------------- */
 
@@ -676,7 +533,6 @@ export default function UserDashboardPage() {
               subtitle="İletişimde olduğun koçlar"
               right={!loadingCoaches && myCoaches.length ? <span className="text-sm text-muted-foreground">{myCoaches.length} koç</span> : null}
             />
-
             {loadingCoaches ? (
               <CoachGridSkeleton />
             ) : myCoaches.length === 0 ? (
