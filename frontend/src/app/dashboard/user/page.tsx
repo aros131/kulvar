@@ -27,22 +27,16 @@ const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/
 
 /* ------------------------------ Helper Utils ------------------------------ */
 
-/** Resolve storage paths & gs:// URLs to downloadable https URLs */
 async function resolveAvatarUrl(input?: string): Promise<string> {
   const FALLBACK = "/images/user.png";
   if (!input) return FALLBACK;
-
-  // Already an HTTP(S) url
   if (/^https?:\/\//i.test(input)) return input;
 
   try {
-    // Accept full gs:// URL as-is
     if (/^gs:\/\//i.test(input)) {
       const ref = sRef(avatarStorage, input);
       return await getDownloadURL(ref);
     }
-
-    // Otherwise treat as a storage path ("profile-pictures/uid.jpg")
     const path = input.replace(/^\/+/, "");
     const ref = sRef(avatarStorage, path);
     return await getDownloadURL(ref);
@@ -75,7 +69,7 @@ interface UserProgram {
   name: string;
   description: string;
   duration?: number | string;
-  image?: string; // kept for compatibility (unused)
+  image?: string;
   progressPercentage: number;
 }
 interface UserProgress {
@@ -92,7 +86,7 @@ interface Notification {
 interface UserProfile {
   name: string;
   email: string;
-  profilePicture: string; // can be https, gs://, or storage path
+  profilePicture: string;
 }
 type CoachLite = {
   id: string;
@@ -119,16 +113,12 @@ function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: st
         aria-valuenow={pct}
         aria-label={label}
       >
-        <div
-          className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
 }
 
-/* ⭐ 1–5 star picker */
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex items-center gap-1">
@@ -140,18 +130,13 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
           className="p-1 rounded hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           aria-label={`${n} yıldız`}
         >
-          <Star
-            className="h-5 w-5"
-            fill={n <= value ? "currentColor" : "none"}
-            stroke="currentColor"
-          />
+          <Star className="h-5 w-5" fill={n <= value ? "currentColor" : "none"} stroke="currentColor" />
         </button>
       ))}
     </div>
   );
 }
 
-/* 🗨️ Review dialog */
 function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: () => void }) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(5);
@@ -233,7 +218,6 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
   );
 }
 
-/* --- Program visual (no images, always clean) --- */
 function initialsFrom(name?: string) {
   if (!name) return "PR";
   const parts = name.trim().split(/\s+/).slice(0, 2);
@@ -243,11 +227,8 @@ function initialsFrom(name?: string) {
 function ProgramThumb({ name }: { name?: string }) {
   return (
     <div className="aspect-[16/9] relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:via-emerald-800/30 dark:to-emerald-700/20">
-      {/* soft texture */}
       <div className="absolute inset-0 opacity-30 [background:radial-gradient(60%_60%_at_20%_0%,white,transparent_60%)] dark:opacity-20" />
-      {/* icon */}
       <Dumbbell className="absolute right-3 top-3 h-5 w-5 text-emerald-600/70 dark:text-emerald-300/70" />
-      {/* initials */}
       <div className="absolute inset-0 grid place-items-center">
         <span className="text-2xl font-semibold tracking-wide text-emerald-700 dark:text-emerald-200">
           {initialsFrom(name)}
@@ -262,23 +243,19 @@ function ProgramThumb({ name }: { name?: string }) {
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0); // notifications
-  const [unreadMessages, setUnreadMessages] = useState(0); // messages
+  const [unreadCount, setUnreadCount] = useState(0);        // notifications
+  const [unreadMessages, setUnreadMessages] = useState(0);  // messages
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Loading states for polished skeletons
   const [loadingPrograms, setLoadingPrograms] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // 🔹 resolved URL for the profile picture (Firebase-friendly)
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
 
-  // 🔹 Koçlarım
   const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
 
-  // Auth header management
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
     setToken(cleanToken());
@@ -291,17 +268,21 @@ export default function UserDashboardPage() {
   const headers = useMemo(() => makeAuthHeaders(token), [token]);
 
   useEffect(() => {
+    if (!token) return; // wait until we have an auth token
+
+    let alive = true;
+    const ac = new AbortController();
+
     const fetchPrograms = async () => {
       setLoadingPrograms(true);
       try {
-        const res = await fetch(`${API}/progress/all-program-progress`, { headers, cache: "no-store" });
+        const res = await fetch(`${API}/progress/all-program-progress`, { headers, cache: "no-store", signal: ac.signal });
         const data = res.ok ? await res.json().catch(() => ({})) : {};
         const list: UserProgram[] = Array.isArray((data as any).programProgress) ? (data as any).programProgress : [];
-        // refresh canonical % per program
         const enriched = await Promise.all(
           list.map(async (p) => {
             try {
-              const r = await fetch(`${API}/progress/user/${p.programId}`, { headers, cache: "no-store" });
+              const r = await fetch(`${API}/progress/user/${p.programId}`, { headers, cache: "no-store", signal: ac.signal });
               if (r.ok && (r.headers.get("content-type") || "").includes("application/json")) {
                 const j = await r.json();
                 return { ...p, progressPercentage: roundPct(j.progressPercentage) };
@@ -310,80 +291,154 @@ export default function UserDashboardPage() {
             return { ...p, progressPercentage: roundPct(p.progressPercentage) };
           })
         );
-        setPrograms(enriched);
+        if (alive) setPrograms(enriched);
       } catch {
-        setPrograms([]);
+        if (alive) setPrograms([]);
       } finally {
-        setLoadingPrograms(false);
+        if (alive) setLoadingPrograms(false);
       }
     };
 
     const fetchProgress = async () => {
       setLoadingProgress(true);
       try {
-        const res = await fetch(`${API}/dashboard/analytics/user`, { headers, cache: "no-store" });
+        const res = await fetch(`${API}/dashboard/analytics/user`, { headers, cache: "no-store", signal: ac.signal });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
-        setProgress({
-          totalCompletedSessions: Number(data.totalCompletedSessions) || 0,
-          assignedPrograms: Number(data.assignedPrograms) || 0,
-          goalTracking: Array.isArray(data.goalTracking) ? data.goalTracking : [],
-        });
+        if (alive) {
+          setProgress({
+            totalCompletedSessions: Number(data.totalCompletedSessions) || 0,
+            assignedPrograms: Number(data.assignedPrograms) || 0,
+            goalTracking: Array.isArray(data.goalTracking) ? data.goalTracking : [],
+          });
+        }
       } catch {
-        setProgress({ totalCompletedSessions: 0, assignedPrograms: 0, goalTracking: [] });
+        if (alive) setProgress({ totalCompletedSessions: 0, assignedPrograms: 0, goalTracking: [] });
       } finally {
-        setLoadingProgress(false);
+        if (alive) setLoadingProgress(false);
       }
     };
 
     const fetchUnreadNotifications = async () => {
       try {
-        const res = await fetch(`${API}/dashboard/notifications/user`, { headers, cache: "no-store" });
+        const res = await fetch(`${API}/dashboard/notifications/user`, { headers, cache: "no-store", signal: ac.signal });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
         const list: Notification[] = Array.isArray(data.notifications) ? data.notifications : [];
-        setUnreadCount(list.filter((n) => !n.isRead).length);
+        if (alive) setUnreadCount(list.filter((n) => !n.isRead).length);
       } catch {
-        setUnreadCount(0);
+        if (alive) setUnreadCount(0);
       }
     };
 
-    const fetchUnreadMessages = async () => {
-      try {
-        // 🔁 adjust endpoint if your API differs
-        const res = await fetch(`${API}/messages/unread-count`, { headers, cache: "no-store" });
-        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
-        const count =
-          typeof data?.unreadCount === "number"
-            ? data.unreadCount
-            : Array.isArray(data?.threads)
-            ? data.threads.filter((t: any) => !t.isRead).length
-            : 0;
-        setUnreadMessages(count);
-      } catch {
-        setUnreadMessages(0);
+    // ---------- Robust unread message counter
+    const pickNumber = (...vals: any[]) => {
+      for (const v of vals) if (typeof v === "number" && !Number.isNaN(v)) return v;
+      return null;
+    };
+
+    const countUnreadInArray = (arr: any[]): number => {
+      let sum = 0;
+      for (const t of arr) {
+        const direct = pickNumber(t?.unreadCount, t?.unread, t?.countUnread);
+        if (direct !== null) {
+          sum += direct!;
+          continue;
+        }
+        // thread-level boolean or message-level unread
+        if (t?.unread === true || t?.isUnread === true) {
+          sum += 1;
+          continue;
+        }
+        if (Array.isArray(t?.messages)) {
+          const hasUnread = t.messages.some((m: any) =>
+            m?.isRead === false || m?.read === false || m?.isSeen === false
+          );
+          if (hasUnread) sum += 1;
+        }
       }
+      return sum;
+    };
+
+    const computeUnread = (data: any): number | null => {
+      if (!data || typeof data !== "object") return null;
+      const top = pickNumber(data.unreadCount, data.unread, data.countUnread, data.totalUnread, data.unread_messages);
+      if (top !== null) return top;
+
+      if (Array.isArray(data.threads)) return countUnreadInArray(data.threads);
+      if (Array.isArray(data.conversations)) return countUnreadInArray(data.conversations);
+      if (Array.isArray(data.items)) return countUnreadInArray(data.items);
+
+      if (Array.isArray(data.messages)) {
+        return data.messages.filter((m: any) => m?.isRead === false || m?.read === false || m?.isSeen === false).length;
+      }
+      return null;
+    };
+
+    const unreadCandidates = [
+      `${API}/messages/unread-count`,
+      `${API}/dashboard/messages/unread-count`,
+      `${API}/messages/threads?limit=100`,
+      `${API}/messages/conversations?limit=100`,
+      `${API}/messages?unread=true&limit=100`,
+      `${API}/messages/unread?limit=100`,
+    ];
+
+    const smartFetchUnreadMessages = async (): Promise<number> => {
+      for (const url of unreadCandidates) {
+        try {
+          const res = await fetch(url, { headers, cache: "no-store", signal: ac.signal });
+          if (!res.ok) continue;
+          const data = await res.json().catch(() => ({}));
+          const n = computeUnread(data);
+          if (typeof n === "number" && n >= 0) return n;
+        } catch {
+          // try next
+        }
+      }
+      return 0;
+    };
+
+    const loadCounts = async () => {
+      await Promise.allSettled([fetchUnreadNotifications(), (async () => {
+        const n = await smartFetchUnreadMessages();
+        if (alive) setUnreadMessages(n);
+      })()]);
     };
 
     const fetchProfile = async () => {
       setLoadingProfile(true);
       try {
-        const res = await fetch(`${API}/profile`, { headers, cache: "no-store" });
+        const res = await fetch(`${API}/profile`, { headers, cache: "no-store", signal: ac.signal });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
-        setProfile(data && typeof data === "object" ? data : null);
+        if (alive) setProfile(data && typeof data === "object" ? data : null);
       } catch {
-        setProfile(null);
+        if (alive) setProfile(null);
       } finally {
-        setLoadingProfile(false);
+        if (alive) setLoadingProfile(false);
       }
     };
 
+    // initial load
     fetchPrograms();
     fetchProgress();
-    fetchUnreadNotifications();
-    fetchUnreadMessages();
+    loadCounts();
     fetchProfile();
-  }, [headers]);
 
-  // ✅ Resolve top profile image from Firebase (gs:// or storage path → https)
+    // refresh unread counts periodically & on tab focus
+    const interval = window.setInterval(loadCounts, 30000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") loadCounts();
+    };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      alive = false;
+      ac.abort();
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [headers, token]);
+
+  // Resolve profile photo
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -395,19 +450,20 @@ export default function UserDashboardPage() {
       const url = await resolveAvatarUrl(input);
       if (alive) setProfilePhotoUrl(url);
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [profile?.profilePicture]);
 
-  // 🔎 Koçlarım
+  // Koçlarım
   useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    const ac = new AbortController();
+
     const run = async () => {
       setLoadingCoaches(true);
 
-      // 1) preferred: single endpoint
       try {
-        const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store" });
+        const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store", signal: ac.signal });
         if (r.ok) {
           const j = await r.json().catch(() => ({}));
           if (Array.isArray(j.items)) {
@@ -417,29 +473,24 @@ export default function UserDashboardPage() {
               avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
               role: c.role || "Coach",
             }));
-
-            // resolve Firebase download URLs for each coach avatar
             const items = await Promise.all(
-              rawItems.map(async (c) => ({
-                ...c,
-                avatarUrl: await resolveAvatarUrl(c.avatarUrl),
-              }))
+              rawItems.map(async (c) => ({ ...c, avatarUrl: await resolveAvatarUrl(c.avatarUrl) }))
             );
-
-            setMyCoaches(items);
-            setLoadingCoaches(false);
-            return;
+            if (alive) {
+              setMyCoaches(items);
+              setLoadingCoaches(false);
+              return;
+            }
           }
         }
-      } catch {
-        // fall through to client derivation
-      }
+      } catch { /* ignore */ }
 
-      // 2) fallback: derive from programs
       try {
         if (!programs.length) {
-          setMyCoaches([]);
-          setLoadingCoaches(false);
+          if (alive) {
+            setMyCoaches([]);
+            setLoadingCoaches(false);
+          }
           return;
         }
 
@@ -448,7 +499,7 @@ export default function UserDashboardPage() {
         const programDetails = await Promise.all(
           programIds.map(async (pid) => {
             try {
-              const r = await fetch(`${API}/programs/${pid}`, { headers, cache: "no-store" });
+              const r = await fetch(`${API}/programs/${pid}`, { headers, cache: "no-store", signal: ac.signal });
               if (!r.ok) return null;
               const j = await r.json().catch(() => ({}));
               return (j && (j.program || j)) || null;
@@ -463,16 +514,8 @@ export default function UserDashboardPage() {
 
         for (const pg of programDetails) {
           if (!pg) continue;
-          const c =
-            pg.coach ||
-            pg.createdBy ||
-            pg.author ||
-            pg.owner ||
-            pg.coachInfo ||
-            null;
-
-          const coachId =
-            c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
+          const c = pg.coach || pg.createdBy || pg.author || pg.owner || pg.coachInfo || null;
+          const coachId = c?.id || c?._id || pg.coachId || pg.createdById || pg.ownerId || null;
 
           if (c && (c.name || c.fullName)) {
             drafts.push({
@@ -505,7 +548,7 @@ export default function UserDashboardPage() {
         await Promise.all(
           toFill.map(async (c) => {
             try {
-              const r = await fetch(`${API}/coaches/${c.id}`, { headers, cache: "no-store" });
+              const r = await fetch(`${API}/coaches/${c.id}`, { headers, cache: "no-store", signal: ac.signal });
               if (!r.ok) return;
               const j = await r.json().catch(() => ({}));
               const obj = j?.coach || j;
@@ -524,14 +567,19 @@ export default function UserDashboardPage() {
         const withPhotos = await Promise.all(
           items.map(async (c) => ({ ...c, avatarUrl: await resolveAvatarUrl(c.avatarUrl) }))
         );
-        setMyCoaches(withPhotos);
+        if (alive) setMyCoaches(withPhotos);
       } finally {
-        setLoadingCoaches(false);
+        if (alive) setLoadingCoaches(false);
       }
     };
 
     run();
-  }, [programs, headers]);
+
+    return () => {
+      alive = false;
+      ac.abort();
+    };
+  }, [programs, headers, token]);
 
   /* ---------------------------- Render: Page Shell --------------------------- */
 
@@ -539,10 +587,7 @@ export default function UserDashboardPage() {
     <div className="relative flex min-h-screen">
       {/* Sidebar only on md+ */}
       <div className="hidden md:block">
-        <SidebarNavUser
-          unreadCount={unreadCount}
-          unreadMessages={unreadMessages}
-        />
+        <SidebarNavUser unreadCount={unreadCount} unreadMessages={unreadMessages} />
       </div>
 
       {/* Add bottom padding on mobile so content doesn't sit under the fixed nav */}
@@ -555,12 +600,7 @@ export default function UserDashboardPage() {
 
         <section className="max-w-6xl mx-auto px-4 pb-12 pt-8 md:pt-12">
           {/* Hero / Greeting */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="mb-8"
-          >
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="mb-8">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
@@ -574,30 +614,16 @@ export default function UserDashboardPage() {
                 />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                  Hoş Geldin, {profile?.name || "Kullanıcı"}!
-                </h1>
-                <p className="text-sm md:text-base text-muted-foreground">
-                  Bugün de hedeflerine ulaşmak için harika bir gün. Hazırsan başlayalım. 💪
-                </p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Hoş Geldin, {profile?.name || "Kullanıcı"}!</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Bugün de hedeflerine ulaşmak için harika bir gün. Hazırsan başlayalım. 💪</p>
               </div>
             </div>
           </motion.div>
 
           {/* Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
-            <StatCard
-              loading={loadingProgress}
-              title="Tamamlanan Seans"
-              value={progress?.totalCompletedSessions ?? 0}
-              hint="Son 30 gün içinde"
-            />
-            <StatCard
-              loading={loadingProgress}
-              title="Atanmış Program"
-              value={progress?.assignedPrograms ?? 0}
-              hint="Aktif"
-            />
+            <StatCard loading={loadingProgress} title="Tamamlanan Seans" value={progress?.totalCompletedSessions ?? 0} hint="Son 30 gün içinde" />
+            <StatCard loading={loadingProgress} title="Atanmış Program" value={progress?.assignedPrograms ?? 0} hint="Aktif" />
             <StatCard loading={false} title="Bildirim" value={unreadCount} hint="Okunmamış" />
           </div>
 
@@ -609,24 +635,12 @@ export default function UserDashboardPage() {
             ) : programs.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {programs.map((program) => (
-                  <motion.div
-                    key={program.programId}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35 }}
-                  >
+                  <motion.div key={program.programId} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
                     <Card className="group overflow-hidden border-zinc-200/70 dark:border-zinc-800/70 hover:shadow-lg hover:border-emerald-500/40 transition-all rounded-2xl">
                       <ProgramThumb name={program.name} />
-
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-base md:text-lg line-clamp-1">
-                          {program.name}
-                        </CardTitle>
-                        {program.description ? (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {program.description}
-                          </p>
-                        ) : null}
+                        <CardTitle className="text-base md:text-lg line-clamp-1">{program.name}</CardTitle>
+                        {program.description ? <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p> : null}
                       </CardHeader>
                       <CardContent className="pt-0 space-y-4">
                         <ProgressBar value={program.progressPercentage} />
@@ -657,9 +671,7 @@ export default function UserDashboardPage() {
             <SectionHeader
               title="Koçlarım"
               subtitle="İletişimde olduğun koçlar"
-              right={!loadingCoaches && myCoaches.length ? (
-                <span className="text-sm text-muted-foreground">{myCoaches.length} koç</span>
-              ) : null}
+              right={!loadingCoaches && myCoaches.length ? <span className="text-sm text-muted-foreground">{myCoaches.length} koç</span> : null}
             />
 
             {loadingCoaches ? (
@@ -678,12 +690,7 @@ export default function UserDashboardPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {myCoaches.map((c) => (
-                  <motion.div
-                    key={c.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
+                  <motion.div key={c.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                     <Card className="hover:shadow-lg transition-shadow rounded-2xl">
                       <CardHeader className="flex flex-row items-center gap-3">
                         <Avatar className="h-10 w-10 ring-2 ring-emerald-500/20 rounded-xl">
@@ -738,19 +745,14 @@ export default function UserDashboardPage() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="Hedef bulunamadı">
-                Koçundan hedef belirlemeni isteyebilirsin.
-              </EmptyState>
+              <EmptyState title="Hedef bulunamadı">Koçundan hedef belirlemeni isteyebilirsin.</EmptyState>
             )}
           </section>
         </section>
       </main>
 
       {/* Bottom nav on mobile, with counts */}
-      <MobileUserBottomNav
-        unreadNotifications={unreadCount}
-        unreadMessages={unreadMessages}
-      />
+      <MobileUserBottomNav unreadNotifications={unreadCount} unreadMessages={unreadMessages} />
     </div>
   );
 }
@@ -767,7 +769,7 @@ function SectionHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-4 md:mb-6 flex items-end justify-between gap-3">
+    <div className="mb-4 md:mb-6 flex items	end justify-between gap-3">
       <div>
         <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{title}</h2>
         {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
