@@ -10,7 +10,7 @@ import SidebarNav from "@/components/ui/SidebarNavCoach";
 import ProgramList from "@/components/coach/ProgramList";
 import PendingBookings from "@/components/coach/PendingBookings";
 import CoachAvailability from "@/components/coach/CoachAvailability";
-
+import MobileCoachBottomNav from "@/components/nav/MobileCoachBottomNav"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -129,15 +129,18 @@ export default function DashboardCoachPage() {
   }, [headers]);
 
   return (
-    <div className="flex">
+  <div className="relative flex min-h-screen">
+    {/* Sidebar only on md+ */}
+    <div className="hidden md:block">
       <SidebarNav unreadCount={unreadCount} />
+    </div>
 
-      <main className="ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
-        {/* Decorative gradient blob */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[260px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.22),rgba(16,185,129,0)_60%)]"
-        />
+    <main className="ml-0 md:ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 pb-20 md:pb-0">
+      {/* Decorative gradient blob */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[260px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.22),rgba(16,185,129,0)_60%)]"
+      />
 
         <section className="max-w-6xl mx-auto px-4 py-8 md:py-10 space-y-8">
           {/* Page Title */}
@@ -254,6 +257,7 @@ export default function DashboardCoachPage() {
           </Card>
         </section>
       </main>
+      <MobileCoachBottomNav unreadCount={unreadCount} />
     </div>
   );
 }

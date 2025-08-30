@@ -46,3 +46,4 @@ export default function MobileCoachBottomNav({ unreadCount = 0 }: Props) {
     </nav>
   );
 }
+
