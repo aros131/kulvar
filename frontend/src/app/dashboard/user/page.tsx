@@ -725,7 +725,7 @@ export default function UserDashboardPage() {
           </section>
         </section>
       </main>
-      <MobileUserBottomNav />
+      <MobileUserBottomNav unreadCount={unreadCount} />
   </div>
     
   );
