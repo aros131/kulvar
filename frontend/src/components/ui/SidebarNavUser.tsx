@@ -4,30 +4,56 @@ import { Home, User, MessageSquare, Settings, Bell } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { ReactNode } from "react";
 
 interface SidebarNavUserProps {
-  unreadCount: number;
+  unreadCount?: number;       // notifications
+  unreadMessages?: number;    // NEW: messages
 }
 
-export default function SidebarNavUser({ unreadCount }: SidebarNavUserProps) {
+export default function SidebarNavUser({
+  unreadCount = 0,
+  unreadMessages = 0,
+}: SidebarNavUserProps) {
   const pathname = usePathname();
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
+
+  const BadgeIcon = ({
+    children,
+    count,
+  }: {
+    children: ReactNode;
+    count: number;
+  }) => (
+    <div className="relative">
+      {children}
+      {count > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 grid min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-4 text-white">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </div>
+  );
 
   const navItems = [
     { href: "/dashboard/user", icon: <Home size={24} />, label: "Ana Sayfa" },
     { href: "/dashboard/user/profile", icon: <User size={24} />, label: "Profil" },
-    { href: "/dashboard/user/messages", icon: <MessageSquare size={24} />, label: "Mesajlar" },
-    
+    {
+      href: "/dashboard/user/messages",
+      icon: (
+        <BadgeIcon count={unreadMessages}>
+          <MessageSquare size={24} />
+        </BadgeIcon>
+      ),
+      label: "Mesajlar",
+    },
     {
       href: "/dashboard/user/notifications",
       icon: (
-        <div className="relative">
+        <BadgeIcon count={unreadCount}>
           <Bell size={24} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 text-[10px] font-bold bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-full">
-              {unreadCount}
-            </span>
-          )}
-        </div>
+        </BadgeIcon>
       ),
       label: "Bildirimler",
     },
@@ -41,11 +67,13 @@ export default function SidebarNavUser({ unreadCount }: SidebarNavUserProps) {
           <Link
             key={item.href}
             href={item.href}
+            title={item.label}
+            aria-label={item.label}
+            aria-current={isActive(item.href) ? "page" : undefined}
             className={clsx(
               "flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all",
-              pathname === item.href && "bg-muted text-primary"
+              isActive(item.href) && "bg-muted text-primary"
             )}
-            title={item.label}
           >
             {item.icon}
           </Link>

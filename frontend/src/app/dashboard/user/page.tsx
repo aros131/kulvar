@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-import UserNavbar from "@/components/nav/UserNavbar";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -263,7 +262,8 @@ function ProgramThumb({ name }: { name?: string }) {
 export default function UserDashboardPage() {
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0); // notifications
+  const [unreadMessages, setUnreadMessages] = useState(0); // messages
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   // Loading states for polished skeletons
@@ -346,6 +346,23 @@ export default function UserDashboardPage() {
       }
     };
 
+    const fetchUnreadMessages = async () => {
+      try {
+        // 🔁 adjust endpoint if your API differs
+        const res = await fetch(`${API}/messages/unread-count`, { headers, cache: "no-store" });
+        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
+        const count =
+          typeof data?.unreadCount === "number"
+            ? data.unreadCount
+            : Array.isArray(data?.threads)
+            ? data.threads.filter((t: any) => !t.isRead).length
+            : 0;
+        setUnreadMessages(count);
+      } catch {
+        setUnreadMessages(0);
+      }
+    };
+
     const fetchProfile = async () => {
       setLoadingProfile(true);
       try {
@@ -362,6 +379,7 @@ export default function UserDashboardPage() {
     fetchPrograms();
     fetchProgress();
     fetchUnreadNotifications();
+    fetchUnreadMessages();
     fetchProfile();
   }, [headers]);
 
@@ -518,20 +536,22 @@ export default function UserDashboardPage() {
   /* ---------------------------- Render: Page Shell --------------------------- */
 
   return (
-  <div className="relative flex min-h-screen">
-    {/* Sidebar only on md+ */}
-    <div className="hidden md:block">
-      <SidebarNavUser unreadCount={typeof unreadCount === "number" ? unreadCount : 0} />
-    </div>
+    <div className="relative flex min-h-screen">
+      {/* Sidebar only on md+ */}
+      <div className="hidden md:block">
+        <SidebarNavUser
+          unreadCount={unreadCount}
+          unreadMessages={unreadMessages}
+        />
+      </div>
 
-    {/* Add bottom padding on mobile so content doesn't sit under the fixed nav */}
-    <main className="ml-0 md:ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 pb-20 md:pb-0">
-      {/* Decorative gradient blob */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[260px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.22),rgba(16,185,129,0)_60%)]"
-      />
-
+      {/* Add bottom padding on mobile so content doesn't sit under the fixed nav */}
+      <main className="ml-0 md:ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 pb-20 md:pb-0">
+        {/* Decorative gradient blob */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[260px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.22),rgba(16,185,129,0)_60%)]"
+        />
 
         <section className="max-w-6xl mx-auto px-4 pb-12 pt-8 md:pt-12">
           {/* Hero / Greeting */}
@@ -725,9 +745,13 @@ export default function UserDashboardPage() {
           </section>
         </section>
       </main>
-      <MobileUserBottomNav unreadCount={unreadCount} />
-  </div>
-    
+
+      {/* Bottom nav on mobile, with counts */}
+      <MobileUserBottomNav
+        unreadNotifications={unreadCount}
+        unreadMessages={unreadMessages}
+      />
+    </div>
   );
 }
 
@@ -837,6 +861,5 @@ function EmptyState({
         {action ? <div className="pt-2">{action}</div> : null}
       </CardContent>
     </Card>
-    
   );
 }
