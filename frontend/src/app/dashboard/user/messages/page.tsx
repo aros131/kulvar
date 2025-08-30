@@ -1,3 +1,4 @@
+// src/app/dashboard/user/messages/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -71,6 +72,9 @@ export default function UserMessagesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // counts for badges
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
   // simple in-memory cache for Firestore user lookups
   const profileCache = useRef<Map<string, { name?: string; profilePicture?: string } | null>>(
     new Map()
@@ -92,10 +96,10 @@ export default function UserMessagesPage() {
     if (typeof token === "string" && token.trim() !== "") {
       h.set("Authorization", `Bearer ${token}`);
     }
-    return h; // Headers = valid HeadersInit
+    return h;
   }, [token]);
 
-  // Fetch the REAL current user from /profile (same logic as your profile page)
+  // Fetch the REAL current user from /profile
   useEffect(() => {
     if (token === undefined) return; // still resolving
     if (!token) {
@@ -146,7 +150,7 @@ export default function UserMessagesPage() {
     run();
   }, [token, authHeaders]);
 
-  // Helper: fetch other participant from Firestore only (no backend by id)
+  // Helper: fetch other participant from Firestore
   async function fetchOtherFromFirestore(
     userId: string
   ): Promise<{ name?: string; profilePicture?: string } | null> {
@@ -224,6 +228,40 @@ export default function UserMessagesPage() {
     return () => unsubscribe();
   }, [user?.id]);
 
+  // fetch unread notifications for badges on this page too
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+
+    const load = async () => {
+      try {
+        const res = await fetch(`${API}/dashboard/notifications/user`, {
+          headers: authHeaders,
+          cache: "no-store",
+        });
+        const data = res.ok ? await res.json().catch(() => ({})) : {};
+        const list = Array.isArray(data?.notifications) ? data.notifications : [];
+        if (alive) setUnreadNotifications(list.filter((n: any) => !n?.isRead).length);
+      } catch {
+        if (alive) setUnreadNotifications(0);
+      }
+    };
+
+    load();
+
+    const onVis = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    const id = window.setInterval(load, 30000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.clearInterval(id);
+      alive = false;
+    };
+  }, [token, authHeaders]);
+
   // --- UI handlers ---
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase();
@@ -243,7 +281,7 @@ export default function UserMessagesPage() {
     }
   };
 
-  const unreadTotal = useMemo(
+  const unreadMessagesTotal = useMemo(
     () => chats.reduce((sum, c) => sum + (c.unreadCount || 0), 0),
     [chats]
   );
@@ -253,14 +291,14 @@ export default function UserMessagesPage() {
     return (
       <div className="relative flex">
         <div className="hidden md:block">
-          <SidebarNavUser unreadCount={0} />
+          <SidebarNavUser unreadCount={0} unreadMessages={0} />
         </div>
         <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
           <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
             <p className="text-center text-zinc-500">Yükleniyor...</p>
           </div>
         </main>
-        <MobileUserBottomNav />
+        <MobileUserBottomNav unreadNotifications={0} unreadMessages={0} />
       </div>
     );
   }
@@ -269,14 +307,14 @@ export default function UserMessagesPage() {
     return (
       <div className="relative flex">
         <div className="hidden md:block">
-          <SidebarNavUser unreadCount={0} />
+          <SidebarNavUser unreadCount={0} unreadMessages={0} />
         </div>
         <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
           <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
             <p className="text-center text-zinc-500">Devam etmek için lütfen giriş yapın.</p>
           </div>
         </main>
-        <MobileUserBottomNav />
+        <MobileUserBottomNav unreadNotifications={0} unreadMessages={0} />
       </div>
     );
   }
@@ -285,7 +323,10 @@ export default function UserMessagesPage() {
     <div className="relative flex">
       {/* Sidebar on md+ only */}
       <div className="hidden md:block">
-        <SidebarNavUser unreadCount={unreadTotal} />
+        <SidebarNavUser
+          unreadCount={unreadNotifications}
+          unreadMessages={unreadMessagesTotal}
+        />
       </div>
 
       {/* Content */}
@@ -380,7 +421,10 @@ export default function UserMessagesPage() {
       </main>
 
       {/* Bottom nav on mobile */}
-      <MobileUserBottomNav />
+      <MobileUserBottomNav
+        unreadNotifications={unreadNotifications}
+        unreadMessages={unreadMessagesTotal}
+      />
     </div>
   );
 }

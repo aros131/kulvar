@@ -16,8 +16,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 
-import { storage } from "@/lib/firebase";
+import { storage, db } from "@/lib/firebase";
 import { getDownloadURL, ref as sRef } from "firebase/storage";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 /* --------------------------------- Config --------------------------------- */
 
@@ -88,12 +89,6 @@ interface UserProfile {
   email: string;
   profilePicture: string;
 }
-type CoachLite = {
-  id: string;
-  name: string;
-  avatarUrl?: string;
-  role?: string;
-};
 
 /* ------------------------------- UI Pieces -------------------------------- */
 
@@ -136,6 +131,8 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
     </div>
   );
 }
+
+type CoachLite = { id: string; name: string; avatarUrl?: string; role?: string };
 
 function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -246,6 +243,7 @@ export default function UserDashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);        // notifications
   const [unreadMessages, setUnreadMessages] = useState(0);  // messages
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [userId, setUserId] = useState<string | null>(null); // for Firestore
 
   const [loadingPrograms, setLoadingPrograms] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(true);
@@ -329,50 +327,36 @@ export default function UserDashboardPage() {
       }
     };
 
-    // ---------- Robust unread message counter
+    // REST fallback for unread messages (in case Firestore isn't available yet)
     const pickNumber = (...vals: any[]) => {
       for (const v of vals) if (typeof v === "number" && !Number.isNaN(v)) return v;
       return null;
     };
-
     const countUnreadInArray = (arr: any[]): number => {
       let sum = 0;
       for (const t of arr) {
         const direct = pickNumber(t?.unreadCount, t?.unread, t?.countUnread);
-        if (direct !== null) {
-          sum += direct!;
-          continue;
-        }
-        // thread-level boolean or message-level unread
-        if (t?.unread === true || t?.isUnread === true) {
-          sum += 1;
-          continue;
-        }
+        if (direct !== null) { sum += direct!; continue; }
+        if (t?.unread === true || t?.isUnread === true) { sum += 1; continue; }
         if (Array.isArray(t?.messages)) {
-          const hasUnread = t.messages.some((m: any) =>
-            m?.isRead === false || m?.read === false || m?.isSeen === false
-          );
+          const hasUnread = t.messages.some((m: any) => m?.isRead === false || m?.read === false || m?.isSeen === false);
           if (hasUnread) sum += 1;
         }
       }
       return sum;
     };
-
     const computeUnread = (data: any): number | null => {
       if (!data || typeof data !== "object") return null;
       const top = pickNumber(data.unreadCount, data.unread, data.countUnread, data.totalUnread, data.unread_messages);
       if (top !== null) return top;
-
       if (Array.isArray(data.threads)) return countUnreadInArray(data.threads);
       if (Array.isArray(data.conversations)) return countUnreadInArray(data.conversations);
       if (Array.isArray(data.items)) return countUnreadInArray(data.items);
-
       if (Array.isArray(data.messages)) {
         return data.messages.filter((m: any) => m?.isRead === false || m?.read === false || m?.isSeen === false).length;
       }
       return null;
     };
-
     const unreadCandidates = [
       `${API}/messages/unread-count`,
       `${API}/dashboard/messages/unread-count`,
@@ -381,7 +365,6 @@ export default function UserDashboardPage() {
       `${API}/messages?unread=true&limit=100`,
       `${API}/messages/unread?limit=100`,
     ];
-
     const smartFetchUnreadMessages = async (): Promise<number> => {
       for (const url of unreadCandidates) {
         try {
@@ -390,18 +373,9 @@ export default function UserDashboardPage() {
           const data = await res.json().catch(() => ({}));
           const n = computeUnread(data);
           if (typeof n === "number" && n >= 0) return n;
-        } catch {
-          // try next
-        }
+        } catch {}
       }
       return 0;
-    };
-
-    const loadCounts = async () => {
-      await Promise.allSettled([fetchUnreadNotifications(), (async () => {
-        const n = await smartFetchUnreadMessages();
-        if (alive) setUnreadMessages(n);
-      })()]);
     };
 
     const fetchProfile = async () => {
@@ -409,7 +383,11 @@ export default function UserDashboardPage() {
       try {
         const res = await fetch(`${API}/profile`, { headers, cache: "no-store", signal: ac.signal });
         const data: any = res.ok ? await res.json().catch(() => ({})) : {};
-        if (alive) setProfile(data && typeof data === "object" ? data : null);
+        if (alive) {
+          setProfile(data && typeof data === "object" ? data : null);
+          const id = data?._id || data?.id || null;
+          setUserId(id);
+        }
       } catch {
         if (alive) setProfile(null);
       } finally {
@@ -417,16 +395,26 @@ export default function UserDashboardPage() {
       }
     };
 
+    const loadCounts = async () => {
+      await Promise.allSettled([
+        fetchUnreadNotifications(),
+        (async () => {
+          const n = await smartFetchUnreadMessages();
+          if (alive) setUnreadMessages(n);
+        })(),
+      ]);
+    };
+
     // initial load
     fetchPrograms();
     fetchProgress();
-    loadCounts();
     fetchProfile();
+    loadCounts();
 
-    // refresh unread counts periodically & on tab focus
-    const interval = window.setInterval(loadCounts, 30000);
+    // refresh notifications periodically & on tab focus (Firestore will live-update messages)
+    const interval = window.setInterval(fetchUnreadNotifications, 30000);
     const onVis = () => {
-      if (document.visibilityState === "visible") loadCounts();
+      if (document.visibilityState === "visible") fetchUnreadNotifications();
     };
     document.addEventListener("visibilitychange", onVis);
 
@@ -452,6 +440,21 @@ export default function UserDashboardPage() {
     })();
     return () => { alive = false; };
   }, [profile?.profilePicture]);
+
+  // --- Real-time unread messages via Firestore
+  useEffect(() => {
+    if (!userId) return;
+    const q = query(collection(db, "chats"), where("participants", "array-contains", userId));
+    const unsub = onSnapshot(q, (snap) => {
+      let total = 0;
+      snap.forEach((doc) => {
+        const d: any = doc.data();
+        total += Number(d?.[`unread_${userId}`]) || 0;
+      });
+      setUnreadMessages(total);
+    });
+    return () => unsub();
+  }, [userId]);
 
   // Koçlarım
   useEffect(() => {
@@ -769,7 +772,7 @@ function SectionHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-4 md:mb-6 flex items	end justify-between gap-3">
+    <div className="mb-4 md:mb-6 flex items-end justify-between gap-3">
       <div>
         <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{title}</h2>
         {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
