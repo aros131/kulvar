@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 
 import UserNavbar from "@/components/nav/UserNavbar";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
-
+import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -518,17 +518,20 @@ export default function UserDashboardPage() {
   /* ---------------------------- Render: Page Shell --------------------------- */
 
   return (
-    <div className="flex">
-      <SidebarNavUser unreadCount={unreadCount} />
+  <div className="relative flex min-h-screen">
+    {/* Sidebar only on md+ */}
+    <div className="hidden md:block">
+      <SidebarNavUser unreadCount={typeof unreadCount === "number" ? unreadCount : 0} />
+    </div>
 
-      <main className="ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
-        <UserNavbar />
+    {/* Add bottom padding on mobile so content doesn't sit under the fixed nav */}
+    <main className="ml-0 md:ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 pb-20 md:pb-0">
+      {/* Decorative gradient blob */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[260px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.22),rgba(16,185,129,0)_60%)]"
+      />
 
-        {/* Decorative gradient blob */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[280px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.25),rgba(16,185,129,0)_60%)]"
-        />
 
         <section className="max-w-6xl mx-auto px-4 pb-12 pt-8 md:pt-12">
           {/* Hero / Greeting */}
@@ -722,7 +725,9 @@ export default function UserDashboardPage() {
           </section>
         </section>
       </main>
-    </div>
+      <MobileUserBottomNav />
+  </div>
+    
   );
 }
 
@@ -832,5 +837,6 @@ function EmptyState({
         {action ? <div className="pt-2">{action}</div> : null}
       </CardContent>
     </Card>
+    
   );
 }
