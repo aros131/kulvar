@@ -7,6 +7,11 @@ const ProgressSchema = new mongoose.Schema({
   // ✅ NEW FIELD: total days completed
   daysCompleted: { type: Number, default: 0 }, // Tracks total completed days
 
+  // Recomputed on every completed session (completedSessions.length / totalSessions).
+  // Without this field, the value the controller computes was silently dropped on save
+  // (not declared in the schema) and /progress/all-program-progress always reported 0%.
+  progressPercentage: { type: Number, default: 0 },
+
   completedSessions: [
     {
       sessionId: { type: String },

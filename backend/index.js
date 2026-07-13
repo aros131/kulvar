@@ -25,6 +25,10 @@ import eventRoutes from "./routes/eventRoutes.js";
 import meRoutes from "./routes/meRoutes.js";
 import availabilityRoutes from "./routes/availabilityRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import { startBookingReminderJob } from "./services/bookingReminderJob.js";
 /* --------------------------------- Setup ---------------------------------- */
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -33,6 +37,7 @@ const PORT = process.env.PORT || 5001;
 app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // needed for iyzico's checkout form callback POST
 
 /* ------------------------ CORS: allow ALL (TEST MODE) ---------------------- */
 /* Reflects the request Origin (so credentials can work) */
@@ -104,6 +109,9 @@ app.use("/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/events", eventRoutes);
 app.use("/me", meRoutes);
+app.use("/payment", paymentRoutes);
+app.use("/reports", reportRoutes);
+app.use("/admin", adminRoutes);
 app.use("/dashboard", availabilityRoutes);
 app.use("/", availabilityRoutes);
 app.use("/", bookingRoutes);
@@ -127,4 +135,5 @@ app.use((err, req, res, _next) => {
 /* --------------------------------- Start ---------------------------------- */
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  startBookingReminderJob();
 });

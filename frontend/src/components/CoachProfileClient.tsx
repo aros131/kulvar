@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users } from "lucide-react";
+import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users, Pencil } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import FollowersDialog from "@/components/coach/FollowersDialog";
 import { useActiveClientCountFromPrograms } from "@/hooks/useActiveClientCountFromPrograms";
 import { useCoachReviews } from "@/hooks/useCoachReviews";
@@ -123,6 +124,11 @@ const STRINGS = {
 
 const SIGNUP_PATH = "/signup";
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(" ");
+
+function apiBase() {
+  const raw = process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com";
+  return raw.replace(/\/+$/, "");
+}
 
 /************************************
  * Sections (v1 = text-only)
@@ -244,7 +250,13 @@ export default function CoachProfileClient({
     hasMore,
     totalCount: totalReviews,
     average: avgRating,
+    refresh: refreshReviews,
   } = useCoachReviews(coach.id, { pageSize: 8, initial: reviews });
+
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  const handleOpenReviewForm = () =>
+    requireAuth(() => setShowReviewForm(true));
 
   const requireAuth = (action: () => void | Promise<void>) => {
     if (isAuthed) return action();
@@ -268,8 +280,39 @@ export default function CoachProfileClient({
   const handleMessage = () =>
     requireAuth(() => {
       if (onMessage) return onMessage(coach.id);
-      router.push(`/messages?to=${coach.id}`);
+      router.push(`/dashboard/user/messages/start?to=${coach.id}`);
     });
+
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const handleSubmitReview = async (rating: number, comment: string) => {
+    const token = cleanToken();
+    if (!token) return goSignup(router);
+    setSubmittingReview(true);
+    try {
+      const res = await fetch(`${apiBase()}/coaches/${coach.id}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating, comment }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        if (res.status === 403) {
+          toast.error(locale === "tr" ? "Sadece bu koçun danışanları yorum yapabilir." : "Only this coach's clients can review.");
+        } else {
+          throw new Error(j?.message || "failed");
+        }
+        return;
+      }
+      toast.success(locale === "tr" ? "Yorumun gönderildi." : "Your review was submitted.");
+      setShowReviewForm(false);
+      refreshReviews();
+    } catch {
+      toast.error(locale === "tr" ? "Yorum gönderilemedi." : "Could not submit review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const handleShare = async () => {
     try {
@@ -497,7 +540,24 @@ export default function CoachProfileClient({
 
       {/* Reviews */}
       <section id="reviews" className="mx-auto max-w-6xl px-4 pt-12">
-        <h2 className="mb-4 text-xl font-semibold">{t.reviews}</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold">{t.reviews}</h2>
+          {!showReviewForm && (
+            <Button size="sm" variant="outline" onClick={handleOpenReviewForm} className="gap-2">
+              <Pencil className="h-4 w-4" />
+              {locale === "tr" ? "Yorum Yap" : "Write a Review"}
+            </Button>
+          )}
+        </div>
+
+        {showReviewForm && (
+          <ReviewForm
+            locale={locale}
+            submitting={submittingReview}
+            onCancel={() => setShowReviewForm(false)}
+            onSubmit={handleSubmitReview}
+          />
+        )}
 
         {reviewsError ? (
           <Card>
@@ -607,6 +667,65 @@ export default function CoachProfileClient({
 /************************************
  * Subcomponents (text-only)
  ************************************/
+function ReviewForm({
+  locale = "tr",
+  submitting,
+  onCancel,
+  onSubmit,
+}: {
+  locale?: "tr" | "en";
+  submitting: boolean;
+  onCancel: () => void;
+  onSubmit: (rating: number, comment: string) => void;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+
+  return (
+    <Card className="mb-4">
+      <CardContent className="pt-6 space-y-4">
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setRating(n)}
+              onMouseEnter={() => setHoverRating(n)}
+              onMouseLeave={() => setHoverRating(0)}
+              aria-label={`${n} ${locale === "tr" ? "yıldız" : "stars"}`}
+            >
+              <Star
+                className={cx(
+                  "h-6 w-6",
+                  (hoverRating || rating) >= n ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                )}
+              />
+            </button>
+          ))}
+        </div>
+        <Textarea
+          placeholder={locale === "tr" ? "Deneyimini paylaş..." : "Share your experience..."}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          rows={3}
+        />
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onCancel} disabled={submitting}>
+            {locale === "tr" ? "İptal" : "Cancel"}
+          </Button>
+          <Button
+            onClick={() => onSubmit(rating, comment)}
+            disabled={submitting || rating < 1}
+          >
+            {submitting ? (locale === "tr" ? "Gönderiliyor..." : "Submitting...") : (locale === "tr" ? "Gönder" : "Submit")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ReviewRow({ r, locale = "tr" }: { r: Review; locale?: "tr" | "en" }) {
   return (
     <Card>

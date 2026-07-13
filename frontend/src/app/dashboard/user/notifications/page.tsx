@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Dot } from "lucide-react";
-import SidebarNavUser from "@/components/ui/SidebarNavUser";
+
+import UserPageShell from "@/components/user/UserPageShell";
 
 interface Notification {
   _id: string;
@@ -22,7 +23,7 @@ export default function UserNotificationsPage() {
 
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch("https://kulvar-qb7t.onrender.com/notifications/user", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/user`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
@@ -36,29 +37,20 @@ export default function UserNotificationsPage() {
 
   const markAsRead = async (id: string) => {
     const token = localStorage.getItem("token");
-    await fetch(`https://kulvar-qb7t.onrender.com/notifications/${id}/read`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/${id}/read`, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-
-    setNotifications((prev) =>
-      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
-    );
-
+    setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
     toast("Bildirim okundu olarak işaretlendi.");
   };
 
   const markAllAsRead = async () => {
     const token = localStorage.getItem("token");
-    await fetch(`https://kulvar-qb7t.onrender.com/notifications/user/mark-all-read`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/user/mark-all-read`, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     toast("Tüm bildirimler okundu olarak işaretlendi.");
   };
@@ -70,14 +62,15 @@ export default function UserNotificationsPage() {
   };
 
   return (
-    <div className="flex">
-      <SidebarNavUser unreadCount={filtered.unread.length} />
-
-      <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900 p-6">
-        <h1 className="text-2xl font-bold mb-6">📨 Bildirimler</h1>
+    <UserPageShell unreadCount={filtered.unread.length}>
+      <section className="max-w-4xl mx-auto px-4 py-8 md:py-10 space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Bildirimler</h1>
+          <p className="text-sm text-muted-foreground">Koçundan ve sistemden gelen bildirimlerin.</p>
+        </div>
 
         {loading ? (
-          <p>Yükleniyor...</p>
+          <p className="text-sm text-muted-foreground">Yükleniyor...</p>
         ) : (
           <Tabs defaultValue="all" className="space-y-4">
             <TabsList>
@@ -86,27 +79,20 @@ export default function UserNotificationsPage() {
               <TabsTrigger value="read">Okunmuş</TabsTrigger>
             </TabsList>
 
-            {["all", "unread", "read"].map((tab) => (
+            {(["all", "unread", "read"] as const).map((tab) => (
               <TabsContent key={tab} value={tab}>
-                {filtered[tab as keyof typeof filtered].length > 0 ? (
+                {filtered[tab].length > 0 ? (
                   <>
                     {tab === "unread" && (
-                      <Button
-                        onClick={markAllAsRead}
-                        className="mb-4"
-                        variant="outline"
-                      >
+                      <Button onClick={markAllAsRead} className="mb-4" variant="outline">
                         Tümünü Okundu Yap
                       </Button>
                     )}
-
-                    <div className="space-y-4">
-                      {filtered[tab as keyof typeof filtered].map((n) => (
+                    <div className="space-y-3">
+                      {filtered[tab].map((n) => (
                         <Card
                           key={n._id}
-                          className={`p-4 border transition-all duration-200 ${
-                            !n.isRead ? "border-blue-500" : ""
-                          }`}
+                          className={`p-4 border transition-all duration-200 ${!n.isRead ? "border-blue-500" : ""}`}
                         >
                           <div className="flex justify-between items-start gap-2">
                             <div>
@@ -117,13 +103,7 @@ export default function UserNotificationsPage() {
                                     Yeni
                                   </Badge>
                                 )}
-                                <p
-                                  className={`text-sm ${
-                                    n.isRead
-                                      ? "text-muted-foreground"
-                                      : "font-medium text-foreground"
-                                  }`}
-                                >
+                                <p className={`text-sm ${n.isRead ? "text-muted-foreground" : "font-medium text-foreground"}`}>
                                   {n.message}
                                 </p>
                               </div>
@@ -137,13 +117,8 @@ export default function UserNotificationsPage() {
                                 })}
                               </p>
                             </div>
-
                             {!n.isRead && (
-                              <Button
-                                variant="ghost"
-                                className="text-xs px-2"
-                                onClick={() => markAsRead(n._id)}
-                              >
+                              <Button variant="ghost" className="text-xs px-2" onClick={() => markAsRead(n._id)}>
                                 okundu
                               </Button>
                             )}
@@ -165,7 +140,7 @@ export default function UserNotificationsPage() {
             ))}
           </Tabs>
         )}
-      </main>
-    </div>
+      </section>
+    </UserPageShell>
   );
 }

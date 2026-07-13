@@ -6,8 +6,7 @@ import axios from "axios";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-import SidebarNavUser from "@/components/ui/SidebarNavUser";
-import UserNavbar from "@/components/nav/UserNavbar";
+import UserPageShell from "@/components/user/UserPageShell";
 
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -152,7 +151,7 @@ export default function UserProfilePage() {
     setSaving(true);
     try {
       const res = await axios.put(`${API}/profile`, editData, { headers: authHeaders });
-      setProfile(res.data);
+      setProfile(res.data?.user ?? res.data);
       setDialogOpen(false);
       toast.success("Profil başarıyla güncellendi.");
     } catch (err: any) {
@@ -166,20 +165,8 @@ export default function UserProfilePage() {
   };
 
   return (
-    <div className="relative flex">
-      {/* Sidebar — content is offset by md:ml-16 below */}
-      <SidebarNavUser unreadCount={unreadCount} />
-
-      <main className="w-full min-h-screen ml-0 md:ml-16 bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
-        <UserNavbar />
-
-        {/* Decorative gradient blob */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[260px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.22),rgba(16,185,129,0)_60%)]"
-        />
-
-        <section className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-6">
+    <UserPageShell unreadCount={unreadCount}>
+      <section className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Profil Bilgileri</h1>
@@ -290,8 +277,7 @@ export default function UserProfilePage() {
               )}
             </CardContent>
           </Card>
-        </section>
-      </main>
-    </div>
+      </section>
+    </UserPageShell>
   );
 }

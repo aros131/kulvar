@@ -1,14 +1,16 @@
 // src/app/dashboard/coach/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
 import SidebarNav from "@/components/ui/SidebarNavCoach";
+import OnboardingModal from "@/components/OnboardingModal";
 import ProgramList from "@/components/coach/ProgramList";
 import PendingBookings from "@/components/coach/PendingBookings";
+import ConfirmedBookings from "@/components/coach/ConfirmedBookings";
 import CoachAvailability from "@/components/coach/CoachAvailability";
 import MobileCoachBottomNav from "@/components/nav/MobileCoachBottomNav"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,12 +31,6 @@ const cleanToken = (): string | null => {
   if (!raw) return null;
   const trimmed = raw.replace(/^"+|"+$/g, "").trim();
   return trimmed.startsWith("Bearer ") ? trimmed.slice(7) : trimmed;
-};
-
-const makeAuthHeaders = (token: string | null): Headers => {
-  const h = new Headers();
-  if (token) h.set("Authorization", `Bearer ${token}`);
-  return h;
 };
 
 /** Resolve storage paths & gs:// URLs to downloadable https URLs */
@@ -66,6 +62,7 @@ interface CoachProfile {
   profilePicture?: string;
   specialization?: string;
   role: "coach";
+  onboardingCompleted?: boolean;
 }
 interface Notification {
   isRead: boolean;
@@ -77,41 +74,40 @@ export default function DashboardCoachPage() {
   const [profileUrl, setProfileUrl] = useState<string>("/images/user.png");
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const [, setLoadingNotifications] = useState(true); // we don't render the loading state, just track it internally
+  const [, setLoadingNotifications] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
-    setToken(cleanToken());
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "token") setToken(cleanToken());
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-  const headers = useMemo(() => makeAuthHeaders(token), [token]);
+    const token = cleanToken();
 
-  useEffect(() => {
     const fetchProfile = async () => {
+      if (!token) { setLoadingProfile(false); return; }
       setLoadingProfile(true);
       try {
-        const res = await fetch(`${API}/profile`, { headers, cache: "no-store" });
+        const res = await fetch(`${API}/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
         const data: CoachProfile = await res.json();
         if (data?.role !== "coach") throw new Error("Not a coach profile");
         setProfile(data || null);
         const url = await resolveAvatarUrl(data?.profilePicture);
         setProfileUrl(url || "/images/user.png");
       } catch (e) {
-        console.error("Profil verisi alınamadı.");
+        console.error("Profil verisi alınamadı.", e);
       } finally {
         setLoadingProfile(false);
       }
     };
 
     const fetchUnreadCount = async () => {
+      if (!token) return;
       setLoadingNotifications(true);
       try {
-        const res = await fetch(`${API}/dashboard/notifications/user`, { headers, cache: "no-store" });
+        const res = await fetch(`${API}/dashboard/notifications/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
         const data = await res.json();
         const unread = (Array.isArray(data?.notifications) ? data.notifications : []).filter(
           (n: Notification) => !n.isRead
@@ -126,10 +122,12 @@ export default function DashboardCoachPage() {
 
     fetchProfile();
     fetchUnreadCount();
-  }, [headers]);
+  }, []);
 
   return (
   <div className="relative flex min-h-screen">
+    <OnboardingModal role="coach" name={profile?.name} onboardingCompleted={profile?.onboardingCompleted} />
+
     {/* Sidebar only on md+ */}
     <div className="hidden md:block">
       <SidebarNav unreadCount={unreadCount} />
@@ -239,6 +237,19 @@ export default function DashboardCoachPage() {
             </Card>
           </div>
 
+          {/* Confirmed sessions awaiting completion */}
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-4 w-4" />
+                <CardTitle className="text-base md:text-lg">Onaylanmış Randevular</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ConfirmedBookings />
+            </CardContent>
+          </Card>
+
           {/* Programs */}
           <Card className="rounded-2xl">
             <CardHeader className="pb-2 flex-row items-center justify-between">
@@ -257,7 +268,7 @@ export default function DashboardCoachPage() {
           </Card>
         </section>
       </main>
-      <MobileCoachBottomNav unreadCount={unreadCount} />
+      <MobileCoachBottomNav unreadNotifications={unreadCount} />
     </div>
   );
 }

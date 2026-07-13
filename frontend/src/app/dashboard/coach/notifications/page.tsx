@@ -8,10 +8,11 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Dot } from "lucide-react";
 
+import CoachPageShell from "@/components/coach/CoachPageShell";
 import SendNotificationDialog from "@/components/coach/SendNotificationDialog";
-import SidebarNavCoach from "@/components/ui/SidebarNavCoach";
 import ProgramList from "@/components/coach/ProgramList";
 import SentNotificationsList from "@/components/coach/SentNotificationsList";
+
 interface Notification {
   _id: string;
   message: string;
@@ -27,11 +28,11 @@ interface ClientForNotification {
 export default function CoachNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [clients, setClients] = useState<ClientForNotification[]>([]); // ✅ Doğru tip
+  const [clients, setClients] = useState<ClientForNotification[]>([]);
 
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch("https://kulvar-qb7t.onrender.com/notifications/coach", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/coach`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
@@ -45,25 +46,19 @@ export default function CoachNotificationsPage() {
 
   const markAsRead = async (id: string) => {
     const token = localStorage.getItem("token");
-    await fetch(`https://kulvar-qb7t.onrender.com/notifications/${id}/read`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/${id}/read`, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-    setNotifications((prev) =>
-      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
-    );
+    setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
     toast("Bildirim okundu olarak işaretlendi.");
   };
 
   const markAllAsRead = async () => {
     const token = localStorage.getItem("token");
-    await fetch(`https://kulvar-qb7t.onrender.com/notifications/coach/mark-all-read`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/user/mark-all-read`, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     toast("Tüm bildirimler okundu olarak işaretlendi.");
@@ -76,53 +71,46 @@ export default function CoachNotificationsPage() {
   };
 
   return (
-    <div className="flex">
-      <SidebarNavCoach unreadCount={filtered.unread.length} />
-
-      <main className="ml-16 w-full min-h-screen bg-zinc-100 dark:bg-zinc-900 p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">📨 Bildirimler</h1>
+    <CoachPageShell unreadCount={filtered.unread.length}>
+      <section className="max-w-4xl mx-auto px-4 py-8 md:py-10 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Bildirimler</h1>
+            <p className="text-sm text-muted-foreground">Gelen bildirimlerini yönet ve danışanlarına duyuru gönder.</p>
+          </div>
           <SendNotificationDialog clients={clients} />
         </div>
-        
-<SentNotificationsList />
+
+        <SentNotificationsList />
 
         <div className="hidden">
-  <ProgramList onClientsFetched={setClients} />
-</div>
-
-
+          <ProgramList onClientsFetched={setClients} />
+        </div>
 
         {loading ? (
-          <p>Yükleniyor...</p>
+          <p className="text-sm text-muted-foreground">Yükleniyor...</p>
         ) : (
-          <Tabs defaultValue="all" className="space-y-4 mt-6">
+          <Tabs defaultValue="all" className="space-y-4">
             <TabsList>
               <TabsTrigger value="all">Tümü</TabsTrigger>
               <TabsTrigger value="unread">Okunmamış</TabsTrigger>
               <TabsTrigger value="read">Okunmuş</TabsTrigger>
             </TabsList>
 
-            {["all", "unread", "read"].map((tab) => (
+            {(["all", "unread", "read"] as const).map((tab) => (
               <TabsContent key={tab} value={tab}>
-                {filtered[tab as keyof typeof filtered].length > 0 ? (
+                {filtered[tab].length > 0 ? (
                   <>
                     {tab === "unread" && (
-                      <Button
-                        onClick={markAllAsRead}
-                        className="mb-4"
-                        variant="outline"
-                      >
+                      <Button onClick={markAllAsRead} className="mb-4" variant="outline">
                         Tümünü Okundu Yap
                       </Button>
                     )}
-                    <div className="space-y-4">
-                      {filtered[tab as keyof typeof filtered].map((n) => (
+                    <div className="space-y-3">
+                      {filtered[tab].map((n) => (
                         <Card
                           key={n._id}
-                          className={`p-4 border transition-all duration-200 ${
-                            !n.isRead ? "border-blue-500" : ""
-                          }`}
+                          className={`p-4 border transition-all duration-200 ${!n.isRead ? "border-blue-500" : ""}`}
                         >
                           <div className="flex justify-between items-start gap-2">
                             <div>
@@ -133,13 +121,7 @@ export default function CoachNotificationsPage() {
                                     Yeni
                                   </Badge>
                                 )}
-                                <p
-                                  className={`text-sm ${
-                                    n.isRead
-                                      ? "text-muted-foreground"
-                                      : "font-medium text-foreground"
-                                  }`}
-                                >
+                                <p className={`text-sm ${n.isRead ? "text-muted-foreground" : "font-medium text-foreground"}`}>
                                   {n.message}
                                 </p>
                               </div>
@@ -154,11 +136,7 @@ export default function CoachNotificationsPage() {
                               </p>
                             </div>
                             {!n.isRead && (
-                              <Button
-                                variant="ghost"
-                                className="text-xs px-2"
-                                onClick={() => markAsRead(n._id)}
-                              >
+                              <Button variant="ghost" className="text-xs px-2" onClick={() => markAsRead(n._id)}>
                                 okundu
                               </Button>
                             )}
@@ -180,7 +158,7 @@ export default function CoachNotificationsPage() {
             ))}
           </Tabs>
         )}
-      </main>
-    </div>
+      </section>
+    </CoachPageShell>
   );
 }

@@ -7,7 +7,9 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
 
-    role: { type: String, enum: ["coach", "user"], required: true, index: true },
+    role: { type: String, enum: ["coach", "user", "admin"], required: true, index: true },
+
+    onboardingCompleted: { type: Boolean, default: false },
 
     // String OR [String] (backward compatible)
     specialization: {
@@ -39,6 +41,24 @@ const UserSchema = new mongoose.Schema(
     tagline: { type: String, default: "" },
     certifications: { type: [String], default: [] },
     languages: { type: [String], default: [] },
+
+    resetToken:       { type: String, default: null },
+    resetTokenExpiry: { type: Date,   default: null },
+
+    notificationPreferences: {
+      inApp: {
+        bookingRequests: { type: Boolean, default: true },
+        bookingUpdates:  { type: Boolean, default: true },
+        messages:        { type: Boolean, default: true },
+        reviews:         { type: Boolean, default: true },
+      },
+      email: {
+        bookingRequests: { type: Boolean, default: true },
+        bookingUpdates:  { type: Boolean, default: true },
+        messages:        { type: Boolean, default: false },
+        weeklyReport:    { type: Boolean, default: false },
+      },
+    },
   },
   {
     timestamps: true,

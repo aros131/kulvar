@@ -11,7 +11,7 @@ const BookingSchema = new mongoose.Schema(
     meetingMode: { type: String, enum: ["in_person", "zoom"], required: true },
 
     // Pick one spelling and use it everywhere (BE + FE). Here I'll use American spelling:
-    status: { type: String, enum: ["pending", "confirmed", "declined", "expired", "canceled"], default: "pending", index: true },
+    status: { type: String, enum: ["pending", "confirmed", "declined", "expired", "canceled", "completed"], default: "pending", index: true },
 
     // only for pending holds; will be set/cleared in hook below
     holdUntil: { type: Date, default: null },
@@ -20,6 +20,7 @@ const BookingSchema = new mongoose.Schema(
     location: String,
     zoomJoinUrl: String,
     zoomStartUrl: String,
+    reminderSent: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -6,7 +6,16 @@ const NotificationSchema = new mongoose.Schema({
   message: { type: String, required: true },
   type: {
     type: String,
-    enum: ["reminder", "program_update", "feedback"],
+    enum: [
+      "reminder",
+      "program_update",
+      "feedback",
+      "booking_request",
+      "booking_approved",
+      "booking_declined",
+      "booking_cancelled",
+      "booking_completed",
+    ],
     required: true,
   },
   isRead: { type: Boolean, default: false },

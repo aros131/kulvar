@@ -172,7 +172,7 @@ export function useCoachReviews(coachId?: string, opts: Options = {}) {
       setLoading(false);
       fetchingRef.current = false;
       // compute average whenever reviews change
-      setAverage((prev) => {
+      setAverage(() => {
         const list = reviews.length ? reviews : opts.initial ?? [];
         const arr = list.length ? list : [];
         if (!arr.length) return null;
@@ -195,5 +195,13 @@ export function useCoachReviews(coachId?: string, opts: Options = {}) {
 
   const loadMore = () => fetchPage(false);
 
-  return { reviews, loading, error, loadMore, hasMore, totalCount, average };
+  const refresh = () => {
+    setReviews([]);
+    setCursor(null);
+    setHasMore(true);
+    setTotalCount(null);
+    fetchPage(true);
+  };
+
+  return { reviews, loading, error, loadMore, hasMore, totalCount, average, refresh };
 }

@@ -4,6 +4,8 @@ import { DateTime } from "luxon";
 import Booking from "../models/Booking.js";
 import { notify } from "../services/NotificationService.js"; // must export notify(...)
 import { getCoachAvailabilityConfig } from "../services/availability.js"; // must export getCoachAvailabilityConfig(...)
+import User from "../models/User.js";
+import { sendBookingConfirmed } from "../services/emailService.js";
 
 // ---------------------------------------------------------------------------
 // constants & helpers
@@ -238,6 +240,26 @@ export async function approve(req, res) {
         console.warn("notify(booking_approved) failed:", e?.message || e);
       }
 
+      // email confirmation (best effort)
+      try {
+        const [client, coach] = await Promise.all([
+          User.findById(booking.userId).select('name email').lean(),
+          User.findById(booking.coachId).select('name').lean(),
+        ]);
+        if (client?.email) {
+          const startDt = DateTime.fromJSDate(booking.startUtc).setLocale('tr').setZone('Europe/Istanbul');
+          sendBookingConfirmed({
+            clientName: client.name,
+            clientEmail: client.email,
+            coachName: coach?.name || 'Koçun',
+            date: startDt.toFormat('dd MMMM yyyy'),
+            time: startDt.toFormat('HH:mm'),
+          }).catch(() => {});
+        }
+      } catch (e) {
+        console.warn("email(booking_confirmed) failed:", e?.message || e);
+      }
+
       return res.json({ ok: true });
     };
 
@@ -295,7 +317,7 @@ export async function decline(req, res) {
     }
 
     if (booking.status === "confirmed") {
-      booking.status = "cancelled"; // keep in sync with schema spelling
+      booking.status = "canceled"; // matches schema enum spelling
       booking.holdUntil = null;
       await booking.save();
 
@@ -317,6 +339,66 @@ export async function decline(req, res) {
   } catch (err) {
     console.error("decline error:", err);
     return res.status(500).json({ message: "Failed to decline." });
+  }
+}
+
+/**
+ * GET /bookings/confirmed
+ * Requires: role=coach
+ * Effect: list confirmed (not yet completed) sessions, soonest first
+ */
+export async function listConfirmedForCoach(req, res) {
+  try {
+    const coachId = String(req.user?._id || "");
+    if (!coachId) return res.status(401).json({ message: "Unauthorized" });
+
+    const items = await Booking.find({ coachId, status: "confirmed" })
+      .sort({ startUtc: 1 })
+      .populate("userId", "name email profilePicture");
+
+    return res.json(items);
+  } catch (err) {
+    console.error("listConfirmedForCoach error:", err);
+    return res.status(500).json({ message: "Failed to list confirmed bookings." });
+  }
+}
+
+/**
+ * POST /bookings/:id/complete
+ * Requires: role=coach
+ * Effect: confirmed -> completed (marks the session as having taken place)
+ */
+export async function complete(req, res) {
+  try {
+    const coachId = String(req.user?._id || "");
+    if (!coachId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { id } = req.params;
+    const booking = await Booking.findOne({ _id: id, coachId });
+    if (!booking) return res.status(404).json({ message: "Not found." });
+    if (booking.status !== "confirmed") {
+      return res.status(400).json({ message: "Only confirmed sessions can be marked completed." });
+    }
+
+    booking.status = "completed";
+    await booking.save();
+
+    try {
+      await notify({
+        toUserId: booking.userId,
+        type: "booking_completed",
+        title: "Seans tamamlandı",
+        message: "Koçun seansı tamamlandı olarak işaretledi.",
+        data: { bookingId: booking._id },
+      });
+    } catch (e) {
+      console.warn("notify(booking_completed) failed:", e?.message || e);
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("complete error:", err);
+    return res.status(500).json({ message: "Failed to mark as completed." });
   }
 }
 
@@ -395,7 +477,7 @@ export async function cancel(req, res) {
       return res.status(400).json({ message: "Too late to cancel a confirmed booking (<24h)." });
     }
 
-    booking.status = "cancelled";
+    booking.status = "canceled";
     booking.holdUntil = null;
     await booking.save();
 

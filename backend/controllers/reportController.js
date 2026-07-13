@@ -1,13 +1,15 @@
 import Report from '../models/Report.js';
+import { computeCoachAnalytics } from '../services/coachAnalytics.js';
 
 export const generateReport = async (req, res) => {
   try {
     const { type, filters } = req.body; // Type of report and optional filters
+    const data = await computeCoachAnalytics(req.user._id);
     const report = await Report.create({
       coachId: req.user._id,
       type,
       filters,
-      data: "Placeholder for generated data",
+      data,
     });
     res.status(201).json({ message: "Report generated successfully", data: report });
   } catch (error) {

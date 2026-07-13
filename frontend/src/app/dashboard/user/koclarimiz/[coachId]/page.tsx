@@ -1,9 +1,7 @@
 // app/dashboard/user/koclarimiz/[coachId]/page.tsx
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import UserNavbar from "@/components/nav/UserNavbar";
-import SidebarNavUserLoader from "@/components/SidebarNavUserLoader";
-import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
+import UserPageShell from "@/components/user/UserPageShell";
 import ClientBridge from "./ClientBridge";
 
 export const dynamic = "force-dynamic";
@@ -97,35 +95,15 @@ export default async function Page({ params }: { params: { coachId: string } }) 
   }
 
   return (
-    <div className="relative flex min-h-screen">
-      {/* Sidebar visible only on md+ to avoid overlay on mobile */}
-      <div className="hidden md:block">
-        <SidebarNavUserLoader />
+    <UserPageShell unreadCount={unreadCount}>
+      <div className="mx-auto max-w-6xl px-4 md:px-6 py-8">
+        <ClientBridge
+          coach={coach}
+          programs={programs}
+          reviews={reviewItems}
+          isAuthed={isAuthed}
+        />
       </div>
-
-      {/* Spacer that matches sidebar width on md+ */}
-      <div className="hidden md:block w-16 shrink-0" aria-hidden />
-
-      {/* Main content */}
-      <main className="w-full min-h-screen isolate">
-        {/* Sticky navbar with higher z-index */}
-        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
-          <UserNavbar unreadCount={unreadCount} />
-        </div>
-
-        {/* content (extra bottom padding so the mobile bottom bar never covers it) */}
-        <div className="mx-auto max-w-6xl px-4 md:px-6 py-8 pb-16 md:pb-8">
-          <ClientBridge
-            coach={coach}
-            programs={programs}
-            reviews={reviewItems}
-            isAuthed={isAuthed}
-          />
-        </div>
-
-        {/* mobile-only bottom nav */}
-        <MobileUserBottomNav />
-      </main>
-    </div>
+    </UserPageShell>
   );
 }

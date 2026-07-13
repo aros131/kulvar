@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
+import OnboardingModal from "@/components/OnboardingModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -90,6 +91,7 @@ interface UserProfile {
   name: string;
   email: string;
   profilePicture: string;
+  onboardingCompleted?: boolean;
 }
 
 type CoachLite = { id: string; name: string; avatarUrl?: string; role?: string };
@@ -156,7 +158,7 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API}/coaches/${coach.id}/reviews`.replace("coaching", "coaches").replace("coaches", "coaches"), {
+      const res = await fetch(`${API}/coaches/${coach.id}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating, comment }),
@@ -445,6 +447,8 @@ export default function UserDashboardPage() {
 
   return (
     <div className="relative flex min-h-screen">
+      <OnboardingModal role="user" name={profile?.name} onboardingCompleted={profile?.onboardingCompleted} />
+
       {/* Sidebar only on md+ */}
       <div className="hidden md:block">
         <SidebarNavUser unreadCount={unreadCount} unreadMessages={unreadMessages} />
