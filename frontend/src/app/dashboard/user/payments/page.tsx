@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ function CheckoutFormRenderer({ html }: { html: string }) {
   return <div ref={containerRef} className="min-h-[480px]" />;
 }
 
-export default function UserPaymentsPage() {
+function UserPaymentsInner() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState<string | null>(null);
@@ -165,5 +165,13 @@ export default function UserPaymentsPage() {
         </DialogContent>
       </Dialog>
     </UserPageShell>
+  );
+}
+
+export default function UserPaymentsPage() {
+  return (
+    <Suspense>
+      <UserPaymentsInner />
+    </Suspense>
   );
 }

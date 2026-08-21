@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
@@ -18,7 +18,7 @@ type Coach = {
   avatar?: string | null;
 };
 
-export default function StartUserChatPage() {
+function StartUserChatInner() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [allCoaches, setAllCoaches] = useState<Coach[]>([]);
   const [user, setUser] = useState<LocalUser | null>(null);
@@ -190,5 +190,13 @@ export default function StartUserChatPage() {
         )}
       </section>
     </UserPageShell>
+  );
+}
+
+export default function StartUserChatPage() {
+  return (
+    <Suspense>
+      <StartUserChatInner />
+    </Suspense>
   );
 }
