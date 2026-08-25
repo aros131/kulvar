@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Dumbbell } from "lucide-react";
+import { Star, Dumbbell, ChevronRight, CheckCircle2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 import { storage, db } from "@/lib/firebase";
@@ -260,6 +260,8 @@ export default function UserDashboardPage() {
   const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
 
+  const [todayEvents, setTodayEvents] = useState<{ _id: string; title: string; start: string; end: string; status: string }[]>([]);
+
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
     setToken(cleanToken());
@@ -354,10 +356,24 @@ export default function UserDashboardPage() {
       }
     };
 
+    const fetchTodayEvents = async () => {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const from = encodeURIComponent(`${today}T00:00:00.000Z`);
+        const to = encodeURIComponent(`${today}T23:59:59.999Z`);
+        const res = await fetch(`${API}/events?from=${from}&to=${to}`, { headers, cache: "no-store", signal: ac.signal });
+        const data: any = res.ok ? await res.json().catch(() => ({})) : {};
+        if (alive) setTodayEvents(Array.isArray(data.events) ? data.events : []);
+      } catch {
+        if (alive) setTodayEvents([]);
+      }
+    };
+
     fetchProfile();
     fetchProgress();
     fetchPrograms();
     fetchUnreadNotifications();
+    fetchTodayEvents();
 
     const interval = window.setInterval(fetchUnreadNotifications, 30000);
     const onVis = () => {
@@ -483,6 +499,9 @@ export default function UserDashboardPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Today's Workout */}
+          <TodayWorkoutWidget events={todayEvents} />
 
           {/* Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
@@ -706,6 +725,37 @@ function CoachGridSkeleton() {
         </Card>
       ))}
     </div>
+  );
+}
+
+function TodayWorkoutWidget({ events }: { events: { _id: string; title: string; start: string; end: string; status: string }[] }) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (events.length === 0) return null;
+
+  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const next = events.find((e) => e.status !== "completed") ?? events[0];
+  const allDone = events.every((e) => e.status === "completed");
+
+  return (
+    <Link href={`/takvim?date=${today}`} className="block mb-6">
+      <div className={`rounded-2xl border p-4 flex items-center gap-4 transition-all hover:shadow-md ${allDone ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800" : "bg-primary/5 border-primary/20 hover:border-primary/40"}`}>
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${allDone ? "bg-green-500" : "bg-primary"}`}>
+          {allDone ? <CheckCircle2 className="h-5 w-5 text-white" /> : <Dumbbell className="h-5 w-5 text-white" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">Bugünkü Antrenman</p>
+          {allDone ? (
+            <p className="font-semibold text-green-700 dark:text-green-400">Tüm seanslar tamamlandı 🎉</p>
+          ) : (
+            <>
+              <p className="font-semibold truncate">{next.title}</p>
+              <p className="text-xs text-muted-foreground">{fmtTime(next.start)} – {fmtTime(next.end)}{events.length > 1 ? ` · ${events.length} seans` : ""}</p>
+            </>
+          )}
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      </div>
+    </Link>
   );
 }
 

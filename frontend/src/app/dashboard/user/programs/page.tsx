@@ -135,12 +135,19 @@ export default function UserProgramsPage() {
           Süre: {program.duration || "Bilinmiyor"}
         </p>
 
-        {/* 🚀 CTA Button */}
-        <Link href={`/dashboard/user/programs/${program.programId}`}>
-          <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
-            Programa Git
-          </button>
-        </Link>
+        {/* 🚀 CTA Buttons */}
+        <div className="flex gap-2">
+          <Link href={`/takvim?date=${new Date().toISOString().slice(0, 10)}`} className="flex-1">
+            <button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2 rounded-lg text-sm font-medium transition-colors">
+              Devam Et
+            </button>
+          </Link>
+          <Link href={`/dashboard/user/programs/${program.programId}`} className="flex-1">
+            <button className="w-full border border-input bg-background hover:bg-muted py-2 rounded-lg text-sm font-medium transition-colors">
+              Detay
+            </button>
+          </Link>
+        </div>
       </div>
     ))
   ) : (
