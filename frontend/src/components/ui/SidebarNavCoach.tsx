@@ -1,8 +1,8 @@
 "use client";
 
-import { Home, User, MessageSquare, Settings, Bell } from "lucide-react";
+import { Home, User, MessageSquare, Settings, Bell, LayoutGrid, BarChart2, CreditCard, Users, LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 
 interface SidebarNavProps {
@@ -11,11 +11,25 @@ interface SidebarNavProps {
 
 export default function SidebarNav({ unreadCount }: SidebarNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
+  const isActive = (href: string) =>
+    pathname === href || (href !== "/dashboard/coach" && pathname.startsWith(href + "/"));
 
   const navItems = [
-    { href: "/dashboard/coach", icon: <Home size={24} />, label: "Home" },
-    { href: "/dashboard/coach/profile", icon: <User size={24} />, label: "Profile" },
-    { href: "/dashboard/coach/messages", icon: <MessageSquare size={24} />, label: "Messages" },
+    { href: "/dashboard/coach", icon: <Home size={24} />, label: "Ana Sayfa" },
+    { href: "/dashboard/coach/profile", icon: <User size={24} />, label: "Profil" },
+    { href: "/dashboard/coach/programs", icon: <LayoutGrid size={24} />, label: "Programlar" },
+    { href: "/dashboard/coach/clients", icon: <Users size={24} />, label: "Danışanlar" },
+    { href: "/dashboard/coach/analytics", icon: <BarChart2 size={24} />, label: "Analitik" },
+    { href: "/dashboard/coach/payments", icon: <CreditCard size={24} />, label: "Ödemeler" },
+    { href: "/dashboard/coach/messages", icon: <MessageSquare size={24} />, label: "Mesajlar" },
     {
       href: "/dashboard/coach/notifications",
       icon: (
@@ -28,9 +42,9 @@ export default function SidebarNav({ unreadCount }: SidebarNavProps) {
           )}
         </div>
       ),
-      label: "Notifications",
+      label: "Bildirimler",
     },
-    { href: "/dashboard/coach/settings", icon: <Settings size={24} />, label: "Settings" },
+    { href: "/dashboard/coach/settings", icon: <Settings size={24} />, label: "Ayarlar" },
   ];
 
   return (
@@ -42,7 +56,7 @@ export default function SidebarNav({ unreadCount }: SidebarNavProps) {
             href={item.href}
             className={clsx(
               "flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all",
-              pathname === item.href && "bg-muted text-primary"
+              isActive(item.href) && "bg-muted text-primary"
             )}
             title={item.label}
           >
@@ -50,6 +64,13 @@ export default function SidebarNav({ unreadCount }: SidebarNavProps) {
           </Link>
         ))}
       </div>
+      <button
+        onClick={handleLogout}
+        title="Çıkış Yap"
+        className="flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+      >
+        <LogOut size={24} />
+      </button>
     </aside>
   );
 }

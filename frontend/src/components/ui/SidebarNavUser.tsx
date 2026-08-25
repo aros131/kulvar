@@ -1,8 +1,8 @@
 "use client";
 
-import { Home, User, MessageSquare, Settings, Bell } from "lucide-react";
+import { Home, User, MessageSquare, Settings, Bell, LayoutGrid, CreditCard, Users, LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { ReactNode } from "react";
 
@@ -16,6 +16,14 @@ export default function SidebarNavUser({
   unreadMessages = 0,
 }: SidebarNavUserProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
@@ -39,6 +47,9 @@ export default function SidebarNavUser({
   const navItems = [
     { href: "/dashboard/user", icon: <Home size={24} />, label: "Ana Sayfa" },
     { href: "/dashboard/user/profile", icon: <User size={24} />, label: "Profil" },
+    { href: "/dashboard/user/programs", icon: <LayoutGrid size={24} />, label: "Programlarım" },
+    { href: "/dashboard/user/koclarimiz", icon: <Users size={24} />, label: "Koçlarım" },
+    { href: "/dashboard/user/payments", icon: <CreditCard size={24} />, label: "Ödemelerim" },
     {
       href: "/dashboard/user/messages",
       icon: (
@@ -79,6 +90,14 @@ export default function SidebarNavUser({
           </Link>
         ))}
       </div>
+      <button
+        onClick={handleLogout}
+        title="Çıkış Yap"
+        aria-label="Çıkış Yap"
+        className="flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+      >
+        <LogOut size={24} />
+      </button>
     </aside>
   );
 }
