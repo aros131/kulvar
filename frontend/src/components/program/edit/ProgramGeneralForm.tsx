@@ -185,6 +185,26 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
         </Select>
       </div>
 
+      <div>
+        <Label htmlFor="priceCents">Program Fiyatı (₺)</Label>
+        <div className="relative mt-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₺</span>
+          <Input
+            className="pl-7"
+            type="number"
+            min={0}
+            step={1}
+            placeholder="0 — ücretsiz"
+            value={program.priceCents != null ? program.priceCents / 100 : ""}
+            onChange={(e) => {
+              const val = e.target.value === "" ? null : Math.round(Number(e.target.value) * 100);
+              setProgram((prev) => prev ? { ...prev, priceCents: val as any } : prev);
+            }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">Boş bırakırsanız program ücretsiz görünür.</p>
+      </div>
+
       <Button className="w-full" onClick={handleSubmit} disabled={submitting}>
         {submitting ? "Güncelleniyor..." : "Güncelle"}
       </Button>

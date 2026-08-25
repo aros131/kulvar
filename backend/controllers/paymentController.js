@@ -1,4 +1,6 @@
 import Payment from '../models/Payment.js';
+import Program from '../models/Program.js';
+import ProgramAssignment from '../models/ProgramAssignment.js';
 import { createCheckoutForm, retrieveCheckoutForm } from '../services/iyzicoService.js';
 
 const APP_URL = (process.env.APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
@@ -85,14 +87,84 @@ export const iyzicoCallback = async (req, res) => {
     if (result.status === "success" && result.paymentStatus === "SUCCESS") {
       payment.status = "Paid";
       payment.iyzicoPaymentId = result.paymentId;
+      await payment.save();
+
+      // Auto-assign program to user after successful payment
+      if (payment.programId) {
+        await Program.findByIdAndUpdate(payment.programId, {
+          $addToSet: { assignedClients: payment.userId },
+        });
+        await ProgramAssignment.create({
+          userId: payment.userId,
+          programId: payment.programId,
+          startDate: new Date(),
+          status: "active",
+        });
+      }
     } else {
       payment.status = "Failed";
       payment.failReason = result.errorMessage || result.fraudStatus || "Payment failed";
+      await payment.save();
     }
-    await payment.save();
 
-    res.redirect(`${APP_URL}/dashboard/user/payments?status=${payment.status === "Paid" ? "success" : "failed"}`);
+    const programId = payment.programId?.toString() ?? "";
+    res.redirect(
+      `${APP_URL}/dashboard/user/payments?status=${payment.status === "Paid" ? "success" : "failed"}&programId=${programId}`
+    );
   } catch (error) {
     res.redirect(`${APP_URL}/dashboard/user/payments?status=failed&reason=${encodeURIComponent(error.message)}`);
+  }
+};
+
+/** POST /payment/program/:programId/buy — user directly purchases a program */
+export const buyProgram = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const program = await Program.findById(programId).lean();
+    if (!program) return res.status(404).json({ message: "Program bulunamadı" });
+
+    const priceCents = program.priceCents;
+    if (!priceCents || priceCents <= 0) {
+      return res.status(400).json({ message: "Bu program ücretli değil" });
+    }
+
+    // Check if user already owns it
+    const alreadyAssigned = program.assignedClients?.some(
+      (id) => id.toString() === req.user._id.toString()
+    );
+    if (alreadyAssigned) {
+      return res.status(409).json({ message: "Bu programa zaten erişiminiz var" });
+    }
+
+    const amountTL = priceCents / 100;
+
+    const payment = await Payment.create({
+      coachId: program.coachId,
+      userId: req.user._id,
+      programId: program._id,
+      amount: amountTL,
+      description: program.name,
+      status: "Pending",
+    });
+
+    const callbackUrl = `${API_PUBLIC_URL}/payment/iyzico/callback`;
+    const result = await createCheckoutForm({
+      payment,
+      buyerUser: req.user,
+      ip: req.ip,
+      callbackUrl,
+    });
+
+    payment.conversationId = result.conversationId;
+    payment.iyzicoToken = result.token;
+    await payment.save();
+
+    res.status(200).json({
+      checkoutFormContent: result.checkoutFormContent,
+      token: result.token,
+      paymentId: payment._id,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Ödeme başlatılamadı", error: error.message });
   }
 };

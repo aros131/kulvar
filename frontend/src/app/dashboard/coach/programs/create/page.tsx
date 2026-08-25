@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 
+import CoachPageShell from "@/components/coach/CoachPageShell";
 import {
   Select,
   SelectContent,
@@ -26,6 +28,7 @@ export default function CreateProgramPage() {
     duration: 4,
     difficulty: "Başlangıç",
     fitnessGoal: "Genel Fitness",
+    priceCents: null as number | null,
   });
 
 
@@ -48,7 +51,7 @@ const [dailySchedule, setDailySchedule] = useState<DailyEntry[]>([]);
         dailySchedule,
       };
 
-      const res = await fetch("https://kulvar-qb7t.onrender.com/programs", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/programs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,19 +61,20 @@ const [dailySchedule, setDailySchedule] = useState<DailyEntry[]>([]);
       });
 
       if (res.ok) {
-        alert("Program oluşturuldu ✅");
-        router.push("/dashboard/coach");
+        toast.success("Program oluşturuldu.");
+        router.push("/dashboard/coach/programs");
       } else {
         const err = await res.json();
-        alert("❌ Oluşturulamadı: " + err.message);
+        toast.error("Oluşturulamadı: " + err.message);
       }
-    } catch (err) {
-      console.error("🚨 Hata oluştu:", err);
+    } catch {
+      toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <CoachPageShell>
+    <div className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-6">
       <h1 className="text-2xl font-bold">Yeni Program Oluştur</h1>
 
       {/* 🔽 Form Fields */}
@@ -120,6 +124,26 @@ const [dailySchedule, setDailySchedule] = useState<DailyEntry[]>([]);
         </Select>
       </div>
 
+      <div>
+        <Label>Program Fiyatı (₺)</Label>
+        <div className="relative mt-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₺</span>
+          <Input
+            className="pl-7"
+            type="number"
+            min={0}
+            step={1}
+            placeholder="0 — ücretsiz"
+            value={form.priceCents != null ? form.priceCents / 100 : ""}
+            onChange={(e) => {
+              const val = e.target.value === "" ? null : Math.round(Number(e.target.value) * 100);
+              setForm((prev) => ({ ...prev, priceCents: val }));
+            }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">Boş bırakırsanız program ücretsiz görünür.</p>
+      </div>
+
       {/* 🔽 Daily Schedule */}
       <div className="space-y-2">
         <Label>Haftalık Program</Label>
@@ -131,5 +155,6 @@ const [dailySchedule, setDailySchedule] = useState<DailyEntry[]>([]);
         Program Oluştur
       </Button>
     </div>
+    </CoachPageShell>
   );
 }

@@ -60,6 +60,8 @@ export type Program = {
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
   goal?: string;
   price?: number | string;
+  priceCents?: number | null;
+  currency?: string;
 };
 
 export type Review = {
@@ -509,28 +511,56 @@ export default function CoachProfileClient({
             </CardContent>
           </Card>
         ) : (
-          <ul className="divide-y rounded-md border">
+          <ul className="space-y-3">
             {programs.map((p) => {
               const pid = p.id || p._id || `${p.name}-${Math.random().toString(36).slice(2)}`;
+              const hasPriceCents = p.priceCents != null && p.priceCents > 0;
+              const formattedPrice = hasPriceCents
+                ? Intl.NumberFormat("tr-TR", { style: "currency", currency: p.currency ?? "TRY", maximumFractionDigits: 0 }).format(p.priceCents! / 100)
+                : null;
+
               return (
-                <li key={pid} className="p-4">
-                  <div className="font-medium">{p.name}</div>
-                  {p.description ? <p className="text-sm text-muted-foreground mt-1">{p.description}</p> : null}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {p.durationWeeks ? `${p.durationWeeks} hafta` : ""}
-                    {p.difficulty ? ` • ${p.difficulty}` : ""}
-                    {p.goal ? ` • ${p.goal}` : ""}
-                    {p.price != null
-                      ? ` • ${
-                          typeof p.price === "number"
-                            ? Intl.NumberFormat(locale, {
-                                style: "currency",
-                                currency: locale === "tr" ? "TRY" : "USD",
-                              }).format(p.price)
-                            : p.price
-                        }`
-                      : ""}
-                  </p>
+                <li key={pid} className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border bg-card p-4 shadow-sm">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-base">{p.name}</div>
+                    {p.description ? <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p> : null}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {p.durationWeeks ? <span className="text-xs bg-muted px-2 py-0.5 rounded">{p.durationWeeks} hafta</span> : null}
+                      {p.difficulty ? <span className="text-xs bg-muted px-2 py-0.5 rounded">{p.difficulty}</span> : null}
+                      {p.goal ? <span className="text-xs bg-muted px-2 py-0.5 rounded">{p.goal}</span> : null}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    {formattedPrice ? (
+                      <span className="text-lg font-bold text-primary">{formattedPrice}</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Ücretsiz</span>
+                    )}
+                    {hasPriceCents ? (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+                          if (!token) { window.location.href = `/login?next=/koc/${coach.id}`; return; }
+                          window.location.href = `/odeme/${pid}`;
+                        }}
+                      >
+                        Satın Al
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+                          if (!token) { window.location.href = `/login?next=/koc/${coach.id}`; return; }
+                          window.location.href = `/dashboard/user/messages/start?to=${coach.id}&msg=${encodeURIComponent(`Merhaba! "${p.name}" programıyla ilgileniyorum.`)}`;
+                        }}
+                      >
+                        Koçla İletişime Geç
+                      </Button>
+                    )}
+                  </div>
                 </li>
               );
             })}

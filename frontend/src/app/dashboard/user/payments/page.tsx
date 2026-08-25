@@ -73,14 +73,17 @@ function UserPaymentsInner() {
     fetchInvoices();
   }, []);
 
+  const [resultBanner, setResultBanner] = useState<{ status: "success" | "failed"; programId?: string } | null>(null);
+
   useEffect(() => {
     const status = searchParams?.get('status');
     if (!status) return;
+    const programId = searchParams?.get('programId') || undefined;
     if (status === 'success') {
-      toast.success('Ödeme başarıyla gerçekleşti.');
+      setResultBanner({ status: 'success', programId });
       fetchInvoices();
     } else if (status === 'failed') {
-      toast.error('Ödeme gerçekleştirilemedi.');
+      setResultBanner({ status: 'failed' });
     }
     router.replace('/dashboard/user/payments');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,6 +113,28 @@ function UserPaymentsInner() {
     <UserPageShell>
       <div className="max-w-2xl mx-auto px-4 py-8 md:py-10 space-y-6">
         <h1 className="text-2xl font-bold">Ödemelerim</h1>
+
+        {resultBanner?.status === 'success' && (
+          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-start gap-3">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="font-semibold text-green-800 dark:text-green-300">Ödeme başarılı!</p>
+              <p className="text-sm text-green-700 dark:text-green-400 mt-0.5">
+                Programınıza erişiminiz aktif edildi.{' '}
+                {resultBanner.programId && (
+                  <a href="/dashboard/user/programs" className="underline font-medium">Programlarıma Git →</a>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {resultBanner?.status === 'failed' && (
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-4">
+            <p className="font-semibold text-red-700 dark:text-red-400">Ödeme başarısız oldu.</p>
+            <p className="text-sm text-red-600 dark:text-red-500 mt-0.5">Lütfen kart bilgilerinizi kontrol edip tekrar deneyin.</p>
+          </div>
+        )}
 
         {invoices.length === 0 ? (
           <div className="bg-white dark:bg-zinc-800 rounded-2xl p-8 shadow text-center text-zinc-500">

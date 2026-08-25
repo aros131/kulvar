@@ -39,7 +39,7 @@ export async function listCoaches(req, res) {
     }
 
     const coaches = await User.find(where)
-      .select("_id name email role specialization profilePicture")
+      .select("_id name email role specialization profilePicture avatar city rating bio tagline certifications programsCount")
       .collation({ locale: "tr", strength: 1 })
       .sort({ name: 1 })
       .lean();
@@ -130,7 +130,7 @@ export async function getCoachPrograms(req, res) {
     }
 
     const docs = await Program.find(q)
-      .select("name description duration difficulty fitnessGoal assets price createdAt status")
+      .select("name description duration difficulty fitnessGoal assets priceCents currency createdAt status")
       .sort({ _id: -1 })
       .limit(limit)
       .lean();
@@ -139,10 +139,11 @@ export async function getCoachPrograms(req, res) {
       id: String(p._id),
       name: p.name,
       description: p.description,
-      durationWeeks: p.duration,           // weeks
-      difficulty: p.difficulty,            // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
+      durationWeeks: p.duration,
+      difficulty: p.difficulty,
       goal: p.fitnessGoal,
-      price: p.price ?? undefined,
+      priceCents: p.priceCents ?? null,
+      currency: p.currency ?? "TRY",
       image: pickCoverImage(p.assets),
     }));
 
