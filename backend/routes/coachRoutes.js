@@ -103,7 +103,7 @@ router.get("/", async (req, res) => {
     const specs = specsParam(req);
     const { limit, page, skip } = paginate(req);
 
-    const and = [{ role: { $regex: /^coach$/i } }];
+    const and = [{ role: { $regex: /^coach$/i } }, { isApproved: { $ne: false } }];
 
     if (q) {
       and.push({
@@ -133,7 +133,7 @@ router.get("/", async (req, res) => {
     const [docs, total] = await Promise.all([
       User.find(filters)
         .select(
-          "name profilePicture avatar specialization city rating bio programsCount role tagline certifications"
+          "name profilePicture avatar specialization city rating bio programsCount role tagline certifications price"
         )
         .sort({ rating: -1, name: 1 })
         .skip(skip)

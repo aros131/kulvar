@@ -131,6 +131,25 @@ export async function sendBookingReminderEmail({ clientName, clientEmail, coachN
   await send(clientEmail, subject, html);
 }
 
+export async function sendVerificationEmail({ name, email, verifyUrl }) {
+  const subject = `PerSe Coaching — E-posta adresinizi doğrulayın`;
+  const html = `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+      <h2 style="color:#10b981">Merhaba ${name},</h2>
+      <p>Kaydınızı tamamlamak için e-posta adresinizi doğrulayın.</p>
+      <p style="margin:24px 0">
+        <a href="${verifyUrl}"
+           style="background:#10b981;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+          E-postamı Doğrula →
+        </a>
+      </p>
+      <p style="color:#6b7280;font-size:13px">Bu bağlantı 24 saat geçerlidir.</p>
+      <p style="color:#6b7280;font-size:12px">PerSe Coaching — kişisel koçluk platformu</p>
+    </div>
+  `;
+  await send(email, subject, html);
+}
+
 export async function sendContactFormReceived({ name, email, message }) {
   const adminEmail = process.env.ADMIN_EMAIL;
   if (!adminEmail) return;

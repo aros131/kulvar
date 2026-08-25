@@ -42,6 +42,12 @@ const UserSchema = new mongoose.Schema(
     certifications: { type: [String], default: [] },
     languages: { type: [String], default: [] },
 
+    emailVerified:     { type: Boolean, default: false },
+    verificationToken: { type: String, default: null },
+
+    isApproved:  { type: Boolean, default: true },
+    price:       { type: Number, default: null },
+
     resetToken:       { type: String, default: null },
     resetTokenExpiry: { type: Date,   default: null },
 

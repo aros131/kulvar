@@ -25,6 +25,8 @@ export default function CoachSettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [price, setPrice] = useState<string>('');
+  const [savingPrice, setSavingPrice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [prefs, setPrefs] = useState<NotifPrefs>(defaultPrefs());
   const [savingPrefs, setSavingPrefs] = useState(false);
@@ -36,6 +38,7 @@ export default function CoachSettingsPage() {
       .then((r) => r.json())
       .then((d) => {
         setEmail(d.email || '');
+        if (d.price != null) setPrice(String(d.price));
         if (d.notificationPreferences) {
           setPrefs({
             inApp:  { ...defaultPrefs().inApp,  ...d.notificationPreferences.inApp  },
@@ -45,6 +48,26 @@ export default function CoachSettingsPage() {
       })
       .catch(() => {});
   }, []);
+
+  const savePrice = async () => {
+    const parsed = Number(price);
+    if (price !== '' && (isNaN(parsed) || parsed < 0)) { toast.error('Geçerli bir fiyat girin.'); return; }
+    setSavingPrice(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ price: price === '' ? null : parsed }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success('Fiyat güncellendi.');
+    } catch {
+      toast.error('Kaydedilemedi.');
+    } finally {
+      setSavingPrice(false);
+    }
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +141,27 @@ export default function CoachSettingsPage() {
           <Input value={email} disabled className="mt-1 bg-zinc-100 dark:bg-zinc-700" />
           <p className="text-xs text-zinc-400 mt-1">E-posta değişikliği için destek ekibiyle iletişime geçin.</p>
         </div>
+      </section>
+
+      <section className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow space-y-4">
+        <h2 className="text-lg font-semibold">Saat Başı Ücret</h2>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-medium">₺</span>
+            <Input
+              type="number"
+              min={0}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="örn. 500"
+              className="mt-1 pl-7"
+            />
+          </div>
+          <Button onClick={savePrice} disabled={savingPrice} className="mt-1">
+            {savingPrice ? 'Kaydediliyor...' : 'Kaydet'}
+          </Button>
+        </div>
+        <p className="text-xs text-zinc-400">Bu fiyat profilinizde ve koç listesinde görünecektir.</p>
       </section>
 
       <section className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">

@@ -2,11 +2,15 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/emailService.js';
+import { sendWelcomeEmail, sendPasswordResetEmail, sendVerificationEmail } from '../services/emailService.js';
 
 export const register = async (req, res) => {
   try {
     const { name, email, password, role, fitnessGoals, specialization, profilePicture } = req.body;
+
+    if (!name || !email || !password) return res.status(400).json({ message: "Ad, e-posta ve şifre zorunludur." });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ message: "Geçerli bir e-posta girin." });
+    if (password.length < 6) return res.status(400).json({ message: "Şifre en az 6 karakter olmalıdır." });
 
     // Validate role
     if (!["user", "coach"].includes(role)) {
@@ -34,12 +38,16 @@ export const register = async (req, res) => {
     }
 
     // Create user
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    userData.verificationToken = verificationToken;
     const user = await User.create(userData);
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    // Fire-and-forget welcome email
+    // Fire-and-forget emails
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
     sendWelcomeEmail({ name: user.name, email: user.email, role: user.role }).catch(() => {});
+    sendVerificationEmail({ name: user.name, email: user.email, verifyUrl: `${appUrl}/verify-email?token=${verificationToken}` }).catch(() => {});
 
     res.status(201).json({
       message: "User registered successfully",
@@ -202,6 +210,37 @@ export const resetPassword = async (req, res) => {
     res.status(200).json({ message: 'Şifre başarıyla güncellendi.' });
   } catch (err) {
     res.status(500).json({ message: 'Şifre sıfırlanamadı.', error: err.message });
+  }
+};
+
+export const resendVerification = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    if (user.emailVerified) return res.status(200).json({ message: 'E-posta zaten doğrulanmış.' });
+    const token = crypto.randomBytes(32).toString('hex');
+    user.verificationToken = token;
+    await user.save();
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    sendVerificationEmail({ name: user.name, email: user.email, verifyUrl: `${appUrl}/verify-email?token=${token}` }).catch(() => {});
+    res.status(200).json({ message: 'Doğrulama e-postası gönderildi.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Gönderim hatası.', error: err.message });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ message: 'Token eksik.' });
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) return res.status(400).json({ message: 'Geçersiz veya süresi dolmuş doğrulama bağlantısı.' });
+    user.emailVerified = true;
+    user.verificationToken = null;
+    await user.save();
+    res.status(200).json({ message: 'E-posta başarıyla doğrulandı.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Doğrulama hatası.', error: err.message });
   }
 };
 

@@ -29,6 +29,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { startBookingReminderJob } from "./services/bookingReminderJob.js";
+import rateLimit from "express-rate-limit";
 /* --------------------------------- Setup ---------------------------------- */
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -37,6 +38,20 @@ const PORT = process.env.PORT || 5001;
 app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(express.json());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Çok fazla deneme yapıldı. 15 dakika sonra tekrar deneyin." },
+});
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 app.use(express.urlencoded({ extended: true })); // needed for iyzico's checkout form callback POST
 
 /* ------------------------ CORS: allow ALL (TEST MODE) ---------------------- */
@@ -92,7 +107,8 @@ mongoose
   });
 
 /* --------------------------------- Routes --------------------------------- */
-app.use("/auth", authRoutes);
+app.use("/auth", authLimiter, authRoutes);
+app.use(generalLimiter);
 app.use("/dashboard", dashboardRoutes);
 app.use("/content", contentRoutes);
 app.use("/notifications", notificationRoutes);

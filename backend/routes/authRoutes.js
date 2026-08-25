@@ -1,12 +1,14 @@
 import express from 'express';
 const router = express.Router();
-import { register, login, getUserProfile, getUserProfileById, changePassword, deleteAccount, adminLogin, forgotPassword, resetPassword } from '../controllers/authController.js';
+import { register, login, getUserProfile, getUserProfileById, changePassword, deleteAccount, adminLogin, forgotPassword, resetPassword, verifyEmail, resendVerification } from '../controllers/authController.js';
 import User from '../models/User.js';
 import { requireUser as protect } from '../middleware/authMiddleware.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
 
 router.post("/register", register);
 router.post("/login", login);
+router.get("/verify-email", verifyEmail);
+router.post("/resend-verification", protect, resendVerification);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/admin-login", adminLogin);

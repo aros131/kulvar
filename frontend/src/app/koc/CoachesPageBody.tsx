@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Search, MapPin, Star, Dumbbell, Loader2, Filter } from "lucide-react";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 /** Fixed specialization options:
  *  - UI label: capitalized
@@ -43,7 +43,10 @@ type Coach = {
   city?: string;
   rating?: number;
   bio?: string;
+  tagline?: string;
+  certifications?: string[];
   programsCount?: number;
+  price?: number | null;
 };
 
 const toTRLower = (s: string) => s.toLocaleLowerCase("tr");
@@ -251,10 +254,20 @@ export default function CoachesPageBody() {
                     </Avatar>
                     <div className="min-w-0">
                       <CardTitle className="truncate group-hover:underline">{c.name}</CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {c.city && (<span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.city}</span>)}
-                        {typeof c.rating === "number" && (<span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5" />{c.rating.toFixed(1)}</span>)}
-                      </div>
+                      {c.tagline ? (
+                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 truncate">{c.tagline}</p>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          {c.city && (<span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.city}</span>)}
+                          {typeof c.rating === "number" && c.rating > 0 && (<span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{c.rating.toFixed(1)}</span>)}
+                        </div>
+                      )}
+                      {c.tagline && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          {c.city && (<span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{c.city}</span>)}
+                          {typeof c.rating === "number" && c.rating > 0 && (<span className="inline-flex items-center gap-1"><Star className="h-3 w-3 fill-amber-400 text-amber-400" />{c.rating.toFixed(1)}</span>)}
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -269,12 +282,20 @@ export default function CoachesPageBody() {
                         <Badge variant="outline">+{toArray(c.specialization).length - 3}</Badge>
                       )}
                     </div>
-                    {c.bio && (<p className="text-sm text-muted-foreground line-clamp-3 mb-3">{c.bio}</p>)}
+                    {c.bio ? (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{c.bio}</p>
+                    ) : (c.certifications?.length ?? 0) > 0 ? (
+                      <p className="text-xs text-muted-foreground mb-3 truncate">
+                        🏅 {c.certifications!.slice(0, 2).join(" · ")}
+                      </p>
+                    ) : (
+                      <div className="mb-3" />
+                    )}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {c.programsCount ? `${c.programsCount} program` : "Program bilgisi yok"}
+                      <span className="text-sm font-semibold text-primary">
+                        {c.price != null ? `₺${c.price}/saat` : ""}
                       </span>
-                      <Button size="sm" variant="secondary">Profili Gör</Button>
+                      <Button size="sm" variant="secondary" className="ml-auto">Profili Gör</Button>
                     </div>
                   </CardContent>
                 </Card>
