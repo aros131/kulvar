@@ -52,7 +52,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
     const fetchProgram = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`https://kulvar-qb7t.onrender.com/programs/${programId}`, 
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, 
 
           {
             headers: {
@@ -63,8 +63,6 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
         setProgram(res.data.program);
       } catch (error) {
         console.error("❌ Program verisi alınamadı:", error);
-        console.log("📦 programId being fetched:", programId);
-
         toast.error("Program verisi alınamadı.");
       } finally {
         setLoading(false);
@@ -95,7 +93,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
 
     try {
       const res = await fetch(
-        `https://kulvar-qb7t.onrender.com/programs/${program._id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/programs/${program._id}`,
         {
           method: "PUT",
           headers: {

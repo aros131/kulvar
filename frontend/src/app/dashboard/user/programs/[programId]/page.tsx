@@ -10,8 +10,9 @@ import FeedbackHistory from "@/components/program/FeedbackHistory";
 import CalendarHeatmap from "@/components/program/CalendarHeatmap";
 import ProgramDetailsView from "@/components/program/ProgramDetailsView";
 import { useProgramProgress } from "@/hooks/useProgramProgress";
+import UserPageShell from "@/components/user/UserPageShell";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/,"");
 
 type UISession = { sessionId?: string; _id?: string; id?: string; name?: string };
 type UserProgress = { completedSessions?: { sessionId: string }[] };
@@ -96,7 +97,8 @@ export default function ProgramContentPage() {
   const completedCount = completedIds.size;
 
   return (
-    <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
+    <UserPageShell>
+    <div className="w-full px-4 py-8 md:py-10">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">{program.name}</h1>
         <p className="text-zinc-600 dark:text-zinc-300 mb-6">{program.description}</p>
@@ -115,7 +117,7 @@ export default function ProgramContentPage() {
           <StreakTracker programId={program._id} />
         </div>
 
-        <ProgramDetailsView program={program} programId={""} />
+        <ProgramDetailsView program={program} programId={programId} />
 
        
 
@@ -123,5 +125,6 @@ export default function ProgramContentPage() {
         
       </div>
     </div>
+    </UserPageShell>
   );
 }

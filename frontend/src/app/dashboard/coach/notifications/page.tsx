@@ -32,7 +32,7 @@ export default function CoachNotificationsPage() {
 
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/coach`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/user`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();

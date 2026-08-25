@@ -8,12 +8,12 @@ function trimEndSlash(s: string) {
 export async function GET(req: NextRequest) {
   const { search } = new URL(req.url);
 
-  const base = process.env.KULVAR_BACKEND_URL;         // ör: https://YOUR-BACKEND
-  const path = process.env.KULVAR_COACHES_PATH || '/coaches'; // gerçek backend yolu (default: /coaches)
+  const base = process.env.KULVAR_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL;
+  const path = process.env.KULVAR_COACHES_PATH || '/coaches';
 
   if (!base) {
     return NextResponse.json(
-      { message: 'Server env KULVAR_BACKEND_URL eksik.' },
+      { message: 'Server env KULVAR_BACKEND_URL veya NEXT_PUBLIC_API_URL eksik.' },
       { status: 500 }
     );
   }

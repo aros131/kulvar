@@ -54,7 +54,7 @@ export default function SendNotificationDialog({ clients }: Props) {
 
   const handleSend = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

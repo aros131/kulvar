@@ -22,7 +22,7 @@ import { storage } from "@/lib/firebase";
 import { getDownloadURL, ref as sRef } from "firebase/storage";
 
 /* --------------------------------- Config --------------------------------- */
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 /* ------------------------------ Helper Utils ------------------------------ */
 const cleanToken = (): string | null => {
@@ -104,7 +104,7 @@ export default function DashboardCoachPage() {
       if (!token) return;
       setLoadingNotifications(true);
       try {
-        const res = await fetch(`${API}/dashboard/notifications/user`, {
+        const res = await fetch(`${API}/notifications/user`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });

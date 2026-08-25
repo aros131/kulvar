@@ -4,6 +4,7 @@ import Event from '../models/Event.js'; // ✅ make sure the path/case matches y
 
 import Progress from '../models/Progress.js';
 import ProgramAssignment from '../models/ProgramAssignment.js'; // ← add this
+import { sendProgramAssigned } from '../services/emailService.js';
 // 🟢 Create a new program
 const createProgram = async (req, res) => {
   try {
@@ -315,8 +316,22 @@ const assignProgramToClients = async (req, res) => {
       return res.status(400).json({ message: "Invalid client IDs found" });
     }
 
-    program.assignedClients = [...new Set([...program.assignedClients, ...userIds])];
+    const newlyAssigned = validClients.filter(
+      (c) => !program.assignedClients.map(String).includes(String(c._id))
+    );
+
+    program.assignedClients = [...new Set([...program.assignedClients.map(String), ...userIds])];
     await program.save();
+
+    const coach = await User.findById(req.user._id).select('name').lean();
+    for (const client of newlyAssigned) {
+      sendProgramAssigned({
+        clientName: client.name,
+        clientEmail: client.email,
+        coachName: coach?.name || 'Koçun',
+        programName: program.name,
+      }).catch(() => {});
+    }
 
     res.status(200).json({ message: "Program successfully assigned!", program });
   } catch (error) {
@@ -607,7 +622,10 @@ const programs = await Program.find({ coachId: coachId });
 };
 const getAllClients = async (req, res) => {
   try {
-    const clients = await User.find({ role: "user" }).select("-password");
+    const coachId = req.user._id;
+    const programs = await Program.find({ coachId }).select('assignedClients').lean();
+    const clientIds = [...new Set(programs.flatMap(p => p.assignedClients.map(id => id.toString())))];
+    const clients = await User.find({ _id: { $in: clientIds }, role: "user" }).select("-password");
     res.json(clients);
   } catch (error) {
     res.status(500).json({ message: "Kullanıcılar alınamadı", error });

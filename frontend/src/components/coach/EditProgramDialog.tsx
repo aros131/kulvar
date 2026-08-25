@@ -23,7 +23,6 @@ const EditProgramDialog: React.FC<EditProgramDialogProps> = ({
   const [open, setOpen] = useState(false);
 
   if (!programId) return null;
-  console.log("Rendering EditProgramDialog for:", programId);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

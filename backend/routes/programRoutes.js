@@ -92,7 +92,6 @@ router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
 // 🟢 Misc
 router.post("/reschedule-workout", protect, roleMiddleware(["user"]), rescheduleWorkout);
 router.post("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), updateAdaptiveAdjustments);
-router.post("/programs/:programId/track-session", trackSessionCompletion); // Redundant with above? Consider removing
 router.post("/assign-group", protect, roleMiddleware(["coach"]), assignProgramToGroup);
 export default router;
 

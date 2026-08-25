@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 
 import ProgressChart from "@/components/program/ProgressChart";
+import UserPageShell from "@/components/user/UserPageShell";
 
 
 const Bar = dynamic(() => import("react-chartjs-2").then((mod) => mod.Bar), { ssr: false });
@@ -46,23 +47,31 @@ export default function UserProgramsPage() {
     const token = localStorage.getItem("token");
 
     const fetchPrograms = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/progress/all-program-progress", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setPrograms(data.programProgress || []);
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/progress/all-program-progress`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setPrograms(data.programProgress || []);
+      } catch {
+        setPrograms([]);
+      }
     };
 
     const fetchProgress = async () => {
-      const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/analytics/user", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProgress({
-        totalCompletedSessions: data.totalCompletedSessions || 0,
-        assignedPrograms: data.assignedPrograms || 0,
-        goalTracking: data.goalTracking || [],
-      });
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/analytics/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setProgress({
+          totalCompletedSessions: data.totalCompletedSessions || 0,
+          assignedPrograms: data.assignedPrograms || 0,
+          goalTracking: data.goalTracking || [],
+        });
+      } catch {
+        setProgress(null);
+      }
     };
 
     fetchPrograms();
@@ -70,7 +79,8 @@ export default function UserProgramsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full px-4 py-10 bg-zinc-100 dark:bg-zinc-900">
+    <UserPageShell>
+    <div className="w-full px-4 py-8 md:py-10">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-4">Programların</h1>
         <p className="text-zinc-600 dark:text-zinc-300 mb-8">
@@ -111,7 +121,7 @@ export default function UserProgramsPage() {
           {/* 🧑‍🏫 Coach + Tag */}
           <div className="flex justify-between items-center mb-4 text-xs text-zinc-400">
            
-            <span>Koç: {program.coachName || "Ali Hoca"}</span>
+            {program.coachName && <span>Koç: {program.coachName}</span>}
           </div>
         </div>
 
@@ -178,5 +188,6 @@ export default function UserProgramsPage() {
         )}
       </div>
     </div>
+    </UserPageShell>
   );
 }

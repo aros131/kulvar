@@ -3,7 +3,7 @@
 import CoachProfileClient from "@/components/CoachProfileClient";
 
 function apiBase() {
-  const raw = process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com";
+  const raw = process.env.NEXT_PUBLIC_API_URL || "";
   return raw.replace(/\/+$/, "");
 }
 
@@ -44,7 +44,7 @@ export default function ClientSection({
         if (!resp.ok && resp.status !== 204) throw new Error("follow toggle failed");
       }}
       onMessage={(id: string) => {
-        window.location.href = `/messages?to=${id}`;
+        window.location.href = `/dashboard/user/messages/start?to=${id}`;
       }}
     />
   );

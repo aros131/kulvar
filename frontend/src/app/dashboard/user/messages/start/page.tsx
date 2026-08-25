@@ -7,7 +7,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import UserPageShell from "@/components/user/UserPageShell";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 type LocalUser = { id: string; name: string; role: string; token?: string };
 

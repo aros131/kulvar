@@ -30,7 +30,7 @@ export default function CompleteSessionDialog({ programId, day, sessionTitle, on
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await fetch("https://kulvar-qb7t.onrender.com/progress/session/complete", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}/complete-session`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
