@@ -75,10 +75,14 @@ const ProgramSchema = new Schema({
           exercises: [
             {
               name: { type: String, required: true },
+              type: { type: String, enum: ["strength", "cardio", "isometric"], default: "strength" },
               sets: { type: Number, default: 3 },
               reps: { type: Number, default: 10 },
               weight: { type: Number, default: null },
               restTime: { type: Number, default: 60 },
+              holdSeconds: { type: Number, default: null },
+              cardioMinutes: { type: Number, default: null },
+              cardioKm: { type: Number, default: null },
               videoUrls: [{ url: { type: String }, description: { type: String } }],
             },
           ],
