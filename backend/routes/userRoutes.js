@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { searchClients } from '../controllers/clientGroupController.js'; // ya da ayrı controller yazacaksan oradan
+import { searchClients } from '../controllers/userController.js';
 
 import protect from '../middleware/authMiddleware.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
