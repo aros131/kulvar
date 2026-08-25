@@ -74,11 +74,11 @@ const ProgramSchema = new Schema({
 
           exercises: [
             {
-              name: { type: String, required: true }, // Egzersiz adı
-              sets: { type: Number, default: 0 },
-              reps: { type: Number, default: 0 },
-              duration: { type: String, default: "0 dakika" },
-              restTime: { type: Number, default: 0 },
+              name: { type: String, required: true },
+              sets: { type: Number, default: 3 },
+              reps: { type: Number, default: 10 },
+              weight: { type: Number, default: null },
+              restTime: { type: Number, default: 60 },
               videoUrls: [{ url: { type: String }, description: { type: String } }],
             },
           ],

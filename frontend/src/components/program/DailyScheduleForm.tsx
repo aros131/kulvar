@@ -5,14 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Trash2 } from "lucide-react";
 
 export interface Exercise {
   name: string;
   sets: number;
   reps: number;
-  duration: string;
+  weight: number | null;
   restTime: number;
   videoUrls: { url: string; description: string }[];
+  /** @deprecated kept for backward compat with old saved programs */
+  duration?: string;
 }
 
 export interface Session {
@@ -144,10 +147,10 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
     const exs = [...(sessions[si]?.exercises || [])];
     exs.push({
       name: "",
-      sets: 0,
-      reps: 0,
-      duration: "0 dakika",
-      restTime: 0,
+      sets: 3,
+      reps: 10,
+      weight: null,
+      restTime: 60,
       videoUrls: [],
     });
     sessions[si] = { ...(sessions[si] || { name: "", exercises: [] }), exercises: exs };
@@ -164,6 +167,17 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
     const sessions = [...(day.sessions || [])];
     const exs = [...(sessions[si]?.exercises || [])];
     exs[ei] = { ...exs[ei], [field]: value };
+    sessions[si] = { ...(sessions[si] || { name: "", exercises: [] }), exercises: exs };
+    day.sessions = sessions;
+    next[gi] = day;
+    updateSchedule(next);
+  };
+
+  const deleteExercise = (gi: number, si: number, ei: number) => {
+    const next = [...schedule];
+    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const sessions = [...(day.sessions || [])];
+    const exs = [...(sessions[si]?.exercises || [])].filter((_, i) => i !== ei);
     sessions[si] = { ...(sessions[si] || { name: "", exercises: [] }), exercises: exs };
     day.sessions = sessions;
     next[gi] = day;
@@ -352,36 +366,72 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
                     />
                   </div>
 
+                  {session.exercises.length > 0 && (
+                    <div className="mt-3 mb-2 grid grid-cols-[1fr_60px_60px_70px_70px_36px] gap-1.5 px-1">
+                      <span className="text-[11px] text-zinc-400 font-medium">Egzersiz</span>
+                      <span className="text-[11px] text-zinc-400 font-medium text-center">Set</span>
+                      <span className="text-[11px] text-zinc-400 font-medium text-center">Tekrar</span>
+                      <span className="text-[11px] text-zinc-400 font-medium text-center">Ağırlık</span>
+                      <span className="text-[11px] text-zinc-400 font-medium text-center">Dinlenme</span>
+                      <span />
+                    </div>
+                  )}
                   {session.exercises.map((exercise, exerciseIndex) => (
-                    <div key={`ex-${gi}-${sessionIndex}-${exerciseIndex}`} className="grid grid-cols-2 gap-2 mt-3">
+                    <div key={`ex-${gi}-${sessionIndex}-${exerciseIndex}`} className="grid grid-cols-[1fr_60px_60px_70px_70px_36px] gap-1.5 mt-1.5 items-center">
                       <Input
-                        placeholder="Egzersiz Adı"
+                        placeholder="Egzersiz adı"
                         value={exercise.name}
                         onChange={(e) => updateExerciseField(gi, sessionIndex, exerciseIndex, "name", e.target.value)}
+                        className="h-8 text-sm"
                       />
                       <Input
                         type="number"
-                        placeholder="Set"
-                        value={exercise.sets}
+                        min={1}
+                        placeholder="3"
+                        value={exercise.sets || ""}
                         onChange={(e) => updateExerciseField(gi, sessionIndex, exerciseIndex, "sets", Number(e.target.value))}
+                        className="h-8 text-sm text-center px-1"
                       />
                       <Input
                         type="number"
-                        placeholder="Tekrar"
-                        value={exercise.reps}
+                        min={1}
+                        placeholder="10"
+                        value={exercise.reps || ""}
                         onChange={(e) => updateExerciseField(gi, sessionIndex, exerciseIndex, "reps", Number(e.target.value))}
+                        className="h-8 text-sm text-center px-1"
                       />
-                      <Input
-                        placeholder="Süre (örn. 30 dakika)"
-                        value={exercise.duration}
-                        onChange={(e) => updateExerciseField(gi, sessionIndex, exerciseIndex, "duration", e.target.value)}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Dinlenme Süresi (sn)"
-                        value={exercise.restTime}
-                        onChange={(e) => updateExerciseField(gi, sessionIndex, exerciseIndex, "restTime", Number(e.target.value))}
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={2.5}
+                          placeholder="—"
+                          value={exercise.weight ?? ""}
+                          onChange={(e) => updateExerciseField(gi, sessionIndex, exerciseIndex, "weight", e.target.value === "" ? null : Number(e.target.value))}
+                          className="h-8 text-sm text-center pr-6 pl-1"
+                        />
+                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400">kg</span>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={5}
+                          placeholder="60"
+                          value={exercise.restTime || ""}
+                          onChange={(e) => updateExerciseField(gi, sessionIndex, exerciseIndex, "restTime", Number(e.target.value))}
+                          className="h-8 text-sm text-center pr-5 pl-1"
+                        />
+                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400">sn</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteExercise(gi, sessionIndex, exerciseIndex)}
+                        className="h-8 w-8 flex items-center justify-center rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                        title="Egzersizi sil"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   ))}
 
