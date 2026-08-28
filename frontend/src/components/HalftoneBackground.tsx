@@ -1,10 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
 
-const GRID   = 16;
-const C1     = { r: 49,  g: 44,  b: 143 }; // indigo  #312C8F
-const C2     = { r: 228, g: 87,  b: 46  }; // terracotta #E4572E
-
 export default function HalftoneBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -14,6 +10,8 @@ export default function HalftoneBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const GRID   = 15;
+    const MAX_R  = GRID / 2 - 0.5;
     let t = 0;
     let raf: number;
     const mouse = { x: -9999, y: -9999 };
@@ -34,21 +32,35 @@ export default function HalftoneBackground() {
       mouse.y = p.clientY - rect.top;
     };
     const onLeave = () => { mouse.x = -9999; mouse.y = -9999; };
-    window.addEventListener("mousemove",   onMove);
-    window.addEventListener("touchmove",   onMove, { passive: true });
-    window.addEventListener("mouseleave",  onLeave);
+    window.addEventListener("mousemove",  onMove);
+    window.addEventListener("touchmove",  onMove, { passive: true });
+    window.addEventListener("mouseleave", onLeave);
 
-    // flowing ribbon density field — diagonal band crossing
-    function ribbonDensity(x: number, y: number): number {
-      const a = Math.sin(t * 0.4  + x * 0.038 - y * 0.030);
-      const b = Math.sin(t * 0.25 - x * 0.022 + y * 0.044);
-      const c = Math.sin(t * 0.15 + x * 0.012 + y * 0.018);
-      return ((a + b + c) / 3 + 1) / 2; // 0..1
+    // Terracotta ribbon field — diagonal SW→NE
+    function bandA(x: number, y: number): number {
+      const v  = Math.sin(t * 0.35 + x * 0.0135 - y * 0.0135);
+      const v2 = Math.sin(t * 0.20 + x * 0.007  - y * 0.018) * 0.35;
+      return Math.max(0, v + v2);
     }
 
-    // second band for color split — offset phase
-    function colorBias(x: number, y: number): number {
-      return Math.sin(t * 0.3 + x * 0.030 - y * 0.024 + 1.2);
+    // Indigo ribbon — same diagonal, offset phase so they interleave
+    function bandB(x: number, y: number): number {
+      const v  = Math.sin(t * 0.35 + x * 0.0135 - y * 0.0135 + 1.9);
+      const v2 = Math.sin(t * 0.20 + x * 0.007  - y * 0.018  + 0.8) * 0.35;
+      return Math.max(0, v + v2);
+    }
+
+    function mouseBoost(x: number, y: number): number {
+      const dx = x - mouse.x, dy = y - mouse.y;
+      return Math.max(0, 1 - Math.sqrt(dx*dx + dy*dy) / 170) * 0.6;
+    }
+
+    function dot(x: number, y: number, r: number, ri: number, gi: number, bi: number, alpha: number) {
+      if (r < 0.3) return;
+      ctx!.beginPath();
+      ctx!.arc(x, y, r, 0, Math.PI * 2);
+      ctx!.fillStyle = `rgba(${ri},${gi},${bi},${Math.min(alpha, 0.95)})`;
+      ctx!.fill();
     }
 
     function draw() {
@@ -64,28 +76,17 @@ export default function HalftoneBackground() {
         for (let c = 0; c < cols; c++) {
           const x = c * GRID;
           const y = r * GRID;
+          const boost = mouseBoost(x, y);
 
-          const d = ribbonDensity(x, y);
-          const powered = Math.pow(d, 2.2); // sharpen the ribbon shape
+          // terracotta layer
+          const a = bandA(x, y);
+          const sizeA = Math.pow(a, 1.8) * MAX_R + boost * MAX_R * 0.5;
+          dot(x, y, sizeA, 228, 87, 46, 0.15 + a * 0.75 + boost * 0.2);
 
-          // mouse ripple
-          const dx = x - mouse.x;
-          const dy = y - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const ripple = Math.max(0, 1 - dist / 160) * 0.5;
-
-          const size = 0.4 + powered * 7.5 + ripple * 4;
-          if (size < 0.35) continue;
-
-          // color: split by colorBias — indigo vs terracotta
-          const bias = colorBias(x, y);
-          const col = bias > 0 ? C1 : C2;
-          const alpha = 0.18 + powered * 0.72 + ripple * 0.2;
-
-          ctx!.beginPath();
-          ctx!.arc(x, y, size, 0, Math.PI * 2);
-          ctx!.fillStyle = `rgba(${col.r},${col.g},${col.b},${Math.min(alpha, 0.92)})`;
-          ctx!.fill();
+          // indigo layer (on top)
+          const b = bandB(x, y);
+          const sizeB = Math.pow(b, 1.8) * MAX_R + boost * MAX_R * 0.4;
+          dot(x, y, sizeB, 49, 44, 143, 0.15 + b * 0.75 + boost * 0.2);
         }
       }
 
@@ -95,10 +96,10 @@ export default function HalftoneBackground() {
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize",     resize);
-      window.removeEventListener("mousemove",  onMove);
-      window.removeEventListener("touchmove",  onMove);
-      window.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("resize",    resize);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("mouseleave",onLeave);
     };
   }, []);
 
