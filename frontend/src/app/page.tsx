@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -113,10 +112,11 @@ export default function HomePage() {
 
       {/* HERO */}
       <section id="hero" className="relative isolate min-h-[92dvh] overflow-hidden flex items-end pb-20 md:items-center md:pb-0">
-        <div className="hero-bg absolute inset-0 -z-10">
-          <Image src="/images/herobackground.jpg" alt="PerSe Coaching" fill priority className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
-        </div>
+        <div
+          data-aifx="halftone"
+          className="hero-bg absolute inset-0 -z-10 pointer-events-none"
+          aria-hidden="true"
+        />
 
         <div className="container mx-auto px-6 md:px-10">
           <div className="max-w-4xl">

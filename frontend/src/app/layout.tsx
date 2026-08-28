@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import CookieBanner from "@/components/CookieBanner";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
+import Script from "next/script";
 
 // Google Fonts
 const geistSans = Geist({
@@ -48,6 +49,7 @@ export default function RootLayout({
         {children}
         <CookieBanner />
         <Toaster richColors position="top-right" />
+        <Script src="https://cdn.aidesigner.ai/effects/runtime/v1.js" strategy="afterInteractive" />
       </body>
     </html>
   );
