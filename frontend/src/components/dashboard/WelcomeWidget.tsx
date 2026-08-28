@@ -21,7 +21,7 @@ export default function WelcomeWidget() {
     return;
   }
 
-  fetch("https://kulvar-qb7t.onrender.com/auth/profile", {
+  fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

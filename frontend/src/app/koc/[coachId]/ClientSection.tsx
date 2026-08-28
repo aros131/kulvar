@@ -35,7 +35,7 @@ export default function ClientSection({
         });
       }}
       onMessage={(id: string) => {
-        window.location.href = `/messages?to=${id}`;
+        window.location.href = `/dashboard/user/messages/start?to=${id}`;
       }}
     />
   );

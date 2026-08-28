@@ -1,23 +1,23 @@
 // src/app/dashboard/user/profile/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
 import UserPageShell from "@/components/user/UserPageShell";
 
+import Link from "next/link";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Users, CreditCard, Settings, LogOut, ChevronRight } from "lucide-react";
 
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase";
-import { v4 as uuidv4 } from "uuid";
 import ProfileImageUploader from "@/components/ProfileImageUploader";
 
 /* ------------------------------- Types ------------------------------- */
@@ -45,6 +45,7 @@ const cleanToken = (): string | null => {
 
 /* ------------------------------ Page --------------------------- */
 export default function UserProfilePage() {
+  const router = useRouter();
   // undefined = not checked yet; null = checked and no token; string = token
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -125,14 +126,19 @@ export default function UserProfilePage() {
   };
 
   const handleImageUpload = async (file: File) => {
-    if (!file || !editData) return;
+    if (!file) return;
     setUploading(true);
     try {
-      const emailSafe = editData.email.replace(/[@.]/g, "_");
-      const fileRef = ref(storage, `profile-pictures/${emailSafe}/${uuidv4()}-${file.name}`);
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-      setEditData((prev) => (prev ? { ...prev, profilePicture: downloadURL } : prev));
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const res = await fetch(`${API}/profile/avatar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setEditData((prev) => (prev ? { ...prev, profilePicture: data.url } : prev));
       toast.success("Fotoğraf yüklendi.");
     } catch (err) {
       toast.error("Fotoğraf yüklenemedi.");
@@ -277,6 +283,43 @@ export default function UserProfilePage() {
               )}
             </CardContent>
           </Card>
+        {/* Mobile-only quick links */}
+        <div className="md:hidden mt-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Diğer</p>
+          <div className="rounded-2xl border overflow-hidden divide-y">
+            {[
+              { href: "/dashboard/user/koclarimiz", label: "Koçlarım", Icon: Users },
+              { href: "/dashboard/user/payments", label: "Ödemelerim", Icon: CreditCard },
+              { href: "/dashboard/user/settings", label: "Ayarlar", Icon: Settings },
+            ].map(({ href, label, Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center justify-between px-4 py-3.5 bg-card hover:bg-muted transition-colors"
+              >
+                <span className="flex items-center gap-3 text-sm font-medium">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  {label}
+                </span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            ))}
+            <button
+              onClick={() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                router.push("/login");
+              }}
+              className="w-full flex items-center justify-between px-4 py-3.5 bg-card hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500"
+            >
+              <span className="flex items-center gap-3 text-sm font-medium">
+                <LogOut className="h-4 w-4" />
+                Çıkış Yap
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </section>
     </UserPageShell>
   );

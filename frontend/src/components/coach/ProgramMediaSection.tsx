@@ -15,7 +15,7 @@ type Asset = {
 
 type Props = { programId: string };
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 // Small helper to stringify unknown errors without using `any`
 function errMsg(err: unknown) {

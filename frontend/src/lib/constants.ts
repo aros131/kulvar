@@ -1,1 +1,1 @@
-export const API_BASE = "https://kulvar-qb7t.onrender.com";
+export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");

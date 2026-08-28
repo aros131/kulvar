@@ -23,7 +23,7 @@ export default function DeleteProgramDialog({
 }: DeleteProgramDialogProps) {
   const handleDelete = async () => {
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRight, Users, Dumbbell, Search, ListFilter } from "lucide-react";
+import { ArrowRight, Users, Dumbbell, Search, ListFilter, Plus } from "lucide-react";
 
 import DeleteProgramDialog from "@/components/coach/DeleteProgramDialog";
 import AssignClientsDialog from "@/components/coach/AssignClientsDialog";
@@ -52,7 +52,7 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
 
       const detailedPrograms: ProgramWithClients[] = await Promise.all(
         basePrograms.map(async (program: Program) => {
-          const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${program._id}`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/programs/${program._id}`, {
             headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           });
@@ -150,8 +150,26 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
         </div>
       ) : filtered.length === 0 ? (
         <Card className="rounded-xl">
-          <CardContent className="py-8 text-center text-muted-foreground text-sm">
-            Kriterlere uygun program bulunamadı.
+          <CardContent className="py-12 text-center space-y-4">
+            {programsWithClients.length === 0 ? (
+              <>
+                <div className="mx-auto h-12 w-12 grid place-items-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/40">
+                  <Dumbbell className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
+                </div>
+                <div>
+                  <p className="font-semibold">Henüz programın yok</p>
+                  <p className="text-sm text-muted-foreground mt-1">İlk programını oluşturarak danışanlarına içerik sunmaya başla.</p>
+                </div>
+                <Button asChild size="sm" className="gap-2">
+                  <Link href="/dashboard/coach/programs/create">
+                    <Plus className="h-4 w-4" />
+                    İlk Programı Oluştur
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Arama kriterlerine uygun program bulunamadı.</p>
+            )}
           </CardContent>
         </Card>
       ) : (

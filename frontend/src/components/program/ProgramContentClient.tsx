@@ -20,7 +20,7 @@ export default function ProgramContentClient({ programId }: { programId: string 
 
     const fetchProgram = async () => {
       try {
-        const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${programId}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

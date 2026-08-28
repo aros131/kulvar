@@ -3,34 +3,38 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setLoading(true);
+    setErrorMsg('');
     try {
-      const res = await fetch('/api/admin-login', { // Adjust this if you have a dedicated admin endpoint
+      const res = await fetch(`${API}/auth/admin-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         setErrorMsg(data.message || 'Giriş başarısız.');
         return;
       }
-
-      // Redirect to admin dashboard
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('role', data.user.role);
+      localStorage.setItem('name', data.user.name);
       router.push('/admin-dashboard');
-    } catch (err) {
-      console.error('Admin login error:', err);
+    } catch {
       setErrorMsg('Bir hata oluştu.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,8 +59,8 @@ export default function AdminLoginPage() {
           onChange={e => setPassword(e.target.value)}
           className="w-full p-3 rounded border dark:bg-zinc-700 dark:text-white"
         />
-        <button type="submit" className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded">
-          Giriş Yap
+        <button type="submit" disabled={loading} className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded disabled:opacity-60">
+          {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
         </button>
       </form>
     </main>

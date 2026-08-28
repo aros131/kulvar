@@ -22,7 +22,7 @@ export default function UserNavbar({ unreadCount = 0 }: Props) {
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between gap-3">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard/user" className="font-semibold">PerSe</Link>
+          <Link href="/dashboard/user" className="font-semibold tracking-tight">PerSe</Link>
 
           <nav className="hidden md:flex items-center gap-3 text-sm">
             {tabs.map((t) => {

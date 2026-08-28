@@ -42,7 +42,7 @@ export default function EditProgramForm({ program: initialProgram, mode, onSucce
   }, [initialProgram]);
 
   const [program, setProgram] = useState<Program>(normalized);
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://kulvar-qb7t.onrender.com";
+  const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
   // -------------------------------
   // Generic handlers

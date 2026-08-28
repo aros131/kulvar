@@ -134,7 +134,7 @@ export default function ClientBridge({ coach, programs, reviews, isAuthed
   isFollowing={isFollowing}
   loading={checkingFollow && typeof coach.isFollowing === "undefined"}
   onFollowToggle={handleFollowToggle}
-  onMessage={(id) => { window.location.href = `/messages?to=${id}`; }}
+  onMessage={(id) => { window.location.href = `/dashboard/user/messages/start?to=${id}`; }}
   followers={followers}
   followerCount={typeof followerCount === "number" ? followerCount : followers.length}
   ssrAuthed={isAuthed}

@@ -28,7 +28,7 @@ export default function SentNotificationsList() {
     const fetchNotifications = async () => {
       const token = localStorage.getItem("token");
       try {
-        const res = await fetch("https://kulvar-qb7t.onrender.com/dashboard/notifications/coach", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/notifications/coach`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

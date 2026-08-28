@@ -3,22 +3,37 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: '',
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // TODO: integrate with backend or Formspree
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/feedback/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error();
+      setSent(true);
+      setFormData({ name: '', email: '', message: '' });
+      toast.success('Mesajınız iletildi. En kısa sürede dönüş yapacağız.');
+    } catch {
+      toast.error('Gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,6 +53,11 @@ export default function ContactPage() {
           Herhangi bir sorunuz, öneriniz veya iş birliği teklifiniz için bizimle iletişime geçebilirsiniz.
         </p>
 
+        {sent && (
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 rounded-lg p-4 text-green-700 dark:text-green-300 text-center mb-6">
+            Mesajınız alındı! En kısa sürede size dönüş yapacağız.
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-8 space-y-6">
           <div>
             <label htmlFor="name" className="block mb-2 font-medium">Adınız</label>
@@ -78,7 +98,9 @@ export default function ContactPage() {
             ></textarea>
           </div>
 
-          <Button type="submit" className="w-full">Gönder</Button>
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? 'Gönderiliyor...' : 'Gönder'}
+          </Button>
         </form>
       </section>
 
