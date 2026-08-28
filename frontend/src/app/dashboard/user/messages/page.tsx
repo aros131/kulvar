@@ -15,8 +15,9 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import UserPageShell from "@/components/user/UserPageShell";
-import { ArrowRight, Plus } from "lucide-react";
+import SidebarNavUser from "@/components/ui/SidebarNavUser";
+import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
+import { ArrowRight } from "lucide-react";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
 
@@ -288,27 +289,49 @@ export default function UserMessagesPage() {
   // Loading / unauth states
   if (token === undefined || loading) {
     return (
-      <UserPageShell>
-        <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-          <p className="text-center text-zinc-500">Yükleniyor...</p>
+      <div className="relative flex">
+        <div className="hidden md:block">
+          <SidebarNavUser unreadCount={0} unreadMessages={0} />
         </div>
-      </UserPageShell>
+        <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
+          <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
+            <p className="text-center text-zinc-500">Yükleniyor...</p>
+          </div>
+        </main>
+        <MobileUserBottomNav unreadNotifications={0} unreadMessages={0} />
+      </div>
     );
   }
 
   if (!token) {
     return (
-      <UserPageShell>
-        <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-          <p className="text-center text-zinc-500">Devam etmek için lütfen giriş yapın.</p>
+      <div className="relative flex">
+        <div className="hidden md:block">
+          <SidebarNavUser unreadCount={0} unreadMessages={0} />
         </div>
-      </UserPageShell>
+        <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
+          <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
+            <p className="text-center text-zinc-500">Devam etmek için lütfen giriş yapın.</p>
+          </div>
+        </main>
+        <MobileUserBottomNav unreadNotifications={0} unreadMessages={0} />
+      </div>
     );
   }
 
   return (
-    <UserPageShell unreadCount={unreadNotifications} unreadMessages={unreadMessagesTotal}>
-      <div className="mx-auto max-w-3xl px-4 md:px-6 py-6 md:py-8">
+    <div className="relative flex">
+      {/* Sidebar on md+ only */}
+      <div className="hidden md:block">
+        <SidebarNavUser
+          unreadCount={unreadNotifications}
+          unreadMessages={unreadMessagesTotal}
+        />
+      </div>
+
+      {/* Content */}
+      <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
+        <div className="mx-auto max-w-3xl px-4 md:px-6 py-6 md:py-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">📨 Mesajlar</h1>
@@ -323,7 +346,7 @@ export default function UserMessagesPage() {
                 href="/dashboard/user/messages/start"
                 className="flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 px-3 py-2 rounded-md text-sm transition"
               >
-                <Plus size={14} /> Yeni Mesaj <ArrowRight size={16} />
+                ➕ Yeni Mesaj <ArrowRight size={16} />
               </Link>
             </div>
           </div>
@@ -395,6 +418,13 @@ export default function UserMessagesPage() {
             </ul>
           )}
         </div>
-    </UserPageShell>
+      </main>
+
+      {/* Bottom nav on mobile */}
+      <MobileUserBottomNav
+        unreadNotifications={unreadNotifications}
+        unreadMessages={unreadMessagesTotal}
+      />
+    </div>
   );
 }

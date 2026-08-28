@@ -32,7 +32,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
       const data = await res.json();
       setAssignedClients(data.program?.assignedClients || []);
     } catch {
-      toast("Atanmış kullanıcılar alınamadı");
+      toast("❌ Atanmış kullanıcılar alınamadı");
     }
   }, [API, programId]);
 
@@ -51,7 +51,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
         const data = await res.json();
         setSearchResults(data.clients || []);
       } catch {
-        toast("Kullanıcılar alınamadı");
+        toast("❌ Kullanıcılar alınamadı");
       }
     }, 400);
 
@@ -75,13 +75,13 @@ export default function AssignClientsDialog({ programId }: { programId: string }
       });
 
       if (res.ok) {
-        toast("Kullanıcı başarıyla atandı!");
+        toast("✅ Kullanıcı başarıyla atandı!");
         fetchAssigned();
       } else {
-        toast("Atama başarısız oldu.");
+        toast("❌ Atama başarısız oldu.");
       }
     } catch {
-      toast("Sunucu hatası");
+      toast("❌ Sunucu hatası");
     }
   };
 
@@ -100,10 +100,10 @@ export default function AssignClientsDialog({ programId }: { programId: string }
         toast("🚫 Kullanıcı atamadan kaldırıldı");
         fetchAssigned();
       } else {
-        toast("Kaldırma başarısız");
+        toast("❌ Kaldırma başarısız");
       }
     } catch {
-      toast("Sunucu hatası");
+      toast("❌ Sunucu hatası");
     }
   };
 

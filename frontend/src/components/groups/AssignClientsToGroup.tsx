@@ -20,13 +20,13 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
   // 🔄 Fetch group members (memoized)
   const fetchGroupMembers = useCallback(async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/groups/${groupId}`, {
+      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = await res.json();
       setGroupMembers(data.userIds || []);
     } catch {
-      toast("Grup üyeleri alınamadı");
+      toast("❌ Grup üyeleri alınamadı");
     }
   }, [groupId]);
 
@@ -35,13 +35,13 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
     const timeout = setTimeout(async () => {
       if (!searchQuery.trim()) return;
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/clients?q=${searchQuery}`, {
+        const res = await fetch(`https://kulvar-qb7t.onrender.com/users/clients?q=${searchQuery}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         const data = await res.json();
         setSearchResults(data.clients || []);
       } catch {
-        toast("Kullanıcı araması başarısız");
+        toast("❌ Kullanıcı araması başarısız");
       }
     }, 400);
 
@@ -54,7 +54,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
 
   const handleAssign = async (userId: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/groups/${groupId}/add-client`, {
+      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/add-client`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,19 +64,19 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
       });
 
       if (res.ok) {
-        toast("Kullanıcı gruba eklendi");
+        toast("✅ Kullanıcı gruba eklendi");
         fetchGroupMembers();
       } else {
-        toast("Ekleme başarısız");
+        toast("❌ Ekleme başarısız");
       }
     } catch {
-      toast("Sunucu hatası");
+      toast("❌ Sunucu hatası");
     }
   };
 
   const handleRemove = async (userId: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/groups/${groupId}/remove-client`, {
+      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/remove-client`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -89,10 +89,10 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
         toast("🚫 Kullanıcı çıkarıldı");
         fetchGroupMembers();
       } else {
-        toast("Kaldırma başarısız");
+        toast("❌ Kaldırma başarısız");
       }
     } catch {
-      toast("Sunucu hatası");
+      toast("❌ Sunucu hatası");
     }
   };
 
