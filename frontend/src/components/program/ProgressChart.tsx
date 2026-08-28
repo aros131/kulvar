@@ -135,7 +135,7 @@ const ProgressChart: React.FC<Props> = (props) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-4">
+    <div className="bg-card dark:bg-gray-900 rounded-2xl shadow p-6 mb-4">
       <h2 className="text-lg font-semibold mb-4">Program İlerleme</h2>
       <div
         className="mx-auto aspect-square max-w-[280px] w-full"

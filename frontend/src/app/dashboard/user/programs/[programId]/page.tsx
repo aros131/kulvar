@@ -101,10 +101,10 @@ export default function ProgramContentPage() {
     <div className="w-full px-4 py-8 md:py-10">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">{program.name}</h1>
-        <p className="text-zinc-600 dark:text-zinc-300 mb-6">{program.description}</p>
+        <p className="text-muted-foreground dark:text-zinc-300 mb-6">{program.description}</p>
 
         <div className="mb-8">
-          {loading && <div className="text-sm text-zinc-500">İlerleme yükleniyor…</div>}
+          {loading && <div className="text-sm text-muted-foreground">İlerleme yükleniyor…</div>}
           {error && <div className="text-sm text-red-600">Hata: {error}</div>}
           {!loading && !error && (
             totalSessionsFromProgram > 0

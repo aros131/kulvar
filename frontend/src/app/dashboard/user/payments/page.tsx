@@ -137,7 +137,7 @@ function UserPaymentsInner() {
         )}
 
         {invoices.length === 0 ? (
-          <div className="bg-white dark:bg-zinc-800 rounded-2xl p-8 shadow text-center text-zinc-500">
+          <div className="bg-card dark:bg-primary/90 rounded-2xl p-8 shadow text-center text-muted-foreground">
             Henüz size ait fatura yok.
           </div>
         ) : (
@@ -145,14 +145,14 @@ function UserPaymentsInner() {
             {invoices.map((inv) => (
               <div
                 key={inv._id}
-                className="bg-white dark:bg-zinc-800 border rounded-xl p-5 flex items-center justify-between gap-4"
+                className="bg-card dark:bg-primary/90 border rounded-xl p-5 flex items-center justify-between gap-4"
               >
                 <div>
                   <p className="font-medium">{inv.description}</p>
                   {inv.coachId?.name && (
-                    <p className="text-sm text-zinc-500">Koç: {inv.coachId.name}</p>
+                    <p className="text-sm text-muted-foreground">Koç: {inv.coachId.name}</p>
                   )}
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-muted-foreground">
                     {new Date(inv.createdAt).toLocaleDateString('tr-TR')}
                   </p>
                 </div>

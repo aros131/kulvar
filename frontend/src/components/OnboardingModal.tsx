@@ -51,11 +51,11 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
   const steps = role === 'coach' ? coachSteps : userSteps;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-foreground/60 backdrop-blur-sm">
+      <div className="bg-card dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
         <button
           onClick={dismiss}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          className="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground dark:hover:text-zinc-200"
           aria-label="Kapat"
         >
           <X size={20} />
@@ -63,7 +63,7 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
 
         <div className="text-3xl mb-2">👋</div>
         <h2 className="text-2xl font-bold mb-1">Merhaba, {firstName}!</h2>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6">
+        <p className="text-muted-foreground dark:text-muted-foreground text-sm mb-6">
           PerSe&apos;ye hoş geldin. Başlamak için şu adımları takip edebilirsin:
         </p>
 
@@ -73,7 +73,7 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
               <div className="text-2xl w-10 text-center shrink-0">{step.icon}</div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">{step.title}</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">{step.desc}</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground">{step.desc}</p>
               </div>
               <Link
                 href={step.href}

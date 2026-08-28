@@ -87,22 +87,22 @@ export default function CoachProgramsPage() {
       </div>
 
       {programs.length === 0 && (
-        <p className="text-zinc-400">Henüz program oluşturmadınız.</p>
+        <p className="text-muted-foreground">Henüz program oluşturmadınız.</p>
       )}
 
       <div className="grid md:grid-cols-2 gap-4">
         {programs.map((program) => (
-          <div key={program._id} className="bg-white dark:bg-zinc-800 border rounded-xl p-5 shadow-sm space-y-3">
+          <div key={program._id} className="bg-card dark:bg-primary/90 border rounded-xl p-5 shadow-sm space-y-3">
             <div>
               <h2 className="font-semibold text-lg">{program.name}</h2>
-              <p className="text-sm text-zinc-500 line-clamp-2">{program.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p>
             </div>
-            <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
-              <span className="bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded">{program.difficulty}</span>
-              <span className="bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded">{program.fitnessGoal}</span>
-              <span className="bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded">{program.duration} hafta</span>
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <span className="bg-zinc-100 dark:bg-primary/80 px-2 py-1 rounded">{program.difficulty}</span>
+              <span className="bg-zinc-100 dark:bg-primary/80 px-2 py-1 rounded">{program.fitnessGoal}</span>
+              <span className="bg-zinc-100 dark:bg-primary/80 px-2 py-1 rounded">{program.duration} hafta</span>
             </div>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               {program.assignedClients?.length || 0} danışan atanmış
             </p>
             <div className="flex gap-2 flex-wrap">
@@ -122,11 +122,11 @@ export default function CoachProgramsPage() {
 
       {/* Danışan Atama Modal */}
       {assigningId && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-xl space-y-4">
+        <div className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card dark:bg-primary/90 rounded-2xl p-6 w-full max-w-md shadow-xl space-y-4">
             <h2 className="text-lg font-bold">Danışan Ata</h2>
             {allClients.length === 0 ? (
-              <p className="text-zinc-400 text-sm">Sistemde kayıtlı kullanıcı yok.</p>
+              <p className="text-muted-foreground text-sm">Sistemde kayıtlı kullanıcı yok.</p>
             ) : (
               <ul className="max-h-64 overflow-y-auto space-y-2">
                 {allClients.map((c) => (
@@ -135,8 +135,8 @@ export default function CoachProgramsPage() {
                     onClick={() => toggleClient(c._id)}
                     className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition ${
                       selectedClients.includes(c._id)
-                        ? 'border-black dark:border-white bg-zinc-50 dark:bg-zinc-700'
-                        : 'border-zinc-200 dark:border-zinc-600'
+                        ? 'border-black dark:border-white bg-zinc-50 dark:bg-primary/80'
+                        : 'border-border dark:border-zinc-600'
                     }`}
                   >
                     <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-600 flex items-center justify-center text-xs font-bold">
@@ -144,7 +144,7 @@ export default function CoachProgramsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">{c.name}</p>
-                      <p className="text-xs text-zinc-400">{c.email}</p>
+                      <p className="text-xs text-muted-foreground">{c.email}</p>
                     </div>
                     {selectedClients.includes(c._id) && (
                       <span className="ml-auto text-green-500 font-bold">✓</span>

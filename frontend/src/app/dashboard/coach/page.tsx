@@ -177,7 +177,7 @@ export default function DashboardCoachPage() {
                       alt="Profil Fotoğrafı"
                       width={84}
                       height={84}
-                      className="relative rounded-2xl object-cover border border-zinc-200 dark:border-zinc-800"
+                      className="relative rounded-2xl object-cover border border-border dark:border-zinc-800"
                       unoptimized
                     />
                   </div>
@@ -277,10 +277,10 @@ export default function DashboardCoachPage() {
 function ProfileSkeleton() {
   return (
     <div className="flex items-center gap-4">
-      <div className="h-[84px] w-[84px] rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
+      <div className="h-[84px] w-[84px] rounded-2xl bg-zinc-200 dark:bg-primary/90" />
       <div className="space-y-2">
-        <div className="h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
-        <div className="h-4 w-56 bg-zinc-200 dark:bg-zinc-800 rounded" />
+        <div className="h-5 w-40 bg-zinc-200 dark:bg-primary/90 rounded" />
+        <div className="h-4 w-56 bg-zinc-200 dark:bg-primary/90 rounded" />
       </div>
     </div>
   );

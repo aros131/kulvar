@@ -2,6 +2,7 @@ import Payment from '../models/Payment.js';
 import Program from '../models/Program.js';
 import ProgramAssignment from '../models/ProgramAssignment.js';
 import { createCheckoutForm, retrieveCheckoutForm } from '../services/iyzicoService.js';
+import { notify } from '../utils/notify.js';
 
 const APP_URL = (process.env.APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
 const API_PUBLIC_URL = (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5001}`).replace(/\/+$/, '');
@@ -16,6 +17,15 @@ export const createInvoice = async (req, res) => {
       description,
       status: "Pending",
     });
+
+    // Kullanıcıya: yeni ödeme talebi
+    await notify({
+      recipientId: userId,
+      senderId: req.user._id,
+      type: 'payment_request',
+      message: `Koçundan ₺${amount} tutarında yeni bir ödeme talebi geldi: "${description}"`,
+    });
+
     res.status(201).json({ message: "Invoice created successfully", data: invoice });
   } catch (error) {
     res.status(500).json({ message: "Error creating invoice", error: error.message });
@@ -44,6 +54,24 @@ export const processPayment = async (req, res) => {
   try {
     const { invoiceId } = req.body;
     const payment = await Payment.findByIdAndUpdate(invoiceId, { status: "Paid" }, { new: true });
+
+    if (payment) {
+      // Kullanıcıya: ödeme onaylandı
+      await notify({
+        recipientId: payment.userId,
+        senderId: payment.coachId,
+        type: 'payment_received',
+        message: `₺${payment.amount} tutarındaki ödemeniz onaylandı: "${payment.description}"`,
+      });
+      // Koça: ödeme alındı
+      await notify({
+        recipientId: payment.coachId,
+        senderId: payment.userId,
+        type: 'payment_received',
+        message: `Danışanının ₺${payment.amount} tutarındaki ödemesi onaylandı: "${payment.description}"`,
+      });
+    }
+
     res.status(200).json({ message: "Payment processed successfully", data: payment });
   } catch (error) {
     res.status(500).json({ message: "Error processing payment", error: error.message });
@@ -88,6 +116,21 @@ export const iyzicoCallback = async (req, res) => {
       payment.status = "Paid";
       payment.iyzicoPaymentId = result.paymentId;
       await payment.save();
+
+      // Kullanıcıya: ödeme tamamlandı
+      await notify({
+        recipientId: payment.userId,
+        senderId: payment.coachId,
+        type: 'payment_received',
+        message: `₺${payment.amount} tutarındaki ödemeniz başarıyla tamamlandı: "${payment.description}"`,
+      });
+      // Koça: ödeme alındı
+      await notify({
+        recipientId: payment.coachId,
+        senderId: payment.userId,
+        type: 'payment_received',
+        message: `Danışanından ₺${payment.amount} tutarında ödeme alındı: "${payment.description}"`,
+      });
 
       // Auto-assign program to user after successful payment
       if (payment.programId) {

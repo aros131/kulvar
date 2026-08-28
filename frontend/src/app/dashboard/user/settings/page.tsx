@@ -111,16 +111,16 @@ export default function UserSettingsPage() {
     <div className="max-w-xl mx-auto px-4 py-8 md:py-10 space-y-10">
       <h1 className="text-2xl font-bold">Ayarlar</h1>
 
-      <section className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow space-y-3">
+      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-3">
         <h2 className="text-lg font-semibold">Hesap Bilgileri</h2>
         <div>
           <Label>E-posta</Label>
-          <Input value={email} disabled className="mt-1 bg-zinc-100 dark:bg-zinc-700" />
-          <p className="text-xs text-zinc-400 mt-1">E-posta değişikliği için destek ekibiyle iletişime geçin.</p>
+          <Input value={email} disabled className="mt-1 bg-zinc-100 dark:bg-primary/80" />
+          <p className="text-xs text-muted-foreground mt-1">E-posta değişikliği için destek ekibiyle iletişime geçin.</p>
         </div>
       </section>
 
-      <section className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow">
+      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">
         <h2 className="text-lg font-semibold mb-4">Şifre Değiştir</h2>
         <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
@@ -141,11 +141,11 @@ export default function UserSettingsPage() {
         </form>
       </section>
 
-      <section className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow space-y-6">
+      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-6">
         <h2 className="text-lg font-semibold">Bildirim Tercihleri</h2>
 
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Uygulama İçi</h3>
+          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">Uygulama İçi</h3>
           {([
             ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
             ['bookingUpdates',  'Randevu durumu değişiklikleri'],
@@ -160,7 +160,7 @@ export default function UserSettingsPage() {
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">E-posta</h3>
+          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">E-posta</h3>
           {([
             ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
             ['bookingUpdates',  'Randevu durumu değişiklikleri'],
@@ -181,7 +181,7 @@ export default function UserSettingsPage() {
 
       <section className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-red-600 mb-2">Tehlikeli Alan</h2>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">Hesabınızı silerseniz tüm verileriniz kalıcı olarak silinir.</p>
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-4">Hesabınızı silerseniz tüm verileriniz kalıcı olarak silinir.</p>
         <Button variant="destructive" onClick={handleDeleteAccount}>Hesabı Sil</Button>
       </section>
     </div>

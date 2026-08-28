@@ -230,9 +230,9 @@ const CoachProfilePage: React.FC = () => {
                   {(editData?.certifications || []).length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-1">
                       {(editData?.certifications || []).map((cert) => (
-                        <span key={cert} className="flex items-center gap-1 text-xs bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1">
+                        <span key={cert} className="flex items-center gap-1 text-xs bg-zinc-100 dark:bg-primary/90 rounded-lg px-2 py-1">
                           {cert}
-                          <button onClick={() => removeCertification(cert)} className="text-zinc-400 hover:text-zinc-600">
+                          <button onClick={() => removeCertification(cert)} className="text-muted-foreground hover:text-muted-foreground">
                             <X size={12} />
                           </button>
                         </span>
@@ -297,7 +297,7 @@ const CoachProfilePage: React.FC = () => {
                       alt="Profil Fotoğrafı"
                       width={96}
                       height={96}
-                      className="relative rounded-2xl object-cover border border-zinc-200 dark:border-zinc-800 w-[96px] h-[96px]"
+                      className="relative rounded-2xl object-cover border border-border dark:border-zinc-800 w-[96px] h-[96px]"
                       unoptimized
                     />
                   </div>

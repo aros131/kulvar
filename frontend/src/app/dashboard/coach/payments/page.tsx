@@ -87,14 +87,14 @@ export default function CoachPaymentsPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={createInvoice} className="bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow space-y-4">
+        <form onSubmit={createInvoice} className="bg-card dark:bg-primary/90 rounded-2xl p-6 shadow space-y-4">
           <h2 className="font-semibold">Yeni Fatura</h2>
           <div>
             <Label>Danışan</Label>
             <select
               value={form.userId}
               onChange={(e) => setForm({ ...form, userId: e.target.value })}
-              className="w-full mt-1 p-2 border rounded-md bg-white dark:bg-zinc-700 dark:text-white"
+              className="w-full mt-1 p-2 border rounded-md bg-card dark:bg-primary/80 dark:text-white"
               required
             >
               <option value="">Danışan seçin</option>
@@ -130,17 +130,17 @@ export default function CoachPaymentsPage() {
       )}
 
       {invoices.length === 0 ? (
-        <p className="text-zinc-400">Henüz fatura yok.</p>
+        <p className="text-muted-foreground">Henüz fatura yok.</p>
       ) : (
         <div className="space-y-3">
           {invoices.map((inv) => {
             const clientName = typeof inv.userId === 'object' ? inv.userId.name : inv.userId;
             return (
-              <div key={inv._id} className="bg-white dark:bg-zinc-800 border rounded-xl p-5 flex items-center justify-between gap-4">
+              <div key={inv._id} className="bg-card dark:bg-primary/90 border rounded-xl p-5 flex items-center justify-between gap-4">
                 <div>
                   <p className="font-medium">{inv.description}</p>
-                  <p className="text-sm text-zinc-500">{clientName}</p>
-                  <p className="text-xs text-zinc-400">{new Date(inv.createdAt).toLocaleDateString('tr-TR')}</p>
+                  <p className="text-sm text-muted-foreground">{clientName}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString('tr-TR')}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-lg">₺{inv.amount}</p>

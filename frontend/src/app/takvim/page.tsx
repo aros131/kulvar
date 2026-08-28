@@ -96,7 +96,7 @@ function StatusBadge({ status, end }: { status: CalEvent["status"]; end: string 
   if (status === "missed" || (status === "planned" && isPast(end)))
     return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Kaçırıldı</span>;
   if (status === "canceled")
-    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-800">İptal</span>;
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-muted-foreground dark:bg-primary/90">İptal</span>;
   return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">Planlı</span>;
 }
 

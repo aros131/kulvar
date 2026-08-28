@@ -156,7 +156,7 @@ export default function AdminDashboardPage() {
             ].map(({ label, value, Icon, color }) => (
               <Card key={label} className="rounded-2xl">
                 <CardContent className="py-6 flex items-center gap-4">
-                  <div className={`h-10 w-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 grid place-items-center shrink-0 ${color}`}>
+                  <div className={`h-10 w-10 rounded-xl bg-zinc-100 dark:bg-primary/90 grid place-items-center shrink-0 ${color}`}>
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
@@ -269,7 +269,7 @@ export default function AdminDashboardPage() {
               <ul className="divide-y">
                 {filtered.map(u => (
                   <li key={u._id} className="flex items-center gap-3 py-3">
-                    <div className="h-9 w-9 rounded-full bg-zinc-200 dark:bg-zinc-700 grid place-items-center text-xs font-bold shrink-0">
+                    <div className="h-9 w-9 rounded-full bg-zinc-200 dark:bg-primary/80 grid place-items-center text-xs font-bold shrink-0">
                       {u.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -298,7 +298,7 @@ export default function AdminDashboardPage() {
 
         <p className="text-xs text-muted-foreground text-center">
           Admin kullanıcısı oluşturmak için MongoDB&apos;ye{' '}
-          <code className="bg-zinc-100 dark:bg-zinc-800 px-1 rounded">role: &quot;admin&quot;</code> ile kayıt ekleyin.
+          <code className="bg-zinc-100 dark:bg-primary/90 px-1 rounded">role: &quot;admin&quot;</code> ile kayıt ekleyin.
         </p>
       </div>
     </div>

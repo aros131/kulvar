@@ -133,12 +133,12 @@ export default function StreakTracker({ programId }: { programId: string }) {
     return () => { cancelled = true; };
   }, [programId]);
 
-  if (loading) return <div className="text-sm text-zinc-500">Seri yükleniyor…</div>;
-  if (err) return <div className="text-sm text-zinc-500">{err}</div>;
-  if (!streak) return <div className="text-sm text-zinc-500">Seri bulunamadı.</div>;
+  if (loading) return <div className="text-sm text-muted-foreground">Seri yükleniyor…</div>;
+  if (err) return <div className="text-sm text-muted-foreground">{err}</div>;
+  if (!streak) return <div className="text-sm text-muted-foreground">Seri bulunamadı.</div>;
 
   return (
-    <div className="rounded-xl border p-4 bg-white dark:bg-zinc-900">
+    <div className="rounded-xl border p-4 bg-card dark:bg-zinc-900">
       <div>Mevcut seri: <b>{streak.currentStreak}</b> gün</div>
       <div>En uzun seri: <b>{streak.longestStreak}</b> gün</div>
     </div>

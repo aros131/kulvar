@@ -264,7 +264,7 @@ export default function UserProfilePage() {
                       alt="Profil Fotoğrafı"
                       width={96}
                       height={96}
-                      className="relative rounded-2xl object-cover border border-zinc-200 dark:border-zinc-800 w-[96px] h-[96px]"
+                      className="relative rounded-2xl object-cover border border-border dark:border-zinc-800 w-[96px] h-[96px]"
                       unoptimized
                     />
                   </div>

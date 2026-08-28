@@ -100,7 +100,7 @@ export default function CoachCard({
     <motion.div
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 shadow-sm hover:shadow-md transition"
+      className="group rounded-xl border border-border dark:border-zinc-800 bg-card dark:bg-primary/90 shadow-sm hover:shadow-md transition"
     >
       <HoverCard openDelay={100} closeDelay={100}>
         <HoverCardTrigger asChild>
@@ -115,7 +115,7 @@ export default function CoachCard({
               {/* Top row: name + actions */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-zinc-800 dark:text-white flex items-center gap-1">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-white flex items-center gap-1">
                     {name}
                     {isVerified && <CheckCircle2 className="h-4 w-4 text-indigo-500" aria-label="Doğrulanmış" />}
                   </h3>
@@ -123,7 +123,7 @@ export default function CoachCard({
                 <button
                   onClick={toggleFav}
                   aria-label={fav ? 'Favorilerden kaldır' : 'Favorilere ekle'}
-                  className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-primary/80 text-muted-foreground dark:text-zinc-300"
                 >
                   {fav ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
                 </button>
@@ -151,12 +151,12 @@ export default function CoachCard({
 
                 <div className="min-w-0">
                   {specialization && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-primary/80 text-zinc-700 dark:text-zinc-200">
                       {specialization}
                     </span>
                   )}
 
-                  <div className="mt-1 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground dark:text-zinc-300">
                     {roundedRating != null ? (
                       <>
                         <Stars value={roundedRating} />
@@ -164,7 +164,7 @@ export default function CoachCard({
                         {typeof reviewCount === 'number' && <span>({reviewCount})</span>}
                       </>
                     ) : (
-                      <span className="italic text-zinc-500">Henüz puan yok</span>
+                      <span className="italic text-muted-foreground">Henüz puan yok</span>
                     )}
                   </div>
 
@@ -175,7 +175,7 @@ export default function CoachCard({
                         Çevrimiçi
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-primary/80 dark:text-zinc-200">
                         <CircleDashed className="h-3 w-3" />
                         Müsait değil
                       </span>
@@ -189,7 +189,7 @@ export default function CoachCard({
                     )}
 
                     {formattedPrice && (
-                      <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200">
+                      <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-primary/80 text-zinc-700 dark:text-zinc-200">
                         ₺{formattedPrice}+
                       </span>
                     )}
@@ -224,14 +224,14 @@ export default function CoachCard({
                 {tags.slice(0, 6).map((t) => (
                   <span
                     key={t}
-                    className="text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200"
+                    className="text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-primary/80 text-zinc-700 dark:text-zinc-200"
                   >
                     #{t}
                   </span>
                 ))}
               </div>
             )}
-            <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">İpucu: Profili açmadan hızlı önizleme.</div>
+            <div className="mt-3 text-xs text-muted-foreground dark:text-muted-foreground">İpucu: Profili açmadan hızlı önizleme.</div>
           </HoverCardContent>
         )}
       </HoverCard>
@@ -250,7 +250,7 @@ function Stars({ value = 0 }: { value?: number }) {
         return (
           <Star
             key={i}
-            className={`h-4 w-4 ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-zinc-400'}`}
+            className={`h-4 w-4 ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
             aria-hidden="true"
           />
         );

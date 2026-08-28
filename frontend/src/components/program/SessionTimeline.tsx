@@ -38,11 +38,11 @@ export default function SessionTimeline({
       {rows.map((s, i) => (
         <li
           key={s.sessionId ?? `${s.day}-${i}`}
-          className="flex items-center justify-between rounded-lg bg-white dark:bg-zinc-900 p-3"
+          className="flex items-center justify-between rounded-lg bg-card dark:bg-zinc-900 p-3"
         >
           <div>
             <div className="font-medium">Gün {s.day}: {s.title}</div>
-            <div className="text-xs text-zinc-500">
+            <div className="text-xs text-muted-foreground">
               {s.completed ? "Tamamlandı" : "Bekliyor"}
             </div>
           </div>

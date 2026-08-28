@@ -1,4 +1,9 @@
 import User from '../models/User.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5001';
 
 // Fetch Profile
 export const getProfile = async (req, res) => {
@@ -104,5 +109,17 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Error updating profile", error: error.message });
+  }
+};
+
+// POST /profile/avatar — multer uploads to uploads/avatars/
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const url = `${BASE_URL}/uploads/avatars/${req.file.filename}`;
+    await User.findByIdAndUpdate(req.user._id, { profilePicture: url });
+    res.status(200).json({ url });
+  } catch (error) {
+    res.status(500).json({ message: 'Error uploading avatar', error: error.message });
   }
 };

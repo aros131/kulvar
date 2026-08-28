@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 px-4">
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-800 p-8 rounded-lg shadow-md w-full max-w-md space-y-6">
+      <form onSubmit={handleSubmit} className="bg-card dark:bg-primary/90 p-8 rounded-lg shadow-md w-full max-w-md space-y-6">
         <h1 className="text-2xl font-bold text-center">Admin Girişi</h1>
         {errorMsg && <p className="text-red-500 text-sm">{errorMsg}</p>}
         <input
@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
           required
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="w-full p-3 rounded border dark:bg-zinc-700 dark:text-white"
+          className="w-full p-3 rounded border dark:bg-primary/80 dark:text-white"
         />
         <input
           type="password"
@@ -57,9 +57,9 @@ export default function AdminLoginPage() {
           required
           value={password}
           onChange={e => setPassword(e.target.value)}
-          className="w-full p-3 rounded border dark:bg-zinc-700 dark:text-white"
+          className="w-full p-3 rounded border dark:bg-primary/80 dark:text-white"
         />
-        <button type="submit" disabled={loading} className="w-full bg-zinc-700 hover:bg-zinc-800 text-white py-2 rounded disabled:opacity-60">
+        <button type="submit" disabled={loading} className="w-full bg-primary/80 hover:bg-primary/90 text-white py-2 rounded disabled:opacity-60">
           {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
         </button>
       </form>

@@ -107,7 +107,7 @@ function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: st
         <span className="font-medium">{pct}%</span>
       </div>
       <div
-        className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden"
+        className="w-full h-2 rounded-full bg-zinc-200 dark:bg-primary/90 overflow-hidden"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -489,7 +489,7 @@ export default function UserDashboardPage() {
                   alt="Profil Fotoğrafı"
                   width={84}
                   height={84}
-                  className="relative rounded-2xl object-cover border border-zinc-200 dark:border-zinc-800"
+                  className="relative rounded-2xl object-cover border border-border dark:border-zinc-800"
                   unoptimized
                 />
               </div>
@@ -519,7 +519,7 @@ export default function UserDashboardPage() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {programs.map((program) => (
                   <motion.div key={program.programId} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-                    <Card className="group overflow-hidden border-zinc-200/70 dark:border-zinc-800/70 hover:shadow-lg hover:border-emerald-500/40 transition-all rounded-2xl">
+                    <Card className="group overflow-hidden border-border/70 dark:border-zinc-800/70 hover:shadow-lg hover:border-emerald-500/40 transition-all rounded-2xl">
                       <ProgramThumb name={program.name} />
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base md:text-lg line-clamp-1">{program.name}</CardTitle>
@@ -607,8 +607,8 @@ export default function UserDashboardPage() {
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Card key={i} className="rounded-2xl">
                     <CardContent className="py-6 space-y-3">
-                      <div className="h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
-                      <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded" />
+                      <div className="h-5 w-40 bg-zinc-200 dark:bg-primary/90 rounded" />
+                      <div className="h-2 w-full bg-zinc-200 dark:bg-primary/90 rounded" />
                     </CardContent>
                   </Card>
                 ))}
@@ -673,13 +673,13 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <Card className="rounded-2xl border-zinc-200/70 dark:border-zinc-800/70">
+    <Card className="rounded-2xl border-border/70 dark:border-zinc-800/70">
       <CardContent className="py-4">
         {loading ? (
           <div className="space-y-2">
-            <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-800 rounded" />
-            <div className="h-7 w-20 bg-zinc-200 dark:bg-zinc-800 rounded" />
-            <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-5 w-32 bg-zinc-200 dark:bg-primary/90 rounded" />
+            <div className="h-7 w-20 bg-zinc-200 dark:bg-primary/90 rounded" />
+            <div className="h-3 w-24 bg-zinc-200 dark:bg-primary/90 rounded" />
           </div>
         ) : (
           <>
@@ -698,12 +698,12 @@ function ProgramGridSkeleton() {
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {Array.from({ length: 6 }).map((_, i) => (
         <Card key={i} className="overflow-hidden rounded-2xl">
-          <div className="aspect-[16/9] bg-zinc-200 dark:bg-zinc-800" />
+          <div className="aspect-[16/9] bg-zinc-200 dark:bg-primary/90" />
           <CardContent className="py-5 space-y-3">
-            <div className="h-5 w-48 bg-zinc-200 dark:bg-zinc-800 rounded" />
-            <div className="h-4 w-64 bg-zinc-200 dark:bg-zinc-800 rounded" />
-            <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded" />
-            <div className="h-9 w-full bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-5 w-48 bg-zinc-200 dark:bg-primary/90 rounded" />
+            <div className="h-4 w-64 bg-zinc-200 dark:bg-primary/90 rounded" />
+            <div className="h-2 w-full bg-zinc-200 dark:bg-primary/90 rounded" />
+            <div className="h-9 w-full bg-zinc-200 dark:bg-primary/90 rounded" />
           </CardContent>
         </Card>
       ))}
@@ -717,10 +717,10 @@ function CoachGridSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <Card key={i} className="rounded-2xl">
           <CardContent className="py-6 space-y-3">
-            <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
-            <div className="h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
-            <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
-            <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800 rounded" />
+            <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-primary/90" />
+            <div className="h-5 w-40 bg-zinc-200 dark:bg-primary/90 rounded" />
+            <div className="h-4 w-24 bg-zinc-200 dark:bg-primary/90 rounded" />
+            <div className="h-9 w-28 bg-zinc-200 dark:bg-primary/90 rounded" />
           </CardContent>
         </Card>
       ))}

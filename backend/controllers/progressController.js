@@ -570,7 +570,9 @@ const getAllProgramProgress = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const assignedPrograms = await Program.find({ assignedClients: userId }).lean();
+    const assignedPrograms = await Program.find({ assignedClients: userId })
+      .populate('coachId', 'name')
+      .lean();
     const programProgress = await Promise.all(
       (Array.isArray(assignedPrograms) ? assignedPrograms : []).map(async (program) => {
         const progress = await Progress.findOne({ programId: program._id, userId }).lean();
@@ -581,6 +583,7 @@ const getAllProgramProgress = async (req, res) => {
           description: program.description,
           duration: program.duration,
           progressPercentage: percentage,
+          coachName: program.coachId?.name || null,
         };
       })
     );

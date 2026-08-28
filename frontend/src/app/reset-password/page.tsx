@@ -52,7 +52,7 @@ function ResetPasswordForm() {
           <p className="text-sm text-muted-foreground mt-1">Yeni şifrenizi belirleyin.</p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-8 space-y-5">
+        <div className="bg-card dark:bg-primary/90 rounded-2xl shadow-lg p-8 space-y-5">
           <h2 className="text-xl font-semibold">Şifre Sıfırla</h2>
 
           {done ? (

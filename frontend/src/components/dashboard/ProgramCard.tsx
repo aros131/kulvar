@@ -29,22 +29,22 @@ export default function ProgramCard({
   };
 
   return (
-    <div className="rounded-xl overflow-hidden shadow bg-white dark:bg-zinc-800 hover:shadow-md transition-all duration-300">
+    <div className="rounded-xl overflow-hidden shadow bg-card dark:bg-primary/90 hover:shadow-md transition-all duration-300">
      
 
       <div className="p-4 space-y-2">
-        <h3 className="text-lg font-bold text-zinc-900 dark:text-white truncate">{name}</h3>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">{description}</p>
+        <h3 className="text-lg font-bold text-foreground dark:text-white truncate">{name}</h3>
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground line-clamp-2">{description}</p>
 
         {/* Info Row */}
         <div className="flex flex-wrap items-center gap-2 mt-3">
-          <span className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-300">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground dark:text-zinc-300">
             <Clock size={14} /> {duration} hafta
           </span>
-          <span className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-300">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground dark:text-zinc-300">
             <Dumbbell size={14} /> {difficulty}
           </span>
-          <span className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-300">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground dark:text-zinc-300">
             <Flag size={14} /> {fitnessGoal}
           </span>
         </div>
@@ -52,7 +52,7 @@ export default function ProgramCard({
         {/* Progress */}
         <div className="mt-4">
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-zinc-500 dark:text-zinc-400">İlerleme</span>
+            <span className="text-muted-foreground dark:text-muted-foreground">İlerleme</span>
             <span className="font-semibold text-green-600 dark:text-green-400">
               %{chartData.completed}
             </span>

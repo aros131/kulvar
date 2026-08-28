@@ -184,25 +184,25 @@ source = events.filter(e => {
     s === 'completed' ? 'bg-green-500'
     : s === 'missed'   ? 'bg-amber-500'
     : s === 'planned'  ? 'bg-sky-400'
-    :                    'bg-zinc-300 dark:bg-zinc-700';
+    :                    'bg-zinc-300 dark:bg-primary/80';
 
   const wk = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
 
   return (
-    <div className="rounded-xl border bg-white dark:bg-zinc-900 p-4 relative">
+    <div className="rounded-xl border bg-card dark:bg-zinc-900 p-4 relative">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-medium">
           {baseDate.getFullYear()} / {pad(baseDate.getMonth() + 1)}
         </h3>
-        <div className="flex items-center gap-3 text-xs text-zinc-500">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-green-500 inline-block" /> Tamamlandı</span>
           <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-amber-500 inline-block" /> Kaçırıldı</span>
           <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-sky-400 inline-block" /> Planlı</span>
-          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-zinc-300 dark:bg-zinc-700 inline-block" /> Boş</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-zinc-300 dark:bg-primary/80 inline-block" /> Boş</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 text-[11px] text-zinc-500 mb-1 px-1">
+      <div className="grid grid-cols-7 text-[11px] text-muted-foreground mb-1 px-1">
         {wk.map((w) => <div key={w} className="text-center">{w}</div>)}
       </div>
 
@@ -222,7 +222,7 @@ source = events.filter(e => {
             ].join(' ')}
             aria-label={`${c.ymd} ${c.status}`}
           >
-            <span className="absolute -top-1 -left-1 text-[10px] px-0.5 rounded bg-white/80 dark:bg-black/30 text-zinc-700 dark:text-zinc-200">
+            <span className="absolute -top-1 -left-1 text-[10px] px-0.5 rounded bg-card/80 dark:bg-foreground/30 text-zinc-700 dark:text-zinc-200">
               {c.date.getDate()}
             </span>
           </button>
@@ -231,7 +231,7 @@ source = events.filter(e => {
 
       {hoverDay && popoverPos && (
         <div
-          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-xl border bg-white dark:bg-zinc-900 shadow p-3 text-xs w-64"
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-xl border bg-card dark:bg-zinc-900 shadow p-3 text-xs w-64"
           style={{
             left: Math.max(120, Math.min((typeof window !== 'undefined' ? window.innerWidth : 9999) - 120, popoverPos.x)),
             top: popoverPos.y - 8
@@ -239,12 +239,12 @@ source = events.filter(e => {
         >
           <div className="font-medium mb-1">{hoverDay.ymd}</div>
           {hoverDay.events.length === 0 ? (
-            <div className="text-zinc-500">Etkinlik yok.</div>
+            <div className="text-muted-foreground">Etkinlik yok.</div>
           ) : (
             <ul className="space-y-1">
               {hoverDay.events.map((e, idx) => (
                 <li key={e._id || idx} className="flex items-start justify-between gap-2">
-                  <div className="text-zinc-800 dark:text-zinc-200">
+                  <div className="text-foreground dark:text-zinc-200">
                     {e.title || 'Seans'}
                   </div>
                   <span className={[
@@ -260,7 +260,7 @@ source = events.filter(e => {
             </ul>
           )}
           <div className="mt-2">
-            <a href={`/takvim?date=${encodeURIComponent(hoverDay.ymd)}`} className="underline text-zinc-600 dark:text-zinc-300">
+            <a href={`/takvim?date=${encodeURIComponent(hoverDay.ymd)}`} className="underline text-muted-foreground dark:text-zinc-300">
               Günü aç →
             </a>
           </div>
@@ -271,11 +271,11 @@ source = events.filter(e => {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-2"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/40 p-2"
           onClick={() => setOpenDay(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border bg-white dark:bg-zinc-900 shadow-lg p-4"
+            className="w-full max-w-md rounded-2xl border bg-card dark:bg-zinc-900 shadow-lg p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-2">
@@ -283,13 +283,13 @@ source = events.filter(e => {
               <button onClick={() => setOpenDay(null)} className="text-sm px-2 py-1 rounded border">Kapat</button>
             </div>
             {openDay.events.length === 0 ? (
-              <div className="text-sm text-zinc-500">Etkinlik yok.</div>
+              <div className="text-sm text-muted-foreground">Etkinlik yok.</div>
             ) : (
               <ul className="space-y-2">
                 {openDay.events.map((e, idx) => (
                   <li key={e._id || idx} className="rounded border p-2">
                     <div className="text-sm font-medium">{e.title || 'Seans'}</div>
-                    <div className="text-[12px] text-zinc-500">
+                    <div className="text-[12px] text-muted-foreground">
                       {new Date(e.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(e.end || e.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <div className="mt-1 text-[11px]">
@@ -318,7 +318,7 @@ source = events.filter(e => {
         </div>
       )}
 
-      {loading && <div className="mt-2 text-sm text-zinc-500">Yükleniyor…</div>}
+      {loading && <div className="mt-2 text-sm text-muted-foreground">Yükleniyor…</div>}
       {err && <div className="mt-2 text-sm text-red-600">Hata: {String(err)}</div>}
     </div>
   );

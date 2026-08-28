@@ -121,7 +121,7 @@ export default function StartCoachChatPage() {
                         className="rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-zinc-800 dark:text-zinc-100 flex items-center justify-center text-xs font-semibold">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-foreground dark:text-zinc-100 flex items-center justify-center text-xs font-semibold">
                         {initials(client.name)}
                       </div>
                     )}

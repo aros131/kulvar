@@ -13,3 +13,5 @@ Thumbs.db
 **/build/
 **/.vercel/
 **/.turbo/
+.vercel
+.env*

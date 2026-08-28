@@ -38,7 +38,7 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
-      <nav className="bg-white dark:bg-zinc-800 shadow-md px-6 py-4 flex justify-between items-center">
+      <nav className="bg-card dark:bg-primary/90 shadow-md px-6 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-indigo-600">PerSe Coaching</Link>
         <ul className="hidden md:flex space-x-6">
           <li><Link href="/" className="hover:underline">Anasayfa</Link></li>
@@ -49,7 +49,7 @@ export default function ContactPage() {
 
       <section className="max-w-2xl mx-auto py-16 px-4">
         <h1 className="text-3xl md:text-4xl font-bold text-center mb-6">Bize Ulaşın</h1>
-        <p className="text-center text-zinc-600 dark:text-zinc-300 mb-10">
+        <p className="text-center text-muted-foreground dark:text-zinc-300 mb-10">
           Herhangi bir sorunuz, öneriniz veya iş birliği teklifiniz için bizimle iletişime geçebilirsiniz.
         </p>
 
@@ -58,7 +58,7 @@ export default function ContactPage() {
             Mesajınız alındı! En kısa sürede size dönüş yapacağız.
           </div>
         )}
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-card dark:bg-primary/90 rounded-lg shadow-md p-8 space-y-6">
           <div>
             <label htmlFor="name" className="block mb-2 font-medium">Adınız</label>
             <input
@@ -68,7 +68,7 @@ export default function ContactPage() {
               required
               value={formData.name}
               onChange={handleChange}
-              className="w-full p-3 rounded border dark:bg-zinc-700 dark:border-zinc-600 dark:text-white"
+              className="w-full p-3 rounded border dark:bg-primary/80 dark:border-zinc-600 dark:text-white"
             />
           </div>
 
@@ -81,7 +81,7 @@ export default function ContactPage() {
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full p-3 rounded border dark:bg-zinc-700 dark:border-zinc-600 dark:text-white"
+              className="w-full p-3 rounded border dark:bg-primary/80 dark:border-zinc-600 dark:text-white"
             />
           </div>
 
@@ -94,7 +94,7 @@ export default function ContactPage() {
               required
               value={formData.message}
               onChange={handleChange}
-              className="w-full p-3 rounded border dark:bg-zinc-700 dark:border-zinc-600 dark:text-white"
+              className="w-full p-3 rounded border dark:bg-primary/80 dark:border-zinc-600 dark:text-white"
             ></textarea>
           </div>
 
@@ -104,7 +104,7 @@ export default function ContactPage() {
         </form>
       </section>
 
-      <footer className="bg-zinc-200 dark:bg-zinc-800 py-6 mt-16 text-center text-sm text-zinc-600 dark:text-zinc-300">
+      <footer className="bg-zinc-200 dark:bg-primary/90 py-6 mt-16 text-center text-sm text-muted-foreground dark:text-zinc-300">
         © 2025 PerSe Coaching. Tüm hakları saklıdır.
       </footer>
     </main>

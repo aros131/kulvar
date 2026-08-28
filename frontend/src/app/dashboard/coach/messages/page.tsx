@@ -260,7 +260,7 @@ export default function UserMessagesPage() {
         </div>
         <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
           <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-            <p className="text-center text-zinc-500">Yükleniyor...</p>
+            <p className="text-center text-muted-foreground">Yükleniyor...</p>
           </div>
         </main>
         <MobileUserBottomNav />
@@ -276,7 +276,7 @@ export default function UserMessagesPage() {
         </div>
         <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
           <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-            <p className="text-center text-zinc-500">Devam etmek için lütfen giriş yapın.</p>
+            <p className="text-center text-muted-foreground">Devam etmek için lütfen giriş yapın.</p>
           </div>
         </main>
         <MobileUserBottomNav />
@@ -346,7 +346,7 @@ export default function UserMessagesPage() {
                           className="rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-zinc-800 dark:text-zinc-100 flex items-center justify-center text-xs font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-foreground dark:text-zinc-100 flex items-center justify-center text-xs font-semibold">
                           {initials(chat.otherUserName)}
                         </div>
                       )}

@@ -83,21 +83,21 @@ export default function UserProgramsPage() {
     <div className="w-full px-4 py-8 md:py-10">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-4">Programların</h1>
-        <p className="text-zinc-600 dark:text-zinc-300 mb-8">
+        <p className="text-muted-foreground dark:text-zinc-300 mb-8">
           Sana atanmış programları ve hedef ilerlemeni burada takip edebilirsin.
         </p>
 
         {progress && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-            <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow text-center">
+            <div className="bg-card dark:bg-primary/90 p-4 rounded-xl shadow text-center">
               <h3 className="text-lg font-medium">Toplam Seans</h3>
               <p className="text-2xl font-bold">{progress.totalCompletedSessions}</p>
             </div>
-            <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow text-center">
+            <div className="bg-card dark:bg-primary/90 p-4 rounded-xl shadow text-center">
               <h3 className="text-lg font-medium">Aktif Programlar</h3>
               <p className="text-2xl font-bold">{progress.assignedPrograms}</p>
             </div>
-            <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow text-center">
+            <div className="bg-card dark:bg-primary/90 p-4 rounded-xl shadow text-center">
               <h3 className="text-lg font-medium">Güncel Ortalama</h3>
               <p className="text-2xl font-bold">
                 {programs.length > 0
@@ -111,15 +111,15 @@ export default function UserProgramsPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
   {programs.length > 0 ? (
     programs.map((program) => (
-      <div key={program.programId} className="bg-white dark:bg-zinc-800 rounded-xl shadow p-4 flex flex-col justify-between transition-transform hover:scale-[1.01]">
+      <div key={program.programId} className="bg-card dark:bg-primary/90 rounded-xl shadow p-4 flex flex-col justify-between transition-transform hover:scale-[1.01]">
         
         {/* 🏷️ Header + Info */}
         <div>
           <h3 className="text-xl font-semibold mb-1">{program.name}</h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{program.description}</p>
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-2">{program.description}</p>
 
           {/* 🧑‍🏫 Coach + Tag */}
-          <div className="flex justify-between items-center mb-4 text-xs text-zinc-400">
+          <div className="flex justify-between items-center mb-4 text-xs text-muted-foreground">
            
             {program.coachName && <span>Koç: {program.coachName}</span>}
           </div>
@@ -131,7 +131,7 @@ export default function UserProgramsPage() {
         </div>
 
         {/* ⏱ Duration */}
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+        <p className="text-xs text-muted-foreground dark:text-muted-foreground mb-4">
           Süre: {program.duration || "Bilinmiyor"}
         </p>
 
@@ -157,7 +157,7 @@ export default function UserProgramsPage() {
 
         {programs.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow">
+            <div className="bg-card dark:bg-primary/90 p-4 rounded-xl shadow">
               <h2 className="text-lg font-semibold mb-4">Program Tamamlanma Dağılımı</h2>
               <Doughnut
                 data={{
@@ -176,7 +176,7 @@ export default function UserProgramsPage() {
               />
             </div>
 
-            <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow">
+            <div className="bg-card dark:bg-primary/90 p-4 rounded-xl shadow">
               <h2 className="text-lg font-semibold mb-4">Tamamlanma Oranları</h2>
               <Bar
                 data={{

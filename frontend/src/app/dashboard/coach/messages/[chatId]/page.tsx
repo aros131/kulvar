@@ -117,7 +117,7 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-foreground/80 flex items-center justify-center" onClick={onClose}>
       <img src={src} alt="Medya" className="max-w-[95vw] max-h-[90vh] object-contain" />
     </div>
   );
@@ -559,7 +559,7 @@ export default function ChatIdPage() {
                       unoptimized
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-zinc-800 dark:text-zinc-100 text-[11px] font-semibold flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-foreground dark:text-zinc-100 text-[11px] font-semibold flex items-center justify-center">
                       {initials(other?.name)}
                     </div>
                   )}
@@ -688,7 +688,7 @@ export default function ChatIdPage() {
                     <img src={URL.createObjectURL(f)} alt="Önizleme" className="object-cover w-full h-full" />
                     <button
                       onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="absolute -top-1 -right-1 bg-black/70 text-white rounded-full h-5 w-5 flex items-center justify-center"
+                      className="absolute -top-1 -right-1 bg-foreground/70 text-white rounded-full h-5 w-5 flex items-center justify-center"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -790,7 +790,7 @@ function MessageBubble({
       }`}
     >
       {msg.replyTo && (
-        <div className={`text-xs rounded-md px-2 py-1 mb-1 ${mine ? "bg-black/10" : "bg-white/50"}`}>
+        <div className={`text-xs rounded-md px-2 py-1 mb-1 ${mine ? "bg-foreground/10" : "bg-card/50"}`}>
           <span className="font-medium">{msg.replyTo.senderName || "Yanıtlanan"}</span>
           {msg.replyTo.text && <div className="line-clamp-1">{msg.replyTo.text}</div>}
           {msg.replyTo.imageUrl && <div className="opacity-75">[Resim]</div>}
@@ -835,7 +835,7 @@ function MessageBubble({
 
       <div className={`opacity-0 group-hover:opacity-100 transition mt-1 -mb-1 flex items-center gap-1 ${mine ? "justify-end" : "justify-start"}`}>
         <details className="relative">
-          <summary className="list-none text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10 cursor-pointer inline-flex items-center gap-1">
+          <summary className="list-none text-[11px] px-1.5 py-0.5 rounded hover:bg-foreground/10 cursor-pointer inline-flex items-center gap-1">
             Tepki
           </summary>
           <div className="absolute z-30 mt-1">
@@ -847,21 +847,21 @@ function MessageBubble({
           onClick={() =>
             onReply({ id: msg.id, text: msg.text, imageUrl: msg.imageUrl, senderName: mine ? "Siz" : otherName })
           }
-          className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10"
+          className="text-[11px] px-1.5 py-0.5 rounded hover:bg-foreground/10"
         >
           Yanıtla
         </button>
         {!!msg.text && (
-          <button onClick={() => onCopy(msg.text)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10">
+          <button onClick={() => onCopy(msg.text)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-foreground/10">
             Kopyala
           </button>
         )}
         {mine && (
-          <button onClick={() => onDelete(msg)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10">
+          <button onClick={() => onDelete(msg)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-foreground/10">
             Sil
           </button>
         )}
-        <button onClick={() => onPin(msg)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10">
+        <button onClick={() => onPin(msg)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-foreground/10">
           📌 Sabitle
         </button>
       </div>
@@ -869,7 +869,7 @@ function MessageBubble({
       {msg.reactions && Object.keys(msg.reactions).length > 0 && (
         <div className={`mt-1 flex gap-1 ${mine ? "justify-end" : "justify-start"}`}>
           {Object.entries(msg.reactions).map(([emoji, ids]) => (
-            <span key={emoji} className="text-xs px-1.5 py-0.5 rounded-full bg-black/10">
+            <span key={emoji} className="text-xs px-1.5 py-0.5 rounded-full bg-foreground/10">
               {emoji} {ids.length}
             </span>
           ))}

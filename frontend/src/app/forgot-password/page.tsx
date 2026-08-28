@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
           <p className="text-sm text-muted-foreground mt-1">Şifrenizi sıfırlayın.</p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-8 space-y-5">
+        <div className="bg-card dark:bg-primary/90 rounded-2xl shadow-lg p-8 space-y-5">
           <h2 className="text-xl font-semibold">Şifremi Unuttum</h2>
 
           {sent ? (

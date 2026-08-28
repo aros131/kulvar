@@ -129,8 +129,8 @@ export default function CoachesPageContent() {
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
       <section className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-zinc-800 dark:text-white">Koçlarımız</h1>
-        <p className="text-zinc-600 dark:text-zinc-300">Alanında uzman koçlarımızla tanışın ve hedefinize ulaşın.</p>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-foreground dark:text-white">Koçlarımız</h1>
+        <p className="text-muted-foreground dark:text-zinc-300">Alanında uzman koçlarımızla tanışın ve hedefinize ulaşın.</p>
       </section>
 
       <div className="flex flex-col md:flex-row gap-4 max-w-4xl mx-auto mb-6">
@@ -139,13 +139,13 @@ export default function CoachesPageContent() {
           placeholder="Koç ara..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 px-4 py-2 rounded border border-zinc-300 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+          className="flex-1 px-4 py-2 rounded border border-zinc-300 dark:bg-primary/90 dark:border-primary/50 dark:text-white"
           aria-label="Koç ara"
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 rounded border border-zinc-300 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+          className="px-4 py-2 rounded border border-zinc-300 dark:bg-primary/90 dark:border-primary/50 dark:text-white"
           aria-label="Uzmanlığa göre filtrele"
         >
           <option value="all">Tümü</option>
@@ -158,13 +158,13 @@ export default function CoachesPageContent() {
       </div>
 
       <div className="max-w-6xl mx-auto mb-6 flex items-center justify-between">
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+        <span className="text-sm text-muted-foreground dark:text-muted-foreground">
           {loading ? 'Yükleniyor…' : `${filteredCoaches.length} sonuç`}
         </span>
         {(searchTerm || filter !== 'all') && (
           <button
             onClick={() => { setSearchTerm(''); setFilter('all'); }}
-            className="text-sm underline text-zinc-600 dark:text-zinc-300"
+            className="text-sm underline text-muted-foreground dark:text-zinc-300"
           >
             Filtreleri temizle
           </button>
@@ -189,7 +189,7 @@ export default function CoachesPageContent() {
             <CoachCard key={coach.id} id={coach.id} name={coach.name} specialization={coach.specialization} profilePicture={coach.profilePicture} />
           ))
         ) : (
-          <p className="text-center text-zinc-500 dark:text-zinc-400 col-span-full">
+          <p className="text-center text-muted-foreground dark:text-muted-foreground col-span-full">
             Hiç koç bulunamadı. {searchTerm ? 'Arama terimini değiştirin' : 'Filtreleri temizlemeyi deneyin'}.
           </p>
         )}
@@ -200,10 +200,10 @@ export default function CoachesPageContent() {
 
 function CoachCardSkeleton() {
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4 animate-pulse">
-      <div className="w-full h-40 bg-zinc-200 dark:bg-zinc-700 rounded-lg mb-4" />
-      <div className="h-5 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded mb-2" />
-      <div className="h-4 w-1/2 bg-zinc-200 dark:bg-zinc-700 rounded" />
+    <div className="rounded-xl border border-border dark:border-zinc-800 bg-card dark:bg-primary/90 p-4 animate-pulse">
+      <div className="w-full h-40 bg-zinc-200 dark:bg-primary/80 rounded-lg mb-4" />
+      <div className="h-5 w-3/4 bg-zinc-200 dark:bg-primary/80 rounded mb-2" />
+      <div className="h-4 w-1/2 bg-zinc-200 dark:bg-primary/80 rounded" />
     </div>
   );
 }

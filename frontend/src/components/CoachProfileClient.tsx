@@ -400,7 +400,7 @@ export default function CoachProfileClient({
                 alt={coach.name}
                 width={112}
                 height={112}
-                className="relative h-28 w-28 rounded-2xl ring-4 ring-background shadow-md object-cover border border-zinc-200 dark:border-zinc-800"
+                className="relative h-28 w-28 rounded-2xl ring-4 ring-background shadow-md object-cover border border-border dark:border-zinc-800"
                 onError={(e) => ((e.currentTarget as HTMLImageElement).src = "/images/user.png")}
                 unoptimized
               />

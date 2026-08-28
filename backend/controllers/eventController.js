@@ -1,4 +1,8 @@
 import Event from '../models/Event.js';
+import Program from '../models/Program.js';
+import Progress from '../models/Progress.js';
+import User from '../models/User.js';
+import { notify } from '../utils/notify.js';
 
 const getUserId = (req) => req.user?.id || req.user?._id;
 
@@ -97,8 +101,64 @@ export const completeEvent = async (req, res) => {
     ev.completedAt = new Date();
     await ev.save();
 
-    // Phase 2 hook: also call your progressController here
-    // await markSessionCompleted(userId, ev.programId, ev.sessionId);
+    // Update Progress collection + Program.progressTracking
+    if (ev.programId) {
+      const program = await Program.findById(ev.programId).select('dailySchedule progressTracking').lean();
+      if (program) {
+        const totalSessions = (program.dailySchedule || []).reduce(
+          (sum, day) => sum + (day.sessions?.length || 0), 0
+        );
+        const completedCount = await Event.countDocuments({
+          userId,
+          programId: ev.programId,
+          status: 'completed',
+        });
+        const progressPercentage = totalSessions > 0
+          ? Math.min(100, Math.round((completedCount / totalSessions) * 100))
+          : 0;
+
+        // 1. Update Progress collection (used by analytics + programs pages)
+        const sessionKey = ev.externalKey || ev.sessionId || ev._id.toString();
+        let progress = await Progress.findOne({ userId, programId: ev.programId });
+        if (!progress) {
+          progress = new Progress({ userId, programId: ev.programId, completedSessions: [] });
+        }
+        const alreadyTracked = progress.completedSessions.some(
+          (s) => s.sessionId === sessionKey
+        );
+        if (!alreadyTracked) {
+          progress.completedSessions.push({ sessionId: sessionKey, completed: true, dateCompleted: new Date() });
+        }
+        progress.progressPercentage = progressPercentage;
+        await progress.save();
+
+        // 2. Update Program.progressTracking (used by coach client detail)
+        const updateResult = await Program.updateOne(
+          { _id: ev.programId, 'progressTracking.user': userId },
+          { $set: { 'progressTracking.$.completedSessions': completedCount, 'progressTracking.$.progressPercentage': progressPercentage } }
+        );
+        if (updateResult.matchedCount === 0) {
+          await Program.updateOne(
+            { _id: ev.programId },
+            { $push: { progressTracking: { user: userId, completedSessions: completedCount, progressPercentage } } }
+          );
+        }
+      }
+    }
+
+    // Koça bildirim: danışan antrenman tamamladı
+    if (ev.programId) {
+      const program = await Program.findById(ev.programId).select('coachId name').lean();
+      if (program?.coachId) {
+        const user = await User.findById(userId).select('name').lean();
+        await notify({
+          recipientId: program.coachId,
+          senderId: userId,
+          type: 'session_completed',
+          message: `${user?.name || 'Danışanın'} "${ev.title}" antrenmanını tamamladı.`,
+        });
+      }
+    }
 
     res.status(200).json({ message: 'Event completed', event: ev });
   } catch (error) {

@@ -9,9 +9,9 @@ import CalendarHeatmap from "./CalendarHeatmap";
 
 // ---------- small UI bits ----------
 const Card: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <div className={`rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 ${className}`}>{children}</div>
+  <div className={`rounded-2xl border border-border dark:border-zinc-800 bg-card dark:bg-zinc-900 ${className}`}>{children}</div>
 );
-const Separator: React.FC = () => <div className="h-px bg-zinc-200 dark:bg-zinc-700 my-6" />;
+const Separator: React.FC = () => <div className="h-px bg-zinc-200 dark:bg-primary/80 my-6" />;
 
 // ---------- helpers ----------
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
@@ -235,7 +235,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
       const di = start + i;
       const has = !!days[di] && arr<DSSession>(days[di]?.sessions).length > 0;
       items.push(
-        <span key={i} className={`px-1.5 py-0.5 rounded text-[10px] border ${has ? 'bg-sky-50 border-sky-300 text-sky-700 dark:bg-sky-900/30 dark:border-sky-700' : 'bg-zinc-50 border-zinc-300 text-zinc-500 dark:bg-zinc-900/30 dark:border-zinc-700'}`}>{wkNames[i]}</span>
+        <span key={i} className={`px-1.5 py-0.5 rounded text-[10px] border ${has ? 'bg-sky-50 border-sky-300 text-sky-700 dark:bg-sky-900/30 dark:border-sky-700' : 'bg-zinc-50 border-zinc-300 text-muted-foreground dark:bg-zinc-900/30 dark:border-primary/50'}`}>{wkNames[i]}</span>
       );
     }
     return <div className="hidden sm:flex gap-1.5">{items}</div>;
@@ -256,7 +256,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold">{program.name ?? "Program"}</h2>
-            {program.description && <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1">{program.description}</p>}
+            {program.description && <p className="text-sm text-muted-foreground dark:text-zinc-300 mt-1">{program.description}</p>}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Info label="Süre (hafta)" value={String((program as any).duration ?? "—")} />
               <Info label="Zorluk" value={String((program as any).difficulty ?? "—")} />
@@ -291,7 +291,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                 key={i}
                 type="button"
                 onClick={() => setWeek(i + 1)}
-                className={`px-3 py-1.5 rounded-xl border text-sm flex items-center gap-2 ${week === i + 1 ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'bg-white dark:bg-zinc-900'}`}
+                className={`px-3 py-1.5 rounded-xl border text-sm flex items-center gap-2 ${week === i + 1 ? 'bg-zinc-900 text-white dark:bg-card dark:text-foreground' : 'bg-card dark:bg-zinc-900'}`}
                 aria-pressed={week === i + 1}
               >
                 <span className="whitespace-nowrap">{i + 1}. Hafta</span>
@@ -301,7 +301,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
           </div>
         )}
         {renderedDays.length === 0 ? (
-          <p className="text-sm text-zinc-500">Plan yok.</p>
+          <p className="text-sm text-muted-foreground">Plan yok.</p>
         ) : (
           <div
             ref={scrollerRef}
@@ -315,11 +315,11 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                 <Card key={dIdx} className="snap-start shrink-0 w-[86vw] sm:w-[520px] xl:w-[640px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="font-semibold">{dayLabel}</div>
-                    {day?.notes && <div className="text-xs text-zinc-500">Not: {day.notes}</div>}
+                    {day?.notes && <div className="text-xs text-muted-foreground">Not: {day.notes}</div>}
                   </div>
 
                   {sessions.length === 0 ? (
-                    <div className="text-sm text-zinc-500">Seans yok.</div>
+                    <div className="text-sm text-muted-foreground">Seans yok.</div>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {sessions.map((s, sIdx) => {
@@ -331,7 +331,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                             <div className="text-sm font-medium truncate" title={s?.name || `Seans ${sIdx + 1}`}>
                               {s?.name || `Seans ${sIdx + 1}`}
                             </div>
-                            <div className="mt-1 text-[11px] text-zinc-500">
+                            <div className="mt-1 text-[11px] text-muted-foreground">
                               {tileMeta(arr<DSExercise>(s?.exercises))}
                             </div>
                             <div className="mt-2 flex items-center justify-between">
@@ -346,7 +346,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                                       await completeSession(pid, String(sid)); // send only id
                                     } catch {}
                                   }}
-                                  className="text-xs px-2 py-1 rounded-lg border bg-white hover:bg-zinc-50 dark:bg-zinc-900"
+                                  className="text-xs px-2 py-1 rounded-lg border bg-card hover:bg-zinc-50 dark:bg-zinc-900"
                                 >
                                   Tamamla
                                 </button>
@@ -370,13 +370,13 @@ export default function ProgramDetailsView({ program, programId, completedSessio
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Duyurular</h3>
         {arr<any>(program.announcements).length === 0 ? (
-          <p className="text-sm text-zinc-500">Duyuru yok.</p>
+          <p className="text-sm text-muted-foreground">Duyuru yok.</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {arr<any>(program.announcements).map((a, i) => (
-              <li key={i} className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between">
+              <li key={i} className="rounded border border-border dark:border-zinc-800 p-3 flex items-center justify-between">
                 <span className="text-zinc-700 dark:text-zinc-300">{a?.message || "-"}</span>
-                <span className="text-xs text-zinc-500">{fmtDate(a?.date)}</span>
+                <span className="text-xs text-muted-foreground">{fmtDate(a?.date)}</span>
               </li>
             ))}
           </ul>
@@ -388,8 +388,8 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3">
-      <div className="text-xs text-zinc-500">{label}</div>
+    <div className="rounded-xl border border-border dark:border-zinc-800 p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
       <div className="font-medium">{value}</div>
     </div>
   );

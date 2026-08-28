@@ -170,25 +170,25 @@ export default function ProgramMediaSection({ programId }: Props) {
 
       {progress > 0 && (
         <div className="w-full mb-4">
-          <div className="h-2 rounded bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+          <div className="h-2 rounded bg-zinc-200 dark:bg-primary/80 overflow-hidden">
             <div className="h-2 bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
           </div>
-          <div className="text-xs text-zinc-500 mt-1">{progress}%</div>
+          <div className="text-xs text-muted-foreground mt-1">{progress}%</div>
         </div>
       )}
 
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="animate-pulse h-20 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+            <div key={i} className="animate-pulse h-20 bg-zinc-200 dark:bg-primary/80 rounded-xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-zinc-500 text-sm text-center">Medya bulunamadı.</p>
+        <p className="text-muted-foreground text-sm text-center">Medya bulunamadı.</p>
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filtered.map((a) => (
-            <li key={a.storagePath} className="border border-zinc-200 dark:border-zinc-700 rounded-xl p-3">
+            <li key={a.storagePath} className="border border-border dark:border-primary/50 rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-semibold truncate">{a.title || "(Başlıksız)"}</div>
                 <button
@@ -207,7 +207,7 @@ export default function ProgramMediaSection({ programId }: Props) {
                 <video src={a.url} controls className="w-full rounded" />
               )}
 
-              <div className="text-xs text-zinc-500 mt-2">
+              <div className="text-xs text-muted-foreground mt-2">
                 {a.kind.toUpperCase()} • {a.mimeType || ""} • {(a.size ?? 0) > 0 ? `${(a.size!/1024/1024).toFixed(2)} MB` : ""}
               </div>
             </li>

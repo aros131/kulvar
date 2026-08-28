@@ -110,7 +110,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
             </div>
           ))
         ) : (
-          <p className="text-sm text-gray-500">Henüz üye yok.</p>
+          <p className="text-sm text-muted-foreground">Henüz üye yok.</p>
         )}
       </ScrollArea>
 
@@ -125,7 +125,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
           <div key={client._id} className="flex justify-between items-center py-2 border-b">
             <div>
               <p className="font-medium">{client.name}</p>
-              <p className="text-sm text-gray-500">{client.email}</p>
+              <p className="text-sm text-muted-foreground">{client.email}</p>
             </div>
             <Button size="sm" onClick={() => handleAssign(client._id)}>
               Ata

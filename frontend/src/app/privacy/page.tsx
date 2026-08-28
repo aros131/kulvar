@@ -6,10 +6,10 @@ export default function PrivacyPolicyPage() {
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
       <section className="max-w-3xl mx-auto prose prose-zinc dark:prose-invert">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-zinc-800 dark:text-white">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-foreground dark:text-white">
           Gizlilik Politikası
         </h1>
-        <p className="text-sm text-zinc-400 mb-8">Son güncelleme: Haziran 2025</p>
+        <p className="text-sm text-muted-foreground mb-8">Son güncelleme: Haziran 2025</p>
 
         <div className="space-y-8 text-zinc-700 dark:text-zinc-300">
 
@@ -117,7 +117,7 @@ export default function PrivacyPolicyPage() {
           </Section>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+        <div className="mt-12 pt-6 border-t border-border dark:border-primary/50">
           <Link href="/" className="text-indigo-600 hover:underline text-sm">
             ← Anasayfaya dön
           </Link>
@@ -130,7 +130,7 @@ export default function PrivacyPolicyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-xl font-semibold text-zinc-800 dark:text-white mb-3">{title}</h2>
+      <h2 className="text-xl font-semibold text-foreground dark:text-white mb-3">{title}</h2>
       <div className="text-sm leading-relaxed space-y-2">{children}</div>
     </div>
   );

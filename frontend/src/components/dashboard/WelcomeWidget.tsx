@@ -34,7 +34,7 @@ export default function WelcomeWidget() {
 }, []);
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-md p-6 flex items-center gap-6">
+    <div className="bg-card dark:bg-primary/90 rounded-xl shadow-md p-6 flex items-center gap-6">
       <Image
         src={profile?.profilePicture || "/images/default.jpg"}
         alt={profile?.name || "Kullanıcı"}
@@ -43,10 +43,10 @@ export default function WelcomeWidget() {
         className="rounded-full object-cover border-2 border-indigo-500"
       />
       <div>
-        <h2 className="text-2xl font-bold text-zinc-800 dark:text-white">
+        <h2 className="text-2xl font-bold text-foreground dark:text-white">
           Hoş geldin, {profile?.name || "Kullanıcı"}!
         </h2>
-        <p className="text-zinc-600 dark:text-zinc-300">
+        <p className="text-muted-foreground dark:text-zinc-300">
           Bugün de güçlü olmaya hazır mısın?
         </p>
       </div>

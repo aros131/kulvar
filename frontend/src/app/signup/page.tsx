@@ -85,7 +85,7 @@ export default function SignupPage() {
           <p className="text-sm text-muted-foreground mt-1">Hesap oluştur, koçluk yolculuğuna başla.</p>
         </div>
 
-        <form onSubmit={handleSignup} className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-8 space-y-5">
+        <form onSubmit={handleSignup} className="bg-card dark:bg-primary/90 rounded-2xl shadow-lg p-8 space-y-5">
           <h2 className="text-xl font-semibold">Kayıt Ol</h2>
 
           {serverError && (

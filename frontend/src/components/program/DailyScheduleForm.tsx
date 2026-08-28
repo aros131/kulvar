@@ -188,10 +188,10 @@ function ExerciseRow({
             </button>
           ))}
         </div>
-        <button type="button" onClick={onCopy} className="h-8 w-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-primary hover:bg-muted transition-colors" title="Egzersizi kopyala">
+        <button type="button" onClick={onCopy} className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title="Egzersizi kopyala">
           <Copy size={13} />
         </button>
-        <button type="button" onClick={onDelete} className="h-8 w-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Egzersizi sil">
+        <button type="button" onClick={onDelete} className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Egzersizi sil">
           <Trash2 size={13} />
         </button>
       </div>
@@ -243,7 +243,7 @@ function ExerciseRow({
 function FieldCell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] text-zinc-400">{label}</span>
+      <span className="text-[10px] text-muted-foreground">{label}</span>
       {children}
     </div>
   );
@@ -270,7 +270,7 @@ function TemplatePicker({ onApply }: { onApply: (t: (typeof PROGRAM_TEMPLATES)[n
     <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">Bir şablon seç</p>
-        <button type="button" onClick={() => setOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-sm">✕</button>
+        <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground hover:text-muted-foreground text-sm">✕</button>
       </div>
       <div className="grid sm:grid-cols-2 gap-2">
         {PROGRAM_TEMPLATES.map((t) => (
@@ -453,15 +453,15 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
       {/* Meta */}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-zinc-600 dark:text-zinc-300">Süre (hafta)</span>
+          <span className="text-sm text-muted-foreground dark:text-zinc-300">Süre (hafta)</span>
           <Input type="number" min={1} value={durationWeeks} onChange={(e) => setDurationWeeks(Math.max(1, Number(e.target.value || 1)))} />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-zinc-600 dark:text-zinc-300">Varsayılan Saat</span>
+          <span className="text-sm text-muted-foreground dark:text-zinc-300">Varsayılan Saat</span>
           <Input value={defaultTimeOfDay} onChange={(e) => setDefaultTimeOfDay(e.target.value)} placeholder="18:00" />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-zinc-600 dark:text-zinc-300">Varsayılan Süre (dk)</span>
+          <span className="text-sm text-muted-foreground dark:text-zinc-300">Varsayılan Süre (dk)</span>
           <Input type="number" min={5} step={5} value={defaultDurationMin} onChange={(e) => setDefaultDurationMin(Math.max(5, Number(e.target.value || 60)))} />
         </div>
       </div>
@@ -489,7 +489,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
           return (
             <div key={`${gi}`} className="mb-5 border rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold">{day.day} <span className="text-xs text-zinc-400 font-normal">Gün {gi + 1}</span></h3>
+                <h3 className="font-bold">{day.day} <span className="text-xs text-muted-foreground font-normal">Gün {gi + 1}</span></h3>
                 <div className="flex gap-1.5">
                   <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => copyDay(gi)}>Kopyala</Button>
                   <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => pasteDay(gi)} disabled={!dayClipboard}>Yapıştır</Button>

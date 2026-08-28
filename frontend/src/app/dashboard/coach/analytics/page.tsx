@@ -59,22 +59,22 @@ export default function CoachAnalyticsPage() {
           <StatCard label="Bekleyen Ödeme" value={`₺${(data?.pendingRevenue ?? 0).toLocaleString('tr-TR')}`} />
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="bg-card dark:bg-primary/90 rounded-2xl p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">Performans Özeti</h2>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
             {(data?.totalClients ?? 0) === 0
               ? 'Henüz danışan atanmamış. Programlarınıza danışan atayarak istatistiklerinizi takip edin.'
               : `${data?.totalClients} danışanınız ${data?.totalPrograms} programa atanmış durumda.`}
           </p>
           <div className="flex flex-wrap gap-6 text-sm">
             <div>
-              <span className="text-zinc-500">Ortalama Danışan İlerlemesi: </span>
+              <span className="text-muted-foreground">Ortalama Danışan İlerlemesi: </span>
               <span className="font-semibold">
                 {data?.avgClientProgress != null ? `%${data.avgClientProgress}` : '—'}
               </span>
             </div>
             <div>
-              <span className="text-zinc-500">Ortalama Puan: </span>
+              <span className="text-muted-foreground">Ortalama Puan: </span>
               <span className="font-semibold">
                 {data?.avgRating ? data.avgRating.toFixed(1) : '—'} ({data?.reviewCount ?? 0} yorum)
               </span>
@@ -88,8 +88,8 @@ export default function CoachAnalyticsPage() {
 
 function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="bg-white dark:bg-zinc-800 border rounded-2xl p-6 shadow-sm text-center">
-      <p className="text-sm text-zinc-500 mb-2">{label}</p>
+    <div className="bg-card dark:bg-primary/90 border rounded-2xl p-6 shadow-sm text-center">
+      <p className="text-sm text-muted-foreground mb-2">{label}</p>
       <p className="text-5xl font-bold">{value}</p>
     </div>
   );

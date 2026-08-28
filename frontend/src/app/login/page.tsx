@@ -83,7 +83,7 @@ export default function LoginPage() {
           <p className="text-sm text-muted-foreground mt-1">Hesabınıza giriş yapın.</p>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-8 space-y-5">
+        <form onSubmit={handleLogin} className="bg-card dark:bg-primary/90 rounded-2xl shadow-lg p-8 space-y-5">
           <h2 className="text-xl font-semibold">Giriş Yap</h2>
 
           {serverError && (

@@ -5,6 +5,15 @@ import Event from '../models/Event.js'; // ✅ make sure the path/case matches y
 import Progress from '../models/Progress.js';
 import ProgramAssignment from '../models/ProgramAssignment.js'; // ← add this
 import { sendProgramAssigned } from '../services/emailService.js';
+import { notify } from '../utils/notify.js';
+
+const toInt = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+const parseHHmm = (hhmm = '18:00') => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
+  if (!m) return { h: 18, m: 0 };
+  return { h: Math.min(23, Math.max(0, Number(m[1]))), m: Math.min(59, Math.max(0, Number(m[2]))) };
+};
+
 // 🟢 Create a new program
 const createProgram = async (req, res) => {
   try {
@@ -324,13 +333,67 @@ const assignProgramToClients = async (req, res) => {
     await program.save();
 
     const coach = await User.findById(req.user._id).select('name').lean();
+
+    // Auto-generate calendar events for newly assigned clients
+    const days = Array.isArray(program.dailySchedule) ? program.dailySchedule : [];
+    const fallbackTime = program.defaultTimeOfDay || '18:00';
+    const { h: defH, m: defM } = parseHHmm(fallbackTime);
+    const programDefaultDur = toInt(program.defaultDurationMin, 60);
+    const startDate = new Date(); startDate.setHours(0, 0, 0, 0);
+
     for (const client of newlyAssigned) {
+      // Create assignment record
+      const assignment = await ProgramAssignment.create({
+        userId: client._id,
+        programId: program._id,
+        startDate,
+        timezone: 'Europe/Istanbul',
+        defaultTimeOfDay: fallbackTime,
+        status: 'active',
+      });
+
+      // Generate events
+      const ops = [];
+      for (let d = 0; d < days.length; d++) {
+        const sessions = Array.isArray(days[d]?.sessions) ? days[d].sessions : [];
+        const baseDate = new Date(startDate); baseDate.setDate(baseDate.getDate() + d);
+        for (let i = 0; i < sessions.length; i++) {
+          const s = sessions[i] || {};
+          const sid = String(s.sessionId || s._id || s.id || `${d}-${i}`);
+          const title = s.name || `Seans ${i + 1}`;
+          const t = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+          const dur = toInt(s.durationMin, programDefaultDur);
+          const st = new Date(baseDate); st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
+          const en = new Date(st); en.setMinutes(en.getMinutes() + dur);
+          const externalKey = `${assignment._id}:${d}:${i}`;
+          ops.push({
+            updateOne: {
+              filter: { userId: client._id, programId: program._id, assignmentId: assignment._id, externalKey },
+              update: {
+                $setOnInsert: { userId: client._id, programId: program._id, assignmentId: assignment._id, externalKey, source: 'program', status: 'planned' },
+                $set: { sessionId: sid, title, start: st, end: en, timezone: 'Europe/Istanbul' },
+              },
+              upsert: true,
+            },
+          });
+        }
+      }
+      if (ops.length) await Event.bulkWrite(ops, { ordered: false });
+
       sendProgramAssigned({
         clientName: client.name,
         clientEmail: client.email,
         coachName: coach?.name || 'Koçun',
         programName: program.name,
       }).catch(() => {});
+
+      // Bildirim: kullanıcıya yeni program atandı
+      await notify({
+        recipientId: client._id,
+        senderId: req.user._id,
+        type: 'program_assigned',
+        message: `Koçun sana yeni bir program atadı: "${program.name}"`,
+      });
     }
 
     res.status(200).json({ message: "Program successfully assigned!", program });
@@ -611,9 +674,9 @@ const getAdaptiveAdjustments = async (req, res) => {
 };
 const getCoachPrograms = async (req, res) => {
   try {
-    const coachId = req.user._id; // ✅ pull from auth middleware
-const programs = await Program.find({ coachId: coachId });
-
+    const coachId = req.user._id;
+    const programs = await Program.find({ coachId })
+      .populate("assignedClients", "name email profilePicture");
     res.json({ programs });
   } catch (error) {
     console.error("Error fetching coach programs:", error);
@@ -670,17 +733,6 @@ const unassignClient = async (req, res) => {
     res.status(500).json({ message: "Error unassigning client", error: error.message });
   }
 };
-const toInt = (v, d = 0) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : d;
-};
-const parseHHmm = (hhmm = '18:00') => {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
-  if (!m) return { h: 18, m: 0 };
-  const h = Math.min(23, Math.max(0, Number(m[1])));
-  const mm = Math.min(59, Math.max(0, Number(m[2])));
-  return { h, m: mm };
-};
 
 const startProgram = async (req, res) => {
   try {
@@ -697,8 +749,10 @@ const startProgram = async (req, res) => {
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) return res.status(400).json({ message: 'Invalid startDate' });
 
-    // 1) Create the assignment that represents this "run"
-    const assignment = await ProgramAssignment.create({
+    // 1) Reuse existing active assignment if one exists (idempotent)
+    let assignment = await ProgramAssignment.findOne({ userId, programId, status: 'active' });
+    const isNew = !assignment;
+    if (!assignment) assignment = await ProgramAssignment.create({
       userId,
       programId,
       startDate: start,
@@ -748,13 +802,13 @@ const startProgram = async (req, res) => {
                 assignmentId: assignment._id,
                 externalKey,
                 source: 'program',
+                status: 'planned',
               },
               $set: {
                 sessionId: sid,
                 title,
                 start: st,
                 end: en,
-                status: 'planned',
                 timezone,
               },
             },

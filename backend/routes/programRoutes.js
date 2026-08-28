@@ -48,6 +48,7 @@ router.post('/:programId/start', protect, roleMiddleware(['user']), startProgram
 // 🟢 Program Management Routes
 router.post("/", protect, roleMiddleware(["coach"]), upload.array("documents"), createProgram);
 router.get("/coach", protect, roleMiddleware(["coach"]), getCoachPrograms); // ✅ MUST come before /:id
+router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
 router.get("/user-programs", protect, getUserPrograms);
 router.get("/", protect, getPrograms);
 
@@ -85,9 +86,6 @@ router.get("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"])
 // 🟢 Assignments
 router.get("/:programId/assigned-clients", protect, roleMiddleware(["coach"]), getAssignedClients);
 router.post("/:programId/unassign", protect, unassignClient);
-
-// routes/userRoutes.js
-router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
 
 // 🟢 Misc
 router.post("/reschedule-workout", protect, roleMiddleware(["user"]), rescheduleWorkout);
