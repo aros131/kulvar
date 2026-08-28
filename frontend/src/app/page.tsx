@@ -69,7 +69,7 @@ export default function HomePage() {
     <div ref={root} className="min-h-screen bg-background text-foreground">
 
       {/* NAVBAR */}
-      <nav className="absolute md:fixed top-0 left-0 w-full z-[60] px-6 py-4">
+      <nav className="fixed top-0 left-0 w-full z-[60] px-6 py-4">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/60 to-transparent" />
         <div className="relative flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold text-foreground tracking-tight">PerSe.</Link>
@@ -86,7 +86,7 @@ export default function HomePage() {
           <button
             aria-label="Menüyü aç"
             onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl bg-card/10 text-white backdrop-blur border border-white/20"
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl bg-card border border-border text-foreground shadow-sm"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
               {menuOpen
@@ -122,7 +122,7 @@ export default function HomePage() {
 
         <div className="container mx-auto px-6 md:px-10">
           <div className="max-w-4xl">
-            <p className="hero-eyebrow inline-block mb-4 text-xs tracking-[0.2em] text-primary/70 uppercase">
+            <p className="hero-eyebrow inline-block mb-4 text-xs font-semibold tracking-[0.2em] text-primary uppercase">
               PerSe Coaching
             </p>
             <h1 className="hero-title text-6xl md:text-8xl font-black text-foreground leading-[0.95] tracking-tight">
