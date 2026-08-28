@@ -51,7 +51,7 @@ export default function RootLayout({
         <Toaster richColors position="top-right" />
         <Script src="https://cdn.aidesigner.ai/effects/runtime/v1.js" strategy="afterInteractive" />
         {/* Badge'i kapatan overlay */}
-        <div style={{position:"fixed",bottom:0,right:0,width:220,height:56,background:"var(--background)",zIndex:9999,pointerEvents:"none"}} />
+        <div style={{position:"fixed",bottom:0,right:0,width:260,height:64,background:"var(--background)",zIndex:2147483647,pointerEvents:"none"}} />
       </body>
     </html>
   );
