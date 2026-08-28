@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -48,6 +49,9 @@ export default function RootLayout({
         {children}
         <CookieBanner />
         <Toaster richColors position="top-right" />
+        <Script src="https://cdn.aidesigner.ai/effects/runtime/v1.js" strategy="afterInteractive" />
+        {/* Badge'i kapatan overlay */}
+        <div style={{position:"fixed",bottom:0,right:0,width:220,height:56,background:"var(--background)",zIndex:9999,pointerEvents:"none"}} />
       </body>
     </html>
   );
