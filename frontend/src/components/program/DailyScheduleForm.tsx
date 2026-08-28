@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, Copy, Clock } from "lucide-react";
+import { Trash2, Copy, Clock, Dumbbell, Zap, Timer, ClipboardList } from "lucide-react";
 import {
   EXERCISE_LIBRARY,
   PROGRAM_TEMPLATES,
@@ -184,7 +184,7 @@ function ExerciseRow({
               onClick={() => onUpdate({ type: t })}
               className={`px-2 py-1 transition-colors ${type === t ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
             >
-              {t === "strength" ? "💪" : t === "cardio" ? "🏃" : "⏱"}
+              {t === "strength" ? <Dumbbell size={12} /> : t === "cardio" ? <Zap size={12} /> : <Timer size={12} />}
             </button>
           ))}
         </div>
@@ -261,7 +261,7 @@ function TemplatePicker({ onApply }: { onApply: (t: (typeof PROGRAM_TEMPLATES)[n
         onClick={() => setOpen(true)}
         className="text-sm text-primary underline hover:no-underline"
       >
-        📋 Hazır şablonla başla
+        <ClipboardList size={14} className="inline mr-1" />Hazır şablonla başla
       </button>
     );
   }

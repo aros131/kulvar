@@ -258,7 +258,7 @@ export default function UserDashboardPage() {
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
 
   const [myCoaches, setMyCoaches] = useState<CoachLite[]>([]);
-  const [loadingCoaches, setLoadingCoaches] = useState(true);
+  const [loadingCoaches, setLoadingCoaches] = useState(false);
 
   const [todayEvents, setTodayEvents] = useState<{ _id: string; title: string; start: string; end: string; status: string }[]>([]);
 
@@ -429,25 +429,16 @@ export default function UserDashboardPage() {
       setLoadingCoaches(true);
       try {
         const r = await fetch(`${API}/dashboard/user/coaches?limit=12`, { headers, cache: "no-store", signal: ac.signal });
-        if (r.ok) {
-          const j = await r.json().catch(() => ({}));
-          if (Array.isArray(j.items)) {
-            const rawItems: CoachLite[] = j.items.map((c: any) => ({
-              id: String(c.id || c._id),
-              name: String(c.name || "Koç"),
-              avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
-              role: c.role || "Coach",
-            }));
-            const items = await Promise.all(
-              rawItems.map(async (c) => ({ ...c, avatarUrl: await resolveAvatarUrl(c.avatarUrl) }))
-            );
-            if (alive) {
-              setMyCoaches(items);
-              setLoadingCoaches(false);
-              return;
-            }
-          }
-        }
+        const j = r.ok ? await r.json().catch(() => ({})) : {};
+        const items: CoachLite[] = Array.isArray(j.items)
+          ? j.items.map((c: any) => ({
+              id: String(c._id || c.id),
+              name: String(c.name || c.fullName || "Koç"),
+              avatarUrl: c.profilePicture && /^https?:\/\//i.test(c.profilePicture) ? c.profilePicture : "/images/user.png",
+              role: c.specialization || "",
+            }))
+          : [];
+        if (alive) setMyCoaches(items);
       } catch { /* ignore */ }
       if (alive) setLoadingCoaches(false);
     };
@@ -495,7 +486,7 @@ export default function UserDashboardPage() {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Hoş Geldin, {profile?.name || "Kullanıcı"}!</h1>
-                <p className="text-sm md:text-base text-muted-foreground">Bugün de hedeflerine ulaşmak için harika bir gün. Hazırsan başlayalım. 💪</p>
+                <p className="text-sm md:text-base text-muted-foreground">Bugün de hedeflerine ulaşmak için harika bir gün. Hazırsan başlayalım.</p>
               </div>
             </div>
           </motion.div>
@@ -581,7 +572,9 @@ export default function UserDashboardPage() {
                         </Avatar>
                         <div>
                           <CardTitle className="text-base">{c.name}</CardTitle>
-                          <div className="text-xs text-muted-foreground">{c.role || "Coach"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {c.role && !["coach","Coach"].includes(c.role) ? c.role : "Kişisel Antrenör"}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="flex items-center gap-2">
@@ -615,16 +608,20 @@ export default function UserDashboardPage() {
               </div>
             ) : progress?.goalTracking?.length ? (
               <div className="grid md:grid-cols-2 gap-5">
-                {progress.goalTracking.map((goal) => (
+                {progress.goalTracking.map((goal) => {
+                  const prog = programs.find((p) => p.programId === goal.programId);
+                  const name = prog?.name || "Program";
+                  return (
                   <Card key={goal.programId} className="rounded-2xl">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Program: {goal.programId}</CardTitle>
+                      <CardTitle className="text-base">{name}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ProgressBar value={goal.progressPercentage} />
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <EmptyState title="Hedef bulunamadı">Koçundan hedef belirlemeni isteyebilirsin.</EmptyState>
@@ -745,7 +742,7 @@ function TodayWorkoutWidget({ events }: { events: { _id: string; title: string; 
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-muted-foreground mb-0.5">Bugünkü Antrenman</p>
           {allDone ? (
-            <p className="font-semibold text-green-700 dark:text-green-400">Tüm seanslar tamamlandı 🎉</p>
+            <p className="font-semibold text-green-700 dark:text-green-400">Tüm seanslar tamamlandı</p>
           ) : (
             <>
               <p className="font-semibold truncate">{next.title}</p>

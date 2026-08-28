@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import UserPageShell from '@/components/user/UserPageShell';
 
@@ -116,7 +117,7 @@ function UserPaymentsInner() {
 
         {resultBanner?.status === 'success' && (
           <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-start gap-3">
-            <span className="text-2xl">🎉</span>
+            <CheckCircle2 className="text-green-500 shrink-0" size={24} />
             <div>
               <p className="font-semibold text-green-800 dark:text-green-300">Ödeme başarılı!</p>
               <p className="text-sm text-green-700 dark:text-green-400 mt-0.5">

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -46,7 +47,7 @@ function VerifyEmailInner() {
         )}
         {status === "success" && (
           <>
-            <div className="text-5xl">✅</div>
+            <CheckCircle2 className="mx-auto text-green-500" size={48} />
             <h1 className="text-xl font-bold">E-posta Doğrulandı!</h1>
             <p className="text-muted-foreground">{message}</p>
             <Link
@@ -59,7 +60,7 @@ function VerifyEmailInner() {
         )}
         {status === "error" && (
           <>
-            <div className="text-5xl">❌</div>
+            <XCircle className="mx-auto text-red-500" size={48} />
             <h1 className="text-xl font-bold">Doğrulama Başarısız</h1>
             <p className="text-muted-foreground">{message}</p>
             <Link

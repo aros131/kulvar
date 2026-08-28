@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, User, ClipboardList, MessageCircle, Dumbbell, BarChart2, Hand } from 'lucide-react';
+
+const STEP_ICONS: Record<string, React.ReactNode> = {
+  '👤': <User size={20} />,
+  '📋': <ClipboardList size={20} />,
+  '💬': <MessageCircle size={20} />,
+  '🏋️': <Dumbbell size={20} />,
+  '📊': <BarChart2 size={20} />,
+};
 
 const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
 
@@ -61,7 +69,7 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
           <X size={20} />
         </button>
 
-        <div className="text-3xl mb-2">👋</div>
+        <div className="mb-2 text-primary"><Hand size={28} /></div>
         <h2 className="text-2xl font-bold mb-1">Merhaba, {firstName}!</h2>
         <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6">
           PerSe&apos;ye hoş geldin. Başlamak için şu adımları takip edebilirsin:
@@ -70,7 +78,7 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
         <ul className="space-y-4 mb-8">
           {steps.map((step, i) => (
             <li key={i} className="flex items-start gap-4">
-              <div className="text-2xl w-10 text-center shrink-0">{step.icon}</div>
+              <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">{STEP_ICONS[step.icon] ?? step.icon}</div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">{step.title}</p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">{step.desc}</p>

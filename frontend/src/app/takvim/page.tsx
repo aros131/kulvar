@@ -245,7 +245,7 @@ function TakvimInner() {
       setEvents((prev) =>
         prev.map((e) => (e._id === eventId ? { ...e, status: "completed" } : e))
       );
-      toast.success("Antrenman tamamlandı! 💪");
+      toast.success("Antrenman tamamlandı!");
     } catch {
       toast.error("İşlem başarısız.");
     } finally {
@@ -307,10 +307,15 @@ function TakvimInner() {
           <div className="text-center py-16 space-y-3">
             <p className="text-4xl">🏖️</p>
             <p className="font-semibold text-lg">Bu gün için antrenman yok</p>
-            <p className="text-sm text-muted-foreground">Dinlenme günü veya henüz planlanmamış.</p>
-            <Button variant="outline" onClick={() => router.push("/dashboard/user")}>
-              Anasayfaya Dön
-            </Button>
+            <p className="text-sm text-muted-foreground">Dinlenme günü ya da program henüz takvime aktarılmamış.</p>
+            <div className="flex flex-col gap-2 items-center pt-1">
+              <Button variant="default" size="sm" onClick={() => router.push("/dashboard/user/programs")}>
+                Programlarım → Takvime Aktar
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/user")}>
+                Anasayfaya Dön
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

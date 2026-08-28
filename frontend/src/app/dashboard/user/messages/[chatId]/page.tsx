@@ -41,6 +41,7 @@ import {
   Check,
   CheckCheck,
   Loader2,
+  Pin,
 } from "lucide-react";
 
 /* --------------------------- Types & constants --------------------------- */
@@ -535,7 +536,7 @@ export default function ChatIdPage() {
       {/* Content */}
       <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
         {/* min-h-0 so inner scroll can scroll */}
-        <div className="mx-auto max-w-3xl px-4 md:px-6 py-4 md:py-6 flex flex-col h-[100svh] md:h-[calc(100vh-2rem)] min-h-0">
+        <div className="mx-auto max-w-3xl px-4 md:px-6 py-4 md:py-6 flex flex-col h-[calc(100svh-3.5rem)] md:h-[calc(100vh-2rem)] min-h-0">
           {/* Header */}
           <div className="sticky top-0 z-20 bg-background/90 backdrop-blur border-b border-border -mx-4 md:-mx-6 px-4 md:px-6 py-3">
             <div className="flex items-center gap-2">
@@ -629,7 +630,7 @@ export default function ChatIdPage() {
                       className="text-xs px-2 py-1 rounded-full bg-muted hover:bg-muted/80 whitespace-nowrap"
                       title={msg.text || (msg.imageUrl ? "Resim" : "")}
                     >
-                      📌 {msg.text?.slice(0, 24) || "Resim"}
+                      <Pin size={10} className="inline mr-0.5" />{msg.text?.slice(0, 24) || "Resim"}
                     </button>
                   );
                 })}
@@ -862,7 +863,7 @@ function MessageBubble({
           </button>
         )}
         <button onClick={() => onPin(msg)} className="text-[11px] px-1.5 py-0.5 rounded hover:bg-black/10">
-          📌 Sabitle
+          <Pin size={11} className="inline mr-1" />Sabitle
         </button>
       </div>
 
