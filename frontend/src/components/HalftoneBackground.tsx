@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useRef } from "react";
 
+const GRID   = 16;
+const C1     = { r: 49,  g: 44,  b: 143 }; // indigo  #312C8F
+const C2     = { r: 228, g: 87,  b: 46  }; // terracotta #E4572E
+
 export default function HalftoneBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -10,17 +14,18 @@ export default function HalftoneBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const GRID = 22;
-    const mouse = { x: -9999, y: -9999, vx: 0, vy: 0 };
     let t = 0;
     let raf: number;
+    const mouse = { x: -9999, y: -9999 };
 
     function resize() {
-      canvas!.width  = canvas!.offsetWidth  * devicePixelRatio;
-      canvas!.height = canvas!.offsetHeight * devicePixelRatio;
-      ctx!.scale(devicePixelRatio, devicePixelRatio);
+      const dpr = devicePixelRatio || 1;
+      canvas!.width  = canvas!.offsetWidth  * dpr;
+      canvas!.height = canvas!.offsetHeight * dpr;
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resize();
+    window.addEventListener("resize", resize);
 
     const onMove = (e: MouseEvent | TouchEvent) => {
       const rect = canvas!.getBoundingClientRect();
@@ -29,14 +34,25 @@ export default function HalftoneBackground() {
       mouse.y = p.clientY - rect.top;
     };
     const onLeave = () => { mouse.x = -9999; mouse.y = -9999; };
+    window.addEventListener("mousemove",   onMove);
+    window.addEventListener("touchmove",   onMove, { passive: true });
+    window.addEventListener("mouseleave",  onLeave);
 
-    window.addEventListener("mousemove",  onMove);
-    window.addEventListener("touchmove",  onMove, { passive: true });
-    window.addEventListener("mouseleave", onLeave);
-    window.addEventListener("resize",     resize);
+    // flowing ribbon density field — diagonal band crossing
+    function ribbonDensity(x: number, y: number): number {
+      const a = Math.sin(t * 0.4  + x * 0.038 - y * 0.030);
+      const b = Math.sin(t * 0.25 - x * 0.022 + y * 0.044);
+      const c = Math.sin(t * 0.15 + x * 0.012 + y * 0.018);
+      return ((a + b + c) / 3 + 1) / 2; // 0..1
+    }
+
+    // second band for color split — offset phase
+    function colorBias(x: number, y: number): number {
+      return Math.sin(t * 0.3 + x * 0.030 - y * 0.024 + 1.2);
+    }
 
     function draw() {
-      t += 0.008;
+      t += 0.006;
       const W = canvas!.offsetWidth;
       const H = canvas!.offsetHeight;
       ctx!.clearRect(0, 0, W, H);
@@ -49,25 +65,26 @@ export default function HalftoneBackground() {
           const x = c * GRID;
           const y = r * GRID;
 
-          // multi-frequency wave for organic feel
-          const wave =
-            Math.sin(t + x * 0.022 + y * 0.015) * 0.4 +
-            Math.sin(t * 0.6 - x * 0.014 + y * 0.021) * 0.35 +
-            Math.sin(t * 1.1 + x * 0.009 - y * 0.018) * 0.25;
-
-          const norm = (wave + 1) / 2; // 0..1
+          const d = ribbonDensity(x, y);
+          const powered = Math.pow(d, 2.2); // sharpen the ribbon shape
 
           // mouse ripple
           const dx = x - mouse.x;
           const dy = y - mouse.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const ripple = Math.max(0, 1 - dist / 180) * 0.55;
+          const ripple = Math.max(0, 1 - dist / 160) * 0.5;
 
-          const size = 0.8 + norm * 3.8 + ripple * 4.2;
+          const size = 0.4 + powered * 7.5 + ripple * 4;
+          if (size < 0.35) continue;
+
+          // color: split by colorBias — indigo vs terracotta
+          const bias = colorBias(x, y);
+          const col = bias > 0 ? C1 : C2;
+          const alpha = 0.18 + powered * 0.72 + ripple * 0.2;
 
           ctx!.beginPath();
-          ctx!.arc(x, y, Math.max(0.1, size), 0, Math.PI * 2);
-          ctx!.fillStyle = `rgba(49,44,143,${0.10 + norm * 0.13 + ripple * 0.18})`;
+          ctx!.arc(x, y, size, 0, Math.PI * 2);
+          ctx!.fillStyle = `rgba(${col.r},${col.g},${col.b},${Math.min(alpha, 0.92)})`;
           ctx!.fill();
         }
       }
@@ -78,10 +95,10 @@ export default function HalftoneBackground() {
 
     return () => {
       cancelAnimationFrame(raf);
+      window.removeEventListener("resize",     resize);
       window.removeEventListener("mousemove",  onMove);
       window.removeEventListener("touchmove",  onMove);
       window.removeEventListener("mouseleave", onLeave);
-      window.removeEventListener("resize",     resize);
     };
   }, []);
 
