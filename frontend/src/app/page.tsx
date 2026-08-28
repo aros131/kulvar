@@ -114,6 +114,8 @@ export default function HomePage() {
       <section id="hero" className="relative isolate min-h-[92dvh] overflow-hidden flex items-end pb-20 md:items-center md:pb-0">
         <div
           data-aifx="halftone"
+          data-aifx-speed="0.11"
+          data-aifx-mouse="0.1"
           className="hero-bg absolute inset-0 -z-10 pointer-events-none"
           aria-hidden="true"
         />
@@ -126,7 +128,7 @@ export default function HomePage() {
             <h1 className="hero-title text-6xl md:text-8xl font-black text-foreground leading-[0.95] tracking-tight">
               Başla,<br />bırakma.
             </h1>
-            <p className="hero-subtitle mt-6 text-base md:text-lg text-muted-foreground max-w-lg leading-relaxed">
+            <p className="hero-subtitle mt-6 text-base md:text-lg font-medium text-muted-foreground max-w-lg leading-relaxed">
               Koçunu bul, programını takip et, ilerlemeyi hızlandır. Türkiye'nin modern koçluk platformu.
             </p>
             <div className="hero-cta mt-10 flex flex-wrap gap-3">
