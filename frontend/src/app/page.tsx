@@ -70,15 +70,15 @@ export default function HomePage() {
 
       {/* NAVBAR */}
       <nav className="absolute md:fixed top-0 left-0 w-full z-[60] px-6 py-4">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/60 to-transparent" />
         <div className="relative flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-white tracking-tight">PerSe.</Link>
-          <ul className="hidden md:flex gap-6 text-sm text-white/90">
+          <Link href="/" className="text-2xl font-bold text-foreground tracking-tight">PerSe.</Link>
+          <ul className="hidden md:flex gap-6 text-sm text-foreground/80">
             <li><Link href="/koc" className="hover:text-white transition-colors">Koçlarımız</Link></li>
             <li><Link href="/contact" className="hover:text-white transition-colors">İletişim</Link></li>
-            <li><Link href="/login" className="hover:text-white transition-colors">Giriş Yap</Link></li>
+            <li><Link href="/login" className="hover:text-foreground transition-colors">Giriş Yap</Link></li>
             <li>
-              <Link href="/signup" className="rounded-full border border-white/30 px-4 py-1.5 hover:bg-card/10 transition-colors">
+              <Link href="/signup" className="rounded-full border border-border px-4 py-1.5 hover:bg-muted transition-colors">
                 Kaydol
               </Link>
             </li>
@@ -96,12 +96,12 @@ export default function HomePage() {
             </svg>
           </button>
           {menuOpen && (
-            <div className="md:hidden absolute left-0 right-0 top-full mt-2 rounded-2xl border border-white/15 bg-foreground/80 backdrop-blur p-4 text-white text-sm">
-              <Link href="/koc" className="block px-3 py-2.5 rounded-lg hover:bg-card/10" onClick={() => setMenuOpen(false)}>Koçlarımız</Link>
-              <Link href="/contact" className="block px-3 py-2.5 rounded-lg hover:bg-card/10" onClick={() => setMenuOpen(false)}>İletişim</Link>
-              <div className="mt-2 pt-2 border-t border-white/10 flex gap-2">
-                <Link href="/login" className="flex-1 text-center rounded-xl border border-white/20 px-3 py-2 hover:bg-card/10" onClick={() => setMenuOpen(false)}>Giriş Yap</Link>
-                <Link href="/signup" className="flex-1 text-center rounded-xl bg-card text-foreground px-3 py-2 font-medium" onClick={() => setMenuOpen(false)}>Kaydol</Link>
+            <div className="md:hidden absolute left-0 right-0 top-full mt-2 rounded-2xl border border-border bg-card/95 backdrop-blur p-4 text-foreground text-sm">
+              <Link href="/koc" className="block px-3 py-2.5 rounded-lg hover:bg-muted" onClick={() => setMenuOpen(false)}>Koçlarımız</Link>
+              <Link href="/contact" className="block px-3 py-2.5 rounded-lg hover:bg-muted" onClick={() => setMenuOpen(false)}>İletişim</Link>
+              <div className="mt-2 pt-2 border-t border-border flex gap-2">
+                <Link href="/login" className="flex-1 text-center rounded-xl border border-border px-3 py-2 hover:bg-muted" onClick={() => setMenuOpen(false)}>Giriş Yap</Link>
+                <Link href="/signup" className="flex-1 text-center rounded-xl bg-primary text-primary-foreground px-3 py-2 font-medium" onClick={() => setMenuOpen(false)}>Kaydol</Link>
               </div>
             </div>
           )}
@@ -120,25 +120,25 @@ export default function HomePage() {
 
         <div className="container mx-auto px-6 md:px-10">
           <div className="max-w-4xl">
-            <p className="hero-eyebrow inline-block mb-4 text-xs tracking-[0.2em] text-white/60 uppercase">
+            <p className="hero-eyebrow inline-block mb-4 text-xs tracking-[0.2em] text-primary/70 uppercase">
               PerSe Coaching
             </p>
-            <h1 className="hero-title text-6xl md:text-8xl font-black text-white leading-[0.95] tracking-tight">
+            <h1 className="hero-title text-6xl md:text-8xl font-black text-foreground leading-[0.95] tracking-tight">
               Başla,<br />bırakma.
             </h1>
-            <p className="hero-subtitle mt-6 text-base md:text-lg text-white/70 max-w-lg leading-relaxed">
+            <p className="hero-subtitle mt-6 text-base md:text-lg text-muted-foreground max-w-lg leading-relaxed">
               Koçunu bul, programını takip et, ilerlemeyi hızlandır. Türkiye'nin modern koçluk platformu.
             </p>
             <div className="hero-cta mt-10 flex flex-wrap gap-3">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 rounded-full bg-rose-900 px-7 py-3.5 text-sm font-semibold text-white hover:bg-rose-800 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Ücretsiz Başla <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/koc"
-                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-7 py-3.5 text-sm font-medium text-white hover:bg-card/10 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
               >
                 Koçları Keşfet
               </Link>
@@ -148,7 +148,7 @@ export default function HomePage() {
 
         {/* Marquee */}
         <div className="pointer-events-none absolute inset-x-0 bottom-8 select-none overflow-hidden">
-          <div className="marquee-track flex gap-10 whitespace-nowrap will-change-transform text-xs tracking-widest text-white/30 uppercase">
+          <div className="marquee-track flex gap-10 whitespace-nowrap will-change-transform text-xs tracking-widest text-foreground/25 uppercase">
             {["Koç Keşfet","Program Takibi","Anlık Mesajlaşma","Randevu Yönetimi","İlerleme Grafikleri","Koç Değerlendirme","Akıllı Bildirimler",
               "Koç Keşfet","Program Takibi","Anlık Mesajlaşma","Randevu Yönetimi","İlerleme Grafikleri","Koç Değerlendirme","Akıllı Bildirimler"].map((t, i) => (
               <span key={i}>{t}</span>
@@ -211,14 +211,14 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-zinc-800">
+          <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/10">
             {[
               { n: "01", title: "Hesap Oluştur",              desc: "Koç veya danışan olarak ücretsiz kaydol." },
               { n: "02", title: "Koçunu veya Programı Bul",   desc: "Hedefine uygun koçu bul ya da koçsan kendi programını oluştur." },
               { n: "03", title: "Takip Et ve Büyü",           desc: "İlerlemeni görsel olarak izle, geri bildirim al, gelişimini hızlandır." },
             ].map((s) => (
               <div key={s.n} data-animate="fade-up" className="py-10 md:py-0 md:px-10 first:md:pl-0 last:md:pr-0 flex flex-col gap-6">
-                <span className="text-7xl font-black text-foreground leading-none select-none">{s.n}</span>
+                <span className="text-7xl font-black text-white/15 leading-none select-none">{s.n}</span>
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2">{s.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
