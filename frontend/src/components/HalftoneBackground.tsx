@@ -1,17 +1,8 @@
 "use client";
 import { useEffect, useRef } from "react";
 
-const GRID = 30;
-const BASE_R = 2;
-const MAX_R = 9;
-const SPEED = 0.11;
-const MOUSE_STR = 0.18;
-const MOUSE_RADIUS = 220;
-
 export default function HalftoneBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouse = useRef({ x: -9999, y: -9999 });
-  const raf = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -19,64 +10,78 @@ export default function HalftoneBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const GRID = 22;
+    const mouse = { x: -9999, y: -9999, vx: 0, vy: 0 };
     let t = 0;
-    let cols = 0, rows = 0;
+    let raf: number;
 
     function resize() {
-      canvas!.width = canvas!.offsetWidth;
-      canvas!.height = canvas!.offsetHeight;
-      cols = Math.ceil(canvas!.width / GRID) + 2;
-      rows = Math.ceil(canvas!.height / GRID) + 2;
+      canvas!.width  = canvas!.offsetWidth  * devicePixelRatio;
+      canvas!.height = canvas!.offsetHeight * devicePixelRatio;
+      ctx!.scale(devicePixelRatio, devicePixelRatio);
     }
     resize();
-    window.addEventListener("resize", resize);
 
     const onMove = (e: MouseEvent | TouchEvent) => {
       const rect = canvas!.getBoundingClientRect();
-      const src = "touches" in e ? e.touches[0] : e;
-      mouse.current = { x: src.clientX - rect.left, y: src.clientY - rect.top };
+      const p = "touches" in e ? e.touches[0] : e;
+      mouse.x = p.clientX - rect.left;
+      mouse.y = p.clientY - rect.top;
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("touchmove", onMove, { passive: true });
+    const onLeave = () => { mouse.x = -9999; mouse.y = -9999; };
+
+    window.addEventListener("mousemove",  onMove);
+    window.addEventListener("touchmove",  onMove, { passive: true });
+    window.addEventListener("mouseleave", onLeave);
+    window.addEventListener("resize",     resize);
 
     function draw() {
-      t += SPEED * 0.012;
-      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
-      ctx!.fillStyle = "#312C8F";
+      t += 0.008;
+      const W = canvas!.offsetWidth;
+      const H = canvas!.offsetHeight;
+      ctx!.clearRect(0, 0, W, H);
+
+      const cols = Math.ceil(W / GRID) + 2;
+      const rows = Math.ceil(H / GRID) + 2;
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const x = c * GRID - GRID / 2;
-          const y = r * GRID - GRID / 2;
+          const x = c * GRID;
+          const y = r * GRID;
 
-          const wave = (Math.sin(t + x * 0.018 + y * 0.014) * 0.5 + 0.5)
-                     * (Math.sin(t * 0.7 + x * 0.012 - y * 0.02) * 0.5 + 0.5);
+          // multi-frequency wave for organic feel
+          const wave =
+            Math.sin(t + x * 0.022 + y * 0.015) * 0.4 +
+            Math.sin(t * 0.6 - x * 0.014 + y * 0.021) * 0.35 +
+            Math.sin(t * 1.1 + x * 0.009 - y * 0.018) * 0.25;
 
-          const dx = x - mouse.current.x;
-          const dy = y - mouse.current.y;
+          const norm = (wave + 1) / 2; // 0..1
+
+          // mouse ripple
+          const dx = x - mouse.x;
+          const dy = y - mouse.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const mouseEffect = MOUSE_STR * Math.max(0, 1 - dist / MOUSE_RADIUS);
+          const ripple = Math.max(0, 1 - dist / 180) * 0.55;
 
-          const radius = BASE_R + (MAX_R - BASE_R) * Math.min(1, wave + mouseEffect);
+          const size = 0.8 + norm * 3.8 + ripple * 4.2;
 
           ctx!.beginPath();
-          ctx!.arc(x, y, radius, 0, Math.PI * 2);
-          ctx!.globalAlpha = 0.12 + wave * 0.1;
+          ctx!.arc(x, y, Math.max(0.1, size), 0, Math.PI * 2);
+          ctx!.fillStyle = `rgba(49,44,143,${0.10 + norm * 0.13 + ripple * 0.18})`;
           ctx!.fill();
         }
       }
 
-      ctx!.globalAlpha = 1;
-      raf.current = requestAnimationFrame(draw);
+      raf = requestAnimationFrame(draw);
     }
-
     draw();
 
     return () => {
-      cancelAnimationFrame(raf.current);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("touchmove", onMove);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("mousemove",  onMove);
+      window.removeEventListener("touchmove",  onMove);
+      window.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("resize",     resize);
     };
   }, []);
 

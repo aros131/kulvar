@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import HalftoneBackground from "@/components/HalftoneBackground";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Footer from "@/components/Footer";
@@ -112,13 +113,7 @@ export default function HomePage() {
 
       {/* HERO */}
       <section id="hero" className="relative isolate min-h-[92dvh] overflow-hidden flex items-end pb-20 md:items-center md:pb-0">
-        <div
-          data-aifx="halftone"
-          data-aifx-speed="0.11"
-          data-aifx-mouse="0.1"
-          className="hero-bg absolute inset-0 -z-10 pointer-events-none"
-          aria-hidden="true"
-        />
+        <HalftoneBackground />
 
         <div className="container mx-auto px-6 md:px-10">
           <div className="max-w-4xl">
