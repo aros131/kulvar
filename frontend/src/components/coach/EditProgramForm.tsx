@@ -416,6 +416,23 @@ export default function EditProgramForm({ program: initialProgram, mode, onSucce
             <option>Durduruldu</option>
           </select>
         </div>
+
+        <div>
+          <Label htmlFor="priceCents">Ücret (₺)</Label>
+          <Input
+            id="priceCents"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="0 — ücretsiz"
+            value={(program as any).priceCents != null ? (program as any).priceCents / 100 : ""}
+            onChange={(e) => {
+              const val = e.target.value === "" ? null : Math.round(parseFloat(e.target.value) * 100);
+              setProgram((prev: any) => ({ ...prev, priceCents: val }));
+            }}
+          />
+          <p className="text-xs text-muted-foreground mt-1">Boş bırakırsanız program ücretsiz görünür.</p>
+        </div>
       </section>
 
       {/* Daily Schedule */}

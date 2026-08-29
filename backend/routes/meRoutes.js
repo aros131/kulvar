@@ -33,7 +33,7 @@ router.get("/coaches/:id", async (req, res) => {
       Follow.exists({ userId: req.user._id, coachId: id }),
       Follow.countDocuments({ coachId: id }).catch(() => 0),
       Program.find({ coachId: id })
-        .select("name description duration difficulty fitnessGoal price")
+        .select("name description duration difficulty fitnessGoal priceCents")
         .sort({ _id: -1 })
         .limit(24)
         .lean(),
@@ -72,7 +72,7 @@ router.get("/coaches/:id", async (req, res) => {
       durationWeeks: p.duration,     // your schema uses 'duration' (weeks)
       difficulty: p.difficulty,      // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
       goal: p.fitnessGoal,
-      price: p.price ?? undefined,
+      priceCents: p.priceCents ?? null,
     }));
 
     const reviews = revs.map((r) => ({

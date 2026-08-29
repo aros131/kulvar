@@ -209,7 +209,7 @@ router.get("/:id/programs", async (req, res) => {
     }
 
     const docs = await Program.find(q)
-      .select("name description duration difficulty fitnessGoal price createdAt status")
+      .select("name description duration difficulty fitnessGoal priceCents createdAt status")
       .sort({ _id: -1 })
       .limit(limit)
       .lean();
@@ -221,7 +221,7 @@ router.get("/:id/programs", async (req, res) => {
       durationWeeks: p.duration,   // Program schema uses `duration`
       difficulty: p.difficulty,    // "Başlangıç" | "Orta Düzey" | "İleri Seviye"
       goal: p.fitnessGoal,
-      price: p.price ?? undefined,
+      priceCents: p.priceCents ?? null,
     }));
 
     res.json({
