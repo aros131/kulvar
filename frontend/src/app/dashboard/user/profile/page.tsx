@@ -1,7 +1,7 @@
 // src/app/dashboard/user/profile/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
@@ -19,6 +19,19 @@ import { toast } from "sonner";
 import { Users, CreditCard, Settings, LogOut, ChevronRight } from "lucide-react";
 
 import ProfileImageUploader from "@/components/ProfileImageUploader";
+import { storage } from "@/lib/firebase";
+import { getDownloadURL, ref as sRef } from "firebase/storage";
+
+async function resolveAvatarUrl(input?: string): Promise<string> {
+  if (!input) return "";
+  if (/^https?:\/\//i.test(input)) return input;
+  try {
+    const path = /^gs:\/\//i.test(input) ? input : input.replace(/^\/+/, "");
+    return await getDownloadURL(sRef(storage, path));
+  } catch {
+    return "";
+  }
+}
 
 /* ------------------------------- Types ------------------------------- */
 type UserProfile = {
@@ -53,6 +66,7 @@ export default function UserProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editData, setEditData] = useState<UserProfile | null>(null);
 
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -84,6 +98,8 @@ export default function UserProfilePage() {
         const res = await axios.get(`${API}/profile`, { headers: authHeaders });
         setProfile(res.data);
         setEditData(res.data);
+        const url = await resolveAvatarUrl(res.data?.profilePicture);
+        setAvatarUrl(url);
       } catch (err: any) {
         const status = err?.response?.status;
         if (status === 401 || status === 403) toast.error("Oturumunuz geçersiz. Lütfen tekrar giriş yapın.");
@@ -139,6 +155,8 @@ export default function UserProfilePage() {
       if (!res.ok) throw new Error();
       const data = await res.json();
       setEditData((prev) => (prev ? { ...prev, profilePicture: data.url } : prev));
+      const resolved = await resolveAvatarUrl(data.url);
+      setAvatarUrl(resolved);
       toast.success("Fotoğraf yüklendi.");
     } catch (err) {
       toast.error("Fotoğraf yüklenemedi.");
@@ -213,13 +231,13 @@ export default function UserProfilePage() {
                     {uploading && <p className="text-xs text-muted-foreground">Yükleniyor…</p>}
 
                     {editData?.profilePicture ? (
-                      <div className="mt-1">
+                      <div className="mt-1 w-[80px] h-[80px] rounded-xl overflow-hidden border">
                         <Image
                           src={editData.profilePicture}
                           alt="Yeni Profil"
-                          width={100}
-                          height={100}
-                          className="rounded-2xl object-cover w-[100px] h-[100px] border"
+                          width={80}
+                          height={80}
+                          className="object-cover w-full h-full"
                           unoptimized
                         />
                       </div>
@@ -257,16 +275,25 @@ export default function UserProfilePage() {
                   transition={{ duration: 0.35 }}
                   className="flex items-center gap-4"
                 >
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
-                    <Image
-                      src={profile.profilePicture || "/images/default-user.jpg"}
-                      alt="Profil Fotoğrafı"
-                      width={96}
-                      height={96}
-                      className="relative rounded-2xl object-cover border border-border dark:border-zinc-800 w-[96px] h-[96px]"
-                      unoptimized
-                    />
+                    <div className="relative w-[96px] h-[96px] rounded-2xl overflow-hidden border border-border dark:border-zinc-800">
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt="Profil Fotoğrafı"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                          <span className="text-white text-2xl font-bold select-none">
+                            {profile.name?.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "U"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex-1 min-w-0">

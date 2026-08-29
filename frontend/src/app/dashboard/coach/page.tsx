@@ -144,10 +144,42 @@ export default function DashboardCoachPage() {
               </p>
             </div>
             {profile && (
-              <Image src={profileUrl} alt="Profil" width={44} height={44}
-                className="rounded-xl object-cover border border-border" unoptimized />
+              <div className="w-11 h-11 rounded-xl overflow-hidden border border-border shrink-0">
+                {profileUrl && profileUrl !== "/images/user.png" ? (
+                  <Image src={profileUrl} alt="Profil" width={44} height={44}
+                    className="w-full h-full object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
+                    <span className="text-primary-foreground text-sm font-bold select-none">
+                      {profile.name?.trim().split(/\s+/).map(w => w[0]).join("").slice(0,2).toUpperCase() || "K"}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
+
+          {/* ── Analytics Stat Row ── */}
+          {!loadingStats && analytics && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Danışan", value: fmt(analytics.totalClients) },
+                { label: "Tamamlanan Seans", value: fmt(analytics.completedSessions) },
+                { label: "Yaklaşan Seans", value: fmt(analytics.upcomingSessions) },
+                { label: "Ort. Puan", value: analytics.avgRating ? analytics.avgRating.toFixed(1) : "—" },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-2xl border bg-card p-4 space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
+                  <p className="text-2xl font-bold tabular-nums leading-none">{value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {loadingStats && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-[72px] rounded-2xl" />)}
+            </div>
+          )}
 
 
           {/* ── Main Grid ── */}

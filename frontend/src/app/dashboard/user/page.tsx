@@ -219,22 +219,36 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
   );
 }
 
-function initialsFrom(name?: string) {
-  if (!name) return "PR";
-  const parts = name.trim().split(/\s+/).slice(0, 2);
-  return parts.map((p) => p[0]).join("").toUpperCase();
+
+const PROGRAM_PHOTOS: { keywords: string[]; url: string }[] = [
+  { keywords: ["koşu","run","kardiyo","cardio","kondisyon"], url: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=338&fit=crop&auto=format" },
+  { keywords: ["yoga","meditasyon","nefes","pilates","esneklik"], url: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&h=338&fit=crop&auto=format" },
+  { keywords: ["kilo verme","yağ yakma","zayıflama","fat","weight loss"], url: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&h=338&fit=crop&auto=format" },
+  { keywords: ["kas","güç","strength","bulk","hacim"], url: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&h=338&fit=crop&auto=format" },
+  { keywords: ["hiit","interval","circuit","tabata"], url: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&h=338&fit=crop&auto=format" },
+  { keywords: ["fonksiyonel","functional","crossfit","kettlebell"], url: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&h=338&fit=crop&auto=format" },
+];
+const FALLBACK_PHOTOS = [
+  "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&h=338&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&h=338&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&h=338&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=338&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&h=338&fit=crop&auto=format",
+];
+function getProgramPhoto(name: string, index = 0) {
+  const h = name.toLowerCase();
+  for (const e of PROGRAM_PHOTOS) if (e.keywords.some((k) => h.includes(k))) return e.url;
+  return FALLBACK_PHOTOS[index % FALLBACK_PHOTOS.length];
 }
 
-function ProgramThumb({ name }: { name?: string }) {
+function ProgramThumb({ name, index }: { name?: string; index?: number }) {
+  const pct = 0;
+  const url = getProgramPhoto(name || "", index ?? 0);
   return (
-    <div className="aspect-[16/9] relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:via-emerald-800/30 dark:to-emerald-700/20">
-      <div className="absolute inset-0 opacity-30 [background:radial-gradient(60%_60%_at_20%_0%,white,transparent_60%)] dark:opacity-20" />
-      <Dumbbell className="absolute right-3 top-3 h-5 w-5 text-emerald-600/70 dark:text-emerald-300/70" />
-      <div className="absolute inset-0 grid place-items-center">
-        <span className="text-2xl font-semibold tracking-wide text-emerald-700 dark:text-emerald-200">
-          {initialsFrom(name)}
-        </span>
-      </div>
+    <div className="aspect-[16/9] relative overflow-hidden rounded-t-2xl">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt={name || ""} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
     </div>
   );
 }
@@ -482,16 +496,25 @@ export default function UserDashboardPage() {
           {/* Hero / Greeting */}
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="mb-8">
             <div className="flex items-center gap-4">
-              <div className="relative">
+              <div className="relative shrink-0">
                 <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
-                <Image
-                  src={profilePhotoUrl || "/images/user.png"}
-                  alt="Profil Fotoğrafı"
-                  width={84}
-                  height={84}
-                  className="relative rounded-2xl object-cover border border-border dark:border-zinc-800"
-                  unoptimized
-                />
+                <div className="relative w-[84px] h-[84px] rounded-2xl overflow-hidden border border-border dark:border-zinc-800">
+                  {profilePhotoUrl ? (
+                    <Image
+                      src={profilePhotoUrl}
+                      alt="Profil Fotoğrafı"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold select-none">
+                        {profile?.name?.trim().split(/\s+/).map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "U"}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Hoş Geldin, {profile?.name || "Kullanıcı"}!</h1>
@@ -517,10 +540,10 @@ export default function UserDashboardPage() {
               <ProgramGridSkeleton />
             ) : programs.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {programs.map((program) => (
+                {programs.map((program, i) => (
                   <motion.div key={program.programId} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
                     <Card className="group overflow-hidden border-border/70 dark:border-zinc-800/70 hover:shadow-lg hover:border-emerald-500/40 transition-all rounded-2xl">
-                      <ProgramThumb name={program.name} />
+                      <ProgramThumb name={program.name} index={i} />
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base md:text-lg line-clamp-1">{program.name}</CardTitle>
                         {program.description ? <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p> : null}

@@ -11,8 +11,8 @@ import UserPageShell from '@/components/user/UserPageShell';
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 interface NotifPrefs {
-  inApp: { bookingRequests: boolean; bookingUpdates: boolean; messages: boolean; reviews: boolean };
-  email: { bookingRequests: boolean; bookingUpdates: boolean; messages: boolean; weeklyReport: boolean };
+  inApp:  { bookingRequests: boolean; bookingUpdates: boolean; messages: boolean; reviews: boolean };
+  email:  { bookingRequests: boolean; bookingUpdates: boolean; messages: boolean; weeklyReport: boolean };
 }
 
 const defaultPrefs = (): NotifPrefs => ({
@@ -20,14 +20,23 @@ const defaultPrefs = (): NotifPrefs => ({
   email:  { bookingRequests: true, bookingUpdates: true, messages: false, weeklyReport: false },
 });
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border bg-card p-6 space-y-4">
+      <h2 className="text-base font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
 export default function UserSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [newPassword,     setNewPassword]     = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [prefs, setPrefs] = useState<NotifPrefs>(defaultPrefs());
-  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [email,           setEmail]           = useState('');
+  const [loading,         setLoading]         = useState(false);
+  const [prefs,           setPrefs]           = useState<NotifPrefs>(defaultPrefs());
+  const [savingPrefs,     setSavingPrefs]     = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -49,7 +58,7 @@ export default function UserSettingsPage() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) { toast.error('Yeni şifreler eşleşmiyor.'); return; }
-    if (newPassword.length < 6) { toast.error('Şifre en az 6 karakter olmalı.'); return; }
+    if (newPassword.length < 6)          { toast.error('Şifre en az 6 karakter olmalı.'); return; }
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -80,14 +89,6 @@ export default function UserSettingsPage() {
     else toast.error('Hesap silinemedi.');
   };
 
-  const toggleInApp = (key: keyof NotifPrefs['inApp']) => {
-    setPrefs(p => ({ ...p, inApp: { ...p.inApp, [key]: !p.inApp[key] } }));
-  };
-
-  const toggleEmail = (key: keyof NotifPrefs['email']) => {
-    setPrefs(p => ({ ...p, email: { ...p.email, [key]: !p.email[key] } }));
-  };
-
   const savePrefs = async () => {
     setSavingPrefs(true);
     try {
@@ -108,83 +109,96 @@ export default function UserSettingsPage() {
 
   return (
     <UserPageShell>
-    <div className="max-w-xl mx-auto px-4 py-8 md:py-10 space-y-10">
-      <h1 className="text-2xl font-bold">Ayarlar</h1>
-
-      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-3">
-        <h2 className="text-lg font-semibold">Hesap Bilgileri</h2>
+      <div className="max-w-xl mx-auto px-4 py-8 md:py-10 space-y-6">
         <div>
-          <Label>E-posta</Label>
-          <Input value={email} disabled className="mt-1 bg-zinc-100 dark:bg-primary/80" />
-          <p className="text-xs text-muted-foreground mt-1">E-posta değişikliği için destek ekibiyle iletişime geçin.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ayarlar</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Hesap ve bildirim tercihlerini yönet.</p>
         </div>
-      </section>
 
-      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">
-        <h2 className="text-lg font-semibold mb-4">Şifre Değiştir</h2>
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
-            <Label>Mevcut Şifre</Label>
-            <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="mt-1" required />
+        {/* Hesap */}
+        <Section title="Hesap Bilgileri">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">E-posta</Label>
+            <Input value={email} disabled className="bg-muted/50" />
+            <p className="text-xs text-muted-foreground">E-posta değişikliği için destek ekibiyle iletişime geçin.</p>
           </div>
-          <div>
-            <Label>Yeni Şifre</Label>
-            <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1" required />
+        </Section>
+
+        {/* Şifre */}
+        <Section title="Şifre Değiştir">
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Mevcut Şifre</Label>
+              <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Yeni Şifre</Label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Yeni Şifre (Tekrar)</Label>
+              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Kaydediliyor…' : 'Şifreyi Güncelle'}
+            </Button>
+          </form>
+        </Section>
+
+        {/* Bildirim tercihleri */}
+        <Section title="Bildirim Tercihleri">
+          <div className="space-y-5">
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Uygulama İçi</p>
+              {([
+                ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
+                ['bookingUpdates',  'Randevu durumu değişiklikleri'],
+                ['messages',        'Mesajlar'],
+                ['reviews',         'Değerlendirme bildirimleri'],
+              ] as [keyof NotifPrefs['inApp'], string][]).map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <Label className="font-normal text-sm">{label}</Label>
+                  <Switch
+                    checked={prefs.inApp[key]}
+                    onCheckedChange={() => setPrefs(p => ({ ...p, inApp: { ...p.inApp, [key]: !p.inApp[key] } }))}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">E-posta</p>
+              {([
+                ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
+                ['bookingUpdates',  'Randevu durumu değişiklikleri'],
+                ['messages',        'Mesajlar'],
+                ['weeklyReport',    'Haftalık özet'],
+              ] as [keyof NotifPrefs['email'], string][]).map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <Label className="font-normal text-sm">{label}</Label>
+                  <Switch
+                    checked={prefs.email[key]}
+                    onCheckedChange={() => setPrefs(p => ({ ...p, email: { ...p.email, [key]: !p.email[key] } }))}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <Label>Yeni Şifre (Tekrar)</Label>
-            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1" required />
-          </div>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
+
+          <Button onClick={savePrefs} disabled={savingPrefs} className="w-full mt-2">
+            {savingPrefs ? 'Kaydediliyor…' : 'Tercihleri Kaydet'}
           </Button>
-        </form>
-      </section>
+        </Section>
 
-      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-6">
-        <h2 className="text-lg font-semibold">Bildirim Tercihleri</h2>
-
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">Uygulama İçi</h3>
-          {([
-            ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
-            ['bookingUpdates',  'Randevu durumu değişiklikleri'],
-            ['messages',        'Mesajlar'],
-            ['reviews',         'Değerlendirme bildirimleri'],
-          ] as [keyof NotifPrefs['inApp'], string][]).map(([key, label]) => (
-            <div key={key} className="flex items-center justify-between">
-              <Label className="font-normal">{label}</Label>
-              <Switch checked={prefs.inApp[key]} onCheckedChange={() => toggleInApp(key)} />
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">E-posta</h3>
-          {([
-            ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
-            ['bookingUpdates',  'Randevu durumu değişiklikleri'],
-            ['messages',        'Mesajlar'],
-            ['weeklyReport',    'Haftalık özet'],
-          ] as [keyof NotifPrefs['email'], string][]).map(([key, label]) => (
-            <div key={key} className="flex items-center justify-between">
-              <Label className="font-normal">{label}</Label>
-              <Switch checked={prefs.email[key]} onCheckedChange={() => toggleEmail(key)} />
-            </div>
-          ))}
-        </div>
-
-        <Button onClick={savePrefs} disabled={savingPrefs} className="w-full">
-          {savingPrefs ? 'Kaydediliyor...' : 'Tercihleri Kaydet'}
-        </Button>
-      </section>
-
-      <section className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-red-600 mb-2">Tehlikeli Alan</h2>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-4">Hesabınızı silerseniz tüm verileriniz kalıcı olarak silinir.</p>
-        <Button variant="destructive" onClick={handleDeleteAccount}>Hesabı Sil</Button>
-      </section>
-    </div>
+        {/* Tehlikeli Alan */}
+        <section className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 space-y-3">
+          <h2 className="text-base font-semibold text-destructive">Tehlikeli Alan</h2>
+          <p className="text-sm text-muted-foreground">Hesabınızı silerseniz tüm verileriniz kalıcı olarak silinir.</p>
+          <Button variant="destructive" onClick={handleDeleteAccount}>Hesabı Sil</Button>
+        </section>
+      </div>
     </UserPageShell>
   );
 }
