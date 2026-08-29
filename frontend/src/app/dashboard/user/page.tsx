@@ -504,8 +504,8 @@ export default function UserDashboardPage() {
           <TodayWorkoutWidget events={todayEvents} />
 
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
-            <StatCard loading={loadingProgress} title="Tamamlanan Seans" value={progress?.totalCompletedSessions ?? 0} hint="Son 30 gün içinde" />
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            <StatCard loading={loadingProgress} title="Tamamlanan Seans" value={progress?.totalCompletedSessions ?? 0} hint="Son 30 gün" />
             <StatCard loading={loadingProgress} title="Atanmış Program" value={progress?.assignedPrograms ?? 0} hint="Aktif" />
             <StatCard loading={false} title="Bildirim" value={unreadCount} hint="Okunmamış" />
           </div>
@@ -618,7 +618,9 @@ export default function UserDashboardPage() {
                 {progress.goalTracking.map((goal) => (
                   <Card key={goal.programId} className="rounded-2xl">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Program: {goal.programId}</CardTitle>
+                      <CardTitle className="text-base">
+                        {programs.find((p) => String(p.programId) === String(goal.programId))?.name || "Program"}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ProgressBar value={goal.progressPercentage} />
@@ -673,23 +675,21 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <Card className="rounded-2xl border-border/70 dark:border-zinc-800/70">
-      <CardContent className="py-4">
-        {loading ? (
-          <div className="space-y-2">
-            <div className="h-5 w-32 bg-zinc-200 dark:bg-primary/90 rounded" />
-            <div className="h-7 w-20 bg-zinc-200 dark:bg-primary/90 rounded" />
-            <div className="h-3 w-24 bg-zinc-200 dark:bg-primary/90 rounded" />
-          </div>
-        ) : (
-          <>
-            <div className="text-sm text-muted-foreground">{title}</div>
-            <div className="text-2xl font-bold mt-1">{value}</div>
-            {hint ? <div className="text-xs text-muted-foreground mt-1">{hint}</div> : null}
-          </>
-        )}
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl border bg-card p-4 space-y-1">
+      {loading ? (
+        <div className="space-y-1.5">
+          <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-700 rounded" />
+          <div className="h-6 w-12 bg-zinc-200 dark:bg-zinc-700 rounded" />
+          <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-700 rounded" />
+        </div>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{title}</p>
+          <div className="text-2xl font-bold tabular-nums leading-none">{value}</div>
+          {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+        </>
+      )}
+    </div>
   );
 }
 
