@@ -765,7 +765,7 @@ async function sub(formId, inputId, successId, e) {
   }
 
   let MAX_DEPTH = 10;
-  let GROWTH_SPEED_BASE = 0.018;
+  let GROWTH_SPEED_BASE = 0.022;
   const HOLD_DURATION = 420;
   const FADE_DURATION = 160;
   const WAIT_DURATION = 60;
@@ -851,8 +851,8 @@ async function sub(formId, inputId, successId, e) {
 
   function createTree() {
     allBranches=[];
-    const trunkLen = H*rand(0.26,0.30);
-    const trunkThick = Math.max(7, W*0.014);
+    const trunkLen = H*rand(0.29,0.34);
+    const trunkThick = Math.max(8, W*0.016);
     const approxTreeH = trunkLen*3.5;
     const baseY = H+trunkThick*0.5;
     allBranches.push({
