@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, TrendingUp, CalendarCheck,
-  AlertTriangle, CheckCircle2, Clock, ArrowRight,
+  CheckCircle2, Clock,
   Dumbbell, ChevronRight,
 } from "lucide-react";
 
@@ -128,76 +128,159 @@ export default function DashboardCoachPage() {
       <div className="hidden md:block"><SidebarNav unreadCount={unreadCount} /></div>
 
       <main className="ml-0 md:ml-16 w-full min-h-screen bg-background pb-20 md:pb-0">
-        <section className="max-w-6xl mx-auto px-4 py-8 md:py-10 space-y-6">
 
-          {/* ── Header ── */}
-          <div className="flex items-center justify-between">
-            <div>
-              {loadingProfile
-                ? <Skeleton className="h-8 w-48 mb-1" />
-                : <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-                    Merhaba, {capitalizeName(profile?.name?.split(" ")[0])} 👋
-                  </h1>
-              }
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {new Date().toLocaleDateString("tr-TR", { weekday:"long", day:"numeric", month:"long" })}
-              </p>
-            </div>
-            {profile && (
-              <div className="w-11 h-11 rounded-xl overflow-hidden border border-border shrink-0">
-                {profileUrl && profileUrl !== "/images/user.png" ? (
-                  <Image src={profileUrl} alt="Profil" width={44} height={44}
-                    className="w-full h-full object-cover" unoptimized />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
-                    <span className="text-primary-foreground text-sm font-bold select-none">
-                      {profile.name?.trim().split(/\s+/).map(w => w[0]).join("").slice(0,2).toUpperCase() || "K"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ── Analytics Stat Row ── */}
-          {!loadingStats && analytics && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Danışan", value: fmt(analytics.totalClients) },
-                { label: "Tamamlanan Seans", value: fmt(analytics.completedSessions) },
-                { label: "Yaklaşan Seans", value: fmt(analytics.upcomingSessions) },
-                { label: "Ort. Puan", value: analytics.avgRating ? analytics.avgRating.toFixed(1) : "—" },
-              ].map(({ label, value }) => (
-                <div key={label} className="rounded-2xl border bg-card p-4 space-y-1">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
-                  <p className="text-2xl font-bold tabular-nums leading-none">{value}</p>
+        {/* ── Hero Banner ── */}
+        <div className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary/8 via-background to-background">
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,hsl(var(--primary)/0.12),transparent)]" />
+          <div className="max-w-6xl mx-auto px-4 py-8 md:py-10">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {/* Avatar */}
+                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-border/60 shrink-0 shadow-sm">
+                  {profileUrl && profileUrl !== "/images/user.png" ? (
+                    <Image src={profileUrl} alt="Profil" width={56} height={56}
+                      className="w-full h-full object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
+                      <span className="text-primary-foreground text-lg font-bold select-none">
+                        {profile?.name?.trim().split(/\s+/).map(w => w[0]).join("").slice(0,2).toUpperCase() || "K"}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-          {loadingStats && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[1,2,3,4].map(i => <Skeleton key={i} className="h-[72px] rounded-2xl" />)}
-            </div>
-          )}
+                <div>
+                  {loadingProfile
+                    ? <Skeleton className="h-7 w-44 mb-1" />
+                    : <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">
+                        Merhaba, {capitalizeName(profile?.name?.split(" ")[0])} 👋
+                      </h1>
+                  }
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {new Date().toLocaleDateString("tr-TR", { weekday:"long", day:"numeric", month:"long" })}
+                  </p>
+                </div>
+              </div>
 
+              {/* Quick actions */}
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
+                <Link href="/dashboard/coach/programs/create">
+                  <Button size="sm" className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" />
+                    Yeni Program
+                  </Button>
+                </Link>
+                <Link href="/takvim">
+                  <Button size="sm" variant="outline" className="gap-1.5">
+                    <CalendarCheck className="h-3.5 w-3.5" />
+                    Takvim
+                  </Button>
+                </Link>
+                <Link href="/dashboard/coach/analytics">
+                  <Button size="sm" variant="outline" className="gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    Analitik
+                  </Button>
+                </Link>
+              </div>
+            </div>
 
-          {/* ── Main Grid ── */}
+            {/* Stat Row */}
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {loadingStats
+                ? [1,2,3,4].map(i => <Skeleton key={i} className="h-[68px] rounded-2xl" />)
+                : analytics
+                  ? [
+                      { label: "Danışan",           value: fmt(analytics.totalClients) },
+                      { label: "Tamamlanan Seans",  value: fmt(analytics.completedSessions) },
+                      { label: "Yaklaşan Seans",    value: fmt(analytics.upcomingSessions) },
+                      { label: "Ort. Puan",         value: analytics.avgRating ? analytics.avgRating.toFixed(1) : "—" },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="rounded-2xl border bg-card/80 backdrop-blur p-4 space-y-1">
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
+                        <p className="text-2xl font-bold tabular-nums leading-none">{value}</p>
+                      </div>
+                    ))
+                  : null
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* ── Body ── */}
+        <section className="max-w-6xl mx-auto px-4 py-6 md:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             {/* Left col (2/3) */}
             <div className="lg:col-span-2 space-y-6">
 
-              {/* Bekleyen istekler */}
+              {/* Mobile quick actions */}
+              <div className="sm:hidden grid grid-cols-3 gap-2">
+                {[
+                  { href: "/dashboard/coach/programs/create", label: "Yeni Program", Icon: Plus },
+                  { href: "/takvim", label: "Takvim", Icon: CalendarCheck },
+                  { href: "/dashboard/coach/analytics", label: "Analitik", Icon: TrendingUp },
+                ].map(({ href, label, Icon }) => (
+                  <Link key={href} href={href}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border bg-card text-center hover:bg-muted transition-colors">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <span className="text-xs font-medium">{label}</span>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Bekleyen randevular */}
               <Card className="rounded-2xl">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-amber-500" />
-                    <CardTitle className="text-base">Bekleyen Randevu İstekleri</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      <CardTitle className="text-base">Bekleyen Randevu İstekleri</CardTitle>
+                    </div>
+                    <Link href="/takvim" className="text-xs text-primary hover:underline">
+                      Takvime git →
+                    </Link>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <PendingBookings />
+                </CardContent>
+              </Card>
+
+              {/* Danışanlarım */}
+              <Card className="rounded-2xl">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Danışanlarım</CardTitle>
+                    <Link href="/dashboard/coach/clients" className="text-xs text-primary hover:underline">
+                      Tümünü gör →
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {loadingStats ? (
+                    <div className="space-y-2">{[1,2,3].map(i=><Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+                  ) : clients.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      <CheckCircle2 className="h-7 w-7 mx-auto mb-2 text-muted-foreground/40" />
+                      Henüz danışanın yok.
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {clients.slice(0, 6).map(c => (
+                        <Link key={c._id} href={`/dashboard/coach/clients/${c._id}`}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors group">
+                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-sm font-bold text-primary">
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{capitalizeName(c.name)}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{c.email}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -209,47 +292,6 @@ export default function DashboardCoachPage() {
               <Card className="rounded-2xl">
                 <CardContent className="p-4">
                   <BookingCalendar bookings={allConfirmed} loading={loadingStats} />
-                </CardContent>
-              </Card>
-
-              {/* Dikkat Gerektiriyor */}
-              <Card className="rounded-2xl">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-rose-500" />
-                    <CardTitle className="text-base">Dikkat Gerektiriyor</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {loadingStats ? (
-                    <div className="space-y-2">{[1,2,3].map(i=><Skeleton key={i} className="h-10 rounded-lg" />)}</div>
-                  ) : clients.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      <CheckCircle2 className="h-7 w-7 mx-auto mb-2 text-green-500 opacity-60" />
-                      Tüm danışanlar aktif görünüyor.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {clients.slice(0, 5).map(c => (
-                        <Link key={c._id} href={`/dashboard/coach/clients/${c._id}`}
-                          className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-muted transition-colors group">
-                          <div className="h-8 w-8 rounded-xl bg-rose-100 flex items-center justify-center shrink-0 text-xs font-bold text-rose-600">
-                            {c.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{capitalizeName(c.name)}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{c.email}</p>
-                          </div>
-                          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-                      ))}
-                      {clients.length > 5 && (
-                        <Link href="/dashboard/coach/clients" className="block text-center text-xs text-primary hover:underline pt-1">
-                          +{clients.length - 5} danışan daha
-                        </Link>
-                      )}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -265,25 +307,6 @@ export default function DashboardCoachPage() {
                   <CoachAvailability embedded />
                 </CardContent>
               </Card>
-
-              {/* Hızlı istatistik */}
-              {!loadingStats && analytics && (
-                <Card className="rounded-2xl bg-primary text-primary-foreground">
-                  <CardContent className="p-4 space-y-3">
-                    <p className="text-xs font-semibold opacity-70 uppercase tracking-wider">Yaklaşan</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Onaylı seans</span>
-                      <span className="text-xl font-black">{analytics.upcomingSessions}</span>
-                    </div>
-                    <div className="h-px bg-primary-foreground/20" />
-                    <Link href="/dashboard/coach/analytics"
-                      className="flex items-center justify-between text-sm opacity-80 hover:opacity-100 transition-opacity">
-                      <span>Tüm analitiği gör</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
         </section>
