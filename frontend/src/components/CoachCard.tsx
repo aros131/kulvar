@@ -133,7 +133,7 @@ export default function CoachCard({
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 relative shrink-0">
                   {!profilePicture || imgError ? (
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xl font-bold">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xl font-bold">
                       {initials}
                     </div>
                   ) : (
@@ -142,7 +142,7 @@ export default function CoachCard({
                       alt={`${name} profil fotoğrafı`}
                       fill
                       sizes="80px"
-                      className="rounded-full object-cover border-2 border-indigo-500"
+                      className="rounded-2xl object-cover border-2 border-indigo-500"
                       onError={() => setImgError(true)}
                       loading="lazy"
                     />

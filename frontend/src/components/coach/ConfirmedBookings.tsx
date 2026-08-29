@@ -68,7 +68,7 @@ export default function ConfirmedBookings() {
             <div className="text-sm">
               <div className="font-medium">{b?.userId?.name ?? "Kullanıcı"}</div>
               <div className="text-muted-foreground">
-                {DateTime.fromISO(b.startUtc).toFormat("dd LLL yyyy, HH:mm")} – {DateTime.fromISO(b.endUtc).toFormat("HH:mm")} ({b.meetingMode})
+                {DateTime.fromISO(b.startUtc).toFormat("dd LLL yyyy, HH:mm")} – {DateTime.fromISO(b.endUtc).toFormat("HH:mm")} ({b.meetingMode === "online" ? "Online" : "Yüz Yüze"})
               </div>
             </div>
             <Button

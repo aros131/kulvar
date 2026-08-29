@@ -31,7 +31,7 @@ export default function CoachesList({
     <ul className="divide-y rounded-md border bg-background">
       {items.map((c) => (
         <li key={c.id} className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl bg-muted overflow-hidden flex items-center justify-center">
             <img src={c.avatarUrl || "/images/user.png"} alt={c.name} className="h-full w-full object-cover" />
           </div>
 

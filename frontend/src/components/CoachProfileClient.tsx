@@ -602,7 +602,7 @@ export default function CoachProfileClient({
                 <CardContent className="pt-6 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-8 w-8 rounded-xl" />
                       <Skeleton className="h-4 w-32" />
                     </div>
                     <Skeleton className="h-4 w-10" />

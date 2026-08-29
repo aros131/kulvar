@@ -40,7 +40,7 @@ export default function WelcomeWidget() {
         alt={profile?.name || "Kullanıcı"}
         width={80}
         height={80}
-        className="rounded-full object-cover border-2 border-indigo-500"
+        className="rounded-2xl object-cover border-2 border-indigo-500"
       />
       <div>
         <h2 className="text-2xl font-bold text-foreground dark:text-white">

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import HalftoneBackground from "@/components/HalftoneBackground";
+import TreeBackground from "@/components/TreeBackground";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Footer from "@/components/Footer";
@@ -113,12 +113,12 @@ export default function HomePage() {
 
       {/* HERO */}
       <section id="hero" className="relative isolate min-h-[92dvh] overflow-hidden flex items-end pb-20 md:items-center md:pb-0">
-        <HalftoneBackground />
+        <TreeBackground />
 
         <div className="container mx-auto px-6 md:px-10">
           <div className="max-w-4xl">
-            <p className="hero-eyebrow inline-block mb-4 text-xs font-semibold tracking-[0.2em] text-primary uppercase">
-              PerSe Coaching
+            <p className="hero-eyebrow inline-block mb-4 text-xs font-semibold tracking-[0.2em] text-primary">
+              PERSE COACHING
             </p>
             <h1 className="hero-title text-6xl md:text-8xl font-black text-foreground leading-[0.95] tracking-tight">
               Başla,<br />bırakma.

@@ -57,7 +57,7 @@ export default function CoachProgramsPage() {
       const res = await fetch(`${API}/programs/${assigningId}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ clientIds: selectedClients }),
+        body: JSON.stringify({ userIds: selectedClients }),
       });
       if (!res.ok) throw new Error();
       toast.success('Danışanlar güncellendi.');

@@ -78,7 +78,7 @@ export async function createPending(req, res) {
 
     const { coachId, startUtc, endUtc, meetingMode, location, notes } = req.body || {};
     if (!coachId) return res.status(400).json({ message: "coachId is required" });
-    if (!["in_person", "zoom"].includes(meetingMode)) {
+    if (!["in_person", "online"].includes(meetingMode)) {
       return res.status(400).json({ message: "meetingMode invalid" });
     }
 

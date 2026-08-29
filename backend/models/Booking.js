@@ -8,7 +8,7 @@ const BookingSchema = new mongoose.Schema(
     startUtc:{ type: Date, required: true, index: true },
     endUtc:  { type: Date, required: true },
 
-    meetingMode: { type: String, enum: ["in_person", "zoom"], required: true },
+    meetingMode: { type: String, enum: ["in_person", "online"], required: true },
 
     // Pick one spelling and use it everywhere (BE + FE). Here I'll use American spelling:
     status: { type: String, enum: ["pending", "confirmed", "declined", "expired", "canceled", "completed"], default: "pending", index: true },

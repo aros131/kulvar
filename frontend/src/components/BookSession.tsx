@@ -66,7 +66,7 @@ export default function BookSession({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [daySlots, setDaySlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [meetingMode, setMeetingMode] = useState<"in_person" | "zoom" | null>(null);
+  const [meetingMode, setMeetingMode] = useState<"in_person" | "online" | null>(null);
   const [posting, setPosting] = useState(false);
 
   const localTz = useMemo(() => DateTime.local().zoneName, []);
@@ -284,10 +284,10 @@ export default function BookSession({
                     </Button>
                     <Button
                       size="sm"
-                      variant={meetingMode === "zoom" ? "default" : "outline"}
-                      onClick={() => setMeetingMode("zoom")}
+                      variant={meetingMode === "online" ? "default" : "outline"}
+                      onClick={() => setMeetingMode("online")}
                     >
-                      Zoom
+                      Online
                     </Button>
                   </div>
                   <DialogFooter className="pt-1">

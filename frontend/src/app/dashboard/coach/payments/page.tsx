@@ -129,6 +129,44 @@ export default function CoachPaymentsPage() {
         </form>
       )}
 
+      {(() => {
+        const now = new Date();
+        const weeks = Array.from({ length: 8 }, (_, i) => {
+          const end = new Date(now);
+          end.setDate(end.getDate() - i * 7);
+          const start = new Date(end);
+          start.setDate(start.getDate() - 6);
+          return { start, end, label: `H-${7 - i}` };
+        }).reverse();
+        const weeklyRevenue = weeks.map(({ start, end }) =>
+          invoices
+            .filter((inv) => inv.status === 'Paid')
+            .filter((inv) => {
+              const d = new Date(inv.createdAt);
+              return d >= start && d <= end;
+            })
+            .reduce((s, inv) => s + inv.amount, 0)
+        );
+        const maxRev = Math.max(...weeklyRevenue, 1);
+        return (
+          <div className="bg-card dark:bg-primary/90 border rounded-2xl p-6 space-y-3">
+            <h2 className="font-semibold text-sm">Haftalık Gelir (₺)</h2>
+            <div className="flex items-end gap-2 h-32">
+              {weeklyRevenue.map((rev, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">{rev > 0 ? `₺${rev}` : ''}</span>
+                  <div
+                    className="w-full rounded-t-md bg-indigo-500 dark:bg-indigo-400 transition-all"
+                    style={{ height: `${Math.max((rev / maxRev) * 96, rev > 0 ? 4 : 0)}px` }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">{weeks[i].label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {invoices.length === 0 ? (
         <p className="text-muted-foreground">Henüz fatura yok.</p>
       ) : (

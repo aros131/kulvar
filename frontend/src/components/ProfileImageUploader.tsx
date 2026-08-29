@@ -65,19 +65,19 @@ const ProfileImageUploader: React.FC<ProfileImageUploaderProps> = ({ onCropped }
       {!imageSrc ? (
         <div
           {...getRootProps()}
-          className="border border-dashed rounded-full w-40 h-40 flex items-center justify-center text-sm text-muted-foreground cursor-pointer bg-muted hover:bg-muted"
+          className="border border-dashed rounded-2xl w-full h-64 flex items-center justify-center text-sm text-muted-foreground cursor-pointer bg-muted hover:bg-muted"
         >
           <input {...getInputProps()} />
           Fotoğrafı sürükleyin veya tıklayın
         </div>
       ) : (
-        <div className="relative w-40 h-40 bg-border rounded-full overflow-hidden">
+        <div className="relative w-full h-64 bg-border rounded-2xl overflow-hidden">
           <Cropper
             image={imageSrc}
             crop={crop}
             zoom={zoom}
             aspect={1}
-            cropShape="round"
+            cropShape="rect"
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}

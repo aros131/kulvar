@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 import ProfileImageUploader from "@/components/ProfileImageUploader";
@@ -187,12 +188,22 @@ const CoachProfilePage: React.FC = () => {
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">Branş</label>
-                  <Input
-                    placeholder="örn. Fitness, Pilates, Crossfit"
+                  <label className="text-xs text-muted-foreground">Uzmanlık Alanı</label>
+                  <Select
                     value={editData?.specialization || ""}
-                    onChange={(e) => handleEditChange("specialization", e.target.value)}
-                  />
+                    onValueChange={(v) => handleEditChange("specialization", v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seçiniz…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Belirtilmemiş —</SelectItem>
+                      <SelectItem value="fitness">Fitness</SelectItem>
+                      <SelectItem value="yoga">Yoga</SelectItem>
+                      <SelectItem value="pilates">Pilates</SelectItem>
+                      <SelectItem value="beslenme">Beslenme</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-1.5">

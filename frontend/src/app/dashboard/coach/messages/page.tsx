@@ -14,8 +14,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import SidebarNavUser from "@/components/ui/SidebarNavUser";
-import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
+import CoachPageShell from "@/components/coach/CoachPageShell";
 import { ArrowRight } from "lucide-react";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
@@ -152,10 +151,11 @@ export default function UserMessagesPage() {
         const res = await fetch(url, { headers: authHeaders, cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
+          // /users/:id returns { user: {...}, programs: [...] }
+          const u = data?.user ?? data;
           return {
-            name: data?.name || data?.fullName || data?.username,
-            profilePicture:
-              data?.profilePicture || data?.avatar || data?.image || data?.photoURL || data?.photo,
+            name: u?.name || u?.fullName || u?.username,
+            profilePicture: u?.profilePicture || u?.avatar || u?.image || u?.photoURL || u?.photo,
           };
         }
       } catch {
@@ -246,6 +246,8 @@ export default function UserMessagesPage() {
     }
   };
 
+  const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
+
   const unreadTotal = useMemo(
     () => chats.reduce((sum, c) => sum + (c.unreadCount || 0), 0),
     [chats]
@@ -254,136 +256,115 @@ export default function UserMessagesPage() {
   // Loading / unauth states
   if (token === undefined || loading) {
     return (
-      <div className="relative flex">
-        <div className="hidden md:block">
-          <SidebarNavUser unreadCount={0} />
+      <CoachPageShell>
+        <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
+          <p className="text-center text-muted-foreground">Yükleniyor...</p>
         </div>
-        <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-          <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-            <p className="text-center text-muted-foreground">Yükleniyor...</p>
-          </div>
-        </main>
-        <MobileUserBottomNav />
-      </div>
+      </CoachPageShell>
     );
   }
 
   if (!token) {
     return (
-      <div className="relative flex">
-        <div className="hidden md:block">
-          <SidebarNavUser unreadCount={0} />
+      <CoachPageShell>
+        <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
+          <p className="text-center text-muted-foreground">Devam etmek için lütfen giriş yapın.</p>
         </div>
-        <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-          <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-            <p className="text-center text-muted-foreground">Devam etmek için lütfen giriş yapın.</p>
-          </div>
-        </main>
-        <MobileUserBottomNav />
-      </div>
+      </CoachPageShell>
     );
   }
 
   return (
-    <div className="relative flex">
-      {/* Sidebar on md+ only */}
-      <div className="hidden md:block">
-        <SidebarNavUser unreadCount={unreadTotal} />
-      </div>
-
-      {/* Content */}
-      <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-        <div className="mx-auto max-w-3xl px-4 md:px-6 py-6 md:py-8">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">📨 Mesajlar</h1>
-            <div className="flex gap-2">
-              <button
-                onClick={markAllAsRead}
-                className="text-sm text-muted-foreground hover:text-foreground transition"
-              >
-                Tümünü okundu yap
-              </button>
-              <Link
-                href="/dashboard/user/messages/start"
-                className="flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 px-3 py-2 rounded-md text-sm transition"
-              >
-                ➕ Yeni Mesaj <ArrowRight size={16} />
-              </Link>
-            </div>
+    <CoachPageShell unreadCount={unreadTotal}>
+      <div className="mx-auto max-w-3xl px-4 md:px-6 py-6 md:py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Mesajlar</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={markAllAsRead}
+              className="text-sm text-muted-foreground hover:text-foreground transition"
+            >
+              Tümünü okundu yap
+            </button>
+            <Link
+              href="/dashboard/coach/messages/start"
+              className="flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 px-3 py-2 rounded-md text-sm transition"
+            >
+              Yeni Mesaj <ArrowRight size={16} />
+            </Link>
           </div>
+        </div>
 
-          {/* Search */}
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Kullanıcı ara..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="w-full h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring border-border"
-            />
-          </div>
+        {/* Search */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Kullanıcı ara..."
+            value={searchTerm}
+            onChange={handleSearch}
+            className="w-full h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring border-border"
+          />
+        </div>
 
-          {/* List */}
-          {chats.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center">Hiç mesaj yok.</p>
-          ) : (
-            <ul className="space-y-3">
-              {chats.map((chat) => (
-                <li key={chat.id}>
-                  <Link
-                    href={`/dashboard/${user?.role || "user"}/messages/${chat.id}`}
-                    className="flex items-center gap-3 rounded-xl border border-border p-4 hover:bg-muted/50 transition"
-                  >
-                    {/* Avatar */}
-                    <div className="relative w-10 h-10 shrink-0">
-                      {chat.otherUserAvatar ? (
-                        <Image
-                          src={chat.otherUserAvatar}
-                          alt={chat.otherUserName || "profil"}
-                          fill
-                          sizes="40px"
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-foreground dark:text-zinc-100 flex items-center justify-center text-xs font-semibold">
-                          {initials(chat.otherUserName)}
-                        </div>
+        {/* List */}
+        {chats.length === 0 ? (
+          <p className="text-muted-foreground text-sm text-center">Hiç mesaj yok.</p>
+        ) : (
+          <ul className="space-y-3">
+            {chats.map((chat) => (
+              <li key={chat.id}>
+                <Link
+                  href={`/dashboard/coach/messages/${chat.id}`}
+                  className="flex items-center gap-3 rounded-xl border border-border p-4 hover:bg-muted/50 transition"
+                >
+                  {/* Avatar */}
+                  <div className="relative w-10 h-10 shrink-0">
+                    {chat.otherUserAvatar && /^https?:\/\//.test(chat.otherUserAvatar) && !imgErrors.has(chat.id) ? (
+                      <Image
+                        src={chat.otherUserAvatar}
+                        alt={chat.otherUserName || "profil"}
+                        fill
+                        sizes="40px"
+                        className="rounded-xl object-cover"
+                        unoptimized
+                        onError={() => setImgErrors(prev => new Set([...prev, chat.id]))}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-600 text-white flex items-center justify-center text-xs font-semibold">
+                        {initials(chat.otherUserName)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Texts */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground truncate">
+                        {chat.otherUserName}
+                      </span>
+                      {chat.unreadCount && chat.unreadCount > 0 && (
+                        <span className="ml-2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
+                          {chat.unreadCount}
+                        </span>
                       )}
                     </div>
-
-                    {/* Texts */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-foreground truncate">
-                          {chat.otherUserName}
-                        </span>
-                        {chat.unreadCount && chat.unreadCount > 0 && (
-                          <span className="ml-2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
-                            {chat.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {chat.lastMessage || "Henüz mesaj yok."}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {chat.updatedAt.toDate().toLocaleString("tr-TR", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
-                      </div>
+                    <div className="text-sm text-muted-foreground truncate">
+                      {chat.lastMessage || "Henüz mesaj yok."}
                     </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </main>
-
-      {/* Bottom nav on mobile */}
-      <MobileUserBottomNav />
-    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {chat.updatedAt.toDate().toLocaleString("tr-TR", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </CoachPageShell>
   );
 }
