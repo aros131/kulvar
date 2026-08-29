@@ -1,0 +1,1144 @@
+<title>Perse Coaching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:      #F0E9DF;
+  --bg2:     #E8DFD3;
+  --surface: #FDFAF6;
+  --border:  #D8D0C2;
+  --border2: #E4DCCE;
+  --text:    #0F0E1A;
+  --text2:   #5A5780;
+  --text3:   #9290B0;
+  --indigo:  #2D2880;
+  --indigom: #6561C8;
+  --terra:   #D4603A;
+  --terra-l: #E8937A;
+  --green:   #10b981;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: auto; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1240px; margin: 0 auto; padding: 0 40px;
+  height: 62px; display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 19px;
+  color: var(--text); text-decoration: none; letter-spacing: -.6px;
+}
+.logo em { color: var(--indigom); font-style: normal; }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-links a { font-size: 14px; color: var(--text2); text-decoration: none; transition: color .15s; }
+.nav-links a:hover { color: var(--text); }
+.nav-pill {
+  background: var(--text); color: #fff !important;
+  border-radius: 100px; padding: 8px 22px;
+  font-size: 14px; font-weight: 500;
+  transition: opacity .15s !important;
+}
+.nav-pill:hover { opacity: .82; }
+
+/* ── Hero ────────────────────────────────────────────────────────── */
+.hero-section {
+  position: relative; overflow: hidden;
+  min-height: calc(100svh - 62px);
+  background: var(--bg);
+  display: flex; flex-direction: column;
+}
+#tree-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.hero-body {
+  flex: 1;
+  max-width: 1240px; margin: 0 auto; width: 100%;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 48px;
+  align-items: center;
+  position: relative; z-index: 1;
+}
+.hero-text { padding: 72px 0; }
+
+/* App frame mockup */
+.app-frame {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 64px rgba(15,14,26,.10), 0 4px 16px rgba(15,14,26,.06);
+  background: #1a1a2e;
+}
+.frame-bar {
+  background: #1a1a2e;
+  padding: 10px 14px;
+  display: flex; gap: 6px; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.fdot { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.fd-r { background: #ff5f57; } .fd-y { background: #febc2e; } .fd-g { background: #28c840; }
+.dash-layout { display: flex; height: 300px; }
+.dash-sidebar {
+  width: 160px; background: #12112a; border-right: 1px solid rgba(255,255,255,.06);
+  padding: 16px 0; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px;
+}
+.sidebar-logo { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 14px; color: #fff; padding: 0 14px 14px; letter-spacing: -.3px; }
+.sidebar-logo span { color: var(--indigom); }
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; font-size: 12px; color: #6b7280;
+  border-radius: 0; cursor: default;
+}
+.nav-item.active { background: rgba(101,97,200,.15); color: #c4c0f0; }
+.nav-icon { width: 14px; height: 14px; flex-shrink: 0; }
+.dash-main { flex: 1; padding: 16px; background: #1a1a2e; overflow: hidden; }
+.dash-heading { font-size: 13px; font-weight: 600; color: #f9fafb; margin-bottom: 2px; }
+.dash-sub { font-size: 11px; color: #6b7280; margin-bottom: 12px; }
+.client-card {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 6px;
+}
+.c-avatar {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.c-info { flex: 1; min-width: 0; }
+.c-name { font-size: 12px; font-weight: 600; color: #f3f4f6; }
+.c-program { font-size: 10px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prog-wrap { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; margin-top: 5px; }
+.prog-fill { height: 100%; border-radius: 2px; }
+.c-right { text-align: right; flex-shrink: 0; }
+.c-pct { font-size: 12px; font-weight: 700; color: #f9fafb; font-variant-numeric: tabular-nums; }
+.c-badge { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 100px; margin-top: 2px; display: inline-block; }
+.badge-green { background: rgba(16,185,129,.15); color: #34d399; }
+.badge-blue { background: rgba(59,130,246,.15); color: #60a5fa; }
+.hero-eyebrow {
+  display: inline-block;
+  font-size: 11px; font-weight: 500; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--indigom);
+  margin-bottom: 28px;
+}
+.hero-h1 {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: clamp(56px, 7.5vw, 104px);
+  letter-spacing: -3px; line-height: 0.92;
+  color: var(--text); margin-bottom: 28px; text-wrap: balance;
+}
+.hero-sub {
+  font-size: 17px; color: var(--text2); line-height: 1.65;
+  max-width: 380px; margin-bottom: 40px; font-weight: 400;
+}
+.hero-form { display: flex; gap: 8px; max-width: 420px; }
+.hero-form input {
+  flex: 1; min-width: 0;
+  background: rgba(255,255,255,0.72); border: 1px solid var(--border);
+  color: var(--text); border-radius: 100px;
+  padding: 13px 22px; font-family: inherit; font-size: 14px;
+  outline: none; transition: border-color .15s;
+  backdrop-filter: blur(6px);
+}
+.hero-form input:focus { border-color: var(--indigom); }
+.hero-form input::placeholder { color: var(--text3); }
+.hero-form button {
+  background: var(--indigo); color: #fff; border: none;
+  border-radius: 100px; padding: 13px 26px;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: opacity .15s;
+}
+.hero-form button:hover { opacity: .85; }
+.hero-note { margin-top: 14px; font-size: 12px; color: var(--text3); }
+.hero-success {
+  display: none; align-items: center; gap: 8px;
+  font-size: 14px; color: var(--green); margin-top: 10px;
+}
+.hero-success.on { display: flex; }
+
+/* ── Marquee ─────────────────────────────────────────────────────── */
+.marquee-strip {
+  border-top: 1px solid var(--border);
+  overflow: hidden; padding: 14px 0;
+  background: var(--bg); position: relative; z-index: 1;
+}
+.marquee-track {
+  display: flex; white-space: nowrap;
+  animation: mq 32s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+.marquee-item {
+  display: inline-flex; align-items: center;
+  padding: 0 32px; gap: 32px;
+  font-size: 11px; font-weight: 500; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text3);
+}
+.marquee-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--terra-l); flex-shrink: 0; }
+@keyframes mq { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── Wrap / Section ──────────────────────────────────────────────── */
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 40px; }
+.section { padding: 100px 0; }
+.section-label {
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--indigom); font-weight: 500; margin-bottom: 20px;
+}
+.section-h2 {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: clamp(30px, 4vw, 52px); letter-spacing: -1.5px;
+  line-height: 1.0; color: var(--text); margin-bottom: 16px; text-wrap: balance;
+}
+.section-p { font-size: 16px; color: var(--text2); max-width: 460px; line-height: 1.7; }
+
+/* ── Pain grid ───────────────────────────────────────────────────── */
+.pains {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--border); border-radius: 20px;
+  overflow: hidden; margin-top: 56px;
+  background: var(--border);
+  gap: 1px;
+}
+.pain { background: var(--surface); padding: 36px 32px; }
+.pain-num {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: 42px; letter-spacing: -2px;
+  color: var(--indigo); opacity: .10; margin-bottom: 20px; line-height: 1;
+}
+.pain h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
+.pain p { font-size: 13px; color: var(--text2); line-height: 1.7; }
+
+/* ── Feature rows ────────────────────────────────────────────────── */
+.feat-block { border-top: 1px solid var(--border); padding-top: 80px; }
+.feat-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 80px; align-items: center; padding-bottom: 80px;
+}
+.feat-row + .feat-row { border-top: 1px solid var(--border); padding-top: 80px; }
+.feat-row.flip { direction: rtl; }
+.feat-row.flip > * { direction: ltr; }
+.feat-h3 {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: clamp(22px, 2.8vw, 34px); letter-spacing: -.8px;
+  margin-bottom: 14px; line-height: 1.05;
+}
+.feat-p { font-size: 15px; color: var(--text2); line-height: 1.7; }
+.feat-list { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.feat-list li {
+  list-style: none; display: flex; align-items: center;
+  gap: 10px; font-size: 14px; color: var(--text2);
+}
+.feat-list li::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--terra); flex-shrink: 0;
+}
+/* Mockup frames */
+.mock {
+  border: 1px solid var(--border); border-radius: 16px;
+  overflow: hidden; background: var(--surface);
+  box-shadow: 0 12px 48px rgba(15,14,26,.06);
+}
+.mock-top {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mock-ttl { font-size: 13px; font-weight: 600; color: var(--text); }
+.mock-sub { font-size: 11px; color: var(--text3); }
+.mock-nav { display: flex; gap: 4px; }
+.mock-nav-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.cal-ev {
+  margin: 12px; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--bg); overflow: hidden;
+}
+.cal-ev-head {
+  padding: 14px 16px; border-bottom: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cal-ico {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: #eff6ff; display: flex; align-items: center; justify-content: center;
+}
+.ev-name { font-size: 13px; font-weight: 600; }
+.ev-time { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.ev-badge { background: #eff6ff; color: #1d4ed8; font-size: 11px; padding: 3px 9px; border-radius: 100px; font-weight: 500; }
+.ex-list { padding: 10px 16px; }
+.ex-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0; border-bottom: 1px dashed var(--border2); font-size: 12px;
+}
+.ex-row:last-child { border-bottom: none; }
+.ex-n { font-weight: 500; }
+.ex-d { color: var(--text3); font-variant-numeric: tabular-nums; }
+.mock-done {
+  margin: 0 12px 12px; width: calc(100% - 24px);
+  background: var(--indigo); color: #fff; border: none; border-radius: 8px;
+  padding: 10px; font-family: inherit; font-size: 13px; font-weight: 500;
+  text-align: center;
+}
+/* pay mock */
+.pay-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--border2);
+}
+.pay-row:last-child { border-bottom: none; }
+.pay-desc { font-size: 13px; font-weight: 500; }
+.pay-client { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.pay-amt { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.tag-paid { background: #d1fae5; color: #065f46; font-size: 10px; padding: 2px 8px; border-radius: 100px; display: inline-block; margin-top: 3px; }
+.tag-pend { background: #fef9c3; color: #854d0e; font-size: 10px; padding: 2px 8px; border-radius: 100px; display: inline-block; margin-top: 3px; }
+.mock-action { background: var(--indigo); color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 12px; font-weight: 500; }
+
+/* ── Steps ───────────────────────────────────────────────────────── */
+.steps-wrap {
+  position: relative; overflow: hidden; border-radius: 24px;
+  border: 1px solid var(--border); margin-top: 56px;
+}
+.steps-wrap > .mesh-bg { border-radius: 24px; }
+.mesh-bg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 0; border-radius: inherit;
+}
+.steps-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  position: relative; z-index: 1;
+}
+.step {
+  padding: 40px 36px;
+  border-right: 1px solid rgba(49,44,143,.12);
+  background: rgba(253,250,246,.85); backdrop-filter: blur(4px);
+}
+.step:last-child { border-right: none; }
+.step-num {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: 12px; letter-spacing: .08em; color: var(--indigom);
+  margin-bottom: 20px;
+}
+.step-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+.step-body { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+/* ── CTA ─────────────────────────────────────────────────────────── */
+.cta-outer { padding: 0 0 96px; }
+.cta-wrap {
+  background: var(--text); border-radius: 24px;
+  padding: 88px 64px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.cta-inner { position: relative; z-index: 1; }
+.cta-eyebrow { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: rgba(160,155,200,.7); font-weight: 500; margin-bottom: 20px; }
+.cta-wrap h2 {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: clamp(30px, 5vw, 56px); letter-spacing: -1.5px;
+  color: #fff; margin-bottom: 12px; text-wrap: balance;
+}
+.cta-wrap p { font-size: 16px; color: rgba(160,155,200,.7); margin-bottom: 36px; }
+.cta-form { display: flex; gap: 8px; max-width: 380px; margin: 0 auto; }
+.cta-form input {
+  flex: 1; min-width: 0;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  color: #f9fafb; border-radius: 100px; padding: 13px 22px;
+  font-family: inherit; font-size: 14px; outline: none; transition: border-color .15s;
+}
+.cta-form input:focus { border-color: rgba(101,97,200,.7); }
+.cta-form input::placeholder { color: rgba(255,255,255,.28); }
+.cta-form button {
+  background: var(--indigom); color: #fff; border: none;
+  border-radius: 100px; padding: 13px 26px;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; flex-shrink: 0; transition: opacity .15s;
+}
+.cta-form button:hover { opacity: .88; }
+.cta-success {
+  display: none; align-items: center; justify-content: center;
+  gap: 8px; color: #34d399; font-size: 14px; font-weight: 500; margin-top: 20px;
+}
+.cta-success.on { display: flex; }
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+footer { border-top: 1px solid var(--border); padding: 28px 40px; }
+.footer-inner {
+  max-width: 1240px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+}
+.footer-inner span { font-size: 13px; color: var(--text3); }
+.footer-logo { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 16px; color: var(--text); letter-spacing: -.4px; }
+.footer-logo em { color: var(--indigom); font-style: normal; }
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  /* Nav */
+  .nav-inner { padding: 0 20px; }
+  .nav-links a:not(:last-child) { display: none; }
+
+  /* Hero */
+  .hero-section { min-height: auto; }
+  .hero-body {
+    padding: 40px 20px 48px;
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .hero-text { padding: 0; }
+  .hero-h1 { font-size: clamp(42px, 11vw, 62px); letter-spacing: -2px; }
+  .hero-sub { max-width: 100%; font-size: 16px; }
+  .hero-form { flex-direction: column; gap: 10px; }
+  .hero-form input,
+  .hero-form button { width: 100%; text-align: center; }
+
+  /* App frame */
+  .app-frame { margin-bottom: 0; }
+  .dash-sidebar { display: none; }
+  .dash-layout { height: 230px; }
+
+  /* General */
+  .wrap { padding: 0 20px; }
+  .section { padding: 64px 0; }
+  .section-h2 { font-size: clamp(26px, 8vw, 40px); }
+
+  /* Pain grid */
+  .pains { grid-template-columns: 1fr; }
+
+  /* Feature rows */
+  .feat-row { grid-template-columns: 1fr; gap: 36px; direction: ltr !important; }
+  .feat-row + .feat-row { padding-top: 48px; }
+  .feat-row { padding-bottom: 48px; }
+
+  /* Steps */
+  .steps-grid { grid-template-columns: 1fr; }
+  .step { border-right: none; border-bottom: 1px solid rgba(49,44,143,.12); }
+  .step:last-child { border-bottom: none; }
+
+  /* CTA */
+  .cta-wrap { padding: 48px 24px; border-radius: 20px; }
+  .cta-h2 { font-size: clamp(28px, 8vw, 44px); }
+  .cta-form { flex-direction: column; gap: 10px; }
+  .cta-form input,
+  .cta-form button { width: 100%; text-align: center; }
+
+  footer { padding: 24px 20px; }
+  .footer-inner { flex-direction: column; align-items: flex-start; gap: 4px; }
+
+  /* Marquee */
+  .marquee-item { padding: 0 20px; gap: 20px; }
+}
+</style>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="#">Perse<em>.</em></a>
+    <div class="nav-links">
+      <a href="#" onclick="event.preventDefault();document.getElementById('ozellikler').scrollIntoView({behavior:'smooth'})">Özellikler</a>
+      <a href="#" onclick="event.preventDefault();document.getElementById('nasil-calisir').scrollIntoView({behavior:'smooth'})">Nasıl Çalışır</a>
+      <a href="#" class="nav-pill" onclick="event.preventDefault();document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Erken Erişim</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-section">
+  <canvas id="tree-canvas"></canvas>
+  <div class="hero-body">
+    <div class="hero-text">
+      <span class="hero-eyebrow">Perse Coaching</span>
+      <h1 class="hero-h1">Tüm<br>danışanların.<br>Tek platform.</h1>
+      <p class="hero-sub">Program yönetiminden ödemelere, antrenman takibinden danışan analitiğine kadar hepsini tek yerden yönet.</p>
+      <form class="hero-form" id="hf" onsubmit="sub('hf','he','hs',event)">
+        <input type="email" placeholder="koç@email.com" id="he" required>
+        <button type="submit" id="hb">Listeye Katıl</button>
+      </form>
+      <div class="hero-success" id="hs">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#10b981" stroke-width="1.5"/><path d="M5 8.5l2.5 2.5 4-5" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Listeye eklendiniz!
+      </div>
+      <p class="hero-note">Ücretsiz &middot; Kredi kartı gerekmez</p>
+    </div>
+    <div class="app-frame">
+      <div class="frame-bar">
+        <span class="fdot fd-r"></span>
+        <span class="fdot fd-y"></span>
+        <span class="fdot fd-g"></span>
+      </div>
+      <div class="dash-layout">
+        <div class="dash-sidebar">
+          <div class="sidebar-logo">Perse<span>.</span></div>
+          <div class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#c4c0f0" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+            Panel
+          </div>
+          <div class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 2v4M10 2v4"/></svg>
+            Programlar
+          </div>
+          <div class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#6b7280" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+            Danışanlar
+          </div>
+          <div class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="1" y="4" width="14" height="10" rx="2"/><path d="M1 8h14M5 4V2M11 4V2"/></svg>
+            Ödemeler
+          </div>
+        </div>
+        <div class="dash-main">
+          <div class="dash-heading">Danışanlarım</div>
+          <div class="dash-sub">3 aktif danışan</div>
+          <div class="client-card">
+            <div class="c-avatar" style="background:#3b82f6">AK</div>
+            <div class="c-info">
+              <div class="c-name">Ahmet Kara</div>
+              <div class="c-program">Güç &amp; Kondisyon</div>
+              <div class="prog-wrap"><div class="prog-fill" style="width:78%;background:#3b82f6"></div></div>
+            </div>
+            <div class="c-right"><div class="c-pct">78%</div><div class="c-badge badge-green">Aktif</div></div>
+          </div>
+          <div class="client-card">
+            <div class="c-avatar" style="background:#7c3aed">MS</div>
+            <div class="c-info">
+              <div class="c-name">Merve Şahin</div>
+              <div class="c-program">12 Haftalık Program</div>
+              <div class="prog-wrap"><div class="prog-fill" style="width:45%;background:#7c3aed"></div></div>
+            </div>
+            <div class="c-right"><div class="c-pct">45%</div><div class="c-badge badge-blue">Devam</div></div>
+          </div>
+          <div class="client-card">
+            <div class="c-avatar" style="background:#10b981">EC</div>
+            <div class="c-info">
+              <div class="c-name">Ece Çelik</div>
+              <div class="c-program">Fonksiyonel Antrenman</div>
+              <div class="prog-wrap"><div class="prog-fill" style="width:92%;background:#10b981"></div></div>
+            </div>
+            <div class="c-right"><div class="c-pct">92%</div><div class="c-badge badge-green">Aktif</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="marquee-strip">
+    <div class="marquee-track" id="mt"></div>
+  </div>
+</section>
+
+<hr style="border:none;border-top:1px solid var(--border)">
+
+<!-- PAIN POINTS -->
+<section class="section">
+  <div class="wrap">
+    <p class="section-label">Neden Perse</p>
+    <h2 class="section-h2">Koçluk zaten<br>yeterince zor.</h2>
+    <p class="section-p">Araçların daha da zorlaştırmasına gerek yok. Zamanını yönetime değil danışana harcaman için tasarlandı.</p>
+    <div class="pains">
+      <div class="pain">
+        <div class="pain-num">01</div>
+        <h3>WhatsApp'ta kaybolan programlar</h3>
+        <p>Gönderdiğin program mesajları diğer konuşmaların arasında kayboluyor, danışan ne yapacağını bulamıyor.</p>
+      </div>
+      <div class="pain">
+        <div class="pain-num">02</div>
+        <h3>Elle tutulan ilerleme takibi</h3>
+        <p>Her danışan için ayrı dosya, her hafta elle güncelleme. Kim nerede, kim geride kaldı görmek dakikalar alıyor.</p>
+      </div>
+      <div class="pain">
+        <div class="pain-num">03</div>
+        <h3>Manuel ödeme takibi</h3>
+        <p>Kim ödedi, kim ödemedi — her ay ayrı not, hatırlatma mesajı. Koçluktan çok muhasebe yapıyorsun.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="ozellikler" style="padding-top:0">
+  <div class="wrap">
+    <p class="section-label">Özellikler</p>
+    <h2 class="section-h2">Bir platform,<br>her şey dahil.</h2>
+    <div class="feat-block">
+
+      <!-- Feature 1 -->
+      <div class="feat-row">
+        <div>
+          <p class="section-label">Takvim &amp; Takip</p>
+          <h3 class="feat-h3">Danışanın her antrenmandan haberdar.</h3>
+          <p class="feat-p">Programı takvime aktar, danışan tamamladığında bildirim al. Kim hangi günü atladı, kim düzenli çalışıyor tek bakışta.</p>
+          <ul class="feat-list">
+            <li>Otomatik takvim entegrasyonu</li>
+            <li>Antrenman tamamlandığında anlık bildirim</li>
+            <li>Egzersiz detayları ve koç notları</li>
+          </ul>
+        </div>
+        <div class="mock">
+          <div class="mock-top">
+            <div>
+              <div class="mock-ttl">Pazartesi, 25 Ağustos 2026</div>
+              <div class="mock-sub">Bugün</div>
+            </div>
+            <div class="mock-nav">
+              <div class="mock-nav-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2.5L4.5 6l3 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+              <div class="mock-nav-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L7.5 6l-3 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+            </div>
+          </div>
+          <div class="cal-ev">
+            <div class="cal-ev-head">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="cal-ico"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h3m0 0V5.5M6 9v3.5M9 9h3m0 0V5.5M12 9v3.5M15 9h-3" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+                <div>
+                  <div class="ev-name">Üst Vücut Gücü</div>
+                  <div class="ev-time">18:00 – 19:00</div>
+                </div>
+              </div>
+              <span class="ev-badge">Planlı</span>
+            </div>
+            <div class="ex-list">
+              <div class="ex-row"><span class="ex-n">Bench Press</span><span class="ex-d">4×8 · 80kg · 90sn</span></div>
+              <div class="ex-row"><span class="ex-n">Shoulder Press</span><span class="ex-d">3×10 · 50kg · 60sn</span></div>
+              <div class="ex-row"><span class="ex-n">Pull-up</span><span class="ex-d">4×6 · vücut ağırlığı</span></div>
+            </div>
+            <div class="mock-done">Tamamlandı Olarak İşaretle</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feat-row flip">
+        <div>
+          <p class="section-label">Ödeme Sistemi</p>
+          <h3 class="feat-h3">Fatura oluştur, online tahsil et.</h3>
+          <p class="feat-p">Danışanına fatura gönder, kredi kartıyla ödesin. Bekleyen ve tamamlanan ödemeleri tek ekranda takip et.</p>
+          <ul class="feat-list">
+            <li>Online kredi kartı ödemeleri</li>
+            <li>Taksit seçenekleri</li>
+            <li>Ödeme bildirim sistemi</li>
+          </ul>
+        </div>
+        <div class="mock">
+          <div class="mock-top">
+            <div class="mock-ttl">Ödemeler</div>
+            <button class="mock-action">+ Fatura Oluştur</button>
+          </div>
+          <div class="pay-row">
+            <div><div class="pay-desc">Aylık Koçluk Paketi</div><div class="pay-client">Ahmet Kara</div></div>
+            <div class="pay-amt">₺2.500<div class="tag-paid">Ödendi</div></div>
+          </div>
+          <div class="pay-row">
+            <div><div class="pay-desc">12 Haftalık Program</div><div class="pay-client">Merve Şahin</div></div>
+            <div class="pay-amt">₺1.800<div class="tag-pend">Bekliyor</div></div>
+          </div>
+          <div class="pay-row">
+            <div><div class="pay-desc">Aylık Koçluk Paketi</div><div class="pay-client">Ece Çelik</div></div>
+            <div class="pay-amt">₺2.500<div class="tag-paid">Ödendi</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="nasil-calisir">
+  <div class="wrap">
+    <p class="section-label">Nasıl Çalışır</p>
+    <h2 class="section-h2" style="max-width:380px">Üç adımda başla.</h2>
+    <div class="steps-wrap">
+      <canvas class="mesh-bg" id="mesh-steps"></canvas>
+      <div class="steps-grid">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-title">Programını oluştur</div>
+          <div class="step-body">Danışanına özel haftalık antrenman programı oluştur, egzersizleri ve setleri belirle.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-title">Danışanını ekle</div>
+          <div class="step-body">Danışanını platforma davet et, programı ata. Takvime otomatik eklenir, bildirim gider.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-title">Takibi bize bırak</div>
+          <div class="step-body">İlerlemeyi gerçek zamanlı izle, antrenman tamamlandığında haber al. Koçluğuna odaklan.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="wrap cta-outer" id="waitlist">
+  <div class="cta-wrap">
+    <canvas class="mesh-bg" id="mesh-cta"></canvas>
+    <div class="cta-inner">
+      <div class="cta-eyebrow">Erken Erişim</div>
+      <h2>Erken erişime<br>hazır mısın?</h2>
+      <p>Bekleme listesine katıl, beta'da ilk sen dene.</p>
+      <form class="cta-form" id="cf" onsubmit="sub('cf','ce','cs',event)">
+        <input type="email" placeholder="koç@email.com" id="ce" required>
+        <button type="submit" id="cb">Katıl</button>
+      </form>
+      <div class="cta-success" id="cs">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#34d399" stroke-width="1.5"/><path d="M5.5 9.5l3 3 5-6" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Harika! Listeye eklendiniz.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-logo">Perse<em>.</em></span>
+    <span>© 2026 Perse Coaching · İstanbul, Türkiye</span>
+    <span><a href="mailto:hello@persecoaching.com" style="color:var(--text3);text-decoration:none">hello@persecoaching.com</a></span>
+  </div>
+</footer>
+
+<script>
+history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
+// ── Form submission ───────────────────────────────────────────────────────
+async function sub(formId, inputId, successId, e) {
+  e.preventDefault();
+  const email = document.getElementById(inputId).value.trim();
+  if (!email) return;
+  const btn = document.getElementById(formId).querySelector('button');
+  const orig = btn.textContent;
+  btn.textContent = 'Ekleniyor…'; btn.disabled = true;
+  try {
+    const res = await fetch('https://formspree.io/f/mppzzykv', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (res.ok) {
+      document.getElementById(formId).style.display = 'none';
+      document.getElementById(successId).classList.add('on');
+    } else throw new Error();
+  } catch {
+    btn.textContent = 'Hata oluştu, tekrar dene'; btn.disabled = false;
+    setTimeout(() => { btn.textContent = orig; }, 3000);
+  }
+}
+
+// ── Marquee ───────────────────────────────────────────────────────────────
+(function() {
+  const items = ['Program Yönetimi','İlerleme Grafikleri','Antrenman Takibi','Koç Değerlendirme','Akıllı Bildirimler','Online Ödemeler','Danışan Analitik','Randevu Yönetimi','Anlık Mesajlaşma'];
+  const track = document.getElementById('mt');
+  const repeated = [...items, ...items, ...items, ...items];
+  track.innerHTML = repeated.map(t =>
+    `<span class="marquee-item">${t}<span class="marquee-dot"></span></span>`
+  ).join('');
+})();
+
+// ── Generative branching tree (hero) ─────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('tree-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H;
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function rand(lo, hi) { return Math.random() * (hi - lo) + lo; }
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  function smoothstep(a, b, t) {
+    t = Math.max(0, Math.min(1, (t - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  }
+
+  let MAX_DEPTH = 10;
+  let GROWTH_SPEED_BASE = 0.006;
+  const HOLD_DURATION = 420;
+  const FADE_DURATION = 160;
+  const WAIT_DURATION = 60;
+
+  // Particle sprite
+  let particleSprite;
+  function initParticleSprite() {
+    particleSprite = document.createElement('canvas');
+    particleSprite.width = 32; particleSprite.height = 32;
+    const pctx = particleSprite.getContext('2d');
+    const g = pctx.createRadialGradient(16,16,0,16,16,16);
+    g.addColorStop(0, 'rgba(45,40,128,0.5)');
+    g.addColorStop(0.4, 'rgba(100,90,180,0.2)');
+    g.addColorStop(1, 'rgba(45,40,128,0)');
+    pctx.fillStyle = g;
+    pctx.fillRect(0,0,32,32);
+  }
+
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+    initParticleSprite();
+  }
+  window.addEventListener('resize', () => { resize(); createTree(); });
+
+  // Particles
+  const PARTICLE_COUNT = 30;
+  let particles = [];
+  function createParticle(fullRandom) {
+    return {
+      x: rand(W*0.15, W*0.85), y: fullRandom ? rand(H*0.1, H*0.9) : rand(H*0.5, H),
+      vx: rand(-0.10,0.10), vy: rand(-0.28,-0.05),
+      size: rand(0.5,1.8), alpha: rand(0.02,0.10),
+      phase: rand(0,Math.PI*2), freq: rand(0.0004,0.0015),
+      life: fullRandom ? rand(0,1) : 0, lifeSpeed: rand(0.0006,0.002),
+    };
+  }
+  function initParticles() { particles = []; for(let i=0;i<PARTICLE_COUNT;i++) particles.push(createParticle(true)); }
+  function updateParticles(time) {
+    for(let i=0;i<particles.length;i++) {
+      const p=particles[i];
+      p.x += p.vx + Math.sin(time*p.freq+p.phase)*0.2;
+      p.y += p.vy; p.life += p.lifeSpeed;
+      if(p.life>1||p.y<-10||p.x<-10||p.x>W+10) particles[i]=createParticle(false);
+    }
+  }
+  function drawParticles(globalAlpha) {
+    for(const p of particles) {
+      const lf = p.life<0.15?p.life/0.15:p.life>0.8?(1-p.life)/0.2:1;
+      const a = p.alpha*lf*globalAlpha;
+      if(a<0.003) continue;
+      const s=p.size*3;
+      ctx.globalAlpha=a;
+      ctx.drawImage(particleSprite,p.x-s,p.y-s,s*2,s*2);
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // Color: deep indigo → lavender → terracotta
+  const PALETTE = [
+    {r:45, g:40, b:128},
+    {r:82, g:76, b:175},
+    {r:120,g:110,b:200},
+    {r:172,g:110,b:140},
+    {r:205,g:105,b:78},
+    {r:212,g:96, b:58},
+  ];
+  function colorForDepth(depth, hueShift) {
+    const t = depth/MAX_DEPTH;
+    const idx = t*(PALETTE.length-1);
+    const i0 = Math.floor(idx);
+    const i1 = Math.min(PALETTE.length-1, i0+1);
+    const f = idx-i0;
+    let r=lerp(PALETTE[i0].r,PALETTE[i1].r,f);
+    let g=lerp(PALETTE[i0].g,PALETTE[i1].g,f);
+    let b=lerp(PALETTE[i0].b,PALETTE[i1].b,f);
+    if(hueShift) { const s=t*t*18; r+=hueShift*s; g-=hueShift*s*0.4; }
+    return {r,g,b};
+  }
+
+  let allBranches=[], treeAlpha=1, treeState='growing', holdTimer=0, fadeTimer=0, waitTimer=0;
+  var mouseActive=false, windForce=0, shakeAmount=0;
+
+  function createTree() {
+    allBranches=[];
+    const trunkLen = H*rand(0.22,0.27);
+    const trunkThick = Math.max(7, W*0.013);
+    const approxTreeH = trunkLen*3.5;
+    const baseY = H+trunkThick*0.5;
+    allBranches.push({
+      x0: W*0.5+rand(-W*0.02,W*0.02), y0: baseY,
+      angle: -Math.PI/2+rand(-0.04,0.04),
+      length: trunkLen, thickness: trunkThick, depth: 0,
+      growthProgress: 0, growthSpeed: GROWTH_SPEED_BASE*rand(0.9,1.1),
+      children: [], spawned: false,
+      swayPhase: rand(0,Math.PI*2), swayAmp: 0.0007, curvature: rand(-0.012,0.012),
+      hueShift: 0, parent: null,
+      strokeSeeds: [rand(-1,1),rand(-1,1),rand(-1,1),rand(-1,1),rand(-1,1)],
+      tipDots: [],
+    });
+    treeState='growing'; holdTimer=fadeTimer=waitTimer=0; treeAlpha=1;
+    initParticles();
+  }
+
+  function spawnChildren(parent) {
+    if(parent.depth>=MAX_DEPTH) return;
+    let numChildren = parent.depth<1?2+(Math.random()<0.35?1:0):parent.depth<3?2+(Math.random()<0.4?1:0):Math.random()<0.25?3:2;
+    const pruneChance = parent.depth<=3?0:parent.depth<=5?0.1:parent.depth<=7?0.22:0.35;
+    if(Math.random()<pruneChance) numChildren=Math.max(1,numChildren-1);
+    const spread = parent.depth<2?rand(0.32,0.48):rand(0.38,0.6);
+    for(let i=0;i<numChildren;i++) {
+      let ao = numChildren===1?rand(-0.25,0.25):numChildren===2?(i===0?-1:1)*rand(0.18,spread):(i-1)*spread+rand(-0.1,0.1);
+      const childDepth=parent.depth+1;
+      const tipDots=[];
+      if(childDepth>=MAX_DEPTH) { const cnt=Math.random()<0.4?2:1; for(let d=0;d<cnt;d++) tipDots.push({ox:rand(-2,2),oy:rand(-2,2),size:rand(0.8,1.6),alpha:rand(0.06,0.16)}); }
+      const ep=getBranchEnd(parent,1,0);
+      const child={
+        x0:ep.x, y0:ep.y, angle:parent.angle+ao,
+        length:parent.length*rand(0.60,0.74), thickness:Math.max(0.4,parent.thickness*rand(0.48,0.67)),
+        depth:childDepth, growthProgress:0, growthSpeed:GROWTH_SPEED_BASE*rand(1.0,1.5)*(1+parent.depth*0.1),
+        children:[], spawned:false,
+        swayPhase:rand(0,Math.PI*2), swayAmp:0.0016*(parent.depth+1)*rand(0.7,1.3),
+        curvature:rand(-0.04,0.04)*(1+parent.depth*0.12),
+        hueShift:Math.max(-1,Math.min(1,parent.hueShift+rand(-0.3,0.3))),
+        parent, strokeSeeds:[rand(-1,1),rand(-1,1),rand(-1,1),rand(-1,1),rand(-1,1)], tipDots,
+      };
+      parent.children.push(child); allBranches.push(child);
+    }
+  }
+
+  function getSwayAngle(branch, time) {
+    let total=0, b=branch, depth=0;
+    while(b) {
+      const a=b.swayAmp;
+      total+=Math.sin(time*0.0005+b.swayPhase)*a;
+      total+=Math.sin(time*0.0003+b.swayPhase*1.7)*a*0.6;
+      total+=Math.sin(time*0.00012+b.swayPhase*0.4)*a*0.35;
+      depth++; b=b.parent;
+    }
+    if(mouseActive) total+=windForce*0.035*depth;
+    if(shakeAmount>0.01) total+=Math.sin(time*0.015+branch.swayPhase*3)*shakeAmount*0.05*depth;
+    return total;
+  }
+  function getBranchEnd(branch, progress, time) {
+    const sway=getSwayAngle(branch,time), angle=branch.angle+sway;
+    const len=branch.length*progress;
+    const perpX=-Math.sin(angle), perpY=Math.cos(angle), curveOff=branch.curvature*len;
+    return {x:branch.x0+Math.cos(angle)*len+perpX*curveOff, y:branch.y0+Math.sin(angle)*len+perpY*curveOff};
+  }
+  function recalcPositions(time) {
+    for(const b of allBranches) if(b.parent) { const pe=getBranchEnd(b.parent,1,time); b.x0=pe.x; b.y0=pe.y; }
+  }
+  function updateBranches(time) {
+    let allDone=true;
+    for(const b of allBranches) {
+      if(b.growthProgress<1) { b.growthProgress=Math.min(1,b.growthProgress+b.growthSpeed); allDone=false; }
+      if(b.growthProgress>=0.65&&!b.spawned) { b.spawned=true; spawnChildren(b); }
+    }
+    return allDone;
+  }
+
+  function drawBranch(b, time) {
+    if(b.growthProgress<=0) return;
+    const sway=getSwayAngle(b,time), angle=b.angle+sway;
+    const progress=easeOutCubic(b.growthProgress), len=b.length*progress;
+    const x1=b.x0, y1=b.y0;
+    const perpX=-Math.sin(angle), perpY=Math.cos(angle);
+    const curveOff=b.curvature*len*1.4;
+    const cpx1=x1+Math.cos(angle)*len*0.33+perpX*curveOff*0.4;
+    const cpy1=y1+Math.sin(angle)*len*0.33+perpY*curveOff*0.4;
+    const cpx2=x1+Math.cos(angle)*len*0.66+perpX*curveOff*0.85;
+    const cpy2=y1+Math.sin(angle)*len*0.66+perpY*curveOff*0.85;
+    const x2=x1+Math.cos(angle)*len+perpX*curveOff*0.7;
+    const y2=y1+Math.sin(angle)*len+perpY*curveOff*0.7;
+    const col=colorForDepth(b.depth,b.hueShift);
+    const depthT=b.depth/MAX_DEPTH;
+    const baseAlpha = b.depth<=1?0.75:b.depth<=5?lerp(0.72,0.52,depthT):lerp(0.52,0.26,(depthT-0.5)*2);
+    const strokeCount=b.depth<3?5:b.depth<6?3:2;
+    const thickBase=b.thickness, thickTaper=lerp(thickBase,thickBase*0.3,progress);
+    for(let s=0;s<strokeCount;s++) {
+      const seed=b.strokeSeeds[s]||0;
+      const normalizedS=strokeCount>1?(s/(strokeCount-1)-0.5):0;
+      const offsetAmt=normalizedS*thickBase*0.35+seed*thickBase*0.08;
+      const ox=perpX*offsetAmt, oy=perpY*offsetAmt;
+      const shift=normalizedS*20+(b.colorShift||0)*0.3;
+      const rr=Math.max(0,Math.min(255,col.r+shift));
+      const gg=Math.max(0,Math.min(255,col.g+shift*0.65));
+      const bb=Math.max(0,Math.min(255,col.b+shift*0.4));
+      const isCore=s===Math.floor(strokeCount/2);
+      const alpha=baseAlpha*(isCore?1.0:0.45);
+      const thick=thickTaper*(isCore?1.0:lerp(0.6,0.4,Math.abs(normalizedS)));
+      ctx.beginPath();
+      ctx.moveTo(x1+ox,y1+oy);
+      ctx.bezierCurveTo(cpx1+ox,cpy1+oy,cpx2+ox,cpy2+oy,x2+ox,y2+oy);
+      ctx.strokeStyle=`rgba(${rr|0},${gg|0},${bb|0},${alpha})`;
+      ctx.lineWidth=thick; ctx.lineCap='round'; ctx.stroke();
+    }
+    if(b.tipDots.length>0&&b.growthProgress>0.92) {
+      const tipFade=smoothstep(0.92,1.0,b.growthProgress);
+      const tr=Math.min(255,col.r*1.2+20),tg=Math.min(255,col.g*1.2+15),tb=Math.min(255,col.b*1.1+10);
+      for(const dot of b.tipDots) {
+        const dx=x2+dot.ox, dy=y2+dot.oy, da=tipFade*dot.alpha;
+        const tgr=ctx.createRadialGradient(dx,dy,0,dx,dy,dot.size*2);
+        tgr.addColorStop(0,`rgba(${tr|0},${tg|0},${tb|0},${da*0.5})`);
+        tgr.addColorStop(1,`rgba(${col.r|0},${col.g|0},${col.b|0},0)`);
+        ctx.fillStyle=tgr; ctx.beginPath(); ctx.arc(dx,dy,dot.size*2,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+
+  function drawScene(time) {
+    ctx.clearRect(0,0,W,H);
+    recalcPositions(time);
+    ctx.save(); ctx.globalAlpha=treeAlpha;
+    for(const b of allBranches) drawBranch(b,time);
+    ctx.restore();
+    updateParticles(time);
+    ctx.save(); drawParticles(treeAlpha*0.6); ctx.restore();
+    // Fade trunk base into bg
+    const baseGrad=ctx.createLinearGradient(0,H*0.78,0,H);
+    baseGrad.addColorStop(0,'rgba(240,233,223,0)');
+    baseGrad.addColorStop(1,'rgba(240,233,223,0.96)');
+    ctx.fillStyle=baseGrad; ctx.fillRect(0,H*0.78,W,H*0.22);
+  }
+
+  let running=true;
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) running=false; else { running=true; requestAnimationFrame(frame); }});
+
+  canvas.addEventListener('mousemove',e=>{mouseActive=true;windForce=(e.clientX-W/2)/(W/2);});
+  canvas.addEventListener('mouseleave',()=>{mouseActive=false;windForce=0;});
+  canvas.addEventListener('click',()=>{shakeAmount=1.0;});
+
+  function frame(time) {
+    if(shakeAmount>0.01) shakeAmount*=0.95; else shakeAmount=0;
+    switch(treeState) {
+      case 'growing': { const done=updateBranches(time); drawScene(time); if(done){treeState='holding';holdTimer=0;} break; }
+      case 'holding': { drawScene(time); holdTimer++; if(holdTimer>=HOLD_DURATION){treeState='fading';fadeTimer=0;} break; }
+      case 'fading':  { fadeTimer++; treeAlpha=Math.max(0,1-fadeTimer/FADE_DURATION); drawScene(time); if(fadeTimer>=FADE_DURATION){treeState='waiting';waitTimer=0;} break; }
+      case 'waiting': { ctx.clearRect(0,0,W,H); waitTimer++; if(waitTimer>=WAIT_DURATION) createTree(); break; }
+    }
+    if(running) requestAnimationFrame(frame);
+  }
+
+  resize();
+  createTree();
+  requestAnimationFrame(frame);
+})();
+
+// ── WebGL torus — step cards ──────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('mesh-steps');
+  if (!canvas) return;
+  const gl = canvas.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: false });
+  if (!gl) return;
+
+  const VS = `
+    attribute vec3 aPos; attribute vec3 aNorm; attribute vec2 aUV;
+    uniform mat4 uMVP; uniform mat4 uModel;
+    varying vec3 vNorm; varying vec3 vWorldPos; varying vec2 vUV;
+    void main() {
+      vec4 wp = uModel * vec4(aPos, 1.0);
+      vWorldPos = wp.xyz;
+      vNorm = normalize(vec3(uModel * vec4(aNorm, 0.0)));
+      vUV = aUV;
+      gl_Position = uMVP * vec4(aPos, 1.0);
+    }`;
+  const FS = `
+    precision highp float;
+    varying vec3 vNorm; varying vec3 vWorldPos; varying vec2 vUV;
+    uniform float uTime; uniform vec3 uCamPos;
+    vec3 palette(float t) {
+      t = fract(t) * 4.0;
+      vec3 c0 = vec3(0.780, 0.757, 0.953);
+      vec3 c1 = vec3(0.898, 0.839, 0.973);
+      vec3 c2 = vec3(0.949, 0.769, 0.706);
+      vec3 c3 = vec3(0.973, 0.918, 0.859);
+      if (t < 1.0) return mix(c0, c1, t);
+      if (t < 2.0) return mix(c1, c2, t - 1.0);
+      if (t < 3.0) return mix(c2, c3, t - 2.0);
+      return mix(c3, c0, t - 3.0);
+    }
+    void main() {
+      vec3 n = normalize(vNorm); vec3 v = normalize(uCamPos - vWorldPos);
+      float NdotV = abs(dot(n, v));
+      const float PI2 = 6.28318;
+      float wu = sin(vUV.x*PI2*3.0+uTime*0.6)*0.07+cos(vUV.y*PI2*3.0-uTime*0.5)*0.05;
+      float wv = cos(vUV.x*PI2*3.0-uTime*0.55)*0.05+sin(vUV.y*PI2*3.0+uTime*0.7)*0.04;
+      float t = fract(vUV.x+wu+vUV.y*0.4+wv+uTime*0.08);
+      vec3 col = palette(t);
+      col += pow(NdotV,6.0)*0.35*vec3(1.0,0.97,0.94);
+      col = mix(col, vec3(1.0,0.96,0.92), clamp(pow(1.0-NdotV,2.0)*0.75,0.0,1.0));
+      gl_FragColor = vec4(col, smoothstep(0.0,0.22,NdotV)*0.82);
+    }`;
+
+  function compile(type, src) { const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s); return s; }
+  const prog=gl.createProgram();
+  gl.attachShader(prog,compile(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(prog);
+  const L={
+    aPos:gl.getAttribLocation(prog,'aPos'),aNorm:gl.getAttribLocation(prog,'aNorm'),aUV:gl.getAttribLocation(prog,'aUV'),
+    uMVP:gl.getUniformLocation(prog,'uMVP'),uModel:gl.getUniformLocation(prog,'uModel'),
+    uTime:gl.getUniformLocation(prog,'uTime'),uCamPos:gl.getUniformLocation(prog,'uCamPos'),
+  };
+  const R=23,r=9.8,SEGS=64,RINGS=52,pos=[],norm=[],uv=[],idx=[];
+  for(let ri=0;ri<=RINGS;ri++){const phi=(ri/RINGS)*Math.PI*2,cp=Math.cos(phi),sp=Math.sin(phi);for(let si=0;si<=SEGS;si++){const theta=(si/SEGS)*Math.PI*2,ct=Math.cos(theta),st=Math.sin(theta);pos.push((R+r*ct)*cp,(R+r*ct)*sp,r*st);norm.push(ct*cp,ct*sp,st);uv.push(ri/RINGS,si/SEGS);}}
+  for(let ri=0;ri<RINGS;ri++)for(let si=0;si<SEGS;si++){const a=ri*(SEGS+1)+si,b=a+1,c=a+(SEGS+1),d=c+1;idx.push(a,b,c,b,d,c);}
+  function mkbuf(data,type=gl.ARRAY_BUFFER){const b=gl.createBuffer();gl.bindBuffer(type,b);gl.bufferData(type,type===gl.ELEMENT_ARRAY_BUFFER?new Uint16Array(data):new Float32Array(data),gl.STATIC_DRAW);return b;}
+  const posBuf=mkbuf(pos),normBuf=mkbuf(norm),uvBuf=mkbuf(uv),idxBuf=mkbuf(idx,gl.ELEMENT_ARRAY_BUFFER);
+  const m4=()=>new Float32Array(16);
+  function ident(){const m=m4();m[0]=m[5]=m[10]=m[15]=1;return m;}
+  function mul(a,b){const r=m4();for(let i=0;i<4;i++)for(let j=0;j<4;j++)r[j*4+i]=a[i]*b[j*4]+a[4+i]*b[j*4+1]+a[8+i]*b[j*4+2]+a[12+i]*b[j*4+3];return r;}
+  function rx(a){const c=Math.cos(a),s=Math.sin(a),m=ident();m[5]=c;m[6]=s;m[9]=-s;m[10]=c;return m;}
+  function ry(a){const c=Math.cos(a),s=Math.sin(a),m=ident();m[0]=c;m[2]=-s;m[8]=s;m[10]=c;return m;}
+  function persp(fov,asp,n,f){const t=1/Math.tan(fov*.5),nf=1/(n-f),m=m4();m[0]=t/asp;m[5]=t;m[10]=(f+n)*nf;m[11]=-1;m[14]=2*f*n*nf;return m;}
+  function v3n(v){const l=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);return[v[0]/l,v[1]/l,v[2]/l];}
+  function v3x(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+  function v3d(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+  function lookAt(e,c,up){const f=v3n([c[0]-e[0],c[1]-e[1],c[2]-e[2]]);const rr=v3n(v3x(f,up));const u=v3x(rr,f);const m=m4();m[0]=rr[0];m[1]=u[0];m[2]=-f[0];m[4]=rr[1];m[5]=u[1];m[6]=-f[1];m[8]=rr[2];m[9]=u[2];m[10]=-f[2];m[12]=-v3d(rr,e);m[13]=-v3d(u,e);m[14]=v3d(f,e);m[15]=1;return m;}
+  let W=0,H=0;
+  function resize(){const dpr=window.devicePixelRatio||1;const w=(canvas.clientWidth*dpr)|0,h=(canvas.clientHeight*dpr)|0;if(w!==W||h!==H){W=canvas.width=w;H=canvas.height=h;gl.viewport(0,0,W,H);}}
+  function frame(ts){
+    requestAnimationFrame(frame);resize();if(!W||!H)return;
+    const t=ts*0.001*2.5*0.08;
+    const dist=90;const CAM_RX=-0.098,CAM_RY=-3.752;
+    const camPos=[dist*Math.sin(CAM_RY)*Math.cos(CAM_RX),-dist*Math.sin(CAM_RX),dist*Math.cos(CAM_RY)*Math.cos(CAM_RX)];
+    const model=mul(ry(-0.5),rx(0.26));
+    const view=lookAt(camPos,[0,0,0],[0,1,0]);
+    const proj=persp(Math.PI*0.45/1.6,W/H,0.5,600);
+    const mvp=mul(proj,mul(view,model));
+    gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+    gl.useProgram(prog);
+    gl.uniformMatrix4fv(L.uMVP,false,mvp);gl.uniformMatrix4fv(L.uModel,false,model);
+    gl.uniform1f(L.uTime,t);gl.uniform3fv(L.uCamPos,camPos);
+    gl.bindBuffer(gl.ARRAY_BUFFER,posBuf);gl.enableVertexAttribArray(L.aPos);gl.vertexAttribPointer(L.aPos,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,normBuf);gl.enableVertexAttribArray(L.aNorm);gl.vertexAttribPointer(L.aNorm,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,uvBuf);gl.enableVertexAttribArray(L.aUV);gl.vertexAttribPointer(L.aUV,2,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,idxBuf);gl.drawElements(gl.TRIANGLES,idx.length,gl.UNSIGNED_SHORT,0);
+  }
+  requestAnimationFrame(frame);
+})();
+
+// ── Wire-mesh — CTA ───────────────────────────────────────────────────────
+(function() {
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const CD=[[80,72,220],[120,90,245],[170,60,220],[240,90,50],[255,145,80]];
+  function sample(colors,u,v,t){
+    const s=Math.max(0,Math.min(0.999,(Math.sin(u*5.5+t)*0.3+Math.cos(v*4.2-t*0.8)*0.3+Math.sin((u+v)*3+t*0.5)*0.2)+0.5));
+    const n=colors.length-1,i0=s*n|0,f=s*n-i0;
+    return colors[i0].map((c,k)=>lerp(c,(colors[i0+1]||colors[i0])[k],f)|0);
+  }
+  function initMesh(id,colors,lineAlpha,speed,cols,rows){
+    const canvas=document.getElementById(id);if(!canvas)return;
+    const ctx=canvas.getContext('2d');let W,H;
+    function tick(ms){
+      requestAnimationFrame(tick);
+      const t=ms*0.001*speed,cw=canvas.offsetWidth,ch=canvas.offsetHeight;
+      if(!cw||!ch)return;
+      if(cw!==W||ch!==H){W=canvas.width=cw;H=canvas.height=ch;}
+      ctx.clearRect(0,0,W,H);
+      const dx=W/cols,dy=H/rows,amp=Math.min(dx,dy)*0.55,pts=[];
+      for(let r=0;r<=rows;r++){const row=[];for(let c=0;c<=cols;c++){const u=c/cols,v=r/rows;row.push({x:c*dx,y:r*dy+Math.sin(u*4+t)*amp*0.55+Math.cos(v*3+t*0.7)*amp*0.4,u,v});}pts.push(row);}
+      ctx.lineWidth=0.85;
+      for(let r=0;r<=rows;r++)for(let c=0;c<=cols;c++){
+        const p=pts[r][c],[cr,cg,cb]=sample(colors,p.u,p.v,t);
+        ctx.strokeStyle=`rgba(${cr},${cg},${cb},${lineAlpha})`;
+        if(c<cols){const p2=pts[r][c+1];ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();}
+        if(r<rows){const p2=pts[r+1][c];ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();}
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  initMesh('mesh-cta', CD, 0.5, 0.6, 32, 14);
+})();
+</script>
