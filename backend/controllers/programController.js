@@ -84,12 +84,22 @@ const getProgramById = async (req, res) => {
       return res.status(404).json({ message: "Program not found" });
     }
 
-    // ✅ Debugging: Check if dailySchedule exists
-    if (!program.dailySchedule || !Array.isArray(program.dailySchedule)) {
-      console.error("🚨 dailySchedule is missing or not an array:", program.dailySchedule);
+    // Attach assignment startDate for the requesting user so the frontend
+    // can anchor the weekly schedule to the correct Monday.
+    const userId = req.user?._id || req.user?.id;
+    let assignmentStartDate = null;
+    if (userId) {
+      const assignment = await ProgramAssignment.findOne(
+        { userId, programId: id, status: 'active' },
+        { startDate: 1 }
+      ).lean();
+      if (assignment) assignmentStartDate = assignment.startDate;
     }
 
-    res.status(200).json({ program });
+    const programObj = program.toObject();
+    if (assignmentStartDate) programObj.startDate = assignmentStartDate;
+
+    res.status(200).json({ program: programObj });
   } catch (error) {
     res.status(500).json({ message: "Error fetching program details", error: error.message });
   }
@@ -339,20 +349,46 @@ const assignProgramToClients = async (req, res) => {
     const fallbackTime = program.defaultTimeOfDay || '18:00';
     const { h: defH, m: defM } = parseHHmm(fallbackTime);
     const programDefaultDur = toInt(program.defaultDurationMin, 60);
+    // Always start from Monday of the current week so day names align with calendar
     const startDate = new Date(); startDate.setHours(0, 0, 0, 0);
+    const dow = startDate.getDay(); // 0=Sun,1=Mon,...,6=Sat
+    startDate.setDate(startDate.getDate() + (dow === 0 ? -6 : 1 - dow));
 
     for (const client of newlyAssigned) {
-      // Create assignment record
-      const assignment = await ProgramAssignment.create({
-        userId: client._id,
-        programId: program._id,
-        startDate,
-        timezone: 'Europe/Istanbul',
-        defaultTimeOfDay: fallbackTime,
-        status: 'active',
-      });
+      // Reuse existing assignment if present (e.g. client was unassigned and reassigned)
+      let assignment = await ProgramAssignment.findOne({ userId: client._id, programId: program._id });
+      const isReassignment = !!assignment;
+      if (!assignment) {
+        assignment = await ProgramAssignment.create({
+          userId: client._id,
+          programId: program._id,
+          startDate,
+          timezone: 'Europe/Istanbul',
+          defaultTimeOfDay: fallbackTime,
+          status: 'active',
+        });
+      } else if (assignment.status !== 'active') {
+        await ProgramAssignment.updateOne({ _id: assignment._id }, { status: 'active' });
+      }
 
-      // Generate events
+      // Generate events (skip if reassignment — events already exist)
+      if (isReassignment) {
+        // Still send notification but don't duplicate events
+        sendProgramAssigned({
+          clientName: client.name,
+          clientEmail: client.email,
+          coachName: coach?.name || 'Koçun',
+          programName: program.name,
+        }).catch(() => {});
+        await notify({
+          recipientId: client._id,
+          senderId: req.user._id,
+          type: 'program_assigned',
+          message: `Koçun sana yeni bir program atadı: "${program.name}"`,
+        });
+        continue;
+      }
+
       const ops = [];
       for (let d = 0; d < days.length; d++) {
         const sessions = Array.isArray(days[d]?.sessions) ? days[d].sessions : [];
@@ -370,8 +406,8 @@ const assignProgramToClients = async (req, res) => {
             updateOne: {
               filter: { userId: client._id, programId: program._id, assignmentId: assignment._id, externalKey },
               update: {
-                $setOnInsert: { userId: client._id, programId: program._id, assignmentId: assignment._id, externalKey, source: 'program', status: 'planned' },
-                $set: { sessionId: sid, title, start: st, end: en, timezone: 'Europe/Istanbul' },
+                $setOnInsert: { userId: client._id, programId: program._id, assignmentId: assignment._id, externalKey, source: 'program', status: 'planned', start: st, end: en },
+                $set: { sessionId: sid, title, timezone: 'Europe/Istanbul' },
               },
               upsert: true,
             },
@@ -803,12 +839,12 @@ const startProgram = async (req, res) => {
                 externalKey,
                 source: 'program',
                 status: 'planned',
+                start: st,
+                end: en,
               },
               $set: {
                 sessionId: sid,
                 title,
-                start: st,
-                end: en,
                 timezone,
               },
             },

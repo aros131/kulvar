@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
@@ -29,6 +30,26 @@ export default function CoachProgramDetailPage() {
   const router = useRouter();
   const [program, setProgram] = useState<Program | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rebuilding, setRebuilding] = useState<string | null>(null);
+
+  const handleRebuild = async (userId: string) => {
+    setRebuilding(userId);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/events/rebuild`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId, programId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      toast.success(`Takvim düzeltildi. Başlangıç: ${new Date(data.startDate).toLocaleDateString('tr-TR')}`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Takvim düzeltilemedi.');
+    } finally {
+      setRebuilding(null);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -82,13 +103,22 @@ export default function CoachProgramDetailPage() {
           <ul className="space-y-2">
             {program.assignedClients.map((c) => (
               <li key={c._id} className="flex items-center gap-3 text-sm">
-                <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-primary/80 flex items-center justify-center font-bold text-xs">
+                <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-primary/80 flex items-center justify-center font-bold text-xs shrink-0">
                   {c.name[0]}
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="font-medium">{c.name}</p>
                   <p className="text-muted-foreground text-xs">{c.email}</p>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs shrink-0"
+                  disabled={rebuilding === c._id}
+                  onClick={() => handleRebuild(c._id)}
+                >
+                  {rebuilding === c._id ? 'Düzeltiliyor…' : 'Takvimi Düzelt'}
+                </Button>
               </li>
             ))}
           </ul>

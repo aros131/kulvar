@@ -28,6 +28,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import mediaRoutes from "./routes/mediaRoutes.js";
 import { startBookingReminderJob } from "./services/bookingReminderJob.js";
 import rateLimit from "express-rate-limit";
 /* --------------------------------- Setup ---------------------------------- */
@@ -123,6 +124,7 @@ app.use("/coaches", coachRoutes);      // GET /coaches, /coaches/:id, ...
 app.use("/progress", progressRoutes);
 app.use("/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/media", mediaRoutes);
 app.use("/events", eventRoutes);
 app.use("/me", meRoutes);
 app.use("/payment", paymentRoutes);

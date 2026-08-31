@@ -11,6 +11,7 @@ import {
   updateEvent,    // PUT update by :id
   deleteEvent,    // DELETE by :id
   completeEvent,  // PATCH mark completed by :id
+  rebuildEvents,  // POST rebuild events from original assignment date
 } from '../controllers/eventController.js';
 
 /**
@@ -32,5 +33,8 @@ router.delete('/:id', protect, roleMiddleware(['user']), deleteEvent);
 
 // Mark completed
 router.patch('/:id/complete', protect, roleMiddleware(['user']), completeEvent);
+
+// Fix: rebuild events from original assignment startDate (coach only)
+router.post('/rebuild', protect, roleMiddleware(['coach']), rebuildEvents);
 
 export default router;

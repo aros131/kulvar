@@ -1,6 +1,7 @@
 import Event from '../models/Event.js';
 import Program from '../models/Program.js';
 import Progress from '../models/Progress.js';
+import ProgramAssignment from '../models/ProgramAssignment.js';
 import User from '../models/User.js';
 import { notify } from '../utils/notify.js';
 
@@ -189,5 +190,86 @@ export const getEvents = async (req, res) => {
     res.status(200).json({ events });
   } catch (error) {
     res.status(500).json({ message: 'Error retrieving events', error: error.message });
+  }
+};
+
+// POST /api/events/rebuild  (coach only)
+// Body: { userId, programId }
+// Finds the OLDEST ProgramAssignment for this user+program, deletes all other assignments'
+// events, then rebuilds events from the original startDate so dates are correct.
+export const rebuildEvents = async (req, res) => {
+  try {
+    const { userId, programId } = req.body;
+    if (!userId || !programId) {
+      return res.status(400).json({ message: 'userId and programId are required' });
+    }
+
+    // 1. Find all assignments for this user+program, oldest first
+    const assignments = await ProgramAssignment.find({ userId, programId }).sort({ createdAt: 1 }).lean();
+    if (!assignments.length) {
+      return res.status(404).json({ message: 'No ProgramAssignment found' });
+    }
+
+    const original = assignments[0]; // oldest = authoritative
+
+    // 2. Delete events from NEWER assignments (duplicates)
+    if (assignments.length > 1) {
+      const newerIds = assignments.slice(1).map(a => a._id);
+      await Event.deleteMany({ userId, programId, assignmentId: { $in: newerIds } });
+      await ProgramAssignment.deleteMany({ _id: { $in: newerIds } });
+    }
+
+    // 3. Rebuild events from original startDate
+    const program = await Program.findById(programId).lean();
+    if (!program) return res.status(404).json({ message: 'Program not found' });
+
+    const days = Array.isArray(program.dailySchedule) ? program.dailySchedule : [];
+    const startDate = new Date(original.startDate); startDate.setHours(0, 0, 0, 0);
+    const fallbackTime = original.defaultTimeOfDay || program.defaultTimeOfDay || '18:00';
+    const toInt = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+    const parseHHmm = (hhmm = '18:00') => {
+      const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
+      if (!m) return { h: 18, m: 0 };
+      return { h: Math.min(23, Math.max(0, Number(m[1]))), m: Math.min(59, Math.max(0, Number(m[2]))) };
+    };
+    const { h: defH, m: defM } = parseHHmm(fallbackTime);
+    const programDefaultDur = toInt(program.defaultDurationMin, 60);
+
+    const ops = [];
+    for (let d = 0; d < days.length; d++) {
+      const sessions = Array.isArray(days[d]?.sessions) ? days[d].sessions : [];
+      const baseDate = new Date(startDate); baseDate.setDate(baseDate.getDate() + d);
+      for (let i = 0; i < sessions.length; i++) {
+        const s = sessions[i] || {};
+        const sid = String(s.sessionId || s._id || s.id || `${d}-${i}`);
+        const title = s.name || `Seans ${i + 1}`;
+        const t = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+        const dur = toInt(s.durationMin, programDefaultDur);
+        const st = new Date(baseDate); st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
+        const en = new Date(st); en.setMinutes(en.getMinutes() + dur);
+        const externalKey = `${original._id}:${d}:${i}`;
+        ops.push({
+          updateOne: {
+            filter: { userId, programId, assignmentId: original._id, externalKey },
+            update: {
+              $setOnInsert: { userId, programId, assignmentId: original._id, externalKey, source: 'program', status: 'planned' },
+              $set: { sessionId: sid, title, start: st, end: en, timezone: 'Europe/Istanbul' },
+            },
+            upsert: true,
+          },
+        });
+      }
+    }
+
+    if (ops.length) await Event.bulkWrite(ops, { ordered: false });
+
+    return res.status(200).json({
+      message: 'Events rebuilt from original start date',
+      startDate: original.startDate,
+      deletedAssignments: assignments.length - 1,
+      rebuiltEvents: ops.length,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rebuilding events', error: error.message });
   }
 };

@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, Copy, Clock } from "lucide-react";
+import { Trash2, Copy, Clock, Paperclip, X, Play, ImageIcon, Loader2 } from "lucide-react";
+const MEDIA_API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+import { toast } from "sonner";
 import {
   EXERCISE_LIBRARY,
   PROGRAM_TEMPLATES,
@@ -101,7 +103,7 @@ function ExerciseNameInput({
   onSelectLibrary: (entry: (typeof EXERCISE_LIBRARY)[number]) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const suggestions = useMemo(() => {
     const q = value.trim().toLowerCase();
@@ -144,6 +146,177 @@ function ExerciseNameInput({
   );
 }
 
+// ─── Media helpers ────────────────────────────────────────────────────────────
+
+function isVideo(url: string) {
+  return /\.(mp4|mov|webm|avi|mkv)(\?|$)/i.test(url);
+}
+
+// Upload via backend (avoids Firebase Storage CORS issues).
+// Uses XMLHttpRequest to get real upload progress.
+function uploadExerciseMedia(
+  file: File,
+  onProgress: (pct: number) => void,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") ?? "" : "";
+    const form = new FormData();
+    form.append("file", file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${MEDIA_API}/media/upload`);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText).url); }
+        catch { reject(new Error("Invalid server response")); }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(form);
+  });
+}
+
+// ─── MediaSection (inside ExerciseRow) ───────────────────────────────────────
+
+function MediaSection({
+  media,
+  onUpdate,
+}: {
+  media: { url: string; description: string }[];
+  onUpdate: (urls: { url: string; description: string }[]) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  // pct (0-100) per file index
+  const [fileProgress, setFileProgress] = useState<number[]>([]);
+  const uploading = fileProgress.length > 0;
+  const aggProgress = uploading
+    ? Math.round(fileProgress.reduce((s, p) => s + p, 0) / fileProgress.length)
+    : 0;
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files);
+    setFileProgress(arr.map(() => 0));
+    try {
+      const uploads = await Promise.all(
+        arr.map((f, i) =>
+          uploadExerciseMedia(f, (pct) =>
+            setFileProgress((prev) => {
+              const next = [...prev];
+              next[i] = pct;
+              return next;
+            })
+          ).then((url) => ({ url, description: f.name.replace(/\.[^.]+$/, "") }))
+        )
+      );
+      onUpdate([...media, ...uploads]);
+      toast.success(`${uploads.length} medya yüklendi.`);
+    } catch (err: any) {
+      const msg = err?.message || err?.code || String(err);
+      console.error("Upload error:", err);
+      toast.error(`Medya yüklenemedi: ${msg}`);
+    } finally {
+      setFileProgress([]);
+    }
+  };
+
+  const removeAt = (idx: number) => onUpdate(media.filter((_, i) => i !== idx));
+  const updateDesc = (idx: number, description: string) =>
+    onUpdate(media.map((m, i) => (i === idx ? { ...m, description } : m)));
+
+  return (
+    <div className="space-y-2 pt-1">
+      {media.map((m, idx) => (
+        <div key={idx} className="flex items-start gap-2 p-1.5 rounded-lg bg-background border border-border">
+          {/* Thumbnail */}
+          <div className="shrink-0 w-14 h-14 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+            {isVideo(m.url) ? (
+              <div className="relative w-full h-full">
+                <video src={m.url} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <Play className="h-4 w-4 text-white" fill="white" />
+                </div>
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={m.url} alt={m.description} className="w-full h-full object-cover" />
+            )}
+          </div>
+          {/* Description + remove */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <Input
+              value={m.description}
+              onChange={(e) => updateDesc(idx, e.target.value)}
+              placeholder="Açıklama (opsiyonel)"
+              className="h-7 text-xs"
+            />
+            <div className="flex items-center gap-1">
+              {isVideo(m.url) ? (
+                <Play className="h-3 w-3 text-muted-foreground" />
+              ) : (
+                <ImageIcon className="h-3 w-3 text-muted-foreground" />
+              )}
+              <a href={m.url} target="_blank" rel="noreferrer" className="text-[10px] text-primary hover:underline truncate">
+                Görüntüle
+              </a>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => removeAt(idx)}
+            className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="video/*,image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      {uploading ? (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Yükleniyor…
+            </span>
+            <span className="tabular-nums font-medium">{aggProgress}%</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-200"
+              style={{ width: `${aggProgress}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+        >
+          <Paperclip className="h-3 w-3" />
+          Medya ekle (video veya resim)
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── ExerciseRow ─────────────────────────────────────────────────────────────
 
 function ExerciseRow({
@@ -158,6 +331,8 @@ function ExerciseRow({
   onCopy: () => void;
 }) {
   const type = ex.type ?? "strength";
+  const [showMedia, setShowMedia] = useState(false);
+  const media = ex.videoUrls ?? [];
 
   return (
     <div className="space-y-1.5 p-2 rounded-lg bg-muted/40 border border-border">
@@ -188,6 +363,17 @@ function ExerciseRow({
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => setShowMedia((v) => !v)}
+          title="Medya ekle"
+          className={`h-8 w-7 flex items-center justify-center rounded-md transition-colors ${showMedia || media.length > 0 ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary hover:bg-muted"}`}
+        >
+          <Paperclip size={13} />
+          {media.length > 0 && (
+            <span className="sr-only">{media.length} medya</span>
+          )}
+        </button>
         <button type="button" onClick={onCopy} className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title="Egzersizi kopyala">
           <Copy size={13} />
         </button>
@@ -234,6 +420,19 @@ function ExerciseRow({
           <FieldCell label="Mesafe (km) — opsiyonel">
             <Input type="number" min={0} step={0.5} placeholder="—" value={ex.cardioKm ?? ""} onChange={(e) => onUpdate({ cardioKm: e.target.value === "" ? undefined : Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
+        </div>
+      )}
+
+      {/* Row 3: media (shown when toggle active or media exists) */}
+      {(showMedia || media.length > 0) && (
+        <div className="border-t border-border/60 pt-1.5">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
+            Medya {media.length > 0 ? `(${media.length})` : ""}
+          </p>
+          <MediaSection
+            media={media}
+            onUpdate={(urls) => onUpdate({ videoUrls: urls })}
+          />
         </div>
       )}
     </div>
