@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5001';
+const BASE_URL = (process.env.BASE_URL || process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5001}`).replace(/\/+$/, '');
 
 // Fetch Profile
 export const getProfile = async (req, res) => {

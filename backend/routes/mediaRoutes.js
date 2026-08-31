@@ -27,7 +27,7 @@ const upload = multer({
 // POST /media/upload  (coach only)
 router.post('/upload', protect, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  const API = process.env.API_URL || `http://localhost:${process.env.PORT || 5001}`;
+  const API = (process.env.BASE_URL || process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5001}`).replace(/\/+$/, '');
   const url = `${API}/uploads/exercises/${req.file.filename}`;
   res.json({ url });
 });

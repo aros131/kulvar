@@ -82,10 +82,11 @@ export default function CoachClientsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const q = search.toLowerCase();
   const filtered = clients.filter(
     (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
+      (c.name ?? '').toLowerCase().includes(q) ||
+      (c.email ?? '').toLowerCase().includes(q)
   );
 
   if (loading) return (

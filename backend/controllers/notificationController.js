@@ -63,7 +63,9 @@ export const markAllAsRead = async (req, res) => {
 
 export const getCoachSentNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ senderId: req.user._id }).sort({ createdAt: -1 });
+    const notifications = await Notification.find({ senderId: req.user._id })
+      .sort({ createdAt: -1 })
+      .populate('recipientId', 'name email');
     res.status(200).json({ notifications });
   } catch (error) {
     console.error("Error retrieving sent notifications:", error.message);
