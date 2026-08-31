@@ -20,7 +20,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
   // 🔄 Fetch group members (memoized)
   const fetchGroupMembers = useCallback(async () => {
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}`, {
+      const res = await fetch(`/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = await res.json();
@@ -35,7 +35,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
     const timeout = setTimeout(async () => {
       if (!searchQuery.trim()) return;
       try {
-        const res = await fetch(`https://kulvar-qb7t.onrender.com/users/clients?q=${searchQuery}`, {
+        const res = await fetch(`/users/clients?q=${searchQuery}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         const data = await res.json();
@@ -54,7 +54,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
 
   const handleAssign = async (userId: string) => {
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/add-client`, {
+      const res = await fetch(`/groups/${groupId}/add-client`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,7 +76,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
 
   const handleRemove = async (userId: string) => {
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/remove-client`, {
+      const res = await fetch(`/groups/${groupId}/remove-client`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

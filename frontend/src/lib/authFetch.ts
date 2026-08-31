@@ -1,4 +1,4 @@
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/,"");
 
 export async function authFetch(path: string, init: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;

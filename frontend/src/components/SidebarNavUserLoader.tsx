@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 const cleanToken = (): string | null => {
   try {

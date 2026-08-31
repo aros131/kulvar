@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 export type TimeSlot = { startUtc: string; endUtc: string };
 

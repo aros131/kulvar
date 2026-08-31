@@ -19,7 +19,7 @@ type Options = {
 };
 
 function apiBase() {
-  const raw = process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com";
+  const raw = process.env.NEXT_PUBLIC_API_URL || "";
   return raw.replace(/\/+$/, "");
 }
 

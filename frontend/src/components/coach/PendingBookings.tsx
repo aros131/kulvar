@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 function token() {
   const raw = localStorage.getItem("token") || "";

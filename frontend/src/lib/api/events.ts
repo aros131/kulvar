@@ -10,7 +10,7 @@ export interface EventDTO {
   status?: 'planned' | 'completed' | 'missed' | 'canceled';
 }
 
-const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
+const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 function authHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';

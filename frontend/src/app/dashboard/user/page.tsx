@@ -24,7 +24,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 /* --------------------------------- Config --------------------------------- */
 
 const avatarStorage = storage;
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/+$/, "");
 
 /* ------------------------------ Helper Utils ------------------------------ */

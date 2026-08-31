@@ -10,7 +10,7 @@ import {
   ArrowUpDown, X, Award,
 } from "lucide-react";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 const SPEC_OPTIONS = [
   { value: "yoga",      label: "Yoga",      color: "bg-violet-100 text-violet-700" },

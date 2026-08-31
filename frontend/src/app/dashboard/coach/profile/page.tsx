@@ -24,7 +24,7 @@ import { Mail, BadgeCheck, PencilLine, User, MapPin, Quote, Award, X, BarChart2,
 import CoachPageShell from "@/components/coach/CoachPageShell";
 
 /* --------------------------------- Config --------------------------------- */
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 const cleanToken = (): string | null => {
   try {

@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
+const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 type Status = 'completed' | 'missed' | 'planned' | 'none';
 export type CalEvent = {

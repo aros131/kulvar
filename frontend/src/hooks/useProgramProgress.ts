@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 type ProgressResp = {
   progressPercentage?: number;

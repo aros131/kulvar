@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
-const API = (process.env.NEXT_PUBLIC_API_URL || 'https://kulvar-qb7t.onrender.com').replace(/\/+$/, '');
+const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 interface Props {
   role: 'coach' | 'user';

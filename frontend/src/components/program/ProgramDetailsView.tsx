@@ -14,7 +14,7 @@ const Card: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ class
 const Separator: React.FC = () => <div className="h-px bg-zinc-200 dark:bg-primary/80 my-6" />;
 
 // ---------- helpers ----------
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/,"");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/,"");
 const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 const z = (n: number) => String(n).padStart(2, "0");
 const fmtDate = (d?: string | Date) => {

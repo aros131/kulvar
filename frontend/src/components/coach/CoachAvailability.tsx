@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 type Rule = { weekdays: number[]; startMin: number; endMin: number; stepMin: number };
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 /** Reads token, trims quotes, strips 'Bearer ' */
 function cleanToken(): string | null {

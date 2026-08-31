@@ -1,5 +1,5 @@
 import Content from '../models/Content.js';
-const BASE_URL = "https://kulvar-qb7t.onrender.com";
+const BASE_URL = (process.env.BASE_URL || process.env.API_PUBLIC_URL || 'http://localhost:5001').replace(/\/+$/, '');
 
 async function getContent() {
   const token = localStorage.getItem("token");

@@ -3,15 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 function baseUrl() {
   const raw =
-    process.env.KULVAR_BACKEND_URL ||
+    process.env.PERSE_BACKEND_URL ||
     process.env.NEXT_PUBLIC_API_URL || // fallback
     '';
-  if (!raw) throw new Error('KULVAR_BACKEND_URL env değişkeni eksik.');
+  if (!raw) throw new Error('PERSE_BACKEND_URL env değişkeni eksik.');
   return raw.replace(/\/+$/, '');
 }
 
 function configuredPaths(): string[] {
-  const fromEnv = (process.env.KULVAR_COACHES_PATHS || '').trim();
+  const fromEnv = (process.env.PERSE_COACHES_PATHS || '').trim();
   if (fromEnv) {
     return fromEnv
       .split(',')
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
         `Base: ${baseUrl()}\n` +
         `Denediğim yollar:\n- ${paths.join('\n- ')}\n\n` +
         `Hatalar:\n- ${errors.join('\n- ')}\n\n` +
-        `Çözüm: KULVAR_COACHES_PATHS env değişkenini, doğru yolu içerecek şekilde ayarlayın (ör. "/coaches" veya "/api/coaches").`,
+        `Çözüm: PERSE_COACHES_PATHS env değişkenini, doğru yolu içerecek şekilde ayarlayın (ör. "/coaches" veya "/api/coaches").`,
     },
     { status: 502 }
   );

@@ -6,7 +6,7 @@ import { Home, LayoutGrid, Users, MessageSquare, User, Bell } from "lucide-react
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 type Props = {
   unreadNotifications?: number;

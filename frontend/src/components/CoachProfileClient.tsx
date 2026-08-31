@@ -128,7 +128,7 @@ const SIGNUP_PATH = "/signup";
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(" ");
 
 function apiBase() {
-  const raw = process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com";
+  const raw = process.env.NEXT_PUBLIC_API_URL || "";
   return raw.replace(/\/+$/, "");
 }
 

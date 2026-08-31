@@ -19,7 +19,7 @@ import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
 import { ArrowRight } from "lucide-react";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "https://kulvar-qb7t.onrender.com").replace(/\/+$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 /* ------------------------------- Types ------------------------------- */
 type CurrentUser = {
