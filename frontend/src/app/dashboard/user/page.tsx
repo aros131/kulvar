@@ -92,6 +92,21 @@ interface UserProfile {
   email: string;
   profilePicture: string;
   onboardingCompleted?: boolean;
+  fitnessGoals?: string;
+  bio?: string;
+}
+
+function profileCompletion(p: UserProfile | null): { pct: number; missing: string[] } {
+  if (!p) return { pct: 0, missing: [] };
+  const checks: [boolean, string][] = [
+    [!!p.name, "İsim"],
+    [!!p.profilePicture && !p.profilePicture.includes("default-user"), "Profil fotoğrafı"],
+    [!!p.fitnessGoals?.trim(), "Fitness hedefi"],
+    [!!p.bio?.trim(), "Hakkımda / bio"],
+  ];
+  const done = checks.filter(([v]) => v).length;
+  const missing = checks.filter(([v]) => !v).map(([, l]) => l);
+  return { pct: Math.round((done / checks.length) * 100), missing };
 }
 
 type CoachLite = { id: string; name: string; avatarUrl?: string; role?: string };
@@ -510,6 +525,30 @@ export default function UserDashboardPage() {
         />
 
         <section className="max-w-6xl mx-auto px-4 pb-12 pt-8 md:pt-12">
+          {/* Profile completion banner */}
+          {(() => {
+            const { pct, missing } = profileCompletion(profile);
+            if (pct >= 100) return null;
+            return (
+              <Link href="/dashboard/user/profile" className="block mb-6">
+                <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Profilin %{pct} tamamlandı</p>
+                    <span className="text-xs text-amber-600 dark:text-amber-400 underline">Tamamla →</span>
+                  </div>
+                  <div className="h-1.5 bg-amber-200 dark:bg-amber-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  {missing.length > 0 && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1.5">
+                      Eksik: {missing.join(" · ")}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            );
+          })()}
+
           {/* Hero / Greeting */}
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="mb-8">
             <div className="flex items-center gap-4">
