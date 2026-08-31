@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Clock, Dumbbell, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Clock, Dumbbell, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import UserPageShell from "@/components/user/UserPageShell";
@@ -84,19 +84,40 @@ function parseKey(key?: string) {
   return { dayIdx, sessionIdx };
 }
 
-function exerciseLabel(ex: Exercise) {
+function setLabel(ex: Exercise) {
   if (ex.type === "cardio") return `${ex.cardioMinutes ?? "?"} dk`;
-  if (ex.type === "isometric") return `${ex.sets ?? "?"} × ${ex.holdSeconds ?? "?"}sn`;
-  const parts = [`${ex.sets ?? "?"}×${ex.reps ?? "?"}`];
-  if (ex.weight) parts.push(`${ex.weight}kg`);
-  if (ex.restTime) parts.push(`${ex.restTime}sn`);
-  return parts.join("  ");
+  if (ex.type === "isometric") return `${ex.holdSeconds ?? "?"}sn`;
+  const parts: string[] = [];
+  if (ex.reps) parts.push(`${ex.reps} tekrar`);
+  if (ex.weight) parts.push(`${ex.weight} kg`);
+  if (ex.restTime) parts.push(`${ex.restTime}sn dinlenme`);
+  return parts.length ? parts.join(" · ") : "—";
 }
 
 function getEmbedUrl(url: string): string | null {
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([^&\s?]+)/);
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
   return null;
+}
+
+function buildLog(exercises: Exercise[], setDone: Set<number>[]) {
+  return {
+    exercises: exercises.map((ex, i) => {
+      const count = ex.sets ?? 1;
+      return {
+        name: ex.name,
+        plannedSets: count,
+        plannedReps: ex.reps ?? null,
+        plannedWeight: ex.weight ?? null,
+        sets: Array.from({ length: count }, (_, si) => ({
+          setNumber: si + 1,
+          reps: ex.reps ?? null,
+          weight: ex.weight ?? null,
+          completed: setDone[i]?.has(si) ?? false,
+        })),
+      };
+    }),
+  };
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -134,6 +155,47 @@ function ExerciseMedia({ url, description }: { url: string; description?: string
   );
 }
 
+// ─── Set row ──────────────────────────────────────────────────────────────────
+
+function SetRow({
+  setIdx,
+  ex,
+  done,
+  canToggle,
+  completing,
+  onToggle,
+}: {
+  setIdx: number;
+  ex: Exercise;
+  done: boolean;
+  canToggle: boolean;
+  completing: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 py-2 pl-8 pr-2 border-t border-dashed border-border/40 ${canToggle ? "cursor-pointer" : ""}`}
+      onClick={canToggle ? onToggle : undefined}
+    >
+      <div
+        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+          done ? "bg-primary border-primary" : "border-muted-foreground/40"
+        } ${completing ? "opacity-50" : ""}`}
+      >
+        {done && (
+          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 12 12">
+            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
+      <span className={`text-xs font-medium shrink-0 text-muted-foreground w-10`}>Set {setIdx + 1}</span>
+      <span className={`text-sm flex-1 transition-colors ${done ? "line-through text-muted-foreground" : ""}`}>
+        {setLabel(ex)}
+      </span>
+    </div>
+  );
+}
+
 // ─── Event card ───────────────────────────────────────────────────────────────
 
 function EventCard({
@@ -144,39 +206,55 @@ function EventCard({
 }: {
   event: CalEvent;
   session: SessionInfo | null;
-  onComplete: (id: string) => void;
+  onComplete: (id: string, log: object) => void;
   completing: boolean;
 }) {
   const canComplete = event.status === "planned";
   const exercises = session?.exercises ?? [];
   const hasExercises = exercises.length > 0;
 
-  const [checked, setChecked] = useState<Set<number>>(new Set());
+  // Per-exercise set completion: setDone[exIdx] = Set of done set indices
+  const [setDone, setSetDone] = useState<Set<number>[]>(() =>
+    exercises.map(() => new Set<number>())
+  );
+  const [expanded, setExpanded] = useState<Set<number>>(new Set<number>());
   const [openMedia, setOpenMedia] = useState<number | null>(null);
   const autoTriggered = useRef(false);
 
-  // Reset when event completes externally
   useEffect(() => {
     if (event.status === "completed") {
-      setChecked(new Set());
+      setSetDone(exercises.map(() => new Set<number>()));
       autoTriggered.current = false;
     }
-  }, [event.status]);
+  }, [event.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const toggle = (idx: number) => {
+  const totalSets = exercises.reduce((sum, ex) => sum + (ex.sets ?? 1), 0);
+  const doneSets = setDone.reduce((acc, s) => acc + s.size, 0);
+  const progress = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+
+  const toggleSet = (exIdx: number, setIdx: number) => {
     if (!canComplete || completing) return;
-    const next = new Set(checked);
-    if (next.has(idx)) next.delete(idx);
-    else next.add(idx);
-    setChecked(next);
-
-    if (next.size === exercises.length && !autoTriggered.current) {
+    const next = setDone.map((s, i) => {
+      if (i !== exIdx) return s;
+      const ns = new Set(s);
+      if (ns.has(setIdx)) ns.delete(setIdx); else ns.add(setIdx);
+      return ns;
+    });
+    setSetDone(next);
+    const newDone = next.reduce((acc, s) => acc + s.size, 0);
+    if (newDone === totalSets && totalSets > 0 && !autoTriggered.current) {
       autoTriggered.current = true;
-      onComplete(event._id);
+      onComplete(event._id, buildLog(exercises, next));
     }
   };
 
-  const progress = hasExercises ? Math.round((checked.size / exercises.length) * 100) : 0;
+  const toggleExpand = (i: number) => {
+    setExpanded(prev => {
+      const n = new Set(prev);
+      if (n.has(i)) n.delete(i); else n.add(i);
+      return n;
+    });
+  };
 
   return (
     <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
@@ -202,7 +280,7 @@ function EventCard({
         <div className="px-4 pt-4 pb-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span className="font-medium">Seans İlerlemesi</span>
-            <span className="tabular-nums">{checked.size}/{exercises.length} egzersiz</span>
+            <span className="tabular-nums">{doneSets}/{totalSets} set</span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <div
@@ -213,72 +291,106 @@ function EventCard({
         </div>
       )}
 
-      {/* Exercise list */}
+      {/* Exercise list with per-set rows */}
       {hasExercises && (
         <div className="px-4 pb-2 pt-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Egzersizler</p>
           <div>
-            {exercises.map((ex, i) => (
-              <div key={i}>
-                <div
-                  className={`flex items-center gap-3 py-2.5 border-b border-dashed border-border/60 last:border-0 ${canComplete ? "cursor-pointer select-none" : ""}`}
-                  onClick={() => canComplete && toggle(i)}
-                >
-                  {/* Checkbox */}
-                  {canComplete && (
-                    <div
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        checked.has(i)
-                          ? "bg-primary border-primary"
-                          : "border-muted-foreground/40"
-                      } ${completing ? "opacity-50" : ""}`}
-                    >
-                      {checked.has(i) && (
-                        <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 12 12">
-                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
+            {exercises.map((ex, exIdx) => {
+              const setCount = ex.sets ?? 1;
+              const exDone = setDone[exIdx]?.size ?? 0;
+              const allDone = exDone === setCount;
+              const isExpanded = expanded.has(exIdx);
+              const hasMedia = ex.videoUrls?.some(v => v.url);
+
+              return (
+                <div key={exIdx}>
+                  {/* Exercise header row */}
+                  <div
+                    className={`flex items-center gap-3 py-2.5 border-b border-dashed border-border/60 last:border-0 ${canComplete ? "cursor-pointer select-none" : ""}`}
+                    onClick={() => canComplete && toggleExpand(exIdx)}
+                  >
+                    {/* Done indicator */}
+                    {canComplete && (
+                      <div
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          allDone ? "bg-primary border-primary" : "border-muted-foreground/40"
+                        }`}
+                      >
+                        {allDone && (
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 12 12">
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+
+                    <span className={`font-medium text-sm flex-1 min-w-0 truncate transition-colors ${allDone ? "line-through text-muted-foreground" : ""}`}>
+                      {ex.name}
+                    </span>
+
+                    {/* Set counter */}
+                    <span className="text-muted-foreground text-xs tabular-nums shrink-0">
+                      {canComplete
+                        ? `${exDone}/${setCount} set`
+                        : ex.type === "cardio"
+                        ? `${ex.cardioMinutes ?? "?"} dk`
+                        : ex.type === "isometric"
+                        ? `${setCount}×${ex.holdSeconds ?? "?"}sn`
+                        : `${setCount}×${ex.reps ?? "?"}`}
+                    </span>
+
+                    {/* Media toggle */}
+                    {hasMedia && (
+                      <button
+                        className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                          openMedia === exIdx ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                        }`}
+                        onClick={e => { e.stopPropagation(); setOpenMedia(openMedia === exIdx ? null : exIdx); }}
+                        title="Videoyu İzle"
+                      >
+                        <Play className="w-3.5 h-3.5" fill="currentColor" />
+                      </button>
+                    )}
+
+                    {/* Expand icon */}
+                    {canComplete && (
+                      <span className="text-muted-foreground shrink-0">
+                        {isExpanded
+                          ? <ChevronUp className="w-4 h-4" />
+                          : <ChevronDown className="w-4 h-4" />}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Set rows (expanded) */}
+                  {isExpanded && canComplete && (
+                    <div className="mb-1">
+                      {Array.from({ length: setCount }, (_, si) => (
+                        <SetRow
+                          key={si}
+                          setIdx={si}
+                          ex={ex}
+                          done={setDone[exIdx]?.has(si) ?? false}
+                          canToggle={canComplete && !completing}
+                          completing={completing}
+                          onToggle={() => toggleSet(exIdx, si)}
+                        />
+                      ))}
                     </div>
                   )}
 
-                  <span
-                    className={`font-medium text-sm flex-1 min-w-0 truncate transition-colors ${
-                      checked.has(i) ? "line-through text-muted-foreground" : ""
-                    }`}
-                  >
-                    {ex.name}
-                  </span>
-
-                  <span className="text-muted-foreground text-xs tabular-nums shrink-0">
-                    {exerciseLabel(ex)}
-                  </span>
-
-                  {/* Media toggle */}
-                  {ex.videoUrls && ex.videoUrls.some(v => v.url) && (
-                    <button
-                      className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                        openMedia === i
-                          ? "bg-primary/10 text-primary"
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
-                      onClick={e => { e.stopPropagation(); setOpenMedia(openMedia === i ? null : i); }}
-                      title="Videoyu İzle"
-                    >
-                      <Play className="w-3.5 h-3.5" fill="currentColor" />
-                    </button>
+                  {/* Media panel */}
+                  {openMedia === exIdx && ex.videoUrls && (
+                    <div className="pb-2">
+                      {ex.videoUrls.filter(v => v.url).map((v, vi) => (
+                        <ExerciseMedia key={vi} url={v.url!} description={v.description} />
+                      ))}
+                    </div>
                   )}
                 </div>
-
-                {/* Media panel */}
-                {openMedia === i && ex.videoUrls && (
-                  <div className="pb-2">
-                    {ex.videoUrls.filter(v => v.url).map((v, vi) => (
-                      <ExerciseMedia key={vi} url={v.url!} description={v.description} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -298,14 +410,13 @@ function EventCard({
           <Button
             className="w-full gap-2"
             disabled={completing}
-            onClick={() => onComplete(event._id)}
+            onClick={() => onComplete(event._id, {})}
           >
             {completing ? "İşaretleniyor..." : "Tamamlandı Olarak İşaretle"}
           </Button>
         </div>
       )}
 
-      {/* Completing overlay hint */}
       {completing && hasExercises && (
         <div className="px-4 pb-4">
           <p className="text-xs text-center text-muted-foreground animate-pulse">Seans tamamlanıyor…</p>
@@ -373,9 +484,18 @@ function TakvimInner() {
     router.push(`/takvim?date=${shiftDay(date, delta)}`);
   };
 
-  const handleComplete = async (eventId: string) => {
+  const handleComplete = async (eventId: string, log: object) => {
     setCompleting(eventId);
     try {
+      // Save workout log (best effort — don't block completion on failure)
+      if (log && Object.keys(log).length > 0) {
+        fetch(`${API}/events/${eventId}/log`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(log),
+        }).catch(() => {});
+      }
+
       const res = await fetch(`${API}/events/${eventId}/complete`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },

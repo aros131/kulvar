@@ -3,6 +3,7 @@ import Program from '../models/Program.js';
 import Progress from '../models/Progress.js';
 import ProgramAssignment from '../models/ProgramAssignment.js';
 import User from '../models/User.js';
+import WorkoutLog from '../models/WorkoutLog.js';
 import { notify } from '../utils/notify.js';
 
 const getUserId = (req) => req.user?.id || req.user?._id;
@@ -271,5 +272,39 @@ export const rebuildEvents = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error rebuilding events', error: error.message });
+  }
+};
+
+// POST /events/:id/log
+export const saveWorkoutLog = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { id } = req.params;
+    const { exercises } = req.body;
+
+    const ev = await Event.findOne({ _id: id, userId }).lean();
+    if (!ev) return res.status(404).json({ message: 'Event not found' });
+
+    const log = await WorkoutLog.findOneAndUpdate(
+      { userId, eventId: id },
+      { userId, eventId: id, programId: ev.programId, date: ev.start, exercises },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({ log });
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving workout log', error: error.message });
+  }
+};
+
+// GET /events/:id/log
+export const getWorkoutLog = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { id } = req.params;
+    const log = await WorkoutLog.findOne({ userId, eventId: id }).lean();
+    res.status(200).json({ log: log || null });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching workout log', error: error.message });
   }
 };

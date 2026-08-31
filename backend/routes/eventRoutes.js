@@ -12,6 +12,8 @@ import {
   deleteEvent,    // DELETE by :id
   completeEvent,  // PATCH mark completed by :id
   rebuildEvents,  // POST rebuild events from original assignment date
+  saveWorkoutLog, // POST save set-based workout log
+  getWorkoutLog,  // GET existing log for an event
 } from '../controllers/eventController.js';
 
 /**
@@ -36,5 +38,9 @@ router.patch('/:id/complete', protect, roleMiddleware(['user']), completeEvent);
 
 // Fix: rebuild events from original assignment startDate (coach only)
 router.post('/rebuild', protect, roleMiddleware(['coach']), rebuildEvents);
+
+// Set-based workout log
+router.post('/:id/log', protect, roleMiddleware(['user']), saveWorkoutLog);
+router.get('/:id/log',  protect, roleMiddleware(['user']), getWorkoutLog);
 
 export default router;
