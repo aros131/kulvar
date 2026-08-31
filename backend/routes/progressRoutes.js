@@ -67,4 +67,38 @@ router.get("/all-program-progress", protect, getAllProgramProgress);
 
 router.get("/calendar/:programId", protect, roleMiddleware(["user"]), getCalendarHeatmap);
 
+// GET /progress/overload-suggestions?programId=xxx
+// Analyses the last completed WorkoutLog for this program and returns per-exercise suggestions.
+import WorkoutLog from '../models/WorkoutLog.js';
+router.get('/overload-suggestions', protect, async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { programId } = req.query;
+    const query = { userId };
+    if (programId) query.programId = programId;
+
+    const lastLog = await WorkoutLog.findOne(query).sort({ date: -1 }).lean();
+    if (!lastLog) return res.json({ suggestions: [] });
+
+    const suggestions = lastLog.exercises
+      .filter(ex => ex.sets?.length && ex.sets.every(s => s.completed))
+      .map(ex => {
+        const lastWeight = ex.sets[ex.sets.length - 1]?.weight ?? ex.plannedWeight ?? 0;
+        const lastReps   = ex.sets[ex.sets.length - 1]?.reps   ?? ex.plannedReps   ?? 0;
+        const hasWeight  = lastWeight > 0;
+        return {
+          exerciseName:    ex.name,
+          lastWeight:      lastWeight || null,
+          lastReps:        lastReps   || null,
+          suggestedWeight: hasWeight ? Math.round((lastWeight + 2.5) * 2) / 2 : null,
+          suggestedReps:   !hasWeight && lastReps ? lastReps + 1 : null,
+        };
+      });
+
+    res.json({ suggestions, logDate: lastLog.date });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
 export default router;

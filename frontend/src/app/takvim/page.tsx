@@ -47,6 +47,14 @@ interface SessionInfo {
   notes?: string;
 }
 
+interface OverloadSuggestion {
+  exerciseName: string;
+  lastWeight: number | null;
+  lastReps: number | null;
+  suggestedWeight: number | null;
+  suggestedReps: number | null;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const TR_DAYS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
@@ -201,11 +209,13 @@ function SetRow({
 function EventCard({
   event,
   session,
+  suggestions,
   onComplete,
   completing,
 }: {
   event: CalEvent;
   session: SessionInfo | null;
+  suggestions: OverloadSuggestion[];
   onComplete: (id: string, log: object) => void;
   completing: boolean;
 }) {
@@ -302,6 +312,7 @@ function EventCard({
               const allDone = exDone === setCount;
               const isExpanded = expanded.has(exIdx);
               const hasMedia = ex.videoUrls?.some(v => v.url);
+              const sugg = suggestions.find(s => s.exerciseName === ex.name);
 
               return (
                 <div key={exIdx}>
@@ -362,6 +373,19 @@ function EventCard({
                       </span>
                     )}
                   </div>
+
+                  {/* Overload suggestion chip */}
+                  {sugg && canComplete && (
+                    <div className="ml-8 mb-1 mt-0.5">
+                      <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full px-2 py-0.5">
+                        💡 {sugg.suggestedWeight
+                          ? `${sugg.lastWeight}kg → ${sugg.suggestedWeight}kg dene`
+                          : sugg.suggestedReps
+                          ? `${sugg.lastReps} → ${sugg.suggestedReps} tekrar dene`
+                          : null}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Set rows (expanded) */}
                   {isExpanded && canComplete && (
@@ -437,6 +461,7 @@ function TakvimInner() {
 
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [programCache, setProgramCache] = useState<Record<string, any>>({});
+  const [suggestionCache, setSuggestionCache] = useState<Record<string, OverloadSuggestion[]>>({});
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState<string | null>(null);
 
@@ -456,20 +481,33 @@ function TakvimInner() {
       setEvents(list);
 
       const ids = [...new Set(list.map((e) => e.programId).filter(Boolean))] as string[];
-      const missing = ids.filter((id) => !programCache[id]);
-      if (missing.length > 0) {
-        const fetched = await Promise.all(
-          missing.map((id) =>
+      const missingPrograms = ids.filter((id) => !programCache[id]);
+      const missingSugg = ids.filter((id) => !suggestionCache[id]);
+
+      const [programResults, suggResults] = await Promise.all([
+        Promise.all(
+          missingPrograms.map((id) =>
             fetch(`${API}/programs/${id}`, { headers: { Authorization: `Bearer ${token}` } })
-              .then((r) => r.json())
-              .catch(() => null)
+              .then((r) => r.json()).catch(() => null)
           )
-        );
+        ),
+        Promise.all(
+          missingSugg.map((id) =>
+            fetch(`${API}/progress/overload-suggestions?programId=${id}`, { headers: { Authorization: `Bearer ${token}` } })
+              .then((r) => r.json()).catch(() => ({ suggestions: [] }))
+          )
+        ),
+      ]);
+
+      if (missingPrograms.length > 0) {
         const next: Record<string, any> = { ...programCache };
-        fetched.forEach((d, i) => {
-          if (d) next[missing[i]] = d.program ?? d;
-        });
+        programResults.forEach((d, i) => { if (d) next[missingPrograms[i]] = d.program ?? d; });
         setProgramCache(next);
+      }
+      if (missingSugg.length > 0) {
+        const next: Record<string, OverloadSuggestion[]> = { ...suggestionCache };
+        suggResults.forEach((d, i) => { next[missingSugg[i]] = d.suggestions ?? []; });
+        setSuggestionCache(next);
       }
     } catch {
       toast.error("Etkinlikler yüklenemedi.");
@@ -576,6 +614,7 @@ function TakvimInner() {
                 key={event._id}
                 event={event}
                 session={resolveSession(event)}
+                suggestions={event.programId ? (suggestionCache[event.programId] ?? []) : []}
                 onComplete={handleComplete}
                 completing={completing === event._id}
               />
