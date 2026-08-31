@@ -56,6 +56,7 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('role', data.user.role);
       localStorage.setItem('name', data.user.name);
+      document.cookie = `token=${data.token}; path=/; max-age=604800; SameSite=Lax`;
 
       await createUserIfNotExists(data.user.id, data.user.name, data.user.role);
 

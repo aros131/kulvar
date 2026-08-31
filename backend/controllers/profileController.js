@@ -30,6 +30,7 @@ export const getProfile = async (req, res) => {
       emailVerified: user.emailVerified,
       price: user.price,
       isApproved: user.isApproved,
+      isListedCoach: user.isListedCoach,
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching profile", error: error.message });
@@ -79,7 +80,7 @@ export const updateProfile = async (req, res) => {
   try {
     const updates = req.body;
 
-    const allowedUpdates = ["name", "profilePicture", "specialization", "fitnessGoals", "bio", "tagline", "certifications", "city", "price"];
+    const allowedUpdates = ["name", "profilePicture", "specialization", "fitnessGoals", "bio", "tagline", "certifications", "city", "price", "isListedCoach"];
     const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
       if (allowedUpdates.includes(key)) {
         acc[key] = updates[key];

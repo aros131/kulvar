@@ -46,6 +46,7 @@ const UserSchema = new mongoose.Schema(
     verificationToken: { type: String, default: null },
 
     isApproved:  { type: Boolean, default: true },
+    isListedCoach: { type: Boolean, default: false }, // koç kendini listede görmek için açık etmeli
     price:       { type: Number, default: null },
 
     resetToken:       { type: String, default: null },

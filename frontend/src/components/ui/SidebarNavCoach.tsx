@@ -53,6 +53,7 @@ export default function SidebarNav({ unreadCount: unreadProp }: SidebarNavProps)
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
     router.push("/login");
   };
 

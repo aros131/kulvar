@@ -11,15 +11,19 @@ export default function EmailVerificationBanner() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("user");
-      if (!stored) return;
-      const user = JSON.parse(stored);
-      // Backend now returns emailVerified in profile; check it
+      if (localStorage.getItem("emailBannerDismissed") === "1") return;
       const token = localStorage.getItem("token");
-      if (!token || !user) return;
+      const stored = localStorage.getItem("user");
+      if (!token || !stored) return;
       fetch(`${API}/profile`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
-        .then(data => { if (data.emailVerified === false) setShow(true); })
+        .then(data => {
+          if (data.emailVerified === false) {
+            setShow(true);
+          } else {
+            localStorage.removeItem("emailBannerDismissed");
+          }
+        })
         .catch(() => {});
     } catch {}
   }, []);
@@ -57,7 +61,7 @@ export default function EmailVerificationBanner() {
           </button>
         )}
         <button
-          onClick={() => setShow(false)}
+          onClick={() => { localStorage.setItem("emailBannerDismissed", "1"); setShow(false); }}
           className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300"
           aria-label="Kapat"
         >

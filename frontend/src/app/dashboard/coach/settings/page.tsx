@@ -30,6 +30,8 @@ export default function CoachSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [prefs, setPrefs] = useState<NotifPrefs>(defaultPrefs());
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [isListed, setIsListed] = useState(false);
+  const [savingListed, setSavingListed] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -39,6 +41,7 @@ export default function CoachSettingsPage() {
       .then((d) => {
         setEmail(d.email || '');
         if (d.price != null) setPrice(String(d.price));
+        setIsListed(!!d.isListedCoach);
         if (d.notificationPreferences) {
           setPrefs({
             inApp:  { ...defaultPrefs().inApp,  ...d.notificationPreferences.inApp  },
@@ -56,7 +59,7 @@ export default function CoachSettingsPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API}/profile`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ price: price === '' ? null : parsed }),
       });
@@ -99,8 +102,28 @@ export default function CoachSettingsPage() {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (res.ok) { localStorage.clear(); window.location.href = '/'; }
+    if (res.ok) { localStorage.clear(); document.cookie = "token=; path=/; max-age=0; SameSite=Lax"; window.location.href = '/'; }
     else toast.error('Hesap silinemedi.');
+  };
+
+  const saveListed = async (val: boolean) => {
+    setIsListed(val);
+    setSavingListed(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isListedCoach: val }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(val ? 'Profiliniz "Koç Bul" listesinde gösteriliyor.' : 'Profiliniz listeden kaldırıldı.');
+    } catch {
+      setIsListed(!val);
+      toast.error('Kaydedilemedi.');
+    } finally {
+      setSavingListed(false);
+    }
   };
 
   const toggleInApp = (key: keyof NotifPrefs['inApp']) => {
@@ -162,6 +185,15 @@ export default function CoachSettingsPage() {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">Bu fiyat profilinizde ve koç listesinde görünecektir.</p>
+      </section>
+
+      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">
+        <h2 className="text-lg font-semibold mb-1">Koç Listesi</h2>
+        <p className="text-sm text-muted-foreground mb-4">Danışanlar seni &quot;Koç Bul&quot; sayfasında görebilir.</p>
+        <div className="flex items-center justify-between">
+          <Label className="font-normal">Listede görün</Label>
+          <Switch checked={isListed} onCheckedChange={saveListed} disabled={savingListed} />
+        </div>
       </section>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">

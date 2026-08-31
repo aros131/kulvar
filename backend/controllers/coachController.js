@@ -32,7 +32,7 @@ const paginate = (req) => {
 export async function listCoaches(req, res) {
   try {
     const { specialization } = req.query || {};
-    const where = { role: "coach" };
+    const where = { role: "coach", isListedCoach: true };
 
     if (specialization && specialization !== "all") {
       where.specialization = new RegExp(`^${specialization}$`, "i");

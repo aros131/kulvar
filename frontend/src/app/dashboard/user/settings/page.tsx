@@ -85,7 +85,7 @@ export default function UserSettingsPage() {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (res.ok) { localStorage.clear(); window.location.href = '/'; }
+    if (res.ok) { localStorage.clear(); document.cookie = "token=; path=/; max-age=0; SameSite=Lax"; window.location.href = '/'; }
     else toast.error('Hesap silinemedi.');
   };
 

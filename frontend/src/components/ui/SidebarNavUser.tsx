@@ -21,6 +21,7 @@ export default function SidebarNavUser({
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
     router.push("/login");
   };
 

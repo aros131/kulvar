@@ -408,6 +408,7 @@ const CoachProfilePage: React.FC = () => {
               onClick={() => {
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
+                document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
                 router.push("/login");
               }}
               className="w-full flex items-center justify-between px-4 py-3.5 bg-card hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500"

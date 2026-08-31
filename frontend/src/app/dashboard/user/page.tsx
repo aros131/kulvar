@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Dumbbell, ChevronRight, CheckCircle2, Calendar } from "lucide-react";
+import { Star, Dumbbell, ChevronRight, CheckCircle2, Flame, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 import { storage, db } from "@/lib/firebase";
@@ -275,6 +275,7 @@ export default function UserDashboardPage() {
   const [loadingCoaches, setLoadingCoaches] = useState(true);
 
   const [todayEvents, setTodayEvents] = useState<{ _id: string; title: string; start: string; end: string; status: string }[]>([]);
+  const [streak, setStreak] = useState<{ currentStreak: number; longestStreak: number } | null>(null);
 
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
@@ -383,11 +384,27 @@ export default function UserDashboardPage() {
       }
     };
 
+    const fetchStreak = async () => {
+      try {
+        // userId comes from profile; fetch after profile resolves
+        const profileRes = await fetch(`${API}/profile`, { headers, cache: "no-store", signal: ac.signal });
+        const profileData: any = profileRes.ok ? await profileRes.json().catch(() => ({})) : {};
+        const uid = profileData?._id || profileData?.id;
+        if (!uid) return;
+        const res = await fetch(`${API}/progress/streaks/${uid}`, { headers, cache: "no-store", signal: ac.signal });
+        if (res.ok) {
+          const d = await res.json().catch(() => ({}));
+          if (alive) setStreak({ currentStreak: Number(d.currentStreak) || 0, longestStreak: Number(d.longestStreak) || 0 });
+        }
+      } catch { /* ignore */ }
+    };
+
     fetchProfile();
     fetchProgress();
     fetchPrograms();
     fetchUnreadNotifications();
     fetchTodayEvents();
+    fetchStreak();
 
     const interval = window.setInterval(fetchUnreadNotifications, 30000);
     const onVis = () => {
@@ -526,12 +543,24 @@ export default function UserDashboardPage() {
           {/* Today's Workout */}
           <TodayWorkoutWidget events={todayEvents} />
 
+          {/* Streak Banner */}
+          <StreakWidget streak={streak} />
+
           {/* Stat Cards */}
-          <div className="grid grid-cols-3 gap-3 mb-8">
-            <StatCard loading={loadingProgress} title="Tamamlanan Seans" value={progress?.totalCompletedSessions ?? 0} hint="Son 30 gün" />
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <StatCard loading={loadingProgress} title="Tamamlanan Seans" value={progress?.totalCompletedSessions ?? 0} hint="Toplam" />
             <StatCard loading={loadingProgress} title="Atanmış Program" value={progress?.assignedPrograms ?? 0} hint="Aktif" />
             <StatCard loading={false} title="Bildirim" value={unreadCount} hint="Okunmamış" />
           </div>
+
+          {/* Achievement Badges */}
+          <AchievementBadges
+            completedSessions={progress?.totalCompletedSessions ?? 0}
+            currentStreak={streak?.currentStreak ?? 0}
+            longestStreak={streak?.longestStreak ?? 0}
+            programs={programs}
+          />
+
 
           {/* Programs */}
           <section className="mb-12">
@@ -799,5 +828,119 @@ function EmptyState({
         {action ? <div className="pt-2">{action}</div> : null}
       </CardContent>
     </Card>
+  );
+}
+
+/* ── StreakWidget ─────────────────────────────────────────────────────────── */
+
+function StreakWidget({ streak }: { streak: { currentStreak: number; longestStreak: number } | null }) {
+  if (streak === null) return null;
+  const { currentStreak, longestStreak } = streak;
+
+  if (currentStreak === 0) {
+    return (
+      <div className="mb-6 rounded-2xl border border-dashed bg-card p-4 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+          <Flame className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">Seri başlatmak için bugün antrenman yap!</p>
+          <p className="text-xs text-muted-foreground">En uzun seriniz: {longestStreak} gün</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isHot = currentStreak >= 7;
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      className={`mb-6 rounded-2xl border p-4 flex items-center gap-4 ${
+        isHot
+          ? "bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-orange-300/40 dark:border-orange-700/40"
+          : "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-300/40 dark:border-emerald-700/40"
+      }`}
+    >
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${isHot ? "bg-orange-500/15" : "bg-emerald-500/15"}`}>
+        <Flame className={`h-7 w-7 ${isHot ? "text-orange-500" : "text-emerald-500"}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-2xl font-black tabular-nums leading-none">
+          {currentStreak} <span className="text-base font-semibold">günlük seri</span> {isHot ? "🔥" : "✅"}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">En uzun seri: {longestStreak} gün</p>
+      </div>
+      {currentStreak >= 3 && (
+        <div className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${isHot ? "bg-orange-500/20 text-orange-600 dark:text-orange-400" : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"}`}>
+          {currentStreak >= 30 ? "Efsane" : currentStreak >= 14 ? "Ateşte" : currentStreak >= 7 ? "Süper" : "Devam et"}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+/* ── AchievementBadges ───────────────────────────────────────────────────── */
+
+const ACHIEVEMENTS = [
+  { id: "first", icon: "🎯", label: "İlk Adım", desc: "İlk antrenmanını tamamla", cond: (s: number) => s >= 1 },
+  { id: "week", icon: "📅", label: "Bir Hafta", desc: "7 antrenman tamamla", cond: (s: number) => s >= 7 },
+  { id: "month", icon: "💪", label: "Bir Ay", desc: "30 antrenman tamamla", cond: (s: number) => s >= 30 },
+  { id: "streak3", icon: "🔥", label: "Seri Başlangıç", desc: "3 günlük seri yap", cond: (_s: number, cur: number) => cur >= 3 },
+  { id: "streak7", icon: "⚡", label: "Haftalık Seri", desc: "7 günlük seri yap", cond: (_s: number, cur: number) => cur >= 7 },
+  { id: "streak30", icon: "🏆", label: "Aylık Seri", desc: "30 günlük seri yap", cond: (_s: number, cur: number) => cur >= 30 },
+  { id: "half", icon: "🎉", label: "Yarı Yolda", desc: "Bir programı %50 tamamla", cond: (_s: number, _c: number, programs: UserProgram[]) => programs.some((p) => p.progressPercentage >= 50) },
+  { id: "done", icon: "🏅", label: "Program Bitti", desc: "Bir programı %100 tamamla", cond: (_s: number, _c: number, programs: UserProgram[]) => programs.some((p) => p.progressPercentage >= 100) },
+];
+
+function AchievementBadges({
+  completedSessions,
+  currentStreak,
+  longestStreak: _longest,
+  programs,
+}: {
+  completedSessions: number;
+  currentStreak: number;
+  longestStreak: number;
+  programs: UserProgram[];
+}) {
+  const unlocked = ACHIEVEMENTS.filter((a) => a.cond(completedSessions, currentStreak, programs));
+  const locked = ACHIEVEMENTS.filter((a) => !a.cond(completedSessions, currentStreak, programs));
+
+  if (unlocked.length === 0 && completedSessions === 0) return null;
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <Trophy className="h-4 w-4 text-amber-500" />
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Başarımlar</h2>
+        {unlocked.length > 0 && (
+          <span className="text-xs bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold px-2 py-0.5 rounded-full">
+            {unlocked.length}/{ACHIEVEMENTS.length}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {unlocked.map((a) => (
+          <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-300/30 dark:border-amber-700/30">
+            <span className="text-base">{a.icon}</span>
+            <div>
+              <p className="text-xs font-semibold leading-none">{a.label}</p>
+              <p className="text-[10px] text-muted-foreground">{a.desc}</p>
+            </div>
+          </div>
+        ))}
+        {locked.slice(0, 3).map((a) => (
+          <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50 border border-border opacity-50">
+            <span className="text-base grayscale">{a.icon}</span>
+            <div>
+              <p className="text-xs font-semibold leading-none text-muted-foreground">{a.label}</p>
+              <p className="text-[10px] text-muted-foreground">{a.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
