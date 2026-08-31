@@ -329,8 +329,19 @@ export default function CoachProfileClient({
 
   return (
     <div ref={rootRef} className="relative min-h-screen">
-      {/* Cover / Header background */}
-      <div className="absolute inset-x-0 top-0 h-[260px] bg-gradient-to-br from-primary/25 via-muted to-background [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+      {/* Cover / Header background — brand color if set */}
+      <div
+        className="absolute inset-x-0 top-0 h-[260px] [mask-image:linear-gradient(to_bottom,black,transparent)]"
+        style={
+          coach.brandColor
+            ? { background: `linear-gradient(135deg, ${coach.brandColor}40, ${coach.brandColor}10, transparent)` }
+            : undefined
+        }
+      >
+        {!coach.brandColor && (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-muted to-background" />
+        )}
+      </div>
 
       {/* Sticky Top Bar */}
       <div className={cx("sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all", scrolled ? "border-b border-border" : "")}>

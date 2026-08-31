@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, User, MessageSquare, Settings, Bell, LayoutGrid, CreditCard, Users, LogOut, Camera, Target } from "lucide-react";
+import { Home, User, MessageSquare, Settings, Bell, LayoutGrid, CreditCard, Users, LogOut, Camera, Target, ClipboardList } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -52,6 +52,7 @@ export default function SidebarNavUser({
     { href: "/dashboard/user/koclarimiz", icon: <Users size={24} />, label: "Koçlarım" },
     { href: "/dashboard/user/ilerleme", icon: <Camera size={24} />, label: "İlerleme" },
     { href: "/dashboard/user/aliskanliklar", icon: <Target size={24} />, label: "Alışkanlıklar" },
+    { href: "/dashboard/user/check-in", icon: <ClipboardList size={24} />, label: "Check-in" },
     { href: "/dashboard/user/payments", icon: <CreditCard size={24} />, label: "Ödemelerim" },
     {
       href: "/dashboard/user/messages",

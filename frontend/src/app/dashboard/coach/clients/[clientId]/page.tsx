@@ -59,6 +59,7 @@ export default function ClientDetailPage() {
 
   const [client, setClient] = useState<ClientUser | null>(null);
   const [programs, setPrograms] = useState<ClientProgram[]>([]);
+  const [checkIns, setCheckIns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [coachId, setCoachId] = useState<string | null>(null);
 
@@ -73,13 +74,14 @@ export default function ClientDetailPage() {
     if (!clientId) return;
     const token = localStorage.getItem('token');
 
-    fetch(`${API}/users/${clientId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
+    Promise.all([
+      fetch(`${API}/users/${clientId}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`${API}/check-ins/client/${clientId}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).catch(() => ({})),
+    ])
+      .then(([data, ci]) => {
         setClient(data.user ?? null);
         setPrograms(Array.isArray(data.programs) ? data.programs : []);
+        setCheckIns(Array.isArray(ci.checkIns) ? ci.checkIns : []);
       })
       .catch(() => toast.error('Danışan bilgisi yüklenemedi.'))
       .finally(() => setLoading(false));
@@ -195,6 +197,30 @@ export default function ClientDetailPage() {
             </ul>
           )}
         </div>
+        {/* Check-ins */}
+        {checkIns.length > 0 && (
+          <div>
+            <h2 className="font-semibold mb-3">Haftalık Check-in'ler</h2>
+            <ul className="space-y-3">
+              {checkIns.map((c) => (
+                <li key={c._id} className="bg-card border rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">{c.week}. Hafta</span>
+                    <span className="text-xs text-muted-foreground">{new Date(c.date).toLocaleDateString('tr-TR')}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    {c.weight != null && <span>⚖️ {c.weight} kg</span>}
+                    {c.energyLevel != null && <span>⚡ Enerji {c.energyLevel}/5</span>}
+                    {c.sleepQuality != null && <span>😴 Uyku {c.sleepQuality}/5</span>}
+                    {c.stressLevel != null && <span>🧠 Stres {c.stressLevel}/5</span>}
+                    {c.completedWorkouts != null && <span>💪 {c.completedWorkouts} antrenman</span>}
+                  </div>
+                  {c.note && <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">{c.note}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </CoachPageShell>
   );

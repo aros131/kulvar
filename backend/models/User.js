@@ -48,6 +48,8 @@ const UserSchema = new mongoose.Schema(
     isApproved:  { type: Boolean, default: true },
     isListedCoach: { type: Boolean, default: false }, // koç kendini listede görmek için açık etmeli
     price:       { type: Number, default: null },
+    brandColor:  { type: String, default: '' },       // hex renk kodu, koç profili için
+    brandLogoUrl:{ type: String, default: '' },       // koç logo URL'i
 
     resetToken:       { type: String, default: null },
     resetTokenExpiry: { type: Date,   default: null },

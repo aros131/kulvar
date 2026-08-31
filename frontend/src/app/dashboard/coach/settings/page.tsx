@@ -32,6 +32,9 @@ export default function CoachSettingsPage() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [isListed, setIsListed] = useState(false);
   const [savingListed, setSavingListed] = useState(false);
+  const [brandColor, setBrandColor] = useState('#6366f1');
+  const [brandLogoUrl, setBrandLogoUrl] = useState('');
+  const [savingBrand, setSavingBrand] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -42,6 +45,8 @@ export default function CoachSettingsPage() {
         setEmail(d.email || '');
         if (d.price != null) setPrice(String(d.price));
         setIsListed(!!d.isListedCoach);
+        if (d.brandColor) setBrandColor(d.brandColor);
+        if (d.brandLogoUrl) setBrandLogoUrl(d.brandLogoUrl);
         if (d.notificationPreferences) {
           setPrefs({
             inApp:  { ...defaultPrefs().inApp,  ...d.notificationPreferences.inApp  },
@@ -126,6 +131,24 @@ export default function CoachSettingsPage() {
     }
   };
 
+  const saveBrand = async () => {
+    setSavingBrand(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ brandColor, brandLogoUrl }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success('Marka ayarları kaydedildi.');
+    } catch {
+      toast.error('Kaydedilemedi.');
+    } finally {
+      setSavingBrand(false);
+    }
+  };
+
   const toggleInApp = (key: keyof NotifPrefs['inApp']) => {
     setPrefs(p => ({ ...p, inApp: { ...p.inApp, [key]: !p.inApp[key] } }));
   };
@@ -194,6 +217,52 @@ export default function CoachSettingsPage() {
           <Label className="font-normal">Listede görün</Label>
           <Switch checked={isListed} onCheckedChange={saveListed} disabled={savingListed} />
         </div>
+      </section>
+
+      <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-4">
+        <h2 className="text-lg font-semibold">Marka Ayarları</h2>
+        <p className="text-sm text-muted-foreground -mt-2">Profil sayfanda gösterilecek marka rengi ve logo.</p>
+
+        <div>
+          <Label>Marka Rengi</Label>
+          <div className="flex items-center gap-3 mt-1">
+            <input
+              type="color"
+              value={brandColor}
+              onChange={e => setBrandColor(e.target.value)}
+              className="w-10 h-10 rounded-lg border border-border cursor-pointer"
+            />
+            <input
+              type="text"
+              value={brandColor}
+              onChange={e => setBrandColor(e.target.value)}
+              placeholder="#6366f1"
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
+            />
+            <div
+              className="w-10 h-10 rounded-lg border border-border shrink-0"
+              style={{ background: brandColor }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>Logo URL (isteğe bağlı)</Label>
+          <Input
+            value={brandLogoUrl}
+            onChange={e => setBrandLogoUrl(e.target.value)}
+            placeholder="https://..."
+            className="mt-1"
+          />
+          {brandLogoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brandLogoUrl} alt="Logo önizleme" className="mt-2 h-12 object-contain rounded" onError={e => (e.currentTarget.style.display = 'none')} />
+          )}
+        </div>
+
+        <Button onClick={saveBrand} disabled={savingBrand}>
+          {savingBrand ? 'Kaydediliyor...' : 'Kaydet'}
+        </Button>
       </section>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">

@@ -31,6 +31,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
 import progressPhotoRoutes from "./routes/progressPhotoRoutes.js";
 import habitRoutes from "./routes/habitRoutes.js";
+import checkInRoutes from "./routes/checkInRoutes.js";
 import { startBookingReminderJob } from "./services/bookingReminderJob.js";
 import rateLimit from "express-rate-limit";
 /* --------------------------------- Setup ---------------------------------- */
@@ -129,6 +130,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/media", mediaRoutes);
 app.use("/progress-photos", progressPhotoRoutes);
 app.use("/habits", habitRoutes);
+app.use("/check-ins", checkInRoutes);
 app.use("/events", eventRoutes);
 app.use("/me", meRoutes);
 app.use("/payment", paymentRoutes);

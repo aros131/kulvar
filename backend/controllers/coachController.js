@@ -74,7 +74,7 @@ export async function getCoachProfile(req, res) {
     if (!isObjId(id)) return res.status(400).json({ message: "Invalid coach id" });
 
     const doc = await User.findOne({ _id: id, role: "coach" })
-      .select("name profilePicture avatar specialization city rating bio programsCount role certifications tagline languages")
+      .select("name profilePicture avatar specialization city rating bio programsCount role certifications tagline languages brandColor brandLogoUrl")
       .lean();
     if (!doc) return res.status(404).json({ message: "Coach not found" });
 
@@ -102,6 +102,8 @@ export async function getCoachProfile(req, res) {
       bio: doc.bio || "",
       isFollowing,
       languages: Array.isArray(doc.languages) ? doc.languages : [],
+      brandColor: doc.brandColor || null,
+      brandLogoUrl: doc.brandLogoUrl || null,
     };
 
     return res.json(coach);
