@@ -145,6 +145,14 @@ nav {
 .c-badge { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 100px; margin-top: 2px; display: inline-block; }
 .badge-green { background: rgba(16,185,129,.15); color: #34d399; }
 .badge-blue { background: rgba(59,130,246,.15); color: #60a5fa; }
+.dash-scroll {
+  height: 120px; overflow: hidden; position: relative;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+.dash-scroll-track { animation: dashScroll 9s linear infinite; }
+.app-frame:hover .dash-scroll-track { animation-play-state: paused; }
+@keyframes dashScroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
 .hero-eyebrow {
   display: inline-block;
   font-size: 11px; font-weight: 500; letter-spacing: .2em;
@@ -519,32 +527,63 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
         <div class="dash-main">
           <div class="dash-heading">Danışanlarım</div>
           <div class="dash-sub">3 aktif danışan</div>
-          <div class="client-card">
-            <div class="c-avatar" style="background:#3b82f6">AK</div>
-            <div class="c-info">
-              <div class="c-name">Ahmet Kara</div>
-              <div class="c-program">Güç &amp; Kondisyon</div>
-              <div class="prog-wrap"><div class="prog-fill" style="width:78%;background:#3b82f6"></div></div>
+          <div class="dash-scroll">
+            <div class="dash-scroll-track">
+              <div class="client-card">
+                <div class="c-avatar" style="background:#3b82f6">AK</div>
+                <div class="c-info">
+                  <div class="c-name">Ahmet Kara</div>
+                  <div class="c-program">Güç &amp; Kondisyon</div>
+                  <div class="prog-wrap"><div class="prog-fill" style="width:78%;background:#3b82f6"></div></div>
+                </div>
+                <div class="c-right"><div class="c-pct">78%</div><div class="c-badge badge-green">Aktif</div></div>
+              </div>
+              <div class="client-card">
+                <div class="c-avatar" style="background:#7c3aed">MS</div>
+                <div class="c-info">
+                  <div class="c-name">Merve Şahin</div>
+                  <div class="c-program">12 Haftalık Program</div>
+                  <div class="prog-wrap"><div class="prog-fill" style="width:45%;background:#7c3aed"></div></div>
+                </div>
+                <div class="c-right"><div class="c-pct">45%</div><div class="c-badge badge-blue">Devam</div></div>
+              </div>
+              <div class="client-card">
+                <div class="c-avatar" style="background:#10b981">EC</div>
+                <div class="c-info">
+                  <div class="c-name">Ece Çelik</div>
+                  <div class="c-program">Fonksiyonel Antrenman</div>
+                  <div class="prog-wrap"><div class="prog-fill" style="width:92%;background:#10b981"></div></div>
+                </div>
+                <div class="c-right"><div class="c-pct">92%</div><div class="c-badge badge-green">Aktif</div></div>
+              </div>
+              <div class="client-card">
+                <div class="c-avatar" style="background:#3b82f6">AK</div>
+                <div class="c-info">
+                  <div class="c-name">Ahmet Kara</div>
+                  <div class="c-program">Güç &amp; Kondisyon</div>
+                  <div class="prog-wrap"><div class="prog-fill" style="width:78%;background:#3b82f6"></div></div>
+                </div>
+                <div class="c-right"><div class="c-pct">78%</div><div class="c-badge badge-green">Aktif</div></div>
+              </div>
+              <div class="client-card">
+                <div class="c-avatar" style="background:#7c3aed">MS</div>
+                <div class="c-info">
+                  <div class="c-name">Merve Şahin</div>
+                  <div class="c-program">12 Haftalık Program</div>
+                  <div class="prog-wrap"><div class="prog-fill" style="width:45%;background:#7c3aed"></div></div>
+                </div>
+                <div class="c-right"><div class="c-pct">45%</div><div class="c-badge badge-blue">Devam</div></div>
+              </div>
+              <div class="client-card">
+                <div class="c-avatar" style="background:#10b981">EC</div>
+                <div class="c-info">
+                  <div class="c-name">Ece Çelik</div>
+                  <div class="c-program">Fonksiyonel Antrenman</div>
+                  <div class="prog-wrap"><div class="prog-fill" style="width:92%;background:#10b981"></div></div>
+                </div>
+                <div class="c-right"><div class="c-pct">92%</div><div class="c-badge badge-green">Aktif</div></div>
+              </div>
             </div>
-            <div class="c-right"><div class="c-pct">78%</div><div class="c-badge badge-green">Aktif</div></div>
-          </div>
-          <div class="client-card">
-            <div class="c-avatar" style="background:#7c3aed">MS</div>
-            <div class="c-info">
-              <div class="c-name">Merve Şahin</div>
-              <div class="c-program">12 Haftalık Program</div>
-              <div class="prog-wrap"><div class="prog-fill" style="width:45%;background:#7c3aed"></div></div>
-            </div>
-            <div class="c-right"><div class="c-pct">45%</div><div class="c-badge badge-blue">Devam</div></div>
-          </div>
-          <div class="client-card">
-            <div class="c-avatar" style="background:#10b981">EC</div>
-            <div class="c-info">
-              <div class="c-name">Ece Çelik</div>
-              <div class="c-program">Fonksiyonel Antrenman</div>
-              <div class="prog-wrap"><div class="prog-fill" style="width:92%;background:#10b981"></div></div>
-            </div>
-            <div class="c-right"><div class="c-pct">92%</div><div class="c-badge badge-green">Aktif</div></div>
           </div>
         </div>
       </div>
