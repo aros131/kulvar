@@ -189,6 +189,29 @@ nav {
 }
 .hero-form button:hover { opacity: .85; }
 .hero-note { margin-top: 14px; font-size: 12px; color: var(--text3); }
+.consent {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin-top: 14px; max-width: 420px;
+  font-size: 12px; line-height: 1.5; color: var(--text3); cursor: pointer;
+}
+.consent input[type="checkbox"] {
+  margin-top: 2px; width: 14px; height: 14px; flex-shrink: 0;
+  accent-color: var(--indigom); cursor: pointer;
+}
+.consent a { color: var(--text2); text-decoration: underline; }
+.consent.dark { color: rgba(255,255,255,.45); }
+.consent.dark a { color: rgba(255,255,255,.75); }
+
+/* ── Legal ───────────────────────────────────────────────────────── */
+.legal-section { border-top: 1px solid var(--border); padding: 56px 0; }
+.legal-section h2 {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: 24px; letter-spacing: -.6px; margin-bottom: 8px;
+}
+.legal-section > .wrap > p:first-of-type { color: var(--text2); font-size: 14px; max-width: 680px; margin-bottom: 24px; }
+.legal-section h3 { font-size: 14px; font-weight: 600; margin: 22px 0 6px; }
+.legal-section p { font-size: 13px; color: var(--text2); line-height: 1.7; max-width: 680px; }
+.legal-section a { color: var(--indigom); }
 .hero-success {
   display: none; align-items: center; gap: 8px;
   font-size: 14px; color: var(--green); margin-top: 10px;
@@ -492,6 +515,10 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
         <input type="email" placeholder="koç@email.com" id="he" required>
         <button type="submit" id="hb">Erken Erişime Katıl</button>
       </form>
+      <label class="consent" for="hk">
+        <input type="checkbox" id="hk" form="hf" required>
+        <span><a href="#kvkk">Aydınlatma Metni</a>'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum.</span>
+      </label>
       <div class="hero-success" id="hs">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#10b981" stroke-width="1.5"/><path d="M5 8.5l2.5 2.5 4-5" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Listeye eklendiniz!
@@ -790,6 +817,10 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
         <input type="email" placeholder="koç@email.com" id="ce" required>
         <button type="submit" id="cb">Katıl</button>
       </form>
+      <label class="consent dark" for="ck" style="margin:14px auto 0">
+        <input type="checkbox" id="ck" form="cf" required>
+        <span><a href="#kvkk">Aydınlatma Metni</a>'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum.</span>
+      </label>
       <div class="cta-success" id="cs">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#34d399" stroke-width="1.5"/><path d="M5.5 9.5l3 3 5-6" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Harika! Listeye eklendiniz.
@@ -798,6 +829,27 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
     </div>
   </div>
 </div>
+
+<!-- KVKK -->
+<section class="legal-section" id="kvkk">
+  <div class="wrap">
+    <h2>KVKK Aydınlatma Metni</h2>
+    <p>Bu web sitesi üzerinden erken erişim listesine kaydolmak amacıyla paylaştığınız e-posta adresiniz, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında aşağıdaki koşullarla işlenir.</p>
+    <h3>Veri Sorumlusu</h3>
+    <p>[Şirket/şahıs unvanı ve açık adresi eklenecek]</p>
+    <h3>Işlenen Veri ve Amacı</h3>
+    <p>E-posta adresiniz; erken erişim/bekleme listesi oluşturmak ve ürüne ilişkin gelişmeler hakkında sizinle iletişime geçmek amacıyla işlenir.</p>
+    <h3>Hukuki Sebep</h3>
+    <p>KVKK m. 5/2-c ("bir sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması") ve verdiğiniz açık rıza (KVKK m. 5/1).</p>
+    <h3>Aktarım</h3>
+    <p>E-posta adresiniz, form altyapı sağlayıcımız Formspree, Inc. (Amerika Birleşik Devletleri merkezli) üzerinden işlenir ve saklanır; bu nedenle veriniz yurt dışına aktarılmaktadır.</p>
+    <h3>Saklama Süresi</h3>
+    <p>Erken erişim süreci sona erene veya talebiniz üzerine silininceye kadar saklanır.</p>
+    <h3>Haklarınız (KVKK m. 11)</h3>
+    <p>Kişisel verinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içinde veya dışında aktarıldığı üçüncü kişileri bilme, eksik veya yanlış işlenmişse düzeltilmesini isteme, işlenmesini gerektiren sebepler ortadan kalktığında silinmesini veya yok edilmesini isteme ve bu işlemlerin aktarıldığı üçüncü kişilere bildirilmesini isteme haklarına sahipsiniz.</p>
+    <p>Bu haklarınızı kullanmak için <a href="mailto:business@persecoaching.com">business@persecoaching.com</a> adresinden bizimle iletişime geçebilirsiniz.</p>
+  </div>
+</section>
 
 <!-- FOOTER -->
 <footer>
@@ -824,7 +876,7 @@ async function sub(formId, inputId, successId, e) {
     const res = await fetch('https://formspree.io/f/mppzzykv', {
       method: 'POST',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, kvkk_onay: true, kvkk_onay_tarihi: new Date().toISOString() }),
     });
     if (res.ok) {
       document.getElementById(formId).style.display = 'none';
