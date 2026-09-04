@@ -122,7 +122,7 @@ nav {
 }
 .nav-item.active { background: rgba(101,97,200,.15); color: #c4c0f0; }
 .nav-icon { width: 14px; height: 14px; flex-shrink: 0; }
-.dash-main { flex: 1; padding: 16px; background: #1a1a2e; overflow: hidden; }
+.dash-main { flex: 1; padding: 16px; background: #1a1a2e; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
 .dash-heading { font-size: 13px; font-weight: 600; color: #f9fafb; margin-bottom: 2px; }
 .dash-sub { font-size: 11px; color: #6b7280; margin-bottom: 12px; }
 .client-card {
@@ -146,9 +146,9 @@ nav {
 .badge-green { background: rgba(16,185,129,.15); color: #34d399; }
 .badge-blue { background: rgba(59,130,246,.15); color: #60a5fa; }
 .dash-scroll {
-  height: 120px; overflow: hidden; position: relative;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  flex: 1; min-height: 0; overflow: hidden; position: relative;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 16px), transparent 100%);
 }
 .dash-scroll-track { animation: dashScroll 9s linear infinite; }
 .app-frame:hover .dash-scroll-track { animation-play-state: paused; }
@@ -485,7 +485,7 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
   <canvas id="tree-canvas"></canvas>
   <div class="hero-body">
     <div class="hero-text">
-      <span class="hero-eyebrow">Perse Coaching</span>
+      <span class="hero-eyebrow" lang="en">Perse Coaching</span>
       <h1 class="hero-h1">Tüm<br>danışanların.<br>Tek platform.</h1>
       <p class="hero-sub">Program gönderiyorsun, danışan soruyor, ilerlemeyi takip ediyorsun, bir yandan ödemenin peşine düşüyorsun. <strong>Perse, bunların hepsini tek yerde toplar.</strong></p>
       <form class="hero-form" id="hf" onsubmit="sub('hf','he','hs',event)">
@@ -600,7 +600,7 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
 <!-- PAIN POINTS -->
 <section class="section">
   <div class="wrap">
-    <p class="section-label">Neden Perse</p>
+    <p class="section-label" lang="en">Neden Perse</p>
     <h2 class="section-h2">Koçluk yapmaya<br>zamanın kalsın.</h2>
     <p class="section-p">Danışan sayın arttıkça asıl işin dışında kalan şeyler de büyüyor.</p>
     <div class="pains">
@@ -626,14 +626,14 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
 <!-- FEATURES -->
 <section class="section" id="ozellikler" style="padding-top:0">
   <div class="wrap">
-    <p class="section-label">Özellikler</p>
+    <p class="section-label" lang="en">Özellikler</p>
     <h2 class="section-h2">Bir platform,<br>her şey dahil.</h2>
     <div class="feat-block">
 
       <!-- Feature 1 -->
       <div class="feat-row">
         <div>
-          <p class="section-label">Takvim &amp; Takip</p>
+          <p class="section-label" lang="en">Takvim &amp; Takip</p>
           <h3 class="feat-h3">Günün antrenmanı, tek bakışta.</h3>
           <p class="feat-p">Danışanın bugün ne yapacağını bilir. Sen de kim antrenmanını tamamladı, kim aksattı görebilirsin.</p>
           <ul class="feat-list">
@@ -677,7 +677,7 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
       <!-- Feature 2 -->
       <div class="feat-row flip">
         <div>
-          <p class="section-label">AI Asistan</p>
+          <p class="section-label" lang="en">AI Asistan</p>
           <h3 class="feat-h3">Programı AI hazırlasın, sen onayla.</h3>
           <p class="feat-p">Danışan bilgilerine göre program saniyeler içinde hazır. Risk altındaki danışanı erkenden gör, mesajlarına AI destekli taslakla hızlı yanıt ver.</p>
           <ul class="feat-list">
@@ -717,7 +717,7 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
       <!-- Feature 3 -->
       <div class="feat-row">
         <div>
-          <p class="section-label">Ödeme Sistemi</p>
+          <p class="section-label" lang="en">Ödeme Sistemi</p>
           <h3 class="feat-h3">Fatura oluştur, online tahsil et.</h3>
           <p class="feat-p">Danışanına fatura gönder, kredi kartıyla ödesin. Bekleyen ve tamamlanan ödemeleri tek ekranda takip et.</p>
           <ul class="feat-list">
@@ -753,7 +753,7 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
 <!-- HOW IT WORKS -->
 <section class="section" id="nasil-calisir">
   <div class="wrap">
-    <p class="section-label">Nasıl Çalışır</p>
+    <p class="section-label" lang="en">Nasıl Çalışır</p>
     <h2 class="section-h2" style="max-width:380px">Üç adımda başla.</h2>
     <div class="steps-wrap">
       <canvas class="mesh-bg" id="mesh-steps"></canvas>
@@ -783,7 +783,7 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
   <div class="cta-wrap">
     <canvas class="mesh-bg" id="mesh-cta"></canvas>
     <div class="cta-inner">
-      <div class="cta-eyebrow">Erken Erişim</div>
+      <div class="cta-eyebrow" lang="en">Erken Erişim</div>
       <h2>WhatsApp'tan çıkmaya<br>hazır mısın?</h2>
       <p>Koçluğunu yönetmenin daha kolay bir yolu var. Perse'nin erken erişimine katıl.</p>
       <form class="cta-form" id="cf" onsubmit="sub('cf','ce','cs',event)">
@@ -842,7 +842,7 @@ async function sub(formId, inputId, successId, e) {
   const track = document.getElementById('mt');
   const repeated = [...items, ...items, ...items, ...items];
   track.innerHTML = repeated.map(t =>
-    `<span class="marquee-item">${t}<span class="marquee-dot"></span></span>`
+    `<span class="marquee-item" lang="en">${t}<span class="marquee-dot"></span></span>`
   ).join('');
 })();
 
@@ -862,7 +862,7 @@ async function sub(formId, inputId, successId, e) {
   }
 
   let MAX_DEPTH = 10;
-  let GROWTH_SPEED_BASE = 0.022;
+  let GROWTH_SPEED_BASE = 0.019;
   const HOLD_DURATION = 420;
   const FADE_DURATION = 160;
   const WAIT_DURATION = 60;
