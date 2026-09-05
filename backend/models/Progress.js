@@ -1,11 +1,16 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
 const ProgressSchema = new mongoose.Schema({
-  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Kullanıcı ID'si
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Kullanıcı ID'si
   programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true }, // Program ID
 
   // ✅ NEW FIELD: total days completed
   daysCompleted: { type: Number, default: 0 }, // Tracks total completed days
+
+  // Recomputed on every completed session (completedSessions.length / totalSessions).
+  // Without this field, the value the controller computes was silently dropped on save
+  // (not declared in the schema) and /progress/all-program-progress always reported 0%.
+  progressPercentage: { type: Number, default: 0 },
 
   completedSessions: [
     {
@@ -81,4 +86,4 @@ const ProgressSchema = new mongoose.Schema({
   lastUpdated: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("Progress", ProgressSchema);
+export default mongoose.model("Progress", ProgressSchema);

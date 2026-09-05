@@ -1,9 +1,28 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
-const { sendNotification, getNotifications } = require("../controllers/notificationController");
+import protect from '../middleware/authMiddleware.js';
 
-router.post("/", protect, sendNotification); // Send notification
-router.get("/", protect, getNotifications); // Fetch all notifications for the user
+import {
+  sendNotification,
+  getUserNotifications,
+  markNotificationAsRead,
+  markAllAsRead,
+  getCoachSentNotifications
+} from '../controllers/notificationController.js';
 
-module.exports = router;
+// 📨 Send a notification
+router.post("/", protect, sendNotification);
+
+// 📥 Get all notifications for the logged-in user
+router.get("/user", protect, getUserNotifications);
+
+// ✅ Mark a single notification as read
+router.patch("/:id/read", protect, markNotificationAsRead);
+
+// ✅ Mark all user notifications as read
+router.patch("/user/mark-all-read", protect, markAllAsRead);
+// 👨‍🏫 Get notifications sent by the coach (admin view)
+router.get("/coach", protect, getCoachSentNotifications);
+
+
+export default router;

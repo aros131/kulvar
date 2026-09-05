@@ -1,31 +1,66 @@
-const Program = require("../models/Program");
-const User = require("../models/User");
-const Notification = require("../models/Notification");
-const Progress = require("../models/Progress");
-const Feedback = require("../models/Feedback");
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+import Progress from '../models/Progress.js';
+import Feedback from '../models/Feedback.js';
+import { computeCoachAnalytics } from '../services/coachAnalytics.js';
 
-// ✅ Send notification
-const sendNotification = async (req, res) => {
+
+
+
+// GET /dashboard/user/coaches?limit=12
+ const getMyCoachesForUser = async (req, res) => {
   try {
-    const { clientId, message, type } = req.body;
-    if (!clientId || !message || !type) {
-      return res.status(400).json({ message: "Client ID, message, and type are required" });
+    const userId = req.user._id; // from protect middleware
+    const limit = Math.max(0, Math.min(100, Number(req.query.limit) || 24));
+
+    // 1) Find programs where this user is assigned
+    const programs = await Program.find(
+      { assignedClients: userId },
+      { coachId: 1 }
+    ).lean();
+
+    if (!programs.length) {
+      return res.json({ items: [], total: 0 });
     }
-    const notification = await Notification.create({
-      recipientId: clientId,
-      message,
-      type,
-    });
-    res.status(201).json(notification);
-  } catch (error) {
-    res.status(500).json({ message: "Error sending notification", error: error.message });
+
+    // 2) Collect unique coach ids
+    const coachIds = Array.from(
+      new Set(
+        programs
+          .map(p => (p.coachId?._id || p.coachId || null))
+          .filter(Boolean)
+          .map(x => x.toString())
+      )
+    );
+
+    if (!coachIds.length) {
+      return res.json({ items: [], total: 0 });
+    }
+
+    // 3) Load coaches from USERS (role = coach)
+    //    NOTE: do NOT include password here
+    const coaches = await User.find(
+      { _id: { $in: coachIds }, role: { $regex: /^coach$/i } }
+    )
+      .select('_id name email role specialization profilePicture createdAt updatedAt rating __v')
+      .limit(limit)
+      .lean();
+
+    // 4) Return raw docs so the client gets the real profilePicture URL (Firebase HTTPS)
+    return res.json({ items: coaches, total: coaches.length });
+  } catch (err) {
+    console.error('getMyCoachesForUser error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
+
+
 
 // ✅ Fetch Profile
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(200).json({
       name: user.name,
@@ -44,17 +79,26 @@ const getProfile = async (req, res) => {
 const getClients = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
-    const coachId = req.user.id;
-    const query = {
-      coachId,
+    const coachId = req.user._id;
+
+    const programs = await Program.find({ coachId }).select('assignedClients').lean();
+    const clientIds = [...new Set(programs.flatMap(p => p.assignedClients.map(id => id.toString())))];
+
+    const clients = await User.find({
+      _id: { $in: clientIds },
       role: "user",
       name: { $regex: search, $options: "i" },
-    };
-    const clients = await User.find(query)
-      .skip((page - 1) * limit)
+    })
+      .skip((page - 1) * parseInt(limit))
       .limit(parseInt(limit))
       .select("-password");
-    const totalClients = await User.countDocuments(query);
+
+    const totalClients = await User.countDocuments({
+      _id: { $in: clientIds },
+      role: "user",
+      name: { $regex: search, $options: "i" },
+    });
+
     res.status(200).json({ clients, totalClients });
   } catch (error) {
     res.status(500).json({ message: "Error fetching clients", error: error.message });
@@ -75,7 +119,7 @@ const getClientDetails = async (req, res) => {
 // ✅ Get user programs
 const getUserPrograms = async (req, res) => {
   try {
-    const programs = await Program.find({ assignedClients: req.user.id });
+    const programs = await Program.find({ assignedClients: req.user._id });
     if (!programs || programs.length === 0) {
       return res.status(404).json({ message: "No programs found for this user" });
     }
@@ -89,7 +133,7 @@ const getUserPrograms = async (req, res) => {
 const getClientProgress = async (req, res) => {
   try {
     const { id } = req.params;
-    const progress = await Progress.find({ clientId: id });
+    const progress = await Progress.find({ userId: id });
     res.status(200).json({ progress });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving client progress", error: error.message });
@@ -102,7 +146,7 @@ const saveProgress = async (req, res) => {
     const { programId, data } = req.body;
     const newProgress = await Progress.create({
       programId,
-      clientId: req.user.id,
+      userId: req.user._id,
       data,
     });
     res.status(201).json(newProgress);
@@ -114,8 +158,8 @@ const saveProgress = async (req, res) => {
 // ✅ Get analytics for coach
 const getAnalyticsForCoach = async (req, res) => {
   try {
-    const totalClients = await User.countDocuments({ coachId: req.user.id, role: "user" });
-    const totalPrograms = await Program.countDocuments({ coachId: req.user.id });
+    const totalClients = await User.countDocuments({ coachId: req.user._id, role: "user" });
+    const totalPrograms = await Program.countDocuments({ coachId: req.user._id });
     res.status(200).json({ totalClients, totalPrograms });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving analytics", error: error.message });
@@ -125,46 +169,35 @@ const getAnalyticsForCoach = async (req, res) => {
 // ✅ Get analytics for user
 const getAnalyticsForUser = async (req, res) => {
   try {
-    const assignedPrograms = await Program.countDocuments({ assignedClients: req.user.id });
-    const totalProgress = await Progress.aggregate([
-      { $match: { clientId: req.user.id } },
-      {
-        $group: {
-          _id: null,
-          totalDaysCompleted: { $sum: "$data.daysCompleted" },
-        },
-      },
-    ]);
-    res.status(200).json({
-      assignedPrograms,
-      totalDaysCompleted: totalProgress.length > 0 ? totalProgress[0].totalDaysCompleted : 0,
+    const userId = req.user._id;
+    const assignedPrograms = await Program.countDocuments({ assignedClients: userId });
+
+    const progressDocs = await Progress.find({ userId }).lean();
+    const totalDaysCompleted = progressDocs.reduce((sum, p) => sum + (p.data?.daysCompleted || 0), 0);
+    const totalCompletedSessions = progressDocs.reduce((sum, p) => sum + (Array.isArray(p.completedSessions) ? p.completedSessions.length : 0), 0);
+
+    const programs = await Program.find({ assignedClients: userId }, { _id: 1, dailySchedule: 1 }).lean();
+    const goalTracking = programs.map(prog => {
+      const totalSessions = (prog.dailySchedule || []).reduce((s, d) => s + (Array.isArray(d.sessions) ? d.sessions.length : 0), 0);
+      const prog_progress = progressDocs.find(p => p.programId?.toString() === prog._id.toString());
+      const completedCount = Array.isArray(prog_progress?.completedSessions) ? prog_progress.completedSessions.length : 0;
+      const progressPercentage = totalSessions > 0 ? Math.round((completedCount / totalSessions) * 100) : 0;
+      return { programId: prog._id, progressPercentage };
     });
+
+    res.status(200).json({ assignedPrograms, totalDaysCompleted, totalCompletedSessions, goalTracking });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving analytics", error: error.message });
   }
 };
 
-// ✅ Get notifications for coach
-const getNotificationsForCoach = async (req, res) => {
-  try {
-    const notifications = await Notification.find({ recipientId: req.user.id });
-    if (!notifications || notifications.length === 0) {
-      return res.status(404).json({ message: "No notifications found" });
-    }
-    res.status(200).json({ notifications });
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving notifications", error: error.message });
-  }
-};
+
 
 // ✅ Get notifications for user
 const getNotificationsForUser = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipientId: req.user.id });
-    if (!notifications || notifications.length === 0) {
-      return res.status(404).json({ message: "No notifications found" });
-    }
-    res.status(200).json({ notifications });
+    const notifications = await Notification.find({ recipientId: req.user._id });
+    res.status(200).json({ notifications: notifications || [] });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving notifications", error: error.message });
   }
@@ -185,7 +218,7 @@ const markNotificationAsRead = async (req, res) => {
 // ✅ Get user schedule
 const getUserSchedule = async (req, res) => {
   try {
-    const programs = await Program.find({ assignedClients: req.user.id });
+    const programs = await Program.find({ assignedClients: req.user._id });
     if (!programs || programs.length === 0) {
       return res.status(404).json({ message: "No scheduled workouts found" });
     }
@@ -209,7 +242,7 @@ const getUserSchedule = async (req, res) => {
 // ✅ Get feedbacks
 const getFeedbacks = async (req, res) => {
   try {
-    const feedbacks = await Feedback.find({ coachId: req.user.id }).populate("clientId", "name email");
+    const feedbacks = await Feedback.find({ coachId: req.user._id }).populate("userId", "name email");
     if (!feedbacks || feedbacks.length === 0) {
       return res.status(404).json({ message: "No feedbacks found" });
     }
@@ -247,7 +280,7 @@ const deleteFeedback = async (req, res) => {
 const replyToFeedback = async (req, res) => {
   try {
     const { feedbackId, message } = req.body;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
     const feedback = await Feedback.findByIdAndUpdate(
       feedbackId,
       { $push: { replies: { coachId, message, date: new Date() } } },
@@ -263,7 +296,8 @@ const replyToFeedback = async (req, res) => {
 // ✅ Get full coach analytics
 const getFullCoachAnalytics = async (req, res) => {
   try {
-    res.status(200).json({ message: "Full coach analytics works" });
+    const data = await computeCoachAnalytics(req.user._id);
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: "Error retrieving full coach analytics", error: error.message });
   }
@@ -272,15 +306,16 @@ const getFullCoachAnalytics = async (req, res) => {
 // ✅ Get summary coach analytics
 const getCoachAnalytics = async (req, res) => {
   try {
-    res.status(200).json({ message: "Coach analytics works" });
+    const data = await computeCoachAnalytics(req.user._id);
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: "Error retrieving coach analytics", error: error.message });
   }
 };
 
-// ✅ Final module exports
-module.exports = {
-  sendNotification,
+// ✅ Exports
+export {
+  
   getProfile,
   getClients,
   getClientDetails,
@@ -289,7 +324,7 @@ module.exports = {
   saveProgress,
   getAnalyticsForCoach,
   getAnalyticsForUser,
-  getNotificationsForCoach,
+  
   getNotificationsForUser,
   markNotificationAsRead,
   getUserSchedule,
@@ -299,5 +334,6 @@ module.exports = {
   replyToFeedback,
   getFullCoachAnalytics,
   getCoachAnalytics,
+  getMyCoachesForUser
   
 };

@@ -114,7 +114,7 @@
     // Assign Program to Client
     document.getElementById("assign-program-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const clientId = document.getElementById("client-select").value;
+      const userId = document.getElementById("client-select").value;
       const programId = document.getElementById("program-select").value;
 
       try {
@@ -124,7 +124,7 @@
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ clientId, programId })
+          body: JSON.stringify({ userId, programId })
         });
 
         if (response.ok) {

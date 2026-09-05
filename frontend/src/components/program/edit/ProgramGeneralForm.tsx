@@ -1,78 +1,212 @@
-// src/components/program/edit/ProgramGeneralForm.tsx
-
 "use client";
 
-import { Program } from "@/types/program";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Program } from "@/types/program";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { toast } from "sonner";
 
-interface Props {
-  program: Program;
-  onSuccess?: () => void; // ✅ Hata buradan kaynaklıydı
+interface ProgramGeneralFormProps {
+  programId: string;
+  onSuccess?: () => void;
 }
 
-const ProgramGeneralForm = ({ program: initialProgram, onSuccess }: Props) => {
-  const [program, setProgram] = useState<Program>(initialProgram);
+const difficultyOptions = ["Başlangıç", "Orta Düzey", "İleri Seviye"];
+const fitnessGoals = [
+  "Kilo Kaybı",
+  "Kas Kazanımı",
+  "Dayanıklılık",
+  "Genel Fitness",
+  "Genel Fitness ve Güç Geliştirme",
+  "Hedefe Özel Gelişim",
+];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
+  programId,
+  onSuccess,
+}) => {
+  const [program, setProgram] = useState<Program | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
+
+  // ✅ useEffect always called
+  useEffect(() => {
+    if (!programId) {
+      console.error("❌ programId is undefined in ProgramGeneralForm");
+      setLoading(false);
+      return;
+    }
+
+    const fetchProgram = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, 
+
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setProgram(res.data.program);
+      } catch (error) {
+        console.error("❌ Program verisi alınamadı:", error);
+        toast.error("Program verisi alınamadı.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgram();
+  }, [programId]);
+
+  if (!programId) return <p>Program ID geçersiz.</p>;
+  if (loading) return <p>Yükleniyor...</p>;
+  if (!program) return <p>Program bulunamadı.</p>;
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setProgram((prev) => ({ ...prev, [name]: value }));
+    setProgram((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
-  const handleSave = async () => {
-    try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/programs/${program._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(program),
-      });
+  const handleSelectChange = (key: keyof Program, value: string) => {
+    setProgram((prev) => (prev ? { ...prev, [key]: value } : prev));
+  };
 
-      if (res.ok) {
-        alert("✅ Program güncellendi!");
-        onSuccess?.(); // ✅ opsiyonel olarak çağır
+  const handleSubmit = async () => {
+    if (!program) return;
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/programs/${program._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(program),
+        }
+      );
+
+      if (!res.ok) throw new Error("Sunucu hatası");
+
+      toast.success("✅ Program başarıyla güncellendi.");
+
+      if (onSuccess) {
+        onSuccess();
       } else {
-        alert("❌ Güncelleme başarısız.");
+        router.push("/dashboard/coach");
       }
-    } catch (error) {
-      console.error("Hata oluştu:", error);
+    } catch (err) {
+      console.error("❌ Güncelleme hatası:", err);
+      toast.error("Program güncellenirken hata oluştu.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <Label>Program Adı</Label>
+        <Label htmlFor="name">Program Adı</Label>
         <Input name="name" value={program.name} onChange={handleChange} />
       </div>
 
       <div>
-        <Label>Açıklama</Label>
-        <Textarea name="description" value={program.description} onChange={handleChange} />
+        <Label htmlFor="description">Açıklama</Label>
+        <Textarea
+          name="description"
+          value={program.description}
+          onChange={handleChange}
+        />
       </div>
 
       <div>
-        <Label>Süre (hafta)</Label>
-        <Input name="duration" type="number" value={program.duration} onChange={handleChange} />
+        <Label htmlFor="duration">Süre (hafta)</Label>
+        <Input
+          name="duration"
+          type="number"
+          value={program.duration}
+          onChange={handleChange}
+        />
       </div>
 
       <div>
-        <Label>Zorluk</Label>
-        <Input name="difficulty" value={program.difficulty} onChange={handleChange} />
+        <Label>Zorluk Seviyesi</Label>
+        <Select
+          value={program.difficulty}
+          onValueChange={(val) => handleSelectChange("difficulty", val)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            {difficultyOptions.map((level) => (
+              <SelectItem key={level} value={level}>
+                {level}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
-        <Label>Hedef</Label>
-        <Input name="fitnessGoal" value={program.fitnessGoal} onChange={handleChange} />
+        <Label>Fitness Hedefi</Label>
+        <Select
+          value={program.fitnessGoal}
+          onValueChange={(val) => handleSelectChange("fitnessGoal", val)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            {fitnessGoals.map((goal) => (
+              <SelectItem key={goal} value={goal}>
+                {goal}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <Button className="w-full" onClick={handleSave}>
-        Güncelle
+      <div>
+        <Label htmlFor="priceCents">Program Fiyatı (₺)</Label>
+        <div className="relative mt-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₺</span>
+          <Input
+            className="pl-7"
+            type="number"
+            min={0}
+            step={1}
+            placeholder="0 — ücretsiz"
+            value={program.priceCents != null ? program.priceCents / 100 : ""}
+            onChange={(e) => {
+              const val = e.target.value === "" ? null : Math.round(Number(e.target.value) * 100);
+              setProgram((prev) => prev ? { ...prev, priceCents: val as any } : prev);
+            }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">Boş bırakırsanız program ücretsiz görünür.</p>
+      </div>
+
+      <Button className="w-full" onClick={handleSubmit} disabled={submitting}>
+        {submitting ? "Güncelleniyor..." : "Güncelle"}
       </Button>
     </div>
   );

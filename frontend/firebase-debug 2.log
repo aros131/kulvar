@@ -1,0 +1,79 @@
+[debug] [2025-08-10T17:12:03.210Z] ----------------------------------------------------------------------
+[debug] [2025-08-10T17:12:03.211Z] Command:       /usr/local/bin/node /usr/local/bin/firebase init
+[debug] [2025-08-10T17:12:03.211Z] CLI Version:   14.12.0
+[debug] [2025-08-10T17:12:03.212Z] Platform:      darwin
+[debug] [2025-08-10T17:12:03.212Z] Node Version:  v22.17.0
+[debug] [2025-08-10T17:12:03.212Z] Time:          Sun Aug 10 2025 20:12:03 GMT+0300 (GMT+03:00)
+[debug] [2025-08-10T17:12:03.212Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-08-10T17:12:03.311Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-08-10T17:12:03.311Z] > authorizing via signed-in user (arenkaraseki@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/arenkaraseki/Documents/Documents - Arens MacBook Air/GitHub/kulvar
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-08-10T17:12:21.185Z] Using project from CLI flag: persecoaching
+[debug] [2025-08-10T17:12:21.187Z] Checked if tokens are valid: true, expires at: 1754848233712
+[debug] [2025-08-10T17:12:21.187Z] Checked if tokens are valid: true, expires at: 1754848233712
+[debug] [2025-08-10T17:12:21.190Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/persecoaching [none]
+[debug] [2025-08-10T17:12:21.670Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/persecoaching 200
+[debug] [2025-08-10T17:12:21.670Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/persecoaching {"projectId":"persecoaching","projectNumber":"697895669524","displayName":"persecoaching","name":"projects/persecoaching","resources":{"hostingSite":"persecoaching"},"state":"ACTIVE","etag":"1_05a4f9ed-9e44-4e97-be64-8f33b536a367"}
+[info] i  Using project persecoaching (persecoaching) 
+[info] 
+=== Functions Setup
+[debug] [2025-08-10T17:12:21.900Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-08-10T17:12:21.901Z] > authorizing via signed-in user (arenkaraseki@gmail.com)
+[debug] [2025-08-10T17:12:21.901Z] [iam] checking project persecoaching for permissions ["firebase.projects.get"]
+[debug] [2025-08-10T17:12:21.902Z] Checked if tokens are valid: true, expires at: 1754848233712
+[debug] [2025-08-10T17:12:21.902Z] Checked if tokens are valid: true, expires at: 1754848233712
+[debug] [2025-08-10T17:12:21.902Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/persecoaching:testIamPermissions [none]
+[debug] [2025-08-10T17:12:21.902Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/persecoaching:testIamPermissions x-goog-quota-user=projects/persecoaching
+[debug] [2025-08-10T17:12:21.902Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/persecoaching:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2025-08-10T17:12:22.960Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/persecoaching:testIamPermissions 200
+[debug] [2025-08-10T17:12:22.961Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/persecoaching:testIamPermissions {"permissions":["firebase.projects.get"]}
+[info] 
+Detected existing codebase(s): default
+
+[info] Let's create a new codebase for your functions.
+[info] A directory corresponding to the codebase will be created in your project
+[info] with sample code pre-configured.
+
+[info] See https://firebase.google.com/docs/functions/organize-functions for
+[info] more information on organizing your functions using codebases.
+
+[info] Functions can be deployed with firebase deploy.
+
+[info] ✔  Wrote perse/package.json 
+[info] ✔  Wrote perse/.eslintrc.js 
+[info] ✔  Wrote perse/index.js 
+[info] ✔  Wrote perse/.gitignore 
+[info] 
+=== Hosting Setup
+[debug] [2025-08-10T17:14:53.525Z] Checked if tokens are valid: true, expires at: 1754848233712
+[debug] [2025-08-10T17:14:53.525Z] Checked if tokens are valid: true, expires at: 1754848233712
+[debug] [2025-08-10T17:14:53.525Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/persecoaching [none]
+[debug] [2025-08-10T17:14:54.007Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/persecoaching 200
+[debug] [2025-08-10T17:14:54.007Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/persecoaching {"projectId":"persecoaching","projectNumber":"697895669524","displayName":"persecoaching","name":"projects/persecoaching","resources":{"hostingSite":"persecoaching"},"state":"ACTIVE","etag":"1_05a4f9ed-9e44-4e97-be64-8f33b536a367"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 

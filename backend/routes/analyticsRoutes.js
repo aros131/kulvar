@@ -1,8 +1,9 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
-const { getAnalytics } = require("../controllers/analyticsController");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+import { getAnalytics } from '../controllers/analyticsController.js';
 
-router.get("/", protect, getAnalytics);
+router.get("/", protect, roleMiddleware(["coach"]), getAnalytics);
 
-module.exports = router;
+export default router;

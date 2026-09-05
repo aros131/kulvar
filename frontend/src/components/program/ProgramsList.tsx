@@ -16,12 +16,12 @@ export default function ProgramsList({ programs = [] }: ProgramsListProps) {
       <h1 className="text-2xl font-bold mb-4">Programlar</h1>
 
       {programs.length === 0 ? (
-        <p className="text-gray-500">Henüz program yok.</p>
+        <p className="text-muted-foreground">Henüz program yok.</p>
       ) : (
         programs.map((program) => (
           <div
             key={program._id}
-            className="bg-white dark:bg-gray-900 shadow rounded-lg p-4 mb-4"
+            className="bg-card dark:bg-gray-900 shadow rounded-lg p-4 mb-4"
           >
             <Link href={`/programs/${program._id}`} className="text-blue-500 underline">
               {program.name}

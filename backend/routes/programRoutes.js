@@ -1,12 +1,12 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
-const multer = require("multer");
+import protect from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+import multer from 'multer';
 const upload = multer({ dest: "uploads/" });
 
 // ✅ Import necessary controllers
-const {
+import {
   createProgram,
   getPrograms,
   
@@ -30,22 +30,25 @@ const {
   resetProgress,
   updateAdaptiveAdjustments,
   getProgramFeedback,
-  getUserProgress,
+ 
   completeSession,
   getAdaptiveAdjustments,
   getProgramMedia,
   getCoachPrograms,
   getAllClients,
-  assignProgramToGroup
- 
-  
- 
-  
-} = require("../controllers/programController");
+  assignProgramToGroup,
+  startProgram
 
+ 
+  
+ 
+  
+} from '../controllers/programController.js';
+router.post('/:programId/start', protect, roleMiddleware(['user']), startProgram);
 // 🟢 Program Management Routes
 router.post("/", protect, roleMiddleware(["coach"]), upload.array("documents"), createProgram);
 router.get("/coach", protect, roleMiddleware(["coach"]), getCoachPrograms); // ✅ MUST come before /:id
+router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
 router.get("/user-programs", protect, getUserPrograms);
 router.get("/", protect, getPrograms);
 
@@ -77,22 +80,18 @@ router.get("/:id/media", protect, getProgramMedia);
 
 // 🟢 Analytics
 router.get("/:id/session-completion", protect, roleMiddleware(["coach", "user"]), getSessionCompletionData);
-router.get("/:programId/user-progress", protect, getUserProgress);
+
 router.get("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), getAdaptiveAdjustments);
 
 // 🟢 Assignments
 router.get("/:programId/assigned-clients", protect, roleMiddleware(["coach"]), getAssignedClients);
 router.post("/:programId/unassign", protect, unassignClient);
 
-// routes/userRoutes.js
-router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
-
 // 🟢 Misc
 router.post("/reschedule-workout", protect, roleMiddleware(["user"]), rescheduleWorkout);
 router.post("/:programId/adaptive-adjustments", protect, roleMiddleware(["user"]), updateAdaptiveAdjustments);
-router.post("/programs/:programId/track-session", trackSessionCompletion); // Redundant with above? Consider removing
 router.post("/assign-group", protect, roleMiddleware(["coach"]), assignProgramToGroup);
-module.exports = router;
+export default router;
 
 
 

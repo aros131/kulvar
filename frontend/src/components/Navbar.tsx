@@ -12,7 +12,7 @@ export default function Navbar() {
   }, [darkMode]);
 
   return (
-    <nav className="flex justify-between items-center px-6 py-4 shadow-md bg-white dark:bg-zinc-800">
+    <nav className="flex justify-between items-center px-6 py-4 shadow-md bg-card dark:bg-primary/90">
       <Link href="/">
         <span className="text-xl font-bold text-indigo-600">PerSe Coaching</span>
       </Link>

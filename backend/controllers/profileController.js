@@ -1,9 +1,14 @@
-const User = require("../models/User");
+import User from '../models/User.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BASE_URL = (process.env.BASE_URL || process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5001}`).replace(/\/+$/, '');
 
 // Fetch Profile
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -16,19 +21,68 @@ exports.getProfile = async (req, res) => {
       profilePicture: user.profilePicture,
       specialization: user.specialization,
       fitnessGoals: user.fitnessGoals,
+      bio: user.bio,
+      tagline: user.tagline,
+      certifications: user.certifications,
+      city: user.city,
+      onboardingCompleted: user.onboardingCompleted,
+      notificationPreferences: user.notificationPreferences,
+      emailVerified: user.emailVerified,
+      price: user.price,
+      isApproved: user.isApproved,
+      isListedCoach: user.isListedCoach,
+      brandColor: user.brandColor,
+      brandLogoUrl: user.brandLogoUrl,
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching profile", error: error.message });
   }
 };
 
+// Mark onboarding as completed (so the welcome modal doesn't reappear on other devices)
+export const completeOnboarding = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { onboardingCompleted: true },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ onboardingCompleted: user.onboardingCompleted });
+  } catch (error) {
+    res.status(500).json({ message: "Error completing onboarding", error: error.message });
+  }
+};
+
+// Update notification preferences
+export const updateNotificationPreferences = async (req, res) => {
+  try {
+    const { inApp, email } = req.body;
+    const update = {};
+    if (inApp && typeof inApp === "object") {
+      for (const key of ["bookingRequests", "bookingUpdates", "messages", "reviews"]) {
+        if (typeof inApp[key] === "boolean") update[`notificationPreferences.inApp.${key}`] = inApp[key];
+      }
+    }
+    if (email && typeof email === "object") {
+      for (const key of ["bookingRequests", "bookingUpdates", "messages", "weeklyReport"]) {
+        if (typeof email[key] === "boolean") update[`notificationPreferences.email.${key}`] = email[key];
+      }
+    }
+    const user = await User.findByIdAndUpdate(req.user._id, { $set: update }, { new: true });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ notificationPreferences: user.notificationPreferences });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating notification preferences", error: error.message });
+  }
+};
+
 // Update Profile
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const updates = req.body;
 
-    // Only allow specific fields to be updated
-    const allowedUpdates = ["name", "profilePicture", "specialization", "fitnessGoals"];
+    const allowedUpdates = ["name", "profilePicture", "specialization", "fitnessGoals", "bio", "tagline", "certifications", "city", "price", "isListedCoach", "brandColor", "brandLogoUrl"];
     const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
       if (allowedUpdates.includes(key)) {
         acc[key] = updates[key];
@@ -36,7 +90,7 @@ exports.updateProfile = async (req, res) => {
       return acc;
     }, {});
 
-    const user = await User.findByIdAndUpdate(req.user.id, filteredUpdates, { new: true });
+    const user = await User.findByIdAndUpdate(req.user._id, filteredUpdates, { new: true });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -50,9 +104,25 @@ exports.updateProfile = async (req, res) => {
         profilePicture: user.profilePicture,
         specialization: user.specialization,
         fitnessGoals: user.fitnessGoals,
+        bio: user.bio,
+        tagline: user.tagline,
+        certifications: user.certifications,
+        city: user.city,
       },
     });
   } catch (error) {
     res.status(500).json({ message: "Error updating profile", error: error.message });
+  }
+};
+
+// POST /profile/avatar — multer uploads to uploads/avatars/
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const url = `${BASE_URL}/uploads/avatars/${req.file.filename}`;
+    await User.findByIdAndUpdate(req.user._id, { profilePicture: url });
+    res.status(200).json({ url });
+  } catch (error) {
+    res.status(500).json({ message: 'Error uploading avatar', error: error.message });
   }
 };

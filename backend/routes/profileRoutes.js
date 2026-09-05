@@ -1,9 +1,26 @@
-const express = require("express");
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
-const { getProfile, updateProfile } = require("../controllers/profileController");
+import protect from '../middleware/authMiddleware.js';
+import { getProfile, updateProfile, completeOnboarding, updateNotificationPreferences, uploadAvatar } from '../controllers/profileController.js';
 
-router.get("/", protect, getProfile); // Fetch profile for logged-in user
-router.put("/", protect, updateProfile); // Update profile information
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-module.exports = router;
+const avatarStorage = multer.diskStorage({
+  destination: path.join(__dirname, '..', 'uploads', 'avatars'),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const avatarUpload = multer({ storage: avatarStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+router.get("/", protect, getProfile);
+router.put("/", protect, updateProfile);
+router.post("/avatar", protect, avatarUpload.single("avatar"), uploadAvatar);
+router.patch("/onboarding-complete", protect, completeOnboarding);
+router.patch("/notification-preferences", protect, updateNotificationPreferences);
+
+export default router;

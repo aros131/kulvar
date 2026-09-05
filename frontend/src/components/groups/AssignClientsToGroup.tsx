@@ -20,11 +20,11 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
   // 🔄 Fetch group members (memoized)
   const fetchGroupMembers = useCallback(async () => {
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}`, {
+      const res = await fetch(`/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = await res.json();
-      setGroupMembers(data.clientIds || []);
+      setGroupMembers(data.userIds || []);
     } catch {
       toast("❌ Grup üyeleri alınamadı");
     }
@@ -35,7 +35,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
     const timeout = setTimeout(async () => {
       if (!searchQuery.trim()) return;
       try {
-        const res = await fetch(`https://kulvar-qb7t.onrender.com/users/clients?q=${searchQuery}`, {
+        const res = await fetch(`/users/clients?q=${searchQuery}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         const data = await res.json();
@@ -52,15 +52,15 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
     fetchGroupMembers();
   }, [fetchGroupMembers]);
 
-  const handleAssign = async (clientId: string) => {
+  const handleAssign = async (userId: string) => {
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/add-client`, {
+      const res = await fetch(`/groups/${groupId}/add-client`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ clientId }),
+        body: JSON.stringify({ userId }),
       });
 
       if (res.ok) {
@@ -74,15 +74,15 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
     }
   };
 
-  const handleRemove = async (clientId: string) => {
+  const handleRemove = async (userId: string) => {
     try {
-      const res = await fetch(`https://kulvar-qb7t.onrender.com/groups/${groupId}/remove-client`, {
+      const res = await fetch(`/groups/${groupId}/remove-client`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ clientId }),
+        body: JSON.stringify({ userId }),
       });
 
       if (res.ok) {
@@ -110,7 +110,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
             </div>
           ))
         ) : (
-          <p className="text-sm text-gray-500">Henüz üye yok.</p>
+          <p className="text-sm text-muted-foreground">Henüz üye yok.</p>
         )}
       </ScrollArea>
 
@@ -125,7 +125,7 @@ export default function AssignClientsToGroup({ groupId }: { groupId: string }) {
           <div key={client._id} className="flex justify-between items-center py-2 border-b">
             <div>
               <p className="font-medium">{client.name}</p>
-              <p className="text-sm text-gray-500">{client.email}</p>
+              <p className="text-sm text-muted-foreground">{client.email}</p>
             </div>
             <Button size="sm" onClick={() => handleAssign(client._id)}>
               Ata

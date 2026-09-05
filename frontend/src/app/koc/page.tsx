@@ -1,11 +1,13 @@
-// app/koc/page.tsx
-import { Suspense } from 'react';
-import CoachesPageContent from './pageContent';
+import { Suspense } from "react";
+import CoachesPageBody from "@/components/CoachesPageBody";
 
-export default function CoachesPage() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default function PublicKocPage() {
   return (
-    <Suspense fallback={<div>Yükleniyor...</div>}>
-      <CoachesPageContent />
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <CoachesPageBody />
     </Suspense>
   );
 }

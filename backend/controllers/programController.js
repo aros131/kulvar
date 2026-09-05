@@ -1,11 +1,24 @@
-const Program = require("../models/Program");
-const User = require("../models/User");
+import Program from '../models/Program.js';
+import User from '../models/User.js';
+import Event from '../models/Event.js'; // ✅ make sure the path/case matches your file name
+
+import Progress from '../models/Progress.js';
+import ProgramAssignment from '../models/ProgramAssignment.js'; // ← add this
+import { sendProgramAssigned } from '../services/emailService.js';
+import { notify } from '../utils/notify.js';
+
+const toInt = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+const parseHHmm = (hhmm = '18:00') => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
+  if (!m) return { h: 18, m: 0 };
+  return { h: Math.min(23, Math.max(0, Number(m[1]))), m: Math.min(59, Math.max(0, Number(m[2]))) };
+};
 
 // 🟢 Create a new program
 const createProgram = async (req, res) => {
   try {
     const { name, description, duration, difficulty, nutritionPlan, dailySchedule, fitnessGoal } = req.body;
-    const coachId = req.user.id;
+    const coachId = req.user._id;
     let documents = [];
 
     if (req.files) {
@@ -48,7 +61,7 @@ const getPrograms = async (req, res) => {
 // 🟢 Get all programs assigned to a user
 const getUserPrograms = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const programs = await Program.find({ assignedClients: userId });
 
     if (!programs.length) {
@@ -71,12 +84,22 @@ const getProgramById = async (req, res) => {
       return res.status(404).json({ message: "Program not found" });
     }
 
-    // ✅ Debugging: Check if dailySchedule exists
-    if (!program.dailySchedule || !Array.isArray(program.dailySchedule)) {
-      console.error("🚨 dailySchedule is missing or not an array:", program.dailySchedule);
+    // Attach assignment startDate for the requesting user so the frontend
+    // can anchor the weekly schedule to the correct Monday.
+    const userId = req.user?._id || req.user?.id;
+    let assignmentStartDate = null;
+    if (userId) {
+      const assignment = await ProgramAssignment.findOne(
+        { userId, programId: id, status: 'active' },
+        { startDate: 1 }
+      ).lean();
+      if (assignment) assignmentStartDate = assignment.startDate;
     }
 
-    res.status(200).json({ program });
+    const programObj = program.toObject();
+    if (assignmentStartDate) programObj.startDate = assignmentStartDate;
+
+    res.status(200).json({ program: programObj });
   } catch (error) {
     res.status(500).json({ message: "Error fetching program details", error: error.message });
   }
@@ -174,7 +197,6 @@ const getProgramVideos = async (req, res) => {
 
 
 // ✅ DEBUG LOG TO VERIFY EXPORTS
-console.log("✅ programController.js loaded! Exported functions:", module.exports);
 
 // 🟢 Update workout video links
 const updateWorkoutVideo = async (req, res) => {
@@ -185,18 +207,21 @@ const updateWorkoutVideo = async (req, res) => {
     const program = await Program.findById(id);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const workoutDay = program.dailySchedule.find(d => d.day === day);
+    const workoutDay = (program.dailySchedule || []).find(d => d.day === day);
     if (!workoutDay) return res.status(400).json({ message: "Invalid day" });
 
+    // optional day-level field
     workoutDay.videoUrl = videoUrl;
-    await program.save();
-    workoutDay.sessions.forEach(session => {
-      session.exercises.forEach(exercise => {
-        if (!exercise.videoUrls) exercise.videoUrls = [];
+
+    for (const session of workoutDay.sessions || []) {
+      for (const exercise of session.exercises || []) {
+        if (!Array.isArray(exercise.videoUrls)) exercise.videoUrls = [];
         exercise.videoUrls.push({ url: videoUrl, description: "New Video" });
-      });
-    });
-    
+      }
+    }
+
+    program.markModified('dailySchedule');
+    await program.save();
 
     res.status(200).json({ message: "Video link updated", program });
   } catch (error) {
@@ -204,20 +229,23 @@ const updateWorkoutVideo = async (req, res) => {
   }
 };
 
+
 // 🟢 Get session completion data (FIXED)
 const getSessionCompletionData = async (req, res) => {
   try {
     const { id } = req.params;
     const program = await Program.findById(id);
-
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    const userProgress = program.progressTracking.find(entry => entry.user?.toString() === req.user.id);
+    const list = Array.isArray(program.progressTracking) ? program.progressTracking : [];
+    const userIdStr = req.user._id.toString();
+    const userProgress = list.find(entry => entry?.user?.toString() === userIdStr);
+
     const completedSessions = userProgress?.completedSessions || 0;
-    const totalSessions = program.dailySchedule?.reduce(
-      (total, day) => total + (day.sessions?.length || 0),
+    const totalSessions = (program.dailySchedule || []).reduce(
+      (total, day) => total + ((day.sessions || []).length),
       0
-    ) || 0;
+    );
 
     res.status(200).json({ completedSessions, totalSessions });
   } catch (error) {
@@ -225,27 +253,32 @@ const getSessionCompletionData = async (req, res) => {
   }
 };
 
+
 // 🟢 Submit session feedback
 const submitSessionFeedback = async (req, res) => {
   try {
     const { programId, session, feedback } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
-    const program = await Program.findByIdAndUpdate(
-      programId,
-      { $push: { sessionFeedback: { session, userId, feedback, date: new Date() } } },
-      { new: true }
-    );
+    const program = await Program.findById(programId);
+    if (!program) return res.status(404).json({ message: "Program not found." });
 
-    if (!program) {
-      return res.status(404).json({ message: "Program not found." });
-    }
+    if (!Array.isArray(program.feedback)) program.feedback = [];
+    program.feedback.push({
+      userId,
+      comment: feedback,
+      rating: undefined,
+      session,
+      createdAt: new Date(),
+    });
 
+    await program.save();
     res.status(201).json({ message: "Session feedback submitted successfully!" });
   } catch (error) {
     res.status(500).json({ message: "Error submitting feedback", error: error.message });
   }
 };
+
 
 // 🟢 Get program documents
 const getProgramDocuments = async (req, res) => {
@@ -287,23 +320,117 @@ const rescheduleWorkout = async (req, res) => {
 const assignProgramToClients = async (req, res) => {
   try {
     const { programId } = req.params; // 🔥 get from URL params
-    const { clientIds } = req.body;   // ✅ keep clientIds in body
+    const { userIds } = req.body;   // ✅ keep userIds in body
 
-    if (!programId || !clientIds || !Array.isArray(clientIds)) {
-      return res.status(400).json({ message: "programId and clientIds (array) are required" });
+    if (!programId || !userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ message: "programId and userIds (array) are required" });
     }
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
     // ✅ Validate all client IDs
-    const validClients = await User.find({ _id: { $in: clientIds }, role: "user" });
-    if (validClients.length !== clientIds.length) {
+    const validClients = await User.find({ _id: { $in: userIds }, role: "user" });
+    if (validClients.length !== userIds.length) {
       return res.status(400).json({ message: "Invalid client IDs found" });
     }
 
-    program.assignedClients = [...new Set([...program.assignedClients, ...clientIds])];
+    const newlyAssigned = validClients.filter(
+      (c) => !program.assignedClients.map(String).includes(String(c._id))
+    );
+
+    program.assignedClients = [...new Set([...program.assignedClients.map(String), ...userIds])];
     await program.save();
+
+    const coach = await User.findById(req.user._id).select('name').lean();
+
+    // Auto-generate calendar events for newly assigned clients
+    const days = Array.isArray(program.dailySchedule) ? program.dailySchedule : [];
+    const fallbackTime = program.defaultTimeOfDay || '18:00';
+    const { h: defH, m: defM } = parseHHmm(fallbackTime);
+    const programDefaultDur = toInt(program.defaultDurationMin, 60);
+    // Always start from Monday of the current week so day names align with calendar
+    const startDate = new Date(); startDate.setHours(0, 0, 0, 0);
+    const dow = startDate.getDay(); // 0=Sun,1=Mon,...,6=Sat
+    startDate.setDate(startDate.getDate() + (dow === 0 ? -6 : 1 - dow));
+
+    for (const client of newlyAssigned) {
+      // Reuse existing assignment if present (e.g. client was unassigned and reassigned)
+      let assignment = await ProgramAssignment.findOne({ userId: client._id, programId: program._id });
+      const isReassignment = !!assignment;
+      if (!assignment) {
+        assignment = await ProgramAssignment.create({
+          userId: client._id,
+          programId: program._id,
+          startDate,
+          timezone: 'Europe/Istanbul',
+          defaultTimeOfDay: fallbackTime,
+          status: 'active',
+        });
+      } else if (assignment.status !== 'active') {
+        await ProgramAssignment.updateOne({ _id: assignment._id }, { status: 'active' });
+      }
+
+      // Generate events (skip if reassignment — events already exist)
+      if (isReassignment) {
+        // Still send notification but don't duplicate events
+        sendProgramAssigned({
+          clientName: client.name,
+          clientEmail: client.email,
+          coachName: coach?.name || 'Koçun',
+          programName: program.name,
+        }).catch(() => {});
+        await notify({
+          recipientId: client._id,
+          senderId: req.user._id,
+          type: 'program_assigned',
+          message: `Koçun sana yeni bir program atadı: "${program.name}"`,
+        });
+        continue;
+      }
+
+      const ops = [];
+      for (let d = 0; d < days.length; d++) {
+        const sessions = Array.isArray(days[d]?.sessions) ? days[d].sessions : [];
+        const baseDate = new Date(startDate); baseDate.setDate(baseDate.getDate() + d);
+        for (let i = 0; i < sessions.length; i++) {
+          const s = sessions[i] || {};
+          const sid = String(s.sessionId || s._id || s.id || `${d}-${i}`);
+          const title = s.name || `Seans ${i + 1}`;
+          const t = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+          const dur = toInt(s.durationMin, programDefaultDur);
+          const st = new Date(baseDate); st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
+          const en = new Date(st); en.setMinutes(en.getMinutes() + dur);
+          const externalKey = `${assignment._id}:${d}:${i}`;
+          ops.push({
+            updateOne: {
+              filter: { userId: client._id, programId: program._id, assignmentId: assignment._id, externalKey },
+              update: {
+                $setOnInsert: { userId: client._id, programId: program._id, assignmentId: assignment._id, externalKey, source: 'program', status: 'planned', start: st, end: en },
+                $set: { sessionId: sid, title, timezone: 'Europe/Istanbul' },
+              },
+              upsert: true,
+            },
+          });
+        }
+      }
+      if (ops.length) await Event.bulkWrite(ops, { ordered: false });
+
+      sendProgramAssigned({
+        clientName: client.name,
+        clientEmail: client.email,
+        coachName: coach?.name || 'Koçun',
+        programName: program.name,
+      }).catch(() => {});
+
+      // Bildirim: kullanıcıya yeni program atandı
+      await notify({
+        recipientId: client._id,
+        senderId: req.user._id,
+        type: 'program_assigned',
+        message: `Koçun sana yeni bir program atadı: "${program.name}"`,
+      });
+    }
 
     res.status(200).json({ message: "Program successfully assigned!", program });
   } catch (error) {
@@ -433,23 +560,28 @@ const getAssignedClients = async (req, res) => {
 const resetProgress = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const progress = await Progress.findOneAndUpdate(
       { programId, userId },
       { completedSessions: [] },
       { new: true }
     );
-    program.progressTracking = program.progressTracking.map(entry => 
-      entry.user.toString() === userId.toString()
-        ? { ...entry, completedSessions: 0, progressPercentage: 0 }
-        : entry
-    );
-    await program.save();
-    
 
     if (!progress) {
       return res.status(404).json({ message: "Progress not found for this program." });
+    }
+
+    const program = await Program.findById(programId);
+    if (program) {
+      const list = Array.isArray(program.progressTracking) ? program.progressTracking : [];
+      const next = list.map((entry) =>
+        entry?.user?.toString() === userId.toString()
+          ? { ...entry.toObject?.() ?? entry, completedSessions: 0, progressPercentage: 0 }
+          : entry
+      );
+      program.progressTracking = next;
+      await program.save();
     }
 
     res.status(200).json({ message: "Progress reset successfully", progress });
@@ -457,11 +589,12 @@ const resetProgress = async (req, res) => {
     res.status(500).json({ message: "Error resetting progress", error: error.message });
   }
 };
+
 const updateAdaptiveAdjustments = async (req, res) => {
   try {
     const { programId } = req.params;
     const { fatigueLevel, notes } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     let progress = await Progress.findOne({ programId, userId });
 
@@ -502,76 +635,42 @@ const getProgramFeedback = async (req, res) => {
   }
 };
 
-// 🟢 Get program progress for a user
-const getUserProgress = async (req, res) => {
-  const { programId } = req.params;
-
-  try {
-    if (!programId) {
-      return res.status(400).json({ message: "Program ID is required." });
-    }
-
-    const program = await Program.findById(programId);
-
-    if (!program) {
-      return res.status(404).json({ message: "Program not found." });
-    }
-
-    if (!Array.isArray(program.progressTracking)) {
-      program.progressTracking = [];
-    }
-
-    let userProgress = program.progressTracking.find(
-      (entry) => entry.userId?.toString() === req.user._id.toString()
-    );
-
-    if (!userProgress) {
-      userProgress = {
-        userId: req.user._id,
-        completedSessions: 0,
-        progressPercentage: 0,
-      };
-
-      program.progressTracking.push(userProgress);
-      await program.save();
-    }
-
-    const totalSessions = program.dailySchedule?.reduce(
-      (total, day) => total + (day.sessions?.length || 0),
-      0
-    ) || 0;
-    
-    const completedSessions = program.progressTracking.reduce(
-      (total, entry) => total + (entry.completedSessions || 0),
-      0
-    );
-    
-    res.status(200).json({ completedSessions, totalSessions });
-    
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching user progress", error: error.message });
-  }
-};
-
-
 const trackSessionCompletion = async (req, res) => {
   try {
-    const { programId, session } = req.body;
-    const userId = req.user.id;
+    const { programId } = req.body;
+    const userId = req.user._id;
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
-    program.progressTracking.completedSessions += 1;
-    program.progressTracking.completionRate =
-      (program.progressTracking.completedSessions / program.progressTracking.totalSessions) * 100;
+    if (!Array.isArray(program.progressTracking)) program.progressTracking = [];
 
+    // ensure an entry for this user
+    let row = program.progressTracking.find(e => e?.user?.toString() === userId.toString());
+    if (!row) {
+      row = { user: userId, completedSessions: 0, progressPercentage: 0 };
+      program.progressTracking.push(row);
+    }
+
+    // increment and recompute percentage
+    row.completedSessions = (row.completedSessions || 0) + 1;
+    const totalSessions = (program.dailySchedule || []).reduce(
+      (acc, d) => acc + ((d.sessions || []).length),
+      0
+    );
+    row.progressPercentage = totalSessions > 0
+      ? Math.round((row.completedSessions / totalSessions) * 100)
+      : 0;
+
+    program.markModified('progressTracking');
     await program.save();
-    res.status(200).json({ message: "Session completion tracked", program });
+
+    res.status(200).json({ message: "Session completion tracked", progress: row });
   } catch (error) {
     res.status(500).json({ message: "Error tracking session completion", error: error.message });
   }
 };
+
 // 🟢 Get combined program media (documents + video URLs)
 const getProgramMedia = async (req, res) => {
   try {
@@ -596,9 +695,9 @@ const getProgramMedia = async (req, res) => {
 const getAdaptiveAdjustments = async (req, res) => {
   try {
     const { programId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
-    const progress = await require("../models/Progress").findOne({ programId, userId });
+    const progress = await Progress.findOne({ programId, userId });
 
     if (!progress) {
       return res.status(404).json({ message: "No adaptive data found" });
@@ -611,9 +710,9 @@ const getAdaptiveAdjustments = async (req, res) => {
 };
 const getCoachPrograms = async (req, res) => {
   try {
-    const coachId = req.user.id; // ✅ pull from auth middleware
-const programs = await Program.find({ coachId: coachId });
-
+    const coachId = req.user._id;
+    const programs = await Program.find({ coachId })
+      .populate("assignedClients", "name email profilePicture");
     res.json({ programs });
   } catch (error) {
     console.error("Error fetching coach programs:", error);
@@ -622,7 +721,10 @@ const programs = await Program.find({ coachId: coachId });
 };
 const getAllClients = async (req, res) => {
   try {
-    const clients = await User.find({ role: "user" }).select("-password");
+    const coachId = req.user._id;
+    const programs = await Program.find({ coachId }).select('assignedClients').lean();
+    const clientIds = [...new Set(programs.flatMap(p => p.assignedClients.map(id => id.toString())))];
+    const clients = await User.find({ _id: { $in: clientIds }, role: "user" }).select("-password");
     res.json(clients);
   } catch (error) {
     res.status(500).json({ message: "Kullanıcılar alınamadı", error });
@@ -639,7 +741,7 @@ const assignProgramToGroup = async (req, res) => {
     const group = await ClientGroup.findById(groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    const validClients = await User.find({ _id: { $in: group.clientIds }, role: "user" });
+    const validClients = await User.find({ _id: { $in: group.userIds }, role: "user" });
 
     program.assignedClients = [...new Set([...program.assignedClients, ...validClients.map(c => c._id)])];
     await program.save();
@@ -652,13 +754,13 @@ const assignProgramToGroup = async (req, res) => {
 const unassignClient = async (req, res) => {
   try {
     const { programId } = req.params;
-    const { clientId } = req.body;
+    const { userId } = req.body;
 
     const program = await Program.findById(programId);
     if (!program) return res.status(404).json({ message: "Program not found" });
 
     program.assignedClients = program.assignedClients.filter(
-      id => id.toString() !== clientId
+      id => id.toString() !== userId
     );
     await program.save();
 
@@ -668,9 +770,110 @@ const unassignClient = async (req, res) => {
   }
 };
 
+const startProgram = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { programId } = req.params;
+    const { startDate, defaultTimeOfDay, timezone = 'Europe/Istanbul' } = req.body || {};
+
+    if (!programId) return res.status(400).json({ message: 'programId missing' });
+    if (!startDate) return res.status(400).json({ message: 'startDate missing' });
+
+    const program = await Program.findById(programId).lean();
+    if (!program) return res.status(404).json({ message: 'Program not found' });
+
+    const start = new Date(startDate);
+    if (Number.isNaN(start.getTime())) return res.status(400).json({ message: 'Invalid startDate' });
+
+    // 1) Reuse existing active assignment if one exists (idempotent)
+    let assignment = await ProgramAssignment.findOne({ userId, programId, status: 'active' });
+    const isNew = !assignment;
+    if (!assignment) assignment = await ProgramAssignment.create({
+      userId,
+      programId,
+      startDate: start,
+      timezone,
+      defaultTimeOfDay: defaultTimeOfDay || program.defaultTimeOfDay || '18:00',
+      status: 'active',
+    });
+
+    // 2) Materialize events from dailySchedule
+    const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
+    const ops = [];
+
+    const fallbackTime = defaultTimeOfDay || program.defaultTimeOfDay || '18:00';
+    const { h: defH, m: defM } = parseHHmm(fallbackTime);
+    const programDefaultDur = toInt(program?.defaultDurationMin, 60);
+
+    for (let d = 0; d < days.length; d++) {
+      const dayDef = days[d] || {};
+      const sessions = Array.isArray(dayDef.sessions) ? dayDef.sessions : [];
+
+      const baseDate = new Date(start.getTime());
+      baseDate.setHours(0, 0, 0, 0);
+      baseDate.setDate(baseDate.getDate() + d); // Day 1 = start, Day 2 = +1 …
+
+      for (let i = 0; i < sessions.length; i++) {
+        const s = sessions[i] || {};
+        const sid   = String(s.sessionId || s._id || s.id || `${d}-${i}`);
+        const title = s.name || `Seans ${i + 1}`;
+        const t     = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+        const dur   = toInt(s.durationMin, programDefaultDur);
+
+        const st = new Date(baseDate);
+        st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
+        const en = new Date(st);
+        en.setMinutes(en.getMinutes() + dur);
+
+        // idempotency per assignment + day + session
+        const externalKey = `${assignment._id}:${d}:${i}`;
+
+        ops.push({
+          updateOne: {
+            filter: { userId, programId, assignmentId: assignment._id, externalKey },
+            update: {
+              $setOnInsert: {
+                userId,
+                programId,
+                assignmentId: assignment._id,
+                externalKey,
+                source: 'program',
+                status: 'planned',
+                start: st,
+                end: en,
+              },
+              $set: {
+                sessionId: sid,
+                title,
+                timezone,
+              },
+            },
+            upsert: true,
+          },
+        });
+      }
+    }
+
+    if (ops.length) await Event.bulkWrite(ops, { ordered: false }); // ✅ use Event model
+
+    return res.status(201).json({
+      message: 'Program started and events generated',
+      assignment: {
+        id: assignment._id,
+        startDate: assignment.startDate,
+        timezone: assignment.timezone,
+      },
+      assignmentId: String(assignment._id),
+      generatedEvents: ops.length,
+    });
+  } catch (error) {
+    console.error('startProgram error:', error);
+    return res.status(500).json({ message: 'Error starting program', error: error.message });
+  }
+};
 
 // ✅ EXPORT ALL FUNCTIONS **(FIXED)**
-module.exports = {
+export {
   createProgram,
   getPrograms,
   getUserPrograms, 
@@ -691,7 +894,7 @@ module.exports = {
   resetProgress,
   updateAdaptiveAdjustments,
   getProgramFeedback,
-  getUserProgress,
+  
   completeSession,
   trackSessionCompletion,
   getAdaptiveAdjustments,
@@ -699,11 +902,11 @@ module.exports = {
   getCoachPrograms,
   getAllClients,
   assignProgramToGroup,
-  unassignClient
+  unassignClient,
+  startProgram
 
 
 };
 
 
 // ✅ DEBUG LOG TO VERIFY EXPORTS
-console.log("✅ programController.js loaded! Exported functions:", module.exports);
