@@ -84,6 +84,7 @@ const ProgramSchema = new Schema({
               cardioMinutes: { type: Number, default: null },
               cardioKm: { type: Number, default: null },
               videoUrls: [{ url: { type: String }, description: { type: String } }],
+              gifUrl: { type: String, default: null },
             },
           ],
         },

@@ -32,7 +32,10 @@ import mediaRoutes from "./routes/mediaRoutes.js";
 import progressPhotoRoutes from "./routes/progressPhotoRoutes.js";
 import habitRoutes from "./routes/habitRoutes.js";
 import checkInRoutes from "./routes/checkInRoutes.js";
+import exerciseRoutes from "./routes/exerciseRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import { startBookingReminderJob } from "./services/bookingReminderJob.js";
+import { startWeeklyReportJob } from "./services/weeklyReportJob.js";
 import rateLimit from "express-rate-limit";
 /* --------------------------------- Setup ---------------------------------- */
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -131,6 +134,8 @@ app.use("/media", mediaRoutes);
 app.use("/progress-photos", progressPhotoRoutes);
 app.use("/habits", habitRoutes);
 app.use("/check-ins", checkInRoutes);
+app.use("/exercises", exerciseRoutes);
+app.use("/ai", aiRoutes);
 app.use("/events", eventRoutes);
 app.use("/me", meRoutes);
 app.use("/payment", paymentRoutes);
@@ -160,4 +165,5 @@ app.use((err, req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   startBookingReminderJob();
+  startWeeklyReportJob();
 });

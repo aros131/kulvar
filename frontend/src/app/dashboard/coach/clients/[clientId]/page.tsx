@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ArrowLeft, MessageCircle, Mail, Dumbbell, TrendingUp } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Mail, Dumbbell, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
@@ -62,6 +62,24 @@ export default function ClientDetailPage() {
   const [checkIns, setCheckIns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [coachId, setCoachId] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
+  const [aiResults, setAiResults] = useState<Record<string, { analysis?: string; reply?: string }>>({});
+  const [progressReport, setProgressReport] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [nutritionPlan, setNutritionPlan] = useState<string | null>(null);
+  const [nutritionLoading, setNutritionLoading] = useState(false);
+  const [showNutritionForm, setShowNutritionForm] = useState(false);
+  const [nutritionParams, setNutritionParams] = useState({ goal: 'Kas Kazanımı', weight: '', activityLevel: 'orta', preferences: '' });
+
+  const [adaptationSuggestion, setAdaptationSuggestion] = useState<string | null>(null);
+  const [adaptationLoading, setAdaptationLoading] = useState(false);
+
+  const [injuryAssessment, setInjuryAssessment] = useState<string | null>(null);
+  const [injuryLoading, setInjuryLoading] = useState(false);
+
+  const [socialContent, setSocialContent] = useState<{ instagram: string; whatsapp: string } | null>(null);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [socialAchievements, setSocialAchievements] = useState('');
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -81,13 +99,132 @@ export default function ClientDetailPage() {
       .then(([data, ci]) => {
         setClient(data.user ?? null);
         setPrograms(Array.isArray(data.programs) ? data.programs : []);
-        setCheckIns(Array.isArray(ci.checkIns) ? ci.checkIns : []);
+        const cis = Array.isArray(ci.checkIns) ? ci.checkIns : [];
+        setCheckIns(cis);
+        // Pre-fill latest check-in weight into nutrition form
+        const latestWeight = [...cis].reverse().find(c => c.weight)?.weight;
+        if (latestWeight) setNutritionParams(p => ({ ...p, weight: String(latestWeight) }));
       })
       .catch(() => toast.error('Danışan bilgisi yüklenemedi.'))
       .finally(() => setLoading(false));
   }, [clientId]);
 
   const chatId = coachId && clientId ? [coachId, clientId].sort().join('_') : null;
+
+  const runAI = async (checkInId: string, type: 'analysis' | 'reply') => {
+    setAiLoading(prev => ({ ...prev, [`${checkInId}-${type}`]: true }));
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/ai/check-in-${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ checkInId }),
+      });
+      const data = await res.json();
+      const text = type === 'analysis' ? data.analysis : data.reply;
+      setAiResults(prev => ({ ...prev, [checkInId]: { ...prev[checkInId], [type]: text } }));
+    } catch {
+      toast.error('AI yanıt üretemedi.');
+    } finally {
+      setAiLoading(prev => ({ ...prev, [`${checkInId}-${type}`]: false }));
+    }
+  };
+
+  const runProgressReport = async () => {
+    setReportLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/ai/progress-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ clientId }),
+      });
+      const data = await res.json();
+      setProgressReport(data.report);
+    } catch {
+      toast.error('Rapor üretilemedi.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const runNutritionPlan = async () => {
+    setNutritionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/ai/nutrition-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(nutritionParams),
+      });
+      const data = await res.json();
+      setNutritionPlan(data.plan);
+      setShowNutritionForm(false);
+    } catch {
+      toast.error('Beslenme planı oluşturulamadı.');
+    } finally {
+      setNutritionLoading(false);
+    }
+  };
+
+  const runAdaptation = async () => {
+    setAdaptationLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const programInfo = programs[0] ? { name: programs[0].name, difficulty: programs[0].difficulty, fitnessGoal: programs[0].fitnessGoal } : null;
+      const res = await fetch(`${API}/ai/program-adaptation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ clientId, programInfo }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setAdaptationSuggestion(data.suggestion);
+    } catch (err: any) {
+      toast.error('Adaptasyon önerisi alınamadı: ' + (err.message || ''));
+    } finally {
+      setAdaptationLoading(false);
+    }
+  };
+
+  const runInjuryRisk = async () => {
+    setInjuryLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/ai/injury-risk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ clientId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setInjuryAssessment(data.assessment);
+    } catch (err: any) {
+      toast.error('Yaralanma analizi yapılamadı: ' + (err.message || ''));
+    } finally {
+      setInjuryLoading(false);
+    }
+  };
+
+  const runSocialContent = async () => {
+    if (!socialAchievements.trim()) { toast.error('Lütfen başarıları girin.'); return; }
+    setSocialLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/ai/social-content`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ achievements: socialAchievements }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setSocialContent(data.content);
+    } catch (err: any) {
+      toast.error('İçerik oluşturulamadı: ' + (err.message || ''));
+    } finally {
+      setSocialLoading(false);
+    }
+  };
 
   if (loading) return (
     <CoachPageShell>
@@ -197,10 +334,172 @@ export default function ClientDetailPage() {
             </ul>
           )}
         </div>
+        {/* AI Beslenme Planı */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-semibold">AI Beslenme Planı</h2>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+              onClick={() => setShowNutritionForm(v => !v)}>
+              <Sparkles className="w-3 h-3 text-violet-500" />
+              {showNutritionForm ? 'Kapat' : 'Plan Oluştur'}
+            </Button>
+          </div>
+
+          {showNutritionForm && (
+            <div className="bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4 space-y-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground">Hedef</label>
+                  <select value={nutritionParams.goal} onChange={e => setNutritionParams(p => ({ ...p, goal: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm">
+                    <option>Kas Kazanımı</option>
+                    <option>Kilo Kaybı</option>
+                    <option>Genel Sağlık</option>
+                    <option>Dayanıklılık</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Kilo (kg)</label>
+                  <input type="number" value={nutritionParams.weight}
+                    onChange={e => setNutritionParams(p => ({ ...p, weight: e.target.value }))}
+                    placeholder="örn. 75"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Aktivite seviyesi</label>
+                  <select value={nutritionParams.activityLevel} onChange={e => setNutritionParams(p => ({ ...p, activityLevel: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm">
+                    <option value="düşük">Düşük</option>
+                    <option value="orta">Orta</option>
+                    <option value="yüksek">Yüksek</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Tercih/kısıt</label>
+                  <input type="text" value={nutritionParams.preferences}
+                    onChange={e => setNutritionParams(p => ({ ...p, preferences: e.target.value }))}
+                    placeholder="örn. vegan, laktozsuz"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm" />
+                </div>
+              </div>
+              <Button size="sm" onClick={runNutritionPlan} disabled={nutritionLoading} className="gap-2 bg-violet-600 hover:bg-violet-700 text-white w-full">
+                {nutritionLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Oluşturuluyor...</> : <><Sparkles className="w-3 h-3" /> Beslenme Planı Oluştur</>}
+              </Button>
+            </div>
+          )}
+
+          {nutritionPlan && (
+            <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
+              <p className="text-[10px] font-semibold text-violet-500 mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Beslenme Planı</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{nutritionPlan}</p>
+            </div>
+          )}
+        </div>
+
+        {/* AI Program Adaptasyonu */}
+        {checkIns.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold">AI Program Adaptasyonu</h2>
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                onClick={runAdaptation} disabled={adaptationLoading}>
+                {adaptationLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-violet-500" />}
+                Öneri Al
+              </Button>
+            </div>
+            {adaptationSuggestion ? (
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <p className="text-[10px] font-semibold text-blue-600 mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Program Düzenleme Önerileri</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{adaptationSuggestion}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Son check-in verilerine göre AI, programınızı nasıl optimize edebileceğinizi önerir.</p>
+            )}
+          </div>
+        )}
+
+        {/* AI Yaralanma Risk Tespiti */}
+        {checkIns.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold">Yaralanma Risk Analizi</h2>
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                onClick={runInjuryRisk} disabled={injuryLoading}>
+                {injuryLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-orange-500" />}
+                Risk Analizi
+              </Button>
+            </div>
+            {injuryAssessment ? (
+              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+                <p className="text-[10px] font-semibold text-orange-600 mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Yaralanma Risk Değerlendirmesi</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{injuryAssessment}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Check-in notlarındaki ağrı/şikayet ifadelerini analiz eder, yaralanma riski taşıyan durumları tespit eder.</p>
+            )}
+          </div>
+        )}
+
+        {/* Sosyal Medya İçerik Üretici */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-semibold">Sosyal Medya İçeriği</h2>
+          </div>
+          <div className="bg-card border rounded-xl p-4 space-y-3">
+            <p className="text-xs text-muted-foreground">Danışanın başarılarından ilham verici içerik oluşturun (isim gizlenir).</p>
+            <textarea
+              value={socialAchievements}
+              onChange={e => setSocialAchievements(e.target.value)}
+              placeholder="örn. 3 ayda 8 kg verdi, pull-up yapmaya başladı, enerji seviyesi %80 arttı..."
+              rows={2}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <Button size="sm" onClick={runSocialContent} disabled={socialLoading} className="gap-2 w-full bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:opacity-90">
+              {socialLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Oluşturuluyor...</> : <><Sparkles className="w-3 h-3" /> İçerik Oluştur</>}
+            </Button>
+            {socialContent && (
+              <div className="space-y-3 pt-1">
+                <div className="rounded-lg bg-pink-50 dark:bg-pink-950/20 border border-pink-200 dark:border-pink-800 p-3">
+                  <p className="text-[10px] font-semibold text-pink-600 mb-1">📸 Instagram</p>
+                  <p className="text-sm leading-relaxed">{socialContent.instagram}</p>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(socialContent.instagram); toast.success('Kopyalandı!'); }}
+                    className="mt-2 text-[10px] text-pink-600 hover:underline"
+                  >Kopyala</button>
+                </div>
+                <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-3">
+                  <p className="text-[10px] font-semibold text-green-600 mb-1">💬 WhatsApp</p>
+                  <p className="text-sm leading-relaxed">{socialContent.whatsapp}</p>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(socialContent.whatsapp); toast.success('Kopyalandı!'); }}
+                    className="mt-2 text-[10px] text-green-600 hover:underline"
+                  >Kopyala</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Check-ins */}
         {checkIns.length > 0 && (
           <div>
-            <h2 className="font-semibold mb-3">Haftalık Check-in'ler</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold">Haftalık Check-in'ler</h2>
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={runProgressReport} disabled={reportLoading}>
+                {reportLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-violet-500" />}
+                AI Rapor
+              </Button>
+            </div>
+
+            {progressReport && (
+              <div className="mb-4 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-xl p-4 space-y-2">
+                <p className="text-xs font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3" /> AI İlerleme Raporu
+                </p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{progressReport}</p>
+              </div>
+            )}
+
             <ul className="space-y-3">
               {checkIns.map((c) => (
                 <li key={c._id} className="bg-card border rounded-xl p-4 space-y-2">
@@ -216,6 +515,36 @@ export default function ClientDetailPage() {
                     {c.completedWorkouts != null && <span>💪 {c.completedWorkouts} antrenman</span>}
                   </div>
                   {c.note && <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">{c.note}</p>}
+
+                  {/* AI Butonları */}
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                      onClick={() => runAI(c._id, 'analysis')}
+                      disabled={aiLoading[`${c._id}-analysis`]}>
+                      {aiLoading[`${c._id}-analysis`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      Analiz Et
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                      onClick={() => runAI(c._id, 'reply')}
+                      disabled={aiLoading[`${c._id}-reply`]}>
+                      {aiLoading[`${c._id}-reply`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      Yanıt Taslağı
+                    </Button>
+                  </div>
+
+                  {/* AI Sonuçları */}
+                  {aiResults[c._id]?.analysis && (
+                    <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-lg p-3">
+                      <p className="text-[10px] font-semibold text-violet-500 mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Analiz</p>
+                      <p className="text-xs whitespace-pre-wrap leading-relaxed">{aiResults[c._id].analysis}</p>
+                    </div>
+                  )}
+                  {aiResults[c._id]?.reply && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+                      <p className="text-[10px] font-semibold text-emerald-600 mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Yanıt Taslağı</p>
+                      <p className="text-xs whitespace-pre-wrap leading-relaxed">{aiResults[c._id].reply}</p>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

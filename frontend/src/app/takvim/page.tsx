@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Clock, Dumbbell, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Clock, Dumbbell, Play, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import UserPageShell from "@/components/user/UserPageShell";
@@ -38,6 +38,7 @@ interface Exercise {
   holdSeconds?: number;
   cardioMinutes?: number;
   videoUrls?: VideoUrl[];
+  gifUrl?: string;
 }
 
 interface SessionInfo {
@@ -229,7 +230,33 @@ function EventCard({
   );
   const [expanded, setExpanded] = useState<Set<number>>(new Set<number>());
   const [openMedia, setOpenMedia] = useState<number | null>(null);
+  const [altLoading, setAltLoading] = useState<number | null>(null);
+  const [altResults, setAltResults] = useState<Record<number, string>>({});
+  const [openAlt, setOpenAlt] = useState<number | null>(null);
   const autoTriggered = useRef(false);
+
+  const fetchAlternatives = async (exIdx: number, exName: string) => {
+    if (openAlt === exIdx) { setOpenAlt(null); return; }
+    if (altResults[exIdx]) { setOpenAlt(exIdx); return; }
+    setAltLoading(exIdx);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/ai/exercise-alternatives`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ exerciseName: exName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || `Hata ${res.status}`);
+      const text = data.alternatives || "Şu an öneri üretilemedi.";
+      setAltResults(prev => ({ ...prev, [exIdx]: text }));
+      setOpenAlt(exIdx);
+    } catch (err: any) {
+      toast.error("AI öneri: " + (err.message || "Bağlantı hatası"));
+    } finally {
+      setAltLoading(null);
+    }
+  };
 
   useEffect(() => {
     if (event.status === "completed") {
@@ -336,6 +363,7 @@ function EventCard({
                       </div>
                     )}
 
+
                     <span className={`font-medium text-sm flex-1 min-w-0 truncate transition-colors ${allDone ? "line-through text-muted-foreground" : ""}`}>
                       {ex.name}
                     </span>
@@ -351,18 +379,40 @@ function EventCard({
                         : `${setCount}×${ex.reps ?? "?"}`}
                     </span>
 
-                    {/* Media toggle */}
-                    {hasMedia && (
+                    {/* Koç videosu varsa → oynat, yoksa → YouTube "nasıl yapılır" */}
+                    {hasMedia ? (
                       <button
                         className={`p-1.5 rounded-lg transition-colors shrink-0 ${
                           openMedia === exIdx ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground hover:text-foreground"
                         }`}
                         onClick={e => { e.stopPropagation(); setOpenMedia(openMedia === exIdx ? null : exIdx); }}
-                        title="Videoyu İzle"
+                        title="Koç videosunu izle"
                       >
                         <Play className="w-3.5 h-3.5" fill="currentColor" />
                       </button>
+                    ) : (
+                      <a
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' nasıl yapılır')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        title="Nasıl yapılır? (YouTube)"
+                        className="p-1.5 rounded-lg transition-colors shrink-0 hover:bg-muted text-muted-foreground hover:text-red-500"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                      </a>
                     )}
+
+                    {/* AI Alternatif butonu */}
+                    <button
+                      className={`p-1.5 rounded-lg transition-colors shrink-0 ${openAlt === exIdx ? "bg-violet-100 text-violet-600 dark:bg-violet-950/40" : "hover:bg-muted text-muted-foreground hover:text-violet-500"}`}
+                      onClick={e => { e.stopPropagation(); fetchAlternatives(exIdx, ex.name); }}
+                      title="AI ile alternatif egzersiz öner"
+                    >
+                      {altLoading === exIdx
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Sparkles className="w-3.5 h-3.5" />}
+                    </button>
 
                     {/* Expand icon */}
                     {canComplete && (
@@ -384,6 +434,14 @@ function EventCard({
                           ? `${sugg.lastReps} → ${sugg.suggestedReps} tekrar dene`
                           : null}
                       </span>
+                    </div>
+                  )}
+
+                  {/* AI Alternatifler paneli */}
+                  {openAlt === exIdx && altResults[exIdx] && (
+                    <div className="ml-8 mb-2 mt-1 bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800 rounded-lg p-3 max-h-48 overflow-y-auto">
+                      <p className="text-[10px] font-semibold text-violet-500 mb-1.5 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Alternatif Öneriler</p>
+                      <p className="text-xs whitespace-pre-wrap leading-relaxed">{altResults[exIdx]}</p>
                     </div>
                   )}
 
@@ -503,6 +561,7 @@ function TakvimInner() {
         const next: Record<string, any> = { ...programCache };
         programResults.forEach((d, i) => { if (d) next[missingPrograms[i]] = d.program ?? d; });
         setProgramCache(next);
+
       }
       if (missingSugg.length > 0) {
         const next: Record<string, OverloadSuggestion[]> = { ...suggestionCache };

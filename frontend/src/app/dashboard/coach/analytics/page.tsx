@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Users, Dumbbell, CalendarCheck, CalendarClock, TrendingUp, Star, Wallet, Clock } from 'lucide-react';
+import { Users, Dumbbell, CalendarCheck, CalendarClock, TrendingUp, Star, Wallet, Clock, Sparkles, Loader2 } from 'lucide-react';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
@@ -98,6 +98,8 @@ function LoadingSkeleton() {
 export default function CoachAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState<string | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -107,6 +109,26 @@ export default function CoachAnalyticsPage() {
       .catch(() => toast.error('Analitik veriler yüklenemedi.'))
       .finally(() => setLoading(false));
   }, []);
+
+  const runInsights = async () => {
+    if (!data) return;
+    setInsightsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/ai/coach-insights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.message);
+      setInsights(d.insights);
+    } catch (err: any) {
+      toast.error('AI öngörü alınamadı: ' + (err.message || ''));
+    } finally {
+      setInsightsLoading(false);
+    }
+  };
 
   const totalRevenue = data?.totalRevenue ?? 0;
   const pendingRevenue = data?.pendingRevenue ?? 0;
@@ -236,6 +258,39 @@ export default function CoachAnalyticsPage() {
               </p>
             </div>
           )}
+
+          {/* AI Coach Insights */}
+          <div className="rounded-2xl border bg-card p-6 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center bg-violet-500/10">
+                  <Sparkles className="h-4 w-4 text-violet-600" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-semibold">AI Koç Öngörüleri</h2>
+                  <p className="text-xs text-muted-foreground">Verilerini analiz et, fırsatları gör</p>
+                </div>
+              </div>
+              <button
+                onClick={runInsights}
+                disabled={insightsLoading || !data}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-60 transition-colors"
+              >
+                {insightsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {insightsLoading ? 'Analiz ediliyor...' : 'Öngörü Al'}
+              </button>
+            </div>
+
+            {insights ? (
+              <div className="bg-violet-50 dark:bg-violet-950/20 rounded-xl p-4">
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{insights}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                AI, koçluk verilerini analiz ederek güçlü yönlerini ve gelişim alanlarını tespit eder.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </CoachPageShell>

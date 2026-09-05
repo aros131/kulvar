@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { MessageCircle, ChevronRight, Search } from 'lucide-react';
+import { MessageCircle, ChevronRight, Search, Sparkles, Loader2 } from 'lucide-react';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
@@ -14,6 +14,18 @@ interface Client {
   email: string;
   profilePicture?: string;
 }
+
+interface RiskResult {
+  level: 'high' | 'medium' | 'low';
+  reasons: string[];
+  action: string;
+}
+
+const RISK_BADGE: Record<string, { label: string; cls: string }> = {
+  high: { label: 'Yüksek Risk', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  medium: { label: 'İzle', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+  low: { label: 'İyi', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+};
 
 interface Program {
   _id: string;
@@ -48,6 +60,9 @@ export default function CoachClientsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [coachId, setCoachId] = useState<string | null>(null);
+  const [riskResults, setRiskResults] = useState<Record<string, RiskResult>>({});
+  const [riskLoading, setRiskLoading] = useState(false);
+  const [expandedRisk, setExpandedRisk] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -82,6 +97,31 @@ export default function CoachClientsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const analyzeAllRisks = async () => {
+    if (clients.length === 0) return;
+    setRiskLoading(true);
+    const token = localStorage.getItem('token');
+    const results: Record<string, RiskResult> = {};
+    await Promise.all(
+      clients.map(async (client) => {
+        try {
+          const res = await fetch(`${API}/ai/churn-risk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ clientId: client._id }),
+          });
+          const data = await res.json();
+          if (res.ok) results[client._id] = data.risk;
+        } catch {}
+      })
+    );
+    setRiskResults(results);
+    setRiskLoading(false);
+    const highCount = Object.values(results).filter(r => r.level === 'high').length;
+    if (highCount > 0) toast.error(`${highCount} danışan yüksek risk taşıyor!`);
+    else toast.success('Risk analizi tamamlandı.');
+  };
+
   const q = search.toLowerCase();
   const filtered = clients.filter(
     (c) =>
@@ -102,11 +142,21 @@ export default function CoachClientsPage() {
   return (
     <CoachPageShell>
       <div className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold">Danışanlarım</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{clients.length} danışan atanmış</p>
           </div>
+          {clients.length > 0 && (
+            <button
+              onClick={analyzeAllRisks}
+              disabled={riskLoading}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-60 transition-colors"
+            >
+              {riskLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {riskLoading ? 'Analiz ediliyor...' : 'AI Risk Analizi'}
+            </button>
+          )}
         </div>
 
         {/* Search */}
@@ -139,6 +189,9 @@ export default function CoachClientsPage() {
               const programs = clientPrograms[client._id] ?? [];
               const chatId = coachId ? getChatId(coachId, client._id) : null;
 
+              const risk = riskResults[client._id];
+              const badge = risk ? RISK_BADGE[risk.level] : null;
+
               return (
                 <li key={client._id} className="group bg-card border rounded-xl hover:shadow-sm transition-all">
                   <div className="flex items-center gap-4 p-4">
@@ -149,7 +202,14 @@ export default function CoachClientsPage() {
 
                     {/* Info */}
                     <Link href={`/dashboard/coach/clients/${client._id}`} className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{client.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold truncate">{client.name}</p>
+                        {badge && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${badge.cls}`}>
+                            {badge.label}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground truncate">{client.email}</p>
                       {programs.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
@@ -165,10 +225,25 @@ export default function CoachClientsPage() {
                           )}
                         </div>
                       )}
+                      {risk && expandedRisk === client._id && (
+                        <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                          {risk.reasons.map((r, i) => <p key={i}>• {r}</p>)}
+                          <p className="text-foreground font-medium mt-1">→ {risk.action}</p>
+                        </div>
+                      )}
                     </Link>
 
                     {/* Actions */}
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {risk && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); setExpandedRisk(expandedRisk === client._id ? null : client._id); }}
+                          title="Detay"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-violet-600 hover:bg-violet-100 transition-colors"
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </button>
+                      )}
                       {chatId && (
                         <Link
                           href={`/dashboard/coach/messages/${chatId}`}

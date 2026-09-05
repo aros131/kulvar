@@ -2,13 +2,84 @@
 
 "use client";
 
-
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Program } from "@/types/program";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+
+interface LibraryExercise { _id: string; name: string; nameTR?: string; bodyPartTR?: string; targetTR?: string; gifUrl?: string; }
+
+function ExerciseSearchInput({ value, onChange, onSelect }: {
+  value: string;
+  onChange: (v: string) => void;
+  onSelect: (ex: LibraryExercise) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<LibraryExercise[]>([]);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const search = (q: string) => {
+    clearTimeout(searchTimer.current);
+    if (!q.trim()) { setResults([]); return; }
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('token') ?? '';
+        const res = await fetch(`${API_URL}/exercises?q=${encodeURIComponent(q)}&limit=8`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setResults(Array.isArray(data.exercises) ? data.exercises : []);
+      } catch { setResults([]); }
+    }, 300);
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        value={value}
+        placeholder="Egzersiz ara..."
+        onChange={(e) => { onChange(e.target.value); setOpen(true); search(e.target.value); }}
+        onFocus={() => { setOpen(true); search(value); }}
+        onBlur={() => { closeTimer.current = setTimeout(() => setOpen(false), 200); }}
+      />
+      {open && results.length > 0 && (
+        <ul className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-popover border border-border rounded-md shadow-lg py-1 max-h-64 overflow-y-auto">
+          {results.map((ex) => (
+            <li key={ex._id}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  clearTimeout(closeTimer.current);
+                  onSelect(ex);
+                  setOpen(false);
+                  setResults([]);
+                }}
+                className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted flex items-center gap-2"
+              >
+                {ex.gifUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={ex.gifUrl} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-muted" />
+                ) : (
+                  <div className="w-10 h-10 rounded bg-muted shrink-0 flex items-center justify-center text-lg">💪</div>
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{ex.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{[ex.bodyPartTR, ex.targetTR].filter(Boolean).join(' · ')}</p>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 interface EditProgramFormProps {
   program: Program;
@@ -18,7 +89,7 @@ interface EditProgramFormProps {
 
 // Helper types for nested structures (keeps TS happy even if Program is looser/stricter)
 interface DSVideoUrl { url?: string; description?: string }
-interface DSExercise { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number; videoUrls?: DSVideoUrl[] }
+interface DSExercise { name?: string; sets?: number; reps?: number; duration?: string; restTime?: number; videoUrls?: DSVideoUrl[]; gifUrl?: string; }
 interface DSSession { name?: string; exercises?: DSExercise[] }
 interface DSDay { day?: string; sessions?: DSSession[]; notes?: string }
 interface StandaloneExercise { name?: string; sets?: number; reps?: number; duration?: string; videoUrls?: DSVideoUrl[] }
@@ -42,7 +113,7 @@ export default function EditProgramForm({ program: initialProgram, mode, onSucce
   }, [initialProgram]);
 
   const [program, setProgram] = useState<Program>(normalized);
-  const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+  const API_BASE = API_URL;
 
   // -------------------------------
   // Generic handlers
@@ -479,7 +550,18 @@ export default function EditProgramForm({ program: initialProgram, mode, onSucce
                     <div className="grid md:grid-cols-5 gap-2">
                       <div>
                         <Label>Egzersiz</Label>
-                        <Input value={ex.name || ""} onChange={(e) => updateExerciseField(dIdx, sIdx, eIdx, "name", e.target.value)} />
+                        {ex.gifUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={ex.gifUrl} alt={ex.name} className="w-12 h-12 rounded object-cover mb-1 border border-border bg-muted" />
+                        )}
+                        <ExerciseSearchInput
+                          value={ex.name || ""}
+                          onChange={(v) => updateExerciseField(dIdx, sIdx, eIdx, "name", v)}
+                          onSelect={(lib) => {
+                            updateExerciseField(dIdx, sIdx, eIdx, "name", lib.name);
+                            updateExerciseField(dIdx, sIdx, eIdx, "gifUrl", lib.gifUrl ?? null);
+                          }}
+                        />
                       </div>
                       <div>
                         <Label>Set</Label>

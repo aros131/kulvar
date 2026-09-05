@@ -137,12 +137,25 @@ export const iyzicoCallback = async (req, res) => {
         await Program.findByIdAndUpdate(payment.programId, {
           $addToSet: { assignedClients: payment.userId },
         });
-        await ProgramAssignment.create({
+        // Idempotent: callback can fire more than once (webhook retry + redirect),
+        // so reuse an existing assignment instead of creating a duplicate.
+        const existingAssignment = await ProgramAssignment.findOne({
           userId: payment.userId,
           programId: payment.programId,
-          startDate: new Date(),
-          status: "active",
         });
+        if (!existingAssignment) {
+          await ProgramAssignment.create({
+            userId: payment.userId,
+            programId: payment.programId,
+            startDate: new Date(),
+            status: "active",
+          });
+        } else if (existingAssignment.status !== "active") {
+          await ProgramAssignment.updateOne(
+            { _id: existingAssignment._id },
+            { status: "active" }
+          );
+        }
       }
     } else {
       payment.status = "Failed";

@@ -12,19 +12,25 @@ export default function EmailVerificationBanner() {
   useEffect(() => {
     try {
       if (localStorage.getItem("emailBannerDismissed") === "1") return;
-      const token = localStorage.getItem("token");
       const stored = localStorage.getItem("user");
-      if (!token || !stored) return;
-      fetch(`${API}/profile`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json())
-        .then(data => {
-          if (data.emailVerified === false) {
-            setShow(true);
-          } else {
-            localStorage.removeItem("emailBannerDismissed");
-          }
-        })
-        .catch(() => {});
+      if (!stored) return;
+      const user = JSON.parse(stored);
+      // Use cached value first — avoids extra profile fetch on every page
+      if (user.emailVerified === false) {
+        setShow(true);
+        return;
+      }
+      // If not in localStorage, fall back to a single profile check
+      if (user.emailVerified === undefined) {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        fetch(`${API}/profile`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(data => {
+            if (data.emailVerified === false) setShow(true);
+          })
+          .catch(() => {});
+      }
     } catch {}
   }, []);
 

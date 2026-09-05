@@ -99,53 +99,55 @@ nav {
   overflow: hidden;
   border: 1px solid var(--border);
   box-shadow: 0 20px 64px rgba(15,14,26,.10), 0 4px 16px rgba(15,14,26,.06);
-  background: #1a1a2e;
+  background: var(--surface);
 }
 .frame-bar {
-  background: #1a1a2e;
+  background: var(--surface);
   padding: 10px 14px;
   display: flex; gap: 6px; align-items: center;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--border);
 }
 .fdot { width: 10px; height: 10px; border-radius: 50%; display: block; }
 .fd-r { background: #ff5f57; } .fd-y { background: #febc2e; } .fd-g { background: #28c840; }
 .dash-layout { display: flex; height: 300px; }
 .dash-sidebar {
-  width: 160px; background: #12112a; border-right: 1px solid rgba(255,255,255,.06);
+  width: 160px; background: #272aa5; border-right: 1px solid rgba(255,255,255,.08);
   padding: 16px 0; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px;
 }
 .sidebar-logo { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 14px; color: #fff; padding: 0 14px 14px; letter-spacing: -.3px; }
-.sidebar-logo span { color: var(--indigom); }
+.sidebar-logo span { color: #fe9a00; }
 .nav-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 14px; font-size: 12px; color: #6b7280;
+  padding: 8px 14px; font-size: 12px; color: rgba(255,255,255,.6);
   border-radius: 0; cursor: default;
 }
-.nav-item.active { background: rgba(101,97,200,.15); color: #c4c0f0; }
+.nav-item.active { background: rgba(255,255,255,.14); color: #fff; }
 .nav-icon { width: 14px; height: 14px; flex-shrink: 0; }
-.dash-main { flex: 1; padding: 16px; background: #1a1a2e; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
-.dash-heading { font-size: 13px; font-weight: 600; color: #f9fafb; margin-bottom: 2px; }
-.dash-sub { font-size: 11px; color: #6b7280; margin-bottom: 12px; }
+.dash-main { flex: 1; padding: 16px; background: var(--surface); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.dash-heading { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.dash-sub { font-size: 11px; color: var(--text3); margin-bottom: 12px; }
 .client-card {
   display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
-  border-radius: 8px; padding: 10px 12px; margin-bottom: 6px;
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
 }
 .c-avatar {
-  width: 32px; height: 32px; border-radius: 8px;
+  width: 34px; height: 34px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
 }
 .c-info { flex: 1; min-width: 0; }
-.c-name { font-size: 12px; font-weight: 600; color: #f3f4f6; }
-.c-program { font-size: 10px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.prog-wrap { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; margin-top: 5px; }
+.c-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.c-program { font-size: 10px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prog-wrap { height: 3px; background: var(--border2); border-radius: 2px; margin-top: 5px; }
 .prog-fill { height: 100%; border-radius: 2px; }
 .c-right { text-align: right; flex-shrink: 0; }
-.c-pct { font-size: 12px; font-weight: 700; color: #f9fafb; font-variant-numeric: tabular-nums; }
+.c-pct { font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .c-badge { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 100px; margin-top: 2px; display: inline-block; }
-.badge-green { background: rgba(16,185,129,.15); color: #34d399; }
-.badge-blue { background: rgba(59,130,246,.15); color: #60a5fa; }
+.badge-green { background: #d1fae5; color: #065f46; }
+.badge-blue { background: #eff6ff; color: #1d4ed8; }
+.badge-gray { background: #f3f4f6; color: #6b7280; }
+.badge-indigo { background: #ede9fe; color: #4f46e5; }
 .dash-scroll {
   flex: 1; min-height: 0; position: relative;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -549,19 +551,19 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
         <div class="dash-sidebar">
           <div class="sidebar-logo">PerSe<span>.</span></div>
           <div class="nav-item active">
-            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#c4c0f0" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#ffffff" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
             Panel
           </div>
           <div class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 2v4M10 2v4"/></svg>
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 2v4M10 2v4"/></svg>
             Programlar
           </div>
           <div class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#6b7280" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
             Danışanlar
           </div>
           <div class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="1" y="4" width="14" height="10" rx="2"/><path d="M1 8h14M5 4V2M11 4V2"/></svg>
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"><rect x="1" y="4" width="14" height="10" rx="2"/><path d="M1 8h14M5 4V2M11 4V2"/></svg>
             Ödemeler
           </div>
         </div>
@@ -570,49 +572,49 @@ footer { border-top: 1px solid var(--border); padding: 28px 40px; }
           <div class="dash-sub">5 aktif danışan</div>
           <div class="dash-scroll">
             <div class="client-card">
-              <div class="c-avatar" style="background:#3b82f6">AK</div>
+              <div class="c-avatar" style="background:linear-gradient(135deg,#0ea5e9,#2563eb)">AK</div>
               <div class="c-info">
                 <div class="c-name">Ahmet Kara</div>
                 <div class="c-program">Güç &amp; Kondisyon</div>
-                <div class="prog-wrap"><div class="prog-fill" style="width:78%;background:#3b82f6"></div></div>
+                <div class="prog-wrap"><div class="prog-fill" style="width:78%;background:#2563eb"></div></div>
               </div>
               <div class="c-right"><div class="c-pct">78%</div><div class="c-badge badge-green">Aktif</div></div>
             </div>
             <div class="client-card">
-              <div class="c-avatar" style="background:#7c3aed">MS</div>
+              <div class="c-avatar" style="background:linear-gradient(135deg,#8b5cf6,#9333ea)">MS</div>
               <div class="c-info">
                 <div class="c-name">Merve Şahin</div>
                 <div class="c-program">12 Haftalık Program</div>
-                <div class="prog-wrap"><div class="prog-fill" style="width:45%;background:#7c3aed"></div></div>
+                <div class="prog-wrap"><div class="prog-fill" style="width:45%;background:#9333ea"></div></div>
               </div>
-              <div class="c-right"><div class="c-pct">45%</div><div class="c-badge badge-blue">Devam</div></div>
+              <div class="c-right"><div class="c-pct">45%</div><div class="c-badge badge-green">Aktif</div></div>
             </div>
             <div class="client-card">
-              <div class="c-avatar" style="background:#10b981">EC</div>
+              <div class="c-avatar" style="background:linear-gradient(135deg,#10b981,#16a34a)">EC</div>
               <div class="c-info">
                 <div class="c-name">Ece Çelik</div>
                 <div class="c-program">Fonksiyonel Antrenman</div>
-                <div class="prog-wrap"><div class="prog-fill" style="width:92%;background:#10b981"></div></div>
+                <div class="prog-wrap"><div class="prog-fill" style="width:100%;background:#16a34a"></div></div>
               </div>
-              <div class="c-right"><div class="c-pct">92%</div><div class="c-badge badge-green">Aktif</div></div>
+              <div class="c-right"><div class="c-pct">100%</div><div class="c-badge badge-indigo">Tamamlandı</div></div>
             </div>
             <div class="client-card">
-              <div class="c-avatar" style="background:#f59e0b">DY</div>
+              <div class="c-avatar" style="background:linear-gradient(135deg,#f97316,#d97706)">DY</div>
               <div class="c-info">
                 <div class="c-name">Deniz Yıldız</div>
                 <div class="c-program">Kilo Verme Programı</div>
-                <div class="prog-wrap"><div class="prog-fill" style="width:60%;background:#f59e0b"></div></div>
+                <div class="prog-wrap"><div class="prog-fill" style="width:60%;background:#d97706"></div></div>
               </div>
-              <div class="c-right"><div class="c-pct">60%</div><div class="c-badge badge-blue">Devam</div></div>
+              <div class="c-right"><div class="c-pct">60%</div><div class="c-badge badge-green">Aktif</div></div>
             </div>
             <div class="client-card">
-              <div class="c-avatar" style="background:#ec4899">CO</div>
+              <div class="c-avatar" style="background:#9ca3af">CO</div>
               <div class="c-info">
                 <div class="c-name">Can Öztürk</div>
-                <div class="c-program">Sağlıklı Yaşam Programı</div>
-                <div class="prog-wrap"><div class="prog-fill" style="width:25%;background:#ec4899"></div></div>
+                <div class="c-program">Program atanmadı</div>
+                <div class="prog-wrap"><div class="prog-fill" style="width:0%;background:#9ca3af"></div></div>
               </div>
-              <div class="c-right"><div class="c-pct">25%</div><div class="c-badge badge-green">Aktif</div></div>
+              <div class="c-right"><div class="c-pct" style="color:var(--text3)">—</div><div class="c-badge badge-gray">Programsız</div></div>
             </div>
           </div>
         </div>

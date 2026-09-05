@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, MapPin, Star, Dumbbell, Loader2, Filter } from "lucide-react";
+import { Search, MapPin, Star, Dumbbell, Loader2, Filter, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -80,6 +81,32 @@ export default function CoachesPageBody() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
 
   const [debugInfo, setDebugInfo] = useState<{ url?: string; status?: number; shape?: string; count?: number } | null>(null);
+
+  // AI Coach Matching
+  const [showAIMatch, setShowAIMatch] = useState(false);
+  const [matchParams, setMatchParams] = useState({ goal: '', level: 'Başlangıç', preferences: '', budget: '', city: '' });
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchResult, setMatchResult] = useState<string | null>(null);
+
+  const runCoachMatch = async () => {
+    if (!matchParams.goal.trim()) return;
+    setMatchLoading(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) { toast.error('Bu özelliği kullanmak için giriş yapmalısın.'); setMatchLoading(false); return; }
+      const res = await fetch(`${API}/ai/coach-match`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(matchParams),
+      });
+      const data = await res.json();
+      setMatchResult(data.result);
+    } catch {
+      toast.error('AI yanıt veremedi. Lütfen tekrar dene.');
+    } finally {
+      setMatchLoading(false);
+    }
+  };
 
   // sync ?q= and ?spec= in the URL
   useEffect(() => {
@@ -208,6 +235,65 @@ export default function CoachesPageBody() {
             {fetching ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Aranıyor</>) : "Ara"}
           </Button>
         </div>
+      </div>
+
+      {/* AI Koç Eşleştirici */}
+      <div className="mb-6 border border-violet-200 dark:border-violet-800 rounded-2xl overflow-hidden">
+        <button
+          className="w-full flex items-center justify-between px-5 py-4 bg-violet-50 dark:bg-violet-950/30 hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors text-left"
+          onClick={() => setShowAIMatch(v => !v)}
+        >
+          <span className="flex items-center gap-2 font-semibold text-violet-700 dark:text-violet-300">
+            <Sparkles className="w-4 h-4" /> AI ile Koç Bul
+            <span className="text-xs font-normal text-violet-500">Hedefini anlat, sana özel koç tipini öğren</span>
+          </span>
+          {showAIMatch ? <ChevronUp className="w-4 h-4 text-violet-500" /> : <ChevronDown className="w-4 h-4 text-violet-500" />}
+        </button>
+
+        {showAIMatch && (
+          <div className="px-5 py-4 space-y-4 bg-white dark:bg-violet-950/10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="sm:col-span-2 md:col-span-1">
+                <label className="text-xs text-muted-foreground">Hedefin nedir?</label>
+                <input value={matchParams.goal} onChange={e => setMatchParams(p => ({ ...p, goal: e.target.value }))}
+                  placeholder="örn. 10kg vermek, kas yapmak, dayanıklılık..."
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Fitness seviyesi</label>
+                <select value={matchParams.level} onChange={e => setMatchParams(p => ({ ...p, level: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                  <option>Başlangıç</option>
+                  <option>Orta Düzey</option>
+                  <option>İleri Seviye</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Şehir (isteğe bağlı)</label>
+                <input value={matchParams.city} onChange={e => setMatchParams(p => ({ ...p, city: e.target.value }))}
+                  placeholder="örn. İstanbul"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Tercihler</label>
+                <input value={matchParams.preferences} onChange={e => setMatchParams(p => ({ ...p, preferences: e.target.value }))}
+                  placeholder="örn. online, sabah, kadın koç"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <button onClick={runCoachMatch} disabled={matchLoading || !matchParams.goal.trim()}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+              {matchLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Analiz ediliyor...</> : <><Sparkles className="w-4 h-4" /> Koç Önerisi Al</>}
+            </button>
+
+            {matchResult && (
+              <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 rounded-xl p-4">
+                <p className="text-[10px] font-semibold text-violet-500 mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Koç Önerisi</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{matchResult}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Optional debug */}

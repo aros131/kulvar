@@ -31,6 +31,7 @@ export interface Exercise {
   cardioMinutes?: number;
   cardioKm?: number;
   videoUrls: { url: string; description: string }[];
+  gifUrl?: string;
   /** @deprecated kept for backward compat */
   duration?: string;
 }
@@ -93,37 +94,93 @@ function clone<T>(x: T): T { return JSON.parse(JSON.stringify(x)); }
 
 // ─── ExerciseName combobox ────────────────────────────────────────────────────
 
+interface ApiExercise {
+  _id: string;
+  name: string;
+  nameTR?: string;
+  bodyPartTR?: string;
+  targetTR?: string;
+  gifUrl?: string;
+}
+
 function ExerciseNameInput({
   value,
   onChange,
   onSelectLibrary,
+  onSelectApi,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSelectLibrary: (entry: (typeof EXERCISE_LIBRARY)[number]) => void;
+  onSelectApi: (ex: ApiExercise) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [apiResults, setApiResults] = useState<ApiExercise[]>([]);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const suggestions = useMemo(() => {
+  const localSuggestions = useMemo(() => {
     const q = value.trim().toLowerCase();
-    if (!q) return EXERCISE_LIBRARY.slice(0, 6);
-    return EXERCISE_LIBRARY.filter((e) => e.name.toLowerCase().includes(q)).slice(0, 6);
+    if (!q) return EXERCISE_LIBRARY.slice(0, 4);
+    return EXERCISE_LIBRARY.filter((e) => e.name.toLowerCase().includes(q)).slice(0, 3);
   }, [value]);
+
+  const fetchApi = (q: string) => {
+    clearTimeout(searchTimer.current);
+    if (!q.trim()) { setApiResults([]); return; }
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('token') ?? '';
+        const res = await fetch(`${MEDIA_API}/exercises?q=${encodeURIComponent(q)}&limit=6`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setApiResults(Array.isArray(data.exercises) ? data.exercises : []);
+      } catch { /* ignore */ }
+    }, 300);
+  };
 
   return (
     <div className="relative flex-1">
       <Input
-        placeholder="Egzersiz adı veya ara..."
+        placeholder="Egzersiz ara (kütüphane)..."
         value={value}
-        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => { closeTimer.current = setTimeout(() => setOpen(false), 150); }}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); fetchApi(e.target.value); }}
+        onFocus={() => { setOpen(true); fetchApi(value); }}
+        onBlur={() => { closeTimer.current = setTimeout(() => setOpen(false), 200); }}
         className="h-8 text-sm"
       />
-      {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-popover border border-border rounded-md shadow-lg py-1 max-h-44 overflow-y-auto">
-          {suggestions.map((ex) => (
+      {open && (localSuggestions.length > 0 || apiResults.length > 0) && (
+        <ul className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-popover border border-border rounded-md shadow-lg py-1 max-h-64 overflow-y-auto">
+          {/* API kütüphane sonuçları (GIF'li) */}
+          {apiResults.map((ex) => (
+            <li key={ex._id}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  clearTimeout(closeTimer.current);
+                  onSelectApi(ex);
+                  setOpen(false);
+                  setApiResults([]);
+                }}
+                className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted flex items-center gap-2"
+              >
+                {ex.gifUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={ex.gifUrl} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-muted" />
+                ) : (
+                  <div className="w-10 h-10 rounded bg-muted shrink-0 flex items-center justify-center text-lg">💪</div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{ex.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{[ex.bodyPartTR, ex.targetTR].filter(Boolean).join(' · ')}</p>
+                </div>
+              </button>
+            </li>
+          ))}
+          {/* Yerel liste (kısa, genel) */}
+          {apiResults.length === 0 && localSuggestions.map((ex) => (
             <li key={ex.name}>
               <button
                 type="button"
@@ -338,6 +395,10 @@ function ExerciseRow({
     <div className="space-y-1.5 p-2 rounded-lg bg-muted/40 border border-border">
       {/* Row 1: name + type selector + actions */}
       <div className="flex items-center gap-1.5">
+        {ex.gifUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={ex.gifUrl} alt={ex.name} className="w-9 h-9 rounded object-cover shrink-0 border border-border bg-muted" />
+        )}
         <ExerciseNameInput
           value={ex.name}
           onChange={(name) => onUpdate({ name })}
@@ -349,6 +410,11 @@ function ExerciseRow({
             restTime: lib.restTime ?? 60,
             holdSeconds: lib.holdSeconds,
             cardioMinutes: lib.cardioMinutes,
+            gifUrl: undefined,
+          })}
+          onSelectApi={(apiEx) => onUpdate({
+            name: apiEx.name,
+            gifUrl: apiEx.gifUrl,
           })}
         />
         <div className="flex shrink-0 rounded-md overflow-hidden border border-border text-[11px]">

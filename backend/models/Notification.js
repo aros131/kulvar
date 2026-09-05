@@ -19,6 +19,8 @@ const NotificationSchema = new mongoose.Schema({
       "payment_received",
       "program_assigned",
       "session_completed",
+      "weekly_report",
+      "adaptation_suggestion",
     ],
     required: true,
   },
