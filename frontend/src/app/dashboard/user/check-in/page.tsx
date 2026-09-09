@@ -20,6 +20,19 @@ interface CheckIn {
   note?: string;
 }
 
+// Monday 00:00 .. next Monday 00:00, in the visitor's local time.
+function currentWeekRange() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun..6=Sat
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(now.getDate() + diffToMonday);
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(monday.getDate() + 7);
+  return { from: monday.toISOString(), to: nextMonday.toISOString() };
+}
+
 const SCALE = [1, 2, 3, 4, 5];
 const SCALE_LABELS: Record<string, [string, string]> = {
   energyLevel:  ["Çok Düşük", "Çok Yüksek"],
@@ -88,22 +101,30 @@ export default function CheckInPage() {
   const [energy, setEnergy] = useState<number | null>(null);
   const [sleep, setSleep] = useState<number | null>(null);
   const [stress, setStress] = useState<number | null>(null);
-  const [workouts, setWorkouts] = useState("");
+  const [autoWorkoutCount, setAutoWorkoutCount] = useState<number | null>(null);
   const [note, setNote] = useState("");
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") ?? "" : "";
 
   useEffect(() => {
+    const { from, to } = currentWeekRange();
     Promise.all([
       fetch(`${API}/progress/all-program-progress`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json()).catch(() => ({})),
       fetch(`${API}/check-ins`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json()).catch(() => ({})),
-    ]).then(([prog, ci]) => {
+      // Completed-this-week comes straight from the calendar (takvim) — a
+      // workout only counts once it's actually been checked off there, so
+      // this can't be fudged by typing a number into the check-in form.
+      fetch(`${API}/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).catch(() => ({})),
+    ]).then(([prog, ci, ev]) => {
       const progs: Program[] = Array.isArray(prog.programs) ? prog.programs.map((p: any) => ({ _id: p.programId || p._id, name: p.programName || p.name })) : [];
       setPrograms(progs);
       if (progs.length > 0) setProgramId(progs[0]._id);
       setHistory(Array.isArray(ci.checkIns) ? ci.checkIns : []);
+      const events: { status?: string }[] = Array.isArray(ev.events) ? ev.events : [];
+      setAutoWorkoutCount(events.filter(e => e.status === "completed").length);
     }).finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -121,7 +142,7 @@ export default function CheckInPage() {
           energyLevel: energy,
           sleepQuality: sleep,
           stressLevel: stress,
-          completedWorkouts: workouts ? parseInt(workouts) : null,
+          completedWorkouts: autoWorkoutCount,
           note,
         }),
       });
@@ -129,7 +150,7 @@ export default function CheckInPage() {
       const data = await res.json();
       setHistory(prev => [data.checkIn, ...prev]);
       setShowForm(false);
-      setWeight(""); setEnergy(null); setSleep(null); setStress(null); setWorkouts(""); setNote("");
+      setWeight(""); setEnergy(null); setSleep(null); setStress(null); setNote("");
       toast.success("Check-in gönderildi! Koçun görebilir.");
     } catch {
       toast.error("Gönderilemedi.");
@@ -198,14 +219,10 @@ export default function CheckInPage() {
 
             <div>
               <label className="text-sm font-medium">Bu hafta tamamlanan antrenman sayısı</label>
-              <input
-                type="number"
-                min={0}
-                value={workouts}
-                onChange={e => setWorkouts(e.target.value)}
-                placeholder="örn. 3"
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
+              <div className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                <span className="font-semibold">💪 {autoWorkoutCount ?? 0} antrenman</span>
+                <span className="text-xs text-muted-foreground">— takviminden otomatik hesaplandı</span>
+              </div>
             </div>
 
             <div>

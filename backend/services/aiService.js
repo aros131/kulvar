@@ -190,28 +190,49 @@ Sadece JSON döndür.`;
 }
 
 // ─── Koç Eşleştirme ──────────────────────────────────────────────────────────
+// Real matching against the platform's actual coach list — the AI picks
+// from `coaches` (fetched by the route from the database), it never invents
+// a coach that doesn't exist. Returns { matches: [{ coachId, reason }] }.
 export async function matchCoach(params) {
-  const { goal, level, preferences, budget, city } = params;
+  const { goal, level, availableDays, preferences, budget, city, coaches } = params;
 
-  const system = `Sen bir fitness danışmanlık platformunun AI asistanısın. Kullanıcının hedeflerine ve tercihlerine göre hangi tür koç araması gerektiği konusunda rehberlik ediyorsun. Türkçe yanıt ver, somut ve kişiselleştirilmiş ol.`;
+  const system = `Sen bir fitness koçluk platformunun eşleştirme asistanısın. Sana bir danışan adayının bilgileri ve platformdaki GERÇEK koçların bir listesi verilecek. Yalnızca bu listeden, danışana en uygun en fazla 3 koçu seç — listede olmayan bir koç asla uydurma. Türkçe yanıt ver.`;
+
+  const coachList = (coaches || [])
+    .map((c) => {
+      const spec = Array.isArray(c.specialization) ? c.specialization.join(', ') : c.specialization;
+      return `- id: ${c.id} | isim: ${c.name} | uzmanlık: ${spec || 'belirtilmemiş'} | şehir: ${c.city || 'belirtilmemiş'} | puan: ${c.rating ?? '-'} | tanıtım: ${c.tagline || c.bio || 'yok'}`;
+    })
+    .join('\n');
 
   const user = `
-Kullanıcı Bilgileri:
+Danışan adayı bilgileri:
 - Hedef: ${goal}
 - Fitness seviyesi: ${level || 'belirtilmedi'}
+- Müsait günler: ${Array.isArray(availableDays) && availableDays.length ? availableDays.join(', ') : 'belirtilmedi'}
 - Tercihler: ${preferences || 'yok'}
 - Bütçe: ${budget || 'belirtilmedi'}
 - Şehir: ${city || 'belirtilmedi'}
 
-Şunları söyle:
-1. Bu hedefe uygun koç uzmanlık alanı (örn. "Fitness ve güç antrenmanı uzmanı")
-2. Bu koçtan beklenmesi gereken 3 özellik
-3. İlk görüşmede sorulması gereken 2 soru
-4. Kısa bir motivasyon mesajı
+Platformdaki koçlar:
+${coachList || '(şu an listelenmiş koç yok)'}
 
-Kısa, sıcak ve pratik bir dil kullan.`;
+Yukarıdaki listeden danışana en uygun en fazla 3 koçu seç (hiçbiri uygun değilse boş liste dön). Her biri için kısa (1 cümle) bir "neden uygun" açıklaması yaz.
 
-  return chat(system, user, 500);
+JSON formatında dön:
+{
+  "matches": [
+    { "coachId": "...", "reason": "..." }
+  ]
+}
+
+Sadece JSON döndür, başka hiçbir şey yazma.`;
+
+  const raw = await chat(system, user, 500);
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('AI geçerli JSON üretmedi');
+  const parsed = JSON.parse(match[0]);
+  return Array.isArray(parsed.matches) ? parsed.matches : [];
 }
 
 // ─── Churn Risk Analizi ──────────────────────────────────────────────────────

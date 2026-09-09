@@ -1,5 +1,6 @@
 import Program from '../models/Program.js';
 import User from '../models/User.js';
+import ClientGroup from '../models/ClientGroup.js';
 import Event from '../models/Event.js'; // ✅ make sure the path/case matches your file name
 
 import Progress from '../models/Progress.js';
@@ -17,7 +18,7 @@ const parseHHmm = (hhmm = '18:00') => {
 // 🟢 Create a new program
 const createProgram = async (req, res) => {
   try {
-    const { name, description, duration, difficulty, nutritionPlan, dailySchedule, fitnessGoal } = req.body;
+    const { name, description, duration, difficulty, nutritionPlan, dailySchedule, fitnessGoal, priceCents } = req.body;
     const coachId = req.user._id;
     let documents = [];
 
@@ -34,6 +35,7 @@ const createProgram = async (req, res) => {
       duration,
       difficulty,
       fitnessGoal,
+      priceCents,
       coachId,
       dailySchedule: Array.isArray(dailySchedule) ? dailySchedule : [], // ✅ Ensure dailySchedule is always an array
       nutritionPlan,
@@ -44,6 +46,9 @@ const createProgram = async (req, res) => {
 
     res.status(201).json({ message: "Program created successfully", program: newProgram });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "Bu isimde bir program zaten mevcut, lütfen farklı bir isim deneyin." });
+    }
     res.status(500).json({ message: "Program creation failed", error: error.message });
   }
 };
@@ -114,6 +119,9 @@ const updateProgram = async (req, res) => {
     if (!existingProgram) {
       return res.status(404).json({ message: "Program not found" });
     }
+    if (existingProgram.coachId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Bu programı düzenleme yetkiniz yok" });
+    }
 
     const updatedProgram = await Program.findByIdAndUpdate(
       id,
@@ -133,11 +141,16 @@ const updateProgram = async (req, res) => {
 const deleteProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedProgram = await Program.findByIdAndDelete(id);
+    const program = await Program.findById(id);
 
-    if (!deletedProgram) {
+    if (!program) {
       return res.status(404).json({ message: "Program not found" });
     }
+    if (program.coachId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Bu programı silme yetkiniz yok" });
+    }
+
+    await program.deleteOne();
 
     res.status(200).json({ message: "Program deleted successfully" });
   } catch (error) {
@@ -450,6 +463,7 @@ const cloneProgram = async (req, res) => {
     const clonedProgram = await Program.create({
       ...originalProgram.toObject(),
       _id: undefined,
+      slug: undefined, // let the pre-validate hook derive a fresh, unique slug — reusing the original's causes a duplicate-key error on every clone
       name: `${originalProgram.name} (Copy)`,
       createdAt: new Date(),
       assignedClients: [] // Remove clients when cloning
@@ -599,10 +613,10 @@ const updateAdaptiveAdjustments = async (req, res) => {
     let progress = await Progress.findOne({ programId, userId });
 
     if (!progress) {
-      progress = new Progress({ programId, userId, fatigueAdjustments: [] });
+      progress = new Progress({ programId, userId, adaptiveAdjustments: [] });
     }
 
-    progress.fatigueAdjustments.push({ fatigueLevel, notes, date: new Date() });
+    progress.adaptiveAdjustments.push({ fatigueLevel });
 
     await progress.save();
 
@@ -637,7 +651,7 @@ const getProgramFeedback = async (req, res) => {
 
 const trackSessionCompletion = async (req, res) => {
   try {
-    const { programId } = req.body;
+    const programId = req.params.programId || req.body.programId;
     const userId = req.user._id;
 
     const program = await Program.findById(programId);
@@ -703,7 +717,7 @@ const getAdaptiveAdjustments = async (req, res) => {
       return res.status(404).json({ message: "No adaptive data found" });
     }
 
-    res.status(200).json({ fatigueAdjustments: progress.fatigueAdjustments || [] });
+    res.status(200).json({ adaptiveAdjustments: progress.adaptiveAdjustments || [] });
   } catch (error) {
     res.status(500).json({ message: "Error fetching adaptive adjustments", error: error.message });
   }
@@ -770,6 +784,73 @@ const unassignClient = async (req, res) => {
   }
 };
 
+// Materializes calendar Events from a program's dailySchedule for one
+// assignment. Shared by startProgram (manual "başlat" click) and the iyzico
+// payment callback (auto-start after a direct purchase) so a paid program
+// isn't left with an assignment but an empty calendar.
+const generateEventsForAssignment = async (userId, programId, assignment, program, opts = {}) => {
+  const { defaultTimeOfDay, timezone = 'Europe/Istanbul' } = opts;
+  const start = new Date(assignment.startDate);
+  const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
+  const ops = [];
+
+  const fallbackTime = defaultTimeOfDay || program.defaultTimeOfDay || '18:00';
+  const { h: defH, m: defM } = parseHHmm(fallbackTime);
+  const programDefaultDur = toInt(program?.defaultDurationMin, 60);
+
+  for (let d = 0; d < days.length; d++) {
+    const dayDef = days[d] || {};
+    const sessions = Array.isArray(dayDef.sessions) ? dayDef.sessions : [];
+
+    const baseDate = new Date(start.getTime());
+    baseDate.setHours(0, 0, 0, 0);
+    baseDate.setDate(baseDate.getDate() + d); // Day 1 = start, Day 2 = +1 …
+
+    for (let i = 0; i < sessions.length; i++) {
+      const s = sessions[i] || {};
+      const sid   = String(s.sessionId || s._id || s.id || `${d}-${i}`);
+      const title = s.name || `Seans ${i + 1}`;
+      const t     = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+      const dur   = toInt(s.durationMin, programDefaultDur);
+
+      const st = new Date(baseDate);
+      st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
+      const en = new Date(st);
+      en.setMinutes(en.getMinutes() + dur);
+
+      // idempotency per assignment + day + session
+      const externalKey = `${assignment._id}:${d}:${i}`;
+
+      ops.push({
+        updateOne: {
+          filter: { userId, programId, assignmentId: assignment._id, externalKey },
+          update: {
+            $setOnInsert: {
+              userId,
+              programId,
+              assignmentId: assignment._id,
+              externalKey,
+              source: 'program',
+              status: 'planned',
+              start: st,
+              end: en,
+            },
+            $set: {
+              sessionId: sid,
+              title,
+              timezone,
+            },
+          },
+          upsert: true,
+        },
+      });
+    }
+  }
+
+  if (ops.length) await Event.bulkWrite(ops, { ordered: false });
+  return ops.length;
+};
+
 const startProgram = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -798,63 +879,7 @@ const startProgram = async (req, res) => {
     });
 
     // 2) Materialize events from dailySchedule
-    const days = Array.isArray(program?.dailySchedule) ? program.dailySchedule : [];
-    const ops = [];
-
-    const fallbackTime = defaultTimeOfDay || program.defaultTimeOfDay || '18:00';
-    const { h: defH, m: defM } = parseHHmm(fallbackTime);
-    const programDefaultDur = toInt(program?.defaultDurationMin, 60);
-
-    for (let d = 0; d < days.length; d++) {
-      const dayDef = days[d] || {};
-      const sessions = Array.isArray(dayDef.sessions) ? dayDef.sessions : [];
-
-      const baseDate = new Date(start.getTime());
-      baseDate.setHours(0, 0, 0, 0);
-      baseDate.setDate(baseDate.getDate() + d); // Day 1 = start, Day 2 = +1 …
-
-      for (let i = 0; i < sessions.length; i++) {
-        const s = sessions[i] || {};
-        const sid   = String(s.sessionId || s._id || s.id || `${d}-${i}`);
-        const title = s.name || `Seans ${i + 1}`;
-        const t     = typeof s.timeOfDay === 'string' ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
-        const dur   = toInt(s.durationMin, programDefaultDur);
-
-        const st = new Date(baseDate);
-        st.setHours(toInt(t.h, defH), toInt(t.m, defM), 0, 0);
-        const en = new Date(st);
-        en.setMinutes(en.getMinutes() + dur);
-
-        // idempotency per assignment + day + session
-        const externalKey = `${assignment._id}:${d}:${i}`;
-
-        ops.push({
-          updateOne: {
-            filter: { userId, programId, assignmentId: assignment._id, externalKey },
-            update: {
-              $setOnInsert: {
-                userId,
-                programId,
-                assignmentId: assignment._id,
-                externalKey,
-                source: 'program',
-                status: 'planned',
-                start: st,
-                end: en,
-              },
-              $set: {
-                sessionId: sid,
-                title,
-                timezone,
-              },
-            },
-            upsert: true,
-          },
-        });
-      }
-    }
-
-    if (ops.length) await Event.bulkWrite(ops, { ordered: false }); // ✅ use Event model
+    const generatedEvents = await generateEventsForAssignment(userId, programId, assignment, program, { defaultTimeOfDay, timezone });
 
     return res.status(201).json({
       message: 'Program started and events generated',
@@ -864,7 +889,7 @@ const startProgram = async (req, res) => {
         timezone: assignment.timezone,
       },
       assignmentId: String(assignment._id),
-      generatedEvents: ops.length,
+      generatedEvents,
     });
   } catch (error) {
     console.error('startProgram error:', error);
@@ -903,9 +928,8 @@ export {
   getAllClients,
   assignProgramToGroup,
   unassignClient,
-  startProgram
-
-
+  startProgram,
+  generateEventsForAssignment,
 };
 
 

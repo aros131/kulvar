@@ -1,10 +1,12 @@
 import Feedback from '../models/Feedback.js';
 export const createFeedback = async (req, res) => {
   try {
-      const { content, coachId } = req.body;
+      const { programId, coachId, comments, rating } = req.body;
       const feedback = await Feedback.create({
-          content,
+          programId,
           coachId,
+          comments,
+          rating,
           userId: req.user._id,
       });
       res.status(201).json(feedback);

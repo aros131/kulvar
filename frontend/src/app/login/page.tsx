@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { createUserIfNotExists } from "@/utils/firestore/createUserIfNotExists";
+import { signInToFirebase } from "@/lib/firebase";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
@@ -58,6 +59,7 @@ export default function LoginPage() {
       localStorage.setItem('name', data.user.name);
       document.cookie = `token=${data.token}; path=/; max-age=604800; SameSite=Lax`;
 
+      await signInToFirebase(data.token);
       await createUserIfNotExists(data.user.id, data.user.name, data.user.role);
 
       if (data.user.role === 'user') {

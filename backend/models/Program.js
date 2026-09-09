@@ -252,14 +252,24 @@ ProgramSchema.virtual("price").get(function () {
 });
 
 // Pre-validate slug if not set (safe)
-ProgramSchema.pre("validate", function (next) {
+ProgramSchema.pre("validate", async function (next) {
   if (!this.slug && this.name) {
-    this.slug = String(this.name)
+    const base = String(this.name)
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "")
       .slice(0, 80);
+
+    // Slugs are globally unique; two coaches (or the same coach) naming a program
+    // identically would otherwise hit a raw duplicate-key error at save time.
+    let candidate = base;
+    let suffix = 1;
+    while (await this.constructor.exists({ slug: candidate, _id: { $ne: this._id } })) {
+      suffix += 1;
+      candidate = `${base}-${suffix}`;
+    }
+    this.slug = candidate;
   }
   next();
 });

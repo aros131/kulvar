@@ -1,10 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, Users, MessageSquare, User, Bell } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, LayoutGrid, Users, MessageSquare, User, Bell, MoreHorizontal, BarChart2, CreditCard, Settings, LogOut } from "lucide-react";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -18,6 +26,7 @@ export default function MobileCoachBottomNav({
   unreadMessages: propMsgs = 0,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const [unreadNotifications, setUnreadNotifications] = useState(propNotif);
   const [unreadMessages, setUnreadMessages] = useState(propMsgs);
 
@@ -51,21 +60,42 @@ export default function MobileCoachBottomNav({
     return () => unsub();
   }, []);
 
-  const items = [
+  const primaryItems = [
     { href: "/dashboard/coach", label: "Panel", Icon: Home },
     { href: "/dashboard/coach/programs", label: "Programlar", Icon: LayoutGrid },
     { href: "/dashboard/coach/clients", label: "Danışanlar", Icon: Users },
     { href: "/dashboard/coach/messages", label: "Mesajlar", Icon: MessageSquare, badge: unreadMessages },
     { href: "/dashboard/coach/notifications?tab=unread", label: "Bildirimler", Icon: Bell, badge: unreadNotifications },
-    { href: "/dashboard/coach/profile", label: "Profil", Icon: User },
   ];
+
+  // Everything that doesn't fit in the bottom bar lives in the "Diğer" sheet —
+  // same set of destinations the desktop sidebar (SidebarNavCoach) exposes directly.
+  const moreItems = [
+    { href: "/dashboard/coach/profile", label: "Profil", Icon: User },
+    { href: "/dashboard/coach/analytics", label: "Analitik", Icon: BarChart2 },
+    { href: "/dashboard/coach/payments", label: "Ödemeler", Icon: CreditCard },
+    { href: "/dashboard/coach/settings", label: "Ayarlar", Icon: Settings },
+  ];
+
+  const isActive = (href: string) => {
+    const base = href.split("?")[0];
+    return pathname === base || pathname.startsWith(base + "/");
+  };
+
+  const moreActive = moreItems.some((i) => isActive(i.href));
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+    router.push("/login");
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 h-14 bg-background/95 backdrop-blur border-t md:hidden">
       <ul className="h-full grid grid-cols-6">
-        {items.map(({ href, label, Icon, badge }) => {
-          const baseHref = href.split("?")[0];
-          const active = pathname === baseHref || pathname.startsWith(baseHref + "/");
+        {primaryItems.map(({ href, label, Icon, badge }) => {
+          const active = isActive(href);
           const badgeNum = Math.max(0, Number(badge || 0));
           return (
             <li key={href} className="flex items-center justify-center">
@@ -89,6 +119,52 @@ export default function MobileCoachBottomNav({
             </li>
           );
         })}
+
+        <li className="flex items-center justify-center">
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-colors ${
+                  moreActive ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Diğer"
+                aria-label="Diğer"
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Diğer</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-1 px-4 pb-4">
+                {moreItems.map(({ href, label, Icon }) => (
+                  <SheetClose asChild key={href}>
+                    <Link
+                      href={href}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                        isActive(href) ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {label}
+                    </Link>
+                  </SheetClose>
+                ))}
+                <div className="my-2 border-t" />
+                <SheetClose asChild>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Çıkış Yap
+                  </button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </li>
       </ul>
     </nav>
   );

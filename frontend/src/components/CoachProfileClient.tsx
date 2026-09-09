@@ -6,11 +6,11 @@ import Image from "next/image"; // ⬅️ added
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users, Pencil } from "lucide-react";
+import { Star, MapPin, Check, MessageCircle, Share2, BadgeCheck, Users, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import FollowersDialog from "@/components/coach/FollowersDialog";
 import { useActiveClientCountFromPrograms } from "@/hooks/useActiveClientCountFromPrograms";
@@ -34,6 +34,7 @@ export type Coach = {
   specialties?: string[];
   certifications?: string[];
   bio?: string;
+  brandColor?: string;
 };
 
 export type CoachProfileClientProps = {
@@ -135,7 +136,10 @@ function apiBase() {
 /************************************
  * Sections (v1 = text-only)
  ************************************/
-const SECTIONS = ["overview", "programs", "reviews", "about"] as const;
+// "about" comes before "programs"/"reviews" — a visitor should learn who
+// this coach is before scrolling through their program list.
+const SECTIONS = ["about", "programs", "reviews"] as const;
+const PROGRAMS_COLLAPSED_COUNT = 3;
 
 /** Hardened token read: treats "null"/"undefined"/"false"/"" as no token, strips 'Bearer ' */
 const cleanToken = (): string | null => {
@@ -176,7 +180,7 @@ export default function CoachProfileClient({
   const t = STRINGS[locale] ?? STRINGS.tr;
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [active, setActive] = useState<(typeof SECTIONS)[number]>("overview");
+  const [active, setActive] = useState<(typeof SECTIONS)[number]>("about");
   const [scrolled, setScrolled] = useState(false);
 
   // Prefetch signup for snappier redirect
@@ -256,6 +260,7 @@ export default function CoachProfileClient({
   } = useCoachReviews(coach.id, { pageSize: 8, initial: reviews });
 
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showAllPrograms, setShowAllPrograms] = useState(false);
 
   const handleOpenReviewForm = () =>
     requireAuth(() => setShowReviewForm(true));
@@ -454,6 +459,12 @@ export default function CoachProfileClient({
                     : (activeClientsCount ?? (typeof coach.clientsCount === "number" ? coach.clientsCount : "—"))}{" "}
                   {t.clientsWord}
                 </span>
+                <FollowersDialog
+                  coachId={coach.id}
+                  locale={locale}
+                  initialCount={followerCount}
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                />
               </div>
               {coach.tagline && (
                 <p className="mt-4 max-w-2xl text-sm md:text-base text-muted-foreground">{coach.tagline}</p>
@@ -470,50 +481,42 @@ export default function CoachProfileClient({
         </div>
       </section>
 
-      {/* Overview */}
-      <section id="overview" className="mx-auto max-w-6xl px-4 pt-8 md:pt-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="col-span-1 md:col-span-3">
-            <CardHeader>
-              <CardTitle>{t.overview}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm text-muted-foreground">
+      {/* About — right after the hero, so bio/certifications don't require
+          scrolling past the program list first */}
+      <section id="about" className="mx-auto max-w-6xl px-4 pt-8 md:pt-12">
+        <h2 className="mb-4 text-xl font-semibold">{t.about}</h2>
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            {coach.bio ? (
+              <p className="text-muted-foreground leading-relaxed">{coach.bio}</p>
+            ) : (
+              <p className="text-muted-foreground">—</p>
+            )}
+            {coach.certifications?.length ? (
               <div>
-                <div className="font-medium text-foreground">
-                  {typeof totalReviews === "number" ? totalReviews : (coach.reviewCount ?? 0)}
+                <div className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+                  {t.certifications}
                 </div>
-                <div>{t.totalReviews}</div>
-              </div>
-
-              <div>
-                <div className="font-medium text-foreground">
-                  {typeof (avgRating ?? coach.rating) === "number"
-                    ? (avgRating ?? coach.rating)!.toFixed(1)
-                    : "-"}
+                <div className="flex flex-wrap gap-2">
+                  {coach.certifications.map((c) => (
+                    <Badge key={c} variant="outline">
+                      {c}
+                    </Badge>
+                  ))}
                 </div>
-                <div>{t.avgRating}</div>
               </div>
-
-              <div>
-                <div className="font-medium text-foreground">
-                  {loadingActiveClients ? <Skeleton className="h-5 w-10" /> : (activeClientsCount ?? (typeof coach.clientsCount === "number" ? coach.clientsCount : "—"))}
-                </div>
-                <div>{t.activeClients}</div>
-              </div>
-
-              <div className="flex items-start">
-                <FollowersDialog coachId={coach.id} locale={locale} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            ) : null}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Programs */}
       <section id="programs" className="mx-auto max-w-6xl px-4 pt-12">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">{t.programs}</h2>
+          <h2 className="text-xl font-semibold">
+            {t.programs}
+            {programs.length > 0 && <span className="text-muted-foreground font-normal"> ({programs.length})</span>}
+          </h2>
         </div>
         {programs.length === 0 ? (
           <Card>
@@ -523,7 +526,7 @@ export default function CoachProfileClient({
           </Card>
         ) : (
           <ul className="space-y-3">
-            {programs.map((p) => {
+            {(showAllPrograms ? programs : programs.slice(0, PROGRAMS_COLLAPSED_COUNT)).map((p) => {
               const pid = p.id || p._id || `${p.name}-${Math.random().toString(36).slice(2)}`;
               const hasPriceCents = p.priceCents != null && p.priceCents > 0;
               const formattedPrice = hasPriceCents
@@ -577,10 +580,26 @@ export default function CoachProfileClient({
             })}
           </ul>
         )}
+        {programs.length > PROGRAMS_COLLAPSED_COUNT && (
+          <div className="mt-3 flex justify-center">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setShowAllPrograms((v) => !v)}>
+              {showAllPrograms ? (
+                <>{locale === "tr" ? "Daha az göster" : "Show less"} <ChevronUp className="h-4 w-4" /></>
+              ) : (
+                <>
+                  {locale === "tr"
+                    ? `${programs.length - PROGRAMS_COLLAPSED_COUNT} program daha`
+                    : `${programs.length - PROGRAMS_COLLAPSED_COUNT} more programs`}{" "}
+                  <ChevronDown className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Reviews */}
-      <section id="reviews" className="mx-auto max-w-6xl px-4 pt-12">
+      <section id="reviews" className="mx-auto max-w-6xl px-4 pt-12 pb-24">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold">{t.reviews}</h2>
           {!showReviewForm && (
@@ -645,61 +664,6 @@ export default function CoachProfileClient({
             )}
           </>
         )}
-      </section>
-
-      {/* About */}
-      <section id="about" className="mx-auto max-w-6xl px-4 pt-12 pb-24">
-        <h2 className="mb-4 text-xl font-semibold">{t.about}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="md:col-span-2">
-            <CardContent className="pt-6 space-y-4">
-              {coach.bio ? (
-                <p className="text-muted-foreground leading-relaxed">{coach.bio}</p>
-              ) : (
-                <p className="text-muted-foreground">—</p>
-              )}
-              {coach.certifications?.length ? (
-                <div>
-                  <div className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    {t.certifications}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {coach.certifications.map((c) => (
-                      <Badge key={c} variant="outline">
-                        {c}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              {coach.location ? (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4" />
-                  <span className="text-muted-foreground">{t.location}:</span>
-                  <span>{coach.location}</span>
-                </div>
-              ) : null}
-              {coach.specialties?.length ? (
-                <div>
-                  <div className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    {t.specializations}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {coach.specialties.map((s) => (
-                      <Badge key={s} variant="secondary">
-                        {s}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </div>
       </section>
     </div>
   );

@@ -112,10 +112,40 @@ router.post('/onboarding-plan', protect, async (req, res) => {
 });
 
 // POST /ai/coach-match   (any authenticated user)
+// Matches against the platform's real, currently-listed coaches — the AI
+// only picks from what's actually in the database, then we re-attach full
+// profile info so the frontend can render real, clickable coach cards.
 router.post('/coach-match', protect, async (req, res) => {
   try {
-    const result = await matchCoach(req.body);
-    res.json({ result });
+    const candidates = await User.find({ role: 'coach', isApproved: { $ne: false } })
+      .select('name specialization city rating bio tagline profilePicture avatar')
+      .limit(30)
+      .lean();
+
+    const matches = await matchCoach({
+      ...req.body,
+      coaches: candidates.map((c) => ({ id: String(c._id), ...c })),
+    });
+
+    const byId = new Map(candidates.map((c) => [String(c._id), c]));
+    const enriched = matches
+      .map((m) => {
+        const coach = byId.get(String(m.coachId));
+        if (!coach) return null;
+        return {
+          coachId: String(coach._id),
+          name: coach.name,
+          avatarUrl: coach.avatar || coach.profilePicture || '',
+          specialization: coach.specialization,
+          city: coach.city,
+          rating: coach.rating,
+          tagline: coach.tagline,
+          reason: m.reason,
+        };
+      })
+      .filter(Boolean);
+
+    res.json({ matches: enriched });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

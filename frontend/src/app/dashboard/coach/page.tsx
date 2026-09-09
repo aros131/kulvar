@@ -35,13 +35,18 @@ const cleanToken = (): string | null => {
 };
 
 async function resolveAvatarUrl(input?: string): Promise<string> {
-  const F = "/images/user.png";
-  if (!input) return F;
+  // No real photo yet (either unset, or the backend's placeholder default) —
+  // return "" so the caller falls back to the initials avatar instead of a
+  // generic circular icon that doesn't fill its square frame.
+  if (!input || input.includes("default-user")) return "";
   if (/^https?:\/\//i.test(input)) return input;
+  // A root-relative path is a local /public asset, not a Firebase Storage
+  // key — serve it directly instead of round-tripping through Storage.
+  if (/^\//.test(input) && !/^gs:\/\//i.test(input)) return input;
   try {
     const ref = /^gs:\/\//i.test(input) ? sRef(storage, input) : sRef(storage, input.replace(/^\/+/, ""));
     return await getDownloadURL(ref);
-  } catch { return F; }
+  } catch { return ""; }
 }
 
 interface CoachProfile { name: string; email: string; profilePicture?: string; specialization?: string; role: "coach"; onboardingCompleted?: boolean; }

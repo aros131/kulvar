@@ -17,7 +17,13 @@ interface Program {
   difficulty: string;
   duration: number;
   status: string;
+  priceCents?: number | null;
   assignedClients?: Client[];
+}
+
+function formatPrice(priceCents?: number | null): string {
+  if (!priceCents || priceCents <= 0) return "Ücretsiz";
+  return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(priceCents / 100);
 }
 
 export default function CoachProgramsPage() {
@@ -26,6 +32,7 @@ export default function CoachProgramsPage() {
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -40,6 +47,30 @@ export default function CoachProgramsPage() {
       .catch(() => toast.error('Veriler yüklenemedi.'))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (program: Program) => {
+    const assignedCount = program.assignedClients?.length || 0;
+    const warning = assignedCount > 0
+      ? `"${program.name}" programını silmek istediğine emin misin? ${assignedCount} danışana atanmış — onlar da bu programa erişimini kaybeder. Bu işlem geri alınamaz.`
+      : `"${program.name}" programını silmek istediğine emin misin? Bu işlem geri alınamaz.`;
+    if (!window.confirm(warning)) return;
+
+    setDeletingId(program._id);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/programs/${program._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      setPrograms((prev) => prev.filter((p) => p._id !== program._id));
+      toast.success('Program silindi.');
+    } catch {
+      toast.error('Program silinemedi.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const openAssign = (programId: string, current: Client[]) => {
     setAssigningId(programId);
@@ -93,9 +124,20 @@ export default function CoachProgramsPage() {
       <div className="grid md:grid-cols-2 gap-4">
         {programs.map((program) => (
           <div key={program._id} className="bg-card dark:bg-primary/90 border rounded-xl p-5 shadow-sm space-y-3">
-            <div>
-              <h2 className="font-semibold text-lg">{program.name}</h2>
-              <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-semibold text-lg">{program.name}</h2>
+                <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p>
+              </div>
+              <span
+                className={`shrink-0 text-sm font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
+                  program.priceCents && program.priceCents > 0
+                    ? "bg-primary/10 text-primary"
+                    : "bg-zinc-100 dark:bg-primary/80 text-muted-foreground"
+                }`}
+              >
+                {formatPrice(program.priceCents)}
+              </span>
             </div>
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
               <span className="bg-zinc-100 dark:bg-primary/80 px-2 py-1 rounded">{program.difficulty}</span>
@@ -114,6 +156,14 @@ export default function CoachProgramsPage() {
               </Link>
               <Button size="sm" onClick={() => openAssign(program._id, program.assignedClients || [])}>
                 Danışan Ata
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDelete(program)}
+                disabled={deletingId === program._id}
+              >
+                {deletingId === program._id ? 'Siliniyor...' : 'Sil'}
               </Button>
             </div>
           </div>

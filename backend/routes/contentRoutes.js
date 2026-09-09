@@ -5,6 +5,6 @@ import contentController from '../controllers/contentController.js'; // Ensure t
 
 // Define routes
 router.get("/", protect, contentController.getContents); // Ensure `getContents` is defined
-router.post("/", protect, contentController.createContent); // Ensure `createContent` is defined
+router.post("/", protect, contentController.uploadContent);
 
 export default router;

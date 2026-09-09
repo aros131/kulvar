@@ -6,13 +6,14 @@ function apiBase() {
   return raw.replace(/\/+$/, "");
 }
 
-export default async function CoachPage({ params }: { params: { coachId: string } }) {
+export default async function CoachPage({ params }: { params: Promise<{ coachId: string }> }) {
   const API = apiBase();
+  const { coachId } = await params;
 
   const [coachRes, progsRes, revsRes] = await Promise.all([
-    fetch(`${API}/coaches/${params.coachId}`, { cache: "no-store" }),
-    fetch(`${API}/coaches/${params.coachId}/programs?limit=12`, { cache: "no-store" }),
-    fetch(`${API}/coaches/${params.coachId}/reviews?limit=50`, { cache: "no-store" }),
+    fetch(`${API}/coaches/${coachId}`, { cache: "no-store" }),
+    fetch(`${API}/coaches/${coachId}/programs?limit=12`, { cache: "no-store" }),
+    fetch(`${API}/coaches/${coachId}/reviews?limit=50`, { cache: "no-store" }),
   ]);
 
   if (!coachRes.ok) {

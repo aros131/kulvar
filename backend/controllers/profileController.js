@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import CheckIn from '../models/CheckIn.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,6 +15,18 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Current weight isn't a field on User — it's whatever was logged most
+    // recently in a check-in, so the weight-goal progress bar reflects real
+    // activity instead of a number nobody keeps updated.
+    let currentWeight = null;
+    if (user.role === "user") {
+      const lastCheckIn = await CheckIn.findOne({ userId: user._id, weight: { $ne: null } })
+        .sort({ date: -1 })
+        .select("weight date")
+        .lean();
+      currentWeight = lastCheckIn?.weight ?? null;
+    }
+
     res.status(200).json({
       name: user.name,
       email: user.email,
@@ -21,6 +34,13 @@ export const getProfile = async (req, res) => {
       profilePicture: user.profilePicture,
       specialization: user.specialization,
       fitnessGoals: user.fitnessGoals,
+      fitnessGoalType: user.fitnessGoalType,
+      goalStartWeight: user.goalStartWeight,
+      goalTargetWeight: user.goalTargetWeight,
+      height: user.height,
+      currentWeight,
+      fitnessLevel: user.fitnessLevel,
+      availableDays: user.availableDays,
       bio: user.bio,
       tagline: user.tagline,
       certifications: user.certifications,
@@ -33,6 +53,7 @@ export const getProfile = async (req, res) => {
       isListedCoach: user.isListedCoach,
       brandColor: user.brandColor,
       brandLogoUrl: user.brandLogoUrl,
+      createdAt: user.createdAt,
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching profile", error: error.message });
@@ -82,10 +103,16 @@ export const updateProfile = async (req, res) => {
   try {
     const updates = req.body;
 
-    const allowedUpdates = ["name", "profilePicture", "specialization", "fitnessGoals", "bio", "tagline", "certifications", "city", "price", "isListedCoach", "brandColor", "brandLogoUrl"];
+    const allowedUpdates = ["name", "profilePicture", "specialization", "fitnessGoals", "fitnessGoalType", "goalStartWeight", "goalTargetWeight", "height", "fitnessLevel", "availableDays", "bio", "tagline", "certifications", "city", "price", "isListedCoach", "brandColor", "brandLogoUrl"];
+    const numericFields = ["goalStartWeight", "goalTargetWeight", "height"];
     const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
       if (allowedUpdates.includes(key)) {
-        acc[key] = updates[key];
+        let value = updates[key];
+        if (numericFields.includes(key)) {
+          value = value === "" || value === null || value === undefined ? null : Number(value);
+          if (Number.isNaN(value)) value = null;
+        }
+        acc[key] = value;
       }
       return acc;
     }, {});
@@ -104,6 +131,12 @@ export const updateProfile = async (req, res) => {
         profilePicture: user.profilePicture,
         specialization: user.specialization,
         fitnessGoals: user.fitnessGoals,
+        fitnessGoalType: user.fitnessGoalType,
+        goalStartWeight: user.goalStartWeight,
+        goalTargetWeight: user.goalTargetWeight,
+        height: user.height,
+        fitnessLevel: user.fitnessLevel,
+        availableDays: user.availableDays,
         bio: user.bio,
         tagline: user.tagline,
         certifications: user.certifications,

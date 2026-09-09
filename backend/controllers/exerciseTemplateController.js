@@ -35,11 +35,11 @@ export const deleteTemplate = async (req, res) => {
     const template = await ExerciseTemplate.findById(req.params.id);
     if (!template) return res.status(404).json({ message: "Template not found." });
 
-    if (template.coachId.toString() !== req.user._id) {
+    if (template.coachId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized to delete this template." });
     }
 
-    await template.remove();
+    await template.deleteOne();
     res.json({ message: "Template deleted successfully." });
   } catch (err) {
     res.status(500).json({ message: "Failed to delete template.", error: err.message });

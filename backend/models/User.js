@@ -28,6 +28,29 @@ const UserSchema = new mongoose.Schema(
     },
 
     fitnessGoals: { type: String },
+    fitnessGoalType: {
+      type: String,
+      enum: ["Kilo Kaybı", "Kas Kazanımı", "Dayanıklılık", "Esneklik", "Genel Fitness"],
+      default: null,
+    },
+    // Weight-based goal tracking (Kilo Kaybı / Kas Kazanımı). Current weight
+    // isn't stored here — it's read from the user's most recent CheckIn.
+    goalStartWeight: { type: Number, default: null },  // kg, snapshot when the goal was set
+    goalTargetWeight: { type: Number, default: null }, // kg
+    height: { type: Number, default: null },           // cm
+
+    // Collected once at onboarding, surfaced to the assigned coach so they
+    // have real intake info to shape the program around.
+    fitnessLevel: {
+      type: String,
+      enum: ["Başlangıç", "Orta Düzey", "İleri Seviye"],
+      default: null,
+    },
+    availableDays: {
+      type: [String],
+      enum: ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"],
+      default: [],
+    },
 
     profilePicture: { type: String, default: "/images/default-user.jpg" },
     avatar: { type: String, default: "" }, // prefer this in UI; fallback to profilePicture

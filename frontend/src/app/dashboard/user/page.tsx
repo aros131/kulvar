@@ -30,21 +30,22 @@ const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/
 /* ------------------------------ Helper Utils ------------------------------ */
 
 async function resolveAvatarUrl(input?: string): Promise<string> {
-  const FALLBACK = "/images/user.png";
-  if (!input) return FALLBACK;
+  // No real photo yet (either unset, or the backend's placeholder default) —
+  // return "" so the caller falls back to the initials avatar instead of a
+  // generic circular icon that doesn't fill its square frame.
+  if (!input || input.includes("default-user")) return "";
   if (/^https?:\/\//i.test(input)) return input;
+  // A root-relative path is a local /public asset, not a Firebase Storage
+  // key — serve it directly instead of round-tripping through Storage.
+  if (/^\//.test(input) && !/^gs:\/\//i.test(input)) return input;
 
   try {
-    if (/^gs:\/\//i.test(input)) {
-      const ref = sRef(avatarStorage, input);
-      return await getDownloadURL(ref);
-    }
-    const path = input.replace(/^\/+/, "");
+    const path = /^gs:\/\//i.test(input) ? input : input.replace(/^\/+/, "");
     const ref = sRef(avatarStorage, path);
     return await getDownloadURL(ref);
   } catch (err) {
     console.warn("resolveAvatarUrl failed:", input, err);
-    return FALLBACK;
+    return "";
   }
 }
 

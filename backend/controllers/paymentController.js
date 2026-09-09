@@ -3,6 +3,7 @@ import Program from '../models/Program.js';
 import ProgramAssignment from '../models/ProgramAssignment.js';
 import { createCheckoutForm, retrieveCheckoutForm } from '../services/iyzicoService.js';
 import { notify } from '../utils/notify.js';
+import { generateEventsForAssignment } from './programController.js';
 
 const APP_URL = (process.env.APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
 const API_PUBLIC_URL = (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5001}`).replace(/\/+$/, '');
@@ -134,27 +135,33 @@ export const iyzicoCallback = async (req, res) => {
 
       // Auto-assign program to user after successful payment
       if (payment.programId) {
-        await Program.findByIdAndUpdate(payment.programId, {
-          $addToSet: { assignedClients: payment.userId },
-        });
+        const program = await Program.findByIdAndUpdate(
+          payment.programId,
+          { $addToSet: { assignedClients: payment.userId } },
+          { new: true }
+        );
         // Idempotent: callback can fire more than once (webhook retry + redirect),
         // so reuse an existing assignment instead of creating a duplicate.
-        const existingAssignment = await ProgramAssignment.findOne({
+        let assignment = await ProgramAssignment.findOne({
           userId: payment.userId,
           programId: payment.programId,
         });
-        if (!existingAssignment) {
-          await ProgramAssignment.create({
+        if (!assignment) {
+          assignment = await ProgramAssignment.create({
             userId: payment.userId,
             programId: payment.programId,
             startDate: new Date(),
             status: "active",
           });
-        } else if (existingAssignment.status !== "active") {
-          await ProgramAssignment.updateOne(
-            { _id: existingAssignment._id },
-            { status: "active" }
-          );
+        } else if (assignment.status !== "active") {
+          assignment.status = "active";
+          await assignment.save();
+        }
+        // A paid purchase should behave like clicking "başlat" — otherwise the
+        // client owns the program but their calendar stays empty until they
+        // separately start it, which they'd have no reason to know to do.
+        if (program) {
+          await generateEventsForAssignment(payment.userId, payment.programId, assignment, program);
         }
       }
     } else {

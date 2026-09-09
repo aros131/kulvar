@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendVerificationEmail } from '../services/emailService.js';
+import { toTitleCase } from '../utils/textCase.js';
 
 export const register = async (req, res) => {
   try {
@@ -23,7 +24,7 @@ export const register = async (req, res) => {
 
     // Prepare user data
     const userData = {
-      name,
+      name: toTitleCase(name),
       email,
       password: hashedPassword,
       role,

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { X, Sparkles, Loader2, ChevronRight } from 'lucide-react';
+import { GOAL_TYPES, WEIGHT_GOALS, type GoalType } from '@/lib/fitnessGoals';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
@@ -11,6 +12,23 @@ interface Props {
   role: 'coach' | 'user';
   name?: string;
   onboardingCompleted?: boolean;
+}
+
+const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+interface CoachMatch {
+  coachId: string;
+  name: string;
+  avatarUrl?: string;
+  specialization?: string | string[];
+  city?: string;
+  rating?: number;
+  tagline?: string;
+  reason: string;
+}
+
+function initials(name: string) {
+  return name?.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
 }
 
 const coachSteps = [
@@ -27,16 +45,54 @@ const userSteps = [
 
 export default function OnboardingModal({ role, name, onboardingCompleted }: Props) {
   const [open, setOpen] = useState(false);
-  // user onboarding: 'welcome' | 'ai-form' | 'ai-result' | 'steps'
-  const [step, setStep] = useState<'welcome' | 'ai-form' | 'ai-result' | 'steps'>('welcome');
-  const [aiParams, setAiParams] = useState({ goal: '', level: 'Başlangıç', age: '', gender: '', availableDays: '3', notes: '' });
+  // user onboarding: 'body-info' | 'welcome' | 'ai-form' | 'ai-result' | 'steps'
+  const [step, setStep] = useState<'body-info' | 'welcome' | 'ai-form' | 'ai-result' | 'steps'>('welcome');
+  const [aiParams, setAiParams] = useState({ level: 'Başlangıç', days: [] as string[], age: '', gender: '', notes: '' });
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiPlan, setAiPlan] = useState<{ karsilama: string; adimlar: string[]; altinKural: string; motivasyon: string } | null>(null);
+  const [matches, setMatches] = useState<CoachMatch[] | null>(null);
+
+  const toggleDay = (d: string) => {
+    setAiParams((p) => ({
+      ...p,
+      days: p.days.includes(d) ? p.days.filter((x) => x !== d) : [...p.days, d],
+    }));
+  };
+
+  // Weight/goal tracking (the progress bar on the profile page) needs a
+  // starting point — ask for it once, right here, instead of leaving it for
+  // the danışan to stumble onto in the profile edit dialog later.
+  const [bodyInfo, setBodyInfo] = useState({ height: '', weight: '', goalType: '' as GoalType | '', targetWeight: '' });
+  const [savingBodyInfo, setSavingBodyInfo] = useState(false);
 
   useEffect(() => {
     if (onboardingCompleted === undefined) return;
     setOpen(!onboardingCompleted);
-  }, [onboardingCompleted]);
+    if (!onboardingCompleted) setStep(role === 'user' ? 'body-info' : 'welcome');
+  }, [onboardingCompleted, role]);
+
+  const saveBodyInfo = async () => {
+    setSavingBodyInfo(true);
+    try {
+      const token = localStorage.getItem('token');
+      const payload: Record<string, string | number> = {};
+      if (bodyInfo.height) payload.height = Number(bodyInfo.height);
+      if (bodyInfo.weight) payload.goalStartWeight = Number(bodyInfo.weight);
+      if (bodyInfo.goalType) payload.fitnessGoalType = bodyInfo.goalType;
+      if (bodyInfo.targetWeight) payload.goalTargetWeight = Number(bodyInfo.targetWeight);
+      if (Object.keys(payload).length > 0) {
+        await fetch(`${API}/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+      }
+    } catch {
+      // Non-critical — the danışan can always fill this in later from the profile page.
+    } finally {
+      setSavingBodyInfo(false);
+      setStep('welcome');
+    }
+  };
 
   const dismiss = () => {
     setOpen(false);
@@ -49,19 +105,41 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
   };
 
   const runAI = async () => {
-    if (!aiParams.goal.trim()) return;
+    if (aiParams.days.length === 0) return;
     setAiLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API}/ai/onboarding-plan`, {
+      const preferences = [
+        aiParams.age ? `${aiParams.age} yaşında` : '',
+        aiParams.gender,
+        aiParams.notes,
+      ].filter(Boolean).join(', ');
+
+      const res = await fetch(`${API}/ai/coach-match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(aiParams),
+        body: JSON.stringify({
+          goal: bodyInfo.goalType || 'Genel Fitness',
+          level: aiParams.level,
+          availableDays: aiParams.days,
+          preferences,
+        }),
       });
       const data = await res.json();
-      if (!res.ok || !data.plan) throw new Error(data.message || 'Plan oluşturulamadı');
-      setAiPlan(data.plan);
+      if (!res.ok) throw new Error(data.message || 'Eşleştirme yapılamadı');
+      setMatches(Array.isArray(data.matches) ? data.matches : []);
       setStep('ai-result');
+
+      // Save the intake so it's not thrown away — the coach sees it once
+      // assigned, and the danışan doesn't have to answer this again later.
+      if (token) {
+        const payload: Record<string, unknown> = { fitnessLevel: aiParams.level, availableDays: aiParams.days };
+        fetch(`${API}/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      }
     } catch {
       setStep('steps');
     } finally {
@@ -81,6 +159,74 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
           <X size={20} />
         </button>
 
+        {/* ── BODY INFO (kilo/boy/hedef — profil sayfasındaki ilerleme çubuğunun başlangıç noktası) ── */}
+        {step === 'body-info' && (
+          <div className="p-6 sm:p-8">
+            <div className="text-3xl mb-2">📏</div>
+            <h2 className="text-2xl font-bold mb-1">Merhaba, {firstName}!</h2>
+            <p className="text-muted-foreground text-sm mb-6">
+              Boyunu, kilonu ve hedefini şimdi belirt — profilinde ilerlemeni buna göre takip edelim. İstersen sonra da girebilirsin.
+            </p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Boy (cm)</label>
+                  <input
+                    type="number"
+                    value={bodyInfo.height}
+                    onChange={(e) => setBodyInfo((p) => ({ ...p, height: e.target.value }))}
+                    placeholder="örn. 168"
+                    className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Güncel Kilo (kg)</label>
+                  <input
+                    type="number"
+                    value={bodyInfo.weight}
+                    onChange={(e) => setBodyInfo((p) => ({ ...p, weight: e.target.value }))}
+                    placeholder="örn. 72"
+                    className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Hedefin</label>
+                <select
+                  value={bodyInfo.goalType}
+                  onChange={(e) => setBodyInfo((p) => ({ ...p, goalType: e.target.value as GoalType }))}
+                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Seç…</option>
+                  {GOAL_TYPES.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+              {bodyInfo.goalType && WEIGHT_GOALS.includes(bodyInfo.goalType) && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Hedef Kilo (kg)</label>
+                  <input
+                    type="number"
+                    value={bodyInfo.targetWeight}
+                    onChange={(e) => setBodyInfo((p) => ({ ...p, targetWeight: e.target.value }))}
+                    placeholder="örn. 65"
+                    className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-5">
+              <Button variant="ghost" onClick={() => setStep('welcome')} className="flex-1" disabled={savingBodyInfo}>
+                Atla
+              </Button>
+              <Button onClick={saveBodyInfo} disabled={savingBodyInfo} className="flex-1 gap-2">
+                {savingBodyInfo ? <><Loader2 className="w-4 h-4 animate-spin" /> Kaydediliyor...</> : 'Kaydet ve Devam Et'}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* ── WELCOME ── */}
         {step === 'welcome' && (
           <div className="p-6 sm:p-8">
@@ -99,8 +245,8 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-sm">AI ile Kişiselleştirilmiş Plan Al</p>
-                    <p className="text-xs text-muted-foreground">Hedefini söyle, AI sana özel yol haritası çıkarsın</p>
+                    <p className="font-semibold text-sm">AI ile Sana Uygun Koçu Bul</p>
+                    <p className="text-xs text-muted-foreground">Müsaitliğini ve seviyeni söyle, AI gerçek koç listesinden sana en uygunlarını seçsin</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                 </button>
@@ -127,15 +273,31 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
           <div className="p-6 sm:p-8">
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-5 h-5 text-violet-500" />
-              <h2 className="text-xl font-bold">AI Yol Haritası</h2>
+              <h2 className="text-xl font-bold">Sana Uygun Koçu Bulalım</h2>
             </div>
-            <p className="text-muted-foreground text-sm mb-5">Birkaç bilgi ver, sana özel plan oluşturalım.</p>
+            <p className="text-muted-foreground text-sm mb-5">
+              {bodyInfo.goalType ? <>Hedefin: <span className="font-medium text-foreground">{bodyInfo.goalType}</span>. </> : null}
+              Müsaitliğini ve seviyeni söyle, AI gerçek koç listemizden en uygunlarını seçsin.
+            </p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Hedefin nedir? *</label>
-                <input value={aiParams.goal} onChange={e => setAiParams(p => ({ ...p, goal: e.target.value }))}
-                  placeholder="örn. 5kg vermek, kas yapmak, daha fit olmak..."
-                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40" />
+                <label className="text-xs font-medium text-muted-foreground">Hangi günler müsaitsin? *</label>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {DAYS.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => toggleDay(d)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        aiParams.days.includes(d)
+                          ? 'bg-violet-600 border-violet-600 text-white'
+                          : 'border-border hover:border-violet-400'
+                      }`}
+                    >
+                      {d.slice(0, 3)}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -145,17 +307,6 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
                     <option>Başlangıç</option>
                     <option>Orta Düzey</option>
                     <option>İleri Seviye</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Haftada kaç gün?</label>
-                  <select value={aiParams.availableDays} onChange={e => setAiParams(p => ({ ...p, availableDays: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm">
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                    <option>6</option>
                   </select>
                 </div>
                 <div>
@@ -183,37 +334,73 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
             </div>
             <div className="flex gap-2 mt-5">
               <Button variant="ghost" onClick={() => setStep('welcome')} className="flex-1">← Geri</Button>
-              <Button onClick={runAI} disabled={aiLoading || !aiParams.goal.trim()} className="flex-1 gap-2 bg-violet-600 hover:bg-violet-700 text-white">
-                {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Oluşturuluyor...</> : <><Sparkles className="w-4 h-4" /> Plan Oluştur</>}
+              <Button onClick={runAI} disabled={aiLoading || aiParams.days.length === 0} className="flex-1 gap-2 bg-violet-600 hover:bg-violet-700 text-white">
+                {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Aranıyor...</> : <><Sparkles className="w-4 h-4" /> Koç Bul</>}
               </Button>
             </div>
           </div>
         )}
 
-        {/* ── AI RESULT ── */}
-        {step === 'ai-result' && aiPlan && (
+        {/* ── AI RESULT (gerçek koç eşleşmeleri) ── */}
+        {step === 'ai-result' && matches && (
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-1">
               <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <h2 className="text-xl font-bold">Yol Haritanız Hazır!</h2>
+              <h2 className="text-xl font-bold">
+                {matches.length > 0 ? 'Senin İçin Uygun Koçlar' : 'Şu An Uygun Koç Bulamadık'}
+              </h2>
             </div>
-            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{aiPlan.karsilama}</p>
-            <div className="space-y-2 mb-4">
-              {aiPlan.adimlar.map((adim, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/50 border border-border">
-                  <span className="w-5 h-5 rounded-full bg-violet-500 text-white text-xs flex items-center justify-center shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                  <p className="text-sm leading-relaxed">{adim}</p>
+
+            {matches.length > 0 ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-4">AI, bilgilerine göre platformdaki koçlar arasından bunları önerdi:</p>
+                <div className="space-y-3 mb-5">
+                  {matches.map((m) => {
+                    const specs = Array.isArray(m.specialization) ? m.specialization.join(', ') : m.specialization;
+                    return (
+                      <Link
+                        key={m.coachId}
+                        href={`/dashboard/user/koclarimiz/${m.coachId}`}
+                        onClick={dismiss}
+                        className="flex gap-3 p-3 rounded-xl border hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-colors"
+                      >
+                        <div className="w-11 h-11 rounded-full bg-violet-500 text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                          {m.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.avatarUrl} alt={m.name} className="w-full h-full object-cover" />
+                          ) : (
+                            initials(m.name)
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-sm truncate">{m.name}</p>
+                            {typeof m.rating === 'number' && m.rating > 0 && (
+                              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium shrink-0">★ {m.rating.toFixed(1)}</span>
+                            )}
+                          </div>
+                          {(specs || m.city) && (
+                            <p className="text-xs text-muted-foreground truncate">{[specs, m.city].filter(Boolean).join(' · ')}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground italic mt-1 leading-snug">"{m.reason}"</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 self-center" />
+                      </Link>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3 mb-4">
-              <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">💡 Altın Kural</p>
-              <p className="text-sm text-amber-800 dark:text-amber-200">{aiPlan.altinKural}</p>
-            </div>
-            <p className="text-xs text-muted-foreground italic text-center mb-5">{aiPlan.motivasyon}</p>
-            <Button onClick={dismiss} className="w-full">Harika, başlayalım! 🚀</Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground mb-5">
+                Şu an kriterlerine tam uyan bir koç bulamadık — ama bu değişebilir.{' '}
+                <Link href="/koc" onClick={dismiss} className="text-violet-600 dark:text-violet-400 font-medium hover:underline">
+                  Tüm koçları kendin de gezebilirsin
+                </Link>.
+              </p>
+            )}
+            <Button onClick={dismiss} className="w-full">Devam Et</Button>
           </div>
         )}
 

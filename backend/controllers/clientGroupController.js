@@ -80,11 +80,11 @@ const deleteGroup = async (req, res) => {
     const group = await ClientGroup.findById(req.params.id);
 
     if (!group) return res.status(404).json({ message: "Group not found" });
-    if (group.coachId.toString() !== req.user._id) {
+    if (group.coachId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized to delete this group" });
     }
 
-    await group.remove();
+    await group.deleteOne();
     res.json({ message: "Group deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Failed to delete group", error: err.message });

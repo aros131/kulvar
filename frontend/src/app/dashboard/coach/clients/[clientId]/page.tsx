@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ArrowLeft, MessageCircle, Mail, Dumbbell, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Mail, Dumbbell, TrendingUp, Sparkles, Loader2, CalendarDays, Target, Ruler, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
@@ -16,6 +16,13 @@ interface ClientUser {
   email: string;
   profilePicture?: string;
   createdAt?: string;
+  fitnessGoalType?: string;
+  fitnessGoals?: string;
+  fitnessLevel?: string;
+  availableDays?: string[];
+  height?: number | null;
+  goalStartWeight?: number | null;
+  goalTargetWeight?: number | null;
 }
 
 interface ClientProgram {
@@ -301,6 +308,57 @@ export default function ClientDetailPage() {
             </p>
           </div>
         </div>
+
+        {/* Danışan tercihleri — onboarding'de toplanan intake bilgisi, program
+            hazırlarken referans alınsın diye burada */}
+        {(client.fitnessGoalType || client.fitnessLevel || (client.availableDays?.length ?? 0) > 0 || client.height || client.fitnessGoals) && (
+          <div className="bg-card border rounded-2xl p-5 space-y-3">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" /> Danışan Tercihleri
+            </h2>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {client.fitnessGoalType && (
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span>{client.fitnessGoalType}</span>
+                </div>
+              )}
+              {client.fitnessLevel && (
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span>{client.fitnessLevel}</span>
+                </div>
+              )}
+              {client.height && (
+                <div className="flex items-center gap-2">
+                  <Ruler className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span>{client.height} cm</span>
+                </div>
+              )}
+              {client.goalStartWeight && client.goalTargetWeight && (
+                <div className="flex items-center gap-2 col-span-2">
+                  <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span>{client.goalStartWeight} kg → {client.goalTargetWeight} kg hedef</span>
+                </div>
+              )}
+            </div>
+            {client.availableDays && client.availableDays.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1.5">
+                  <CalendarDays className="h-3.5 w-3.5" /> Müsait günler
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {client.availableDays.map((d) => (
+                    <span key={d} className="text-xs font-medium bg-muted rounded-full px-2.5 py-1">{d}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {client.fitnessGoals && (
+              <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">{client.fitnessGoals}</p>
+            )}
+          </div>
+        )}
 
         {/* Programs */}
         <div>

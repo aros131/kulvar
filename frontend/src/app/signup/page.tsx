@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { signInToFirebase } from '@/lib/firebase';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
@@ -68,6 +69,8 @@ export default function SignupPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('role', data.user.role);
       localStorage.setItem('name', data.user.name);
+
+      await signInToFirebase(data.token);
 
       router.push(data.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/user');
     } catch {
