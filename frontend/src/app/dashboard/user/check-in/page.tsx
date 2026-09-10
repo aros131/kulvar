@@ -16,6 +16,8 @@ interface CheckIn {
   energyLevel?: number;
   sleepQuality?: number;
   stressLevel?: number;
+  soreness?: number;
+  steps?: number;
   completedWorkouts?: number;
   note?: string;
 }
@@ -38,6 +40,7 @@ const SCALE_LABELS: Record<string, [string, string]> = {
   energyLevel:  ["Çok Düşük", "Çok Yüksek"],
   sleepQuality: ["Çok Kötü",  "Mükemmel"],
   stressLevel:  ["Hiç Yok",   "Çok Fazla"],
+  soreness:     ["Hiç Yok",   "Çok Fazla"],
 };
 
 function ScaleInput({ label, field, value, onChange }: {
@@ -81,6 +84,8 @@ function CheckInCard({ c }: { c: CheckIn }) {
         {c.energyLevel != null && <span>⚡ Enerji {c.energyLevel}/5</span>}
         {c.sleepQuality != null && <span>😴 Uyku {c.sleepQuality}/5</span>}
         {c.stressLevel != null && <span>🧠 Stres {c.stressLevel}/5</span>}
+        {c.soreness != null && <span>🤕 Kas Ağrısı {c.soreness}/5</span>}
+        {c.steps != null && <span>👣 {c.steps.toLocaleString("tr-TR")} adım</span>}
         {c.completedWorkouts != null && <span>💪 {c.completedWorkouts} antrenman</span>}
       </div>
       {c.note && <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">{c.note}</p>}
@@ -101,6 +106,8 @@ export default function CheckInPage() {
   const [energy, setEnergy] = useState<number | null>(null);
   const [sleep, setSleep] = useState<number | null>(null);
   const [stress, setStress] = useState<number | null>(null);
+  const [soreness, setSoreness] = useState<number | null>(null);
+  const [steps, setSteps] = useState("");
   const [autoWorkoutCount, setAutoWorkoutCount] = useState<number | null>(null);
   const [note, setNote] = useState("");
 
@@ -142,6 +149,8 @@ export default function CheckInPage() {
           energyLevel: energy,
           sleepQuality: sleep,
           stressLevel: stress,
+          soreness,
+          steps: steps ? parseInt(steps) : null,
           completedWorkouts: autoWorkoutCount,
           note,
         }),
@@ -150,7 +159,7 @@ export default function CheckInPage() {
       const data = await res.json();
       setHistory(prev => [data.checkIn, ...prev]);
       setShowForm(false);
-      setWeight(""); setEnergy(null); setSleep(null); setStress(null); setNote("");
+      setWeight(""); setEnergy(null); setSleep(null); setStress(null); setSoreness(null); setSteps(""); setNote("");
       toast.success("Check-in gönderildi! Koçun görebilir.");
     } catch {
       toast.error("Gönderilemedi.");
@@ -213,9 +222,22 @@ export default function CheckInPage() {
               />
             </div>
 
+            <div>
+              <label className="text-sm font-medium">Günlük Ortalama Adım (isteğe bağlı)</label>
+              <input
+                type="number"
+                min="0"
+                value={steps}
+                onChange={e => setSteps(e.target.value)}
+                placeholder="örn. 8000"
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+
             <ScaleInput label="Enerji Seviyesi" field="energyLevel" value={energy} onChange={setEnergy} />
             <ScaleInput label="Uyku Kalitesi" field="sleepQuality" value={sleep} onChange={setSleep} />
             <ScaleInput label="Stres Seviyesi" field="stressLevel" value={stress} onChange={setStress} />
+            <ScaleInput label="Kas Ağrısı" field="soreness" value={soreness} onChange={setSoreness} />
 
             <div>
               <label className="text-sm font-medium">Bu hafta tamamlanan antrenman sayısı</label>

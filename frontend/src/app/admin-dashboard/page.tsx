@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Dumbbell, BarChart2, Search, Trash2, LogOut, Star } from 'lucide-react';
+import { Users, Dumbbell, BarChart2, Search, Trash2, LogOut, Star, Check, X, Wallet } from 'lucide-react';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
@@ -29,17 +29,43 @@ interface AdminReview {
   coachId?: { name?: string; email?: string };
 }
 
+interface CoachApplication {
+  _id: string;
+  name: string;
+  email: string;
+  city?: string;
+  specialization?: string[];
+  isApproved: boolean;
+  createdAt?: string;
+}
+
+interface AdminPayment {
+  _id: string;
+  amount: number;
+  status: 'Pending' | 'Paid' | 'Failed';
+  platformFeeCents?: number;
+  coachNetCents?: number;
+  createdAt: string;
+  coachId?: { name?: string; email?: string };
+  userId?: { name?: string; email?: string };
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [coaches, setCoaches] = useState<User[]>([]);
   const [totalPrograms, setTotalPrograms] = useState(0);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [applications, setApplications] = useState<CoachApplication[]>([]);
+  const [payments, setPayments] = useState<AdminPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingReviews, setLoadingReviews] = useState(true);
+  const [loadingApplications, setLoadingApplications] = useState(true);
+  const [loadingPayments, setLoadingPayments] = useState(true);
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<'users' | 'coaches' | 'reviews'>('users');
+  const [tab, setTab] = useState<'users' | 'coaches' | 'reviews' | 'applications' | 'payments'>('users');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [approving, setApproving] = useState<string | null>(null);
 
   const token = () => localStorage.getItem('token');
 
@@ -71,7 +97,37 @@ export default function AdminDashboardPage() {
       .then(d => setReviews(Array.isArray(d.reviews) ? d.reviews : []))
       .catch(() => toast.error('Yorumlar yüklenemedi.'))
       .finally(() => setLoadingReviews(false));
+
+    fetch(`${API}/admin/coaches?limit=100`, { headers: { Authorization: `Bearer ${token()}` } })
+      .then(r => r.json())
+      .then(d => setApplications(Array.isArray(d.coaches) ? d.coaches : []))
+      .catch(() => toast.error('Koç başvuruları yüklenemedi.'))
+      .finally(() => setLoadingApplications(false));
+
+    fetch(`${API}/admin/payments?limit=50`, { headers: { Authorization: `Bearer ${token()}` } })
+      .then(r => r.json())
+      .then(d => setPayments(Array.isArray(d.payments) ? d.payments : []))
+      .catch(() => toast.error('Ödemeler yüklenemedi.'))
+      .finally(() => setLoadingPayments(false));
   }, [router]);
+
+  const handleApproval = async (coachId: string, approved: boolean) => {
+    setApproving(coachId);
+    try {
+      const res = await fetch(`${API}/admin/coaches/${coachId}/approval`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved }),
+      });
+      if (!res.ok) throw new Error();
+      setApplications(p => p.map(c => (c._id === coachId ? { ...c, isApproved: approved } : c)));
+      toast.success(approved ? 'Koç onaylandı.' : 'Koç onayı kaldırıldı.');
+    } catch {
+      toast.error('İşlem başarısız.');
+    } finally {
+      setApproving(null);
+    }
+  };
 
   const handleDelete = async (userId: string) => {
     if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
@@ -195,8 +251,22 @@ export default function AdminDashboardPage() {
                 >
                   Yorumlar ({reviews.length})
                 </Button>
+                <Button
+                  size="sm"
+                  variant={tab === 'applications' ? 'default' : 'outline'}
+                  onClick={() => setTab('applications')}
+                >
+                  Koç Onayları ({applications.filter(c => !c.isApproved).length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={tab === 'payments' ? 'default' : 'outline'}
+                  onClick={() => setTab('payments')}
+                >
+                  Ödemeler ({payments.length})
+                </Button>
               </div>
-              {tab !== 'reviews' && (
+              {tab !== 'reviews' && tab !== 'applications' && tab !== 'payments' && (
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -210,7 +280,95 @@ export default function AdminDashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {tab === 'reviews' ? (
+            {tab === 'applications' ? (
+              loadingApplications ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : applications.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Koç başvurusu yok.</p>
+              ) : (
+                <ul className="divide-y">
+                  {applications.map(c => (
+                    <li key={c._id} className="flex items-center gap-3 py-3">
+                      <div className="h-9 w-9 rounded-full bg-zinc-200 dark:bg-primary/80 grid place-items-center text-xs font-bold shrink-0">
+                        {c.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{c.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{c.email}{c.city ? ` · ${c.city}` : ''}</p>
+                      </div>
+                      <Badge variant={c.isApproved ? 'default' : 'secondary'} className="shrink-0">
+                        {c.isApproved ? 'Onaylı' : 'Bekliyor'}
+                      </Badge>
+                      {c.isApproved ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 shrink-0"
+                          disabled={approving === c._id}
+                          onClick={() => handleApproval(c._id, false)}
+                          title="Onayı kaldır"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950 shrink-0"
+                          disabled={approving === c._id}
+                          onClick={() => handleApproval(c._id, true)}
+                          title="Onayla"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : tab === 'payments' ? (
+              loadingPayments ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : payments.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Henüz ödeme yok.</p>
+              ) : (
+                <ul className="divide-y">
+                  {payments.map(p => (
+                    <li key={p._id} className="flex items-start gap-3 py-3">
+                      <div className="h-9 w-9 rounded-xl bg-zinc-100 dark:bg-primary/90 grid place-items-center shrink-0 text-emerald-500">
+                        <Wallet className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">{p.userId?.name || 'Kullanıcı'}</span>
+                          <span className="text-xs text-muted-foreground">→ {p.coachId?.name || 'Koç'}</span>
+                          <Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Failed' ? 'destructive' : 'secondary'}>
+                            {p.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          ₺{p.amount.toFixed(2)}
+                          {typeof p.platformFeeCents === 'number' && (
+                            <span className="text-xs"> · komisyon ₺{(p.platformFeeCents / 100).toFixed(2)} · net ₺{((p.coachNetCents ?? 0) / 100).toFixed(2)}</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          {new Date(p.createdAt).toLocaleDateString('tr-TR')}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : tab === 'reviews' ? (
               loadingReviews ? (
                 <div className="space-y-3">
                   {Array.from({ length: 4 }).map((_, i) => (

@@ -429,15 +429,16 @@ function CoachCard({
               )}
             </div>
 
-            {/* Hover preview: bio snippet */}
-            <div className={`overflow-hidden transition-all duration-300 ${isHovered ? "max-h-20 mt-3 opacity-100" : "max-h-0 opacity-0"}`}>
-              {c.bio ? (
-                <p className="text-xs text-muted-foreground line-clamp-3">{c.bio}</p>
-              ) : c.tagline ? (
-                <p className="text-xs text-muted-foreground italic">{c.tagline}</p>
-              ) : c.certifications?.length ? (
-                <p className="text-xs text-muted-foreground">🏅 {c.certifications.slice(0, 2).join(" · ")}</p>
-              ) : null}
+            {/* Hover preview: bio snippet. Always rendered at the same fixed
+                height (even with no content) so every card in the masonry
+                grid stays the same size — only opacity fades on hover, never
+                height, so hovering can't reshuffle the cards below it. */}
+            <div className="mt-3 h-12 overflow-hidden">
+              {(c.bio || c.tagline || c.certifications?.length) && (
+                <p className={`text-xs text-muted-foreground transition-opacity duration-300 ${isHovered ? "opacity-100" : "opacity-0"} ${c.tagline && !c.bio ? "italic" : ""} line-clamp-3`}>
+                  {c.bio || c.tagline || `🏅 ${c.certifications!.slice(0, 2).join(" · ")}`}
+                </p>
+              )}
             </div>
 
             {/* CTA */}

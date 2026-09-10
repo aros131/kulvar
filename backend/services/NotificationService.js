@@ -1,6 +1,7 @@
 // ESM module
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
+import { sendPushNotification } from "./firebaseAdmin.js";
 
 // Maps notification type → notificationPreferences.inApp key
 const TYPE_TO_PREF = {
@@ -25,17 +26,16 @@ export async function notify({ toUserId, type, title, message, data = {} }) {
 
   // Check recipient's inApp preference for this notification type
   const prefKey = TYPE_TO_PREF[type];
-  if (prefKey) {
-    try {
-      const recipient = await User.findById(toUserId).select("notificationPreferences").lean();
-      const inApp = recipient?.notificationPreferences?.inApp;
-      // If the preference is explicitly false, skip creating the notification
-      if (inApp && inApp[prefKey] === false) {
-        return { ok: false, skipped: true };
-      }
-    } catch {
-      // If preference lookup fails, still deliver the notification
+  let recipient = null;
+  try {
+    recipient = await User.findById(toUserId).select("notificationPreferences fcmToken").lean();
+    const inApp = recipient?.notificationPreferences?.inApp;
+    // If the preference is explicitly false, skip creating the notification
+    if (prefKey && inApp && inApp[prefKey] === false) {
+      return { ok: false, skipped: true };
     }
+  } catch {
+    // If preference lookup fails, still deliver the notification
   }
 
   const text = title ? `${title}: ${message}` : message;
@@ -47,6 +47,11 @@ export async function notify({ toUserId, type, title, message, data = {} }) {
       message: text,
       type,
     });
+
+    if (recipient?.fcmToken) {
+      sendPushNotification(recipient.fcmToken, { title: title || "Kulvar", body: message }).catch(() => {});
+    }
+
     return { ok: true, notification: doc };
   } catch (err) {
     console.error("[notify] failed to persist notification:", err.message);

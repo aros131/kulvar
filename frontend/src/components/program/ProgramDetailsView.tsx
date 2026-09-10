@@ -366,6 +366,56 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       <Separator />
 
+      {/* NUTRITION PLAN */}
+      {(() => {
+        const nutritionPlan = (program as any).nutritionPlan;
+        const tips = arr<string>(nutritionPlan?.tips);
+        const meals = arr<{ name?: string; description?: string; time?: string }>(nutritionPlan?.meals);
+        const calorieTarget = nutritionPlan?.dailyCalorieTarget;
+        const macros = nutritionPlan?.macroTargets;
+        if (!tips.length && !meals.length && !calorieTarget && !macros) return null;
+        return (
+          <>
+            <section className="space-y-3">
+              <h3 className="text-lg font-semibold">Beslenme Planı</h3>
+              {(calorieTarget || macros?.protein || macros?.carbs || macros?.fat) && (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {calorieTarget && <Info label="Günlük Kalori" value={`${calorieTarget} kcal`} />}
+                  {macros?.protein && <Info label="Protein" value={`${macros.protein} g`} />}
+                  {macros?.carbs && <Info label="Karbonhidrat" value={`${macros.carbs} g`} />}
+                  {macros?.fat && <Info label="Yağ" value={`${macros.fat} g`} />}
+                </div>
+              )}
+              {tips.length > 0 && (
+                <Card className="p-4">
+                  <div className="text-sm font-medium mb-2">İpuçları</div>
+                  <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                    {tips.map((t, i) => <li key={i}>{t}</li>)}
+                  </ul>
+                </Card>
+              )}
+              {meals.length > 0 && (
+                <Card className="p-4">
+                  <div className="text-sm font-medium mb-2">Öğünler</div>
+                  <ul className="divide-y divide-border dark:divide-zinc-800">
+                    {meals.map((m, i) => (
+                      <li key={i} className="py-2 flex items-center justify-between gap-3 text-sm">
+                        <div>
+                          <span className="font-medium">{m.name || "Öğün"}</span>
+                          {m.description && <span className="text-muted-foreground"> — {m.description}</span>}
+                        </div>
+                        {m.time && <span className="text-xs text-muted-foreground shrink-0">{m.time}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              )}
+            </section>
+            <Separator />
+          </>
+        );
+      })()}
+
       {/* ANNOUNCEMENTS (kept) */}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Duyurular</h3>

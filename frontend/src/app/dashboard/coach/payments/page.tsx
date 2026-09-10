@@ -16,6 +16,8 @@ interface Invoice {
   description: string;
   status: 'Pending' | 'Paid';
   createdAt: string;
+  platformFeeCents?: number | null;
+  coachNetCents?: number | null;
 }
 
 interface Client {
@@ -182,6 +184,11 @@ export default function CoachPaymentsPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-lg">₺{inv.amount}</p>
+                  {typeof inv.coachNetCents === 'number' && (
+                    <p className="text-xs text-muted-foreground">
+                      net ₺{(inv.coachNetCents / 100).toFixed(2)} (komisyon ₺{((inv.platformFeeCents ?? 0) / 100).toFixed(2)})
+                    </p>
+                  )}
                   <span className={`text-xs px-2 py-1 rounded-full ${inv.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                     {inv.status === 'Paid' ? 'Ödendi' : 'Bekliyor'}
                   </span>

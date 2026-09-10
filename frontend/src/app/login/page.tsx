@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { createUserIfNotExists } from "@/utils/firestore/createUserIfNotExists";
-import { signInToFirebase } from "@/lib/firebase";
+import { signInToFirebase, registerPushNotifications } from "@/lib/firebase";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
@@ -61,6 +61,7 @@ export default function LoginPage() {
 
       await signInToFirebase(data.token);
       await createUserIfNotExists(data.user.id, data.user.name, data.user.role);
+      registerPushNotifications(data.token);
 
       if (data.user.role === 'user') {
         router.push('/dashboard/user');

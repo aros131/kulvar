@@ -67,6 +67,7 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<ClientUser | null>(null);
   const [programs, setPrograms] = useState<ClientProgram[]>([]);
   const [checkIns, setCheckIns] = useState<any[]>([]);
+  const [nutritionLogs, setNutritionLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [coachId, setCoachId] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
@@ -102,12 +103,14 @@ export default function ClientDetailPage() {
     Promise.all([
       fetch(`${API}/users/${clientId}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
       fetch(`${API}/check-ins/client/${clientId}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).catch(() => ({})),
+      fetch(`${API}/nutrition-logs/client/${clientId}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).catch(() => ({})),
     ])
-      .then(([data, ci]) => {
+      .then(([data, ci, nl]) => {
         setClient(data.user ?? null);
         setPrograms(Array.isArray(data.programs) ? data.programs : []);
         const cis = Array.isArray(ci.checkIns) ? ci.checkIns : [];
         setCheckIns(cis);
+        setNutritionLogs(Array.isArray(nl.nutritionLogs) ? nl.nutritionLogs : []);
         // Pre-fill latest check-in weight into nutrition form
         const latestWeight = [...cis].reverse().find(c => c.weight)?.weight;
         if (latestWeight) setNutritionParams(p => ({ ...p, weight: String(latestWeight) }));
@@ -570,6 +573,8 @@ export default function ClientDetailPage() {
                     {c.energyLevel != null && <span>⚡ Enerji {c.energyLevel}/5</span>}
                     {c.sleepQuality != null && <span>😴 Uyku {c.sleepQuality}/5</span>}
                     {c.stressLevel != null && <span>🧠 Stres {c.stressLevel}/5</span>}
+                    {c.soreness != null && <span>🤕 Kas Ağrısı {c.soreness}/5</span>}
+                    {c.steps != null && <span>👣 {c.steps.toLocaleString('tr-TR')} adım</span>}
                     {c.completedWorkouts != null && <span>💪 {c.completedWorkouts} antrenman</span>}
                   </div>
                   {c.note && <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">{c.note}</p>}
@@ -602,6 +607,37 @@ export default function ClientDetailPage() {
                       <p className="text-[10px] font-semibold text-emerald-600 mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Yanıt Taslağı</p>
                       <p className="text-xs whitespace-pre-wrap leading-relaxed">{aiResults[c._id].reply}</p>
                     </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Beslenme Kayıtları */}
+        {nutritionLogs.length > 0 && (
+          <div>
+            <h2 className="font-semibold mb-3">Beslenme Kayıtları</h2>
+            <ul className="space-y-3">
+              {nutritionLogs.map((l) => (
+                <li key={l._id} className="bg-card border rounded-xl p-4 space-y-2">
+                  <span className="font-semibold text-sm">{new Date(l.date).toLocaleDateString('tr-TR')}</span>
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    {l.calories != null && <span>🔥 {l.calories} kcal</span>}
+                    {l.protein != null && <span>🥩 {l.protein}g protein</span>}
+                    {l.carbs != null && <span>🍞 {l.carbs}g karbonhidrat</span>}
+                    {l.fat != null && <span>🥑 {l.fat}g yağ</span>}
+                    {l.water != null && <span>💧 {l.water}ml su</span>}
+                  </div>
+                  {l.items?.length > 0 && (
+                    <ul className="text-sm space-y-1 pt-1 border-t">
+                      {l.items.map((it: any, i: number) => (
+                        <li key={i} className="flex justify-between text-muted-foreground">
+                          <span>{it.description}</span>
+                          <span>{it.calories} kcal</span>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </li>
               ))}

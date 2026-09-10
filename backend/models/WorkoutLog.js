@@ -4,6 +4,7 @@ const SetSchema = new mongoose.Schema({
   setNumber: Number,
   reps:      { type: Number, default: null },
   weight:    { type: Number, default: null },
+  rir:       { type: Number, min: 0, max: 5, default: null },
   completed: { type: Boolean, default: true },
 }, { _id: false });
 

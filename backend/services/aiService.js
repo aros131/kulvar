@@ -152,6 +152,35 @@ Kısa ve pratik tut.`;
   return chat(system, user, 700);
 }
 
+// ─── Öğün Kalori/Makro Tahmini ───────────────────────────────────────────────
+export async function estimateMealNutrition(description) {
+  const system = `Sen bir beslenme uzmanısın. Kullanıcının yazdığı yemek/öğün tarifine bakarak gerçekçi bir kalori ve makro tahmini yapıyorsun. Türk mutfağına ve ev yemeklerine aşinasın. Belirsiz porsiyon durumunda ortalama bir porsiyon varsay.`;
+
+  const user = `
+Öğün: "${description}"
+
+JSON formatında dön:
+{
+  "calories": 000,
+  "protein": 00,
+  "carbs": 00,
+  "fat": 00
+}
+
+Sadece JSON döndür, başka açıklama ekleme. Değerler tam sayı olsun.`;
+
+  const raw = await chat(system, user, 200);
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('AI geçerli JSON üretmedi');
+  const parsed = JSON.parse(match[0]);
+  return {
+    calories: Number(parsed.calories) || 0,
+    protein: Number(parsed.protein) || 0,
+    carbs: Number(parsed.carbs) || 0,
+    fat: Number(parsed.fat) || 0,
+  };
+}
+
 // ─── Onboarding Planı ────────────────────────────────────────────────────────
 export async function generateOnboardingPlan(params) {
   const { goal, level, age, gender, availableDays, notes } = params;

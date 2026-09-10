@@ -148,6 +148,20 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// POST /profile/fcm-token — saves the browser's push (FCM) device token
+export const saveFcmToken = async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken || typeof fcmToken !== "string") {
+      return res.status(400).json({ message: "fcmToken is required" });
+    }
+    await User.findByIdAndUpdate(req.user._id, { fcmToken });
+    res.status(200).json({ message: "FCM token saved" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving FCM token", error: error.message });
+  }
+};
+
 // POST /profile/avatar — multer uploads to uploads/avatars/
 export const uploadAvatar = async (req, res) => {
   try {

@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 const router = express.Router();
 import protect from '../middleware/authMiddleware.js';
-import { getProfile, updateProfile, completeOnboarding, updateNotificationPreferences, uploadAvatar } from '../controllers/profileController.js';
+import { getProfile, updateProfile, completeOnboarding, updateNotificationPreferences, uploadAvatar, saveFcmToken } from '../controllers/profileController.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,5 +22,6 @@ router.put("/", protect, updateProfile);
 router.post("/avatar", protect, avatarUpload.single("avatar"), uploadAvatar);
 router.patch("/onboarding-complete", protect, completeOnboarding);
 router.patch("/notification-preferences", protect, updateNotificationPreferences);
+router.post("/fcm-token", protect, saveFcmToken);
 
 export default router;

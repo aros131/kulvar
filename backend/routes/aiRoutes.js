@@ -10,6 +10,7 @@ import {
   generateProgram,
   suggestAlternatives,
   generateNutritionPlan,
+  estimateMealNutrition,
   generateProgressReport,
   matchCoach,
   generateOnboardingPlan,
@@ -82,6 +83,20 @@ router.post('/nutrition-plan', protect, async (req, res) => {
   try {
     const plan = await generateNutritionPlan(req.body);
     res.json({ plan });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /ai/estimate-meal   (kullanıcı yediği şeyi yazar, kalori/makro tahmini döner)
+router.post('/estimate-meal', protect, async (req, res) => {
+  try {
+    const { description } = req.body;
+    if (!description || !description.trim()) {
+      return res.status(400).json({ message: 'description is required' });
+    }
+    const estimate = await estimateMealNutrition(description.trim());
+    res.json({ estimate });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

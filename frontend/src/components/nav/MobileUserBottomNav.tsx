@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, LayoutGrid, MessageSquare, Bell, MoreHorizontal, User, Users, Camera, Target, ClipboardList, CreditCard, Settings, LogOut } from "lucide-react";
+import { Home, LayoutGrid, MessageSquare, Bell, MoreHorizontal, User, Users, Camera, Target, ClipboardList, CreditCard, Settings, LogOut, Apple } from "lucide-react";
 import {
   Sheet,
   SheetTrigger,
@@ -38,6 +38,7 @@ export default function MobileUserBottomNav({
     { href: "/dashboard/user/ilerleme", label: "İlerleme", Icon: Camera },
     { href: "/dashboard/user/aliskanliklar", label: "Alışkanlıklar", Icon: Target },
     { href: "/dashboard/user/check-in", label: "Check-in", Icon: ClipboardList },
+    { href: "/dashboard/user/nutrition", label: "Beslenme", Icon: Apple },
     { href: "/dashboard/user/payments", label: "Ödemelerim", Icon: CreditCard },
     { href: "/dashboard/user/settings", label: "Ayarlar", Icon: Settings },
   ];

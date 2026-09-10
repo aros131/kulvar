@@ -112,6 +112,12 @@ const ProgramSchema = new Schema({
     meals: [
       { name: { type: String }, description: { type: String }, time: { type: String } }
     ],
+    dailyCalorieTarget: { type: Number, default: null },
+    macroTargets: {
+      protein: { type: Number, default: null }, // gram
+      carbs: { type: Number, default: null },   // gram
+      fat: { type: Number, default: null },     // gram
+    },
   },
 
   /** Legacy alanlar — dokunmuyoruz; UI’nız bunları kullanıyorsa çalışmaya devam eder */

@@ -68,7 +68,9 @@ const UserSchema = new mongoose.Schema(
     emailVerified:     { type: Boolean, default: false },
     verificationToken: { type: String, default: null },
 
-    isApproved:  { type: Boolean, default: true },
+    // Coaches start unapproved and need an admin to approve them via the
+    // admin panel; other roles don't use this field, so they default true.
+    isApproved:  { type: Boolean, default: function () { return this.role !== "coach"; } },
     isListedCoach: { type: Boolean, default: false }, // koç kendini listede görmek için açık etmeli
     price:       { type: Number, default: null },
     brandColor:  { type: String, default: '' },       // hex renk kodu, koç profili için
@@ -76,6 +78,8 @@ const UserSchema = new mongoose.Schema(
 
     resetToken:       { type: String, default: null },
     resetTokenExpiry: { type: Date,   default: null },
+
+    fcmToken: { type: String, default: null }, // web push (Firebase Cloud Messaging) device token
 
     notificationPreferences: {
       inApp: {

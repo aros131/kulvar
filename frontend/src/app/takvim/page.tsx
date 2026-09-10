@@ -54,6 +54,15 @@ interface OverloadSuggestion {
   lastReps: number | null;
   suggestedWeight: number | null;
   suggestedReps: number | null;
+  avgRir?: number | null;
+  note?: string | null;
+}
+
+interface SetEntry {
+  done: boolean;
+  weight: number | null;
+  reps: number | null;
+  rir: number | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -109,20 +118,33 @@ function getEmbedUrl(url: string): string | null {
   return null;
 }
 
-function buildLog(exercises: Exercise[], setDone: Set<number>[]) {
+function makeInitialSetData(exercises: Exercise[]): SetEntry[][] {
+  return exercises.map((ex) =>
+    Array.from({ length: ex.sets ?? 1 }, () => ({
+      done: false,
+      weight: ex.weight ?? null,
+      reps: ex.reps ?? null,
+      rir: null,
+    }))
+  );
+}
+
+function buildLog(exercises: Exercise[], setData: SetEntry[][]) {
   return {
     exercises: exercises.map((ex, i) => {
       const count = ex.sets ?? 1;
+      const entries = setData[i] ?? [];
       return {
         name: ex.name,
         plannedSets: count,
         plannedReps: ex.reps ?? null,
         plannedWeight: ex.weight ?? null,
-        sets: Array.from({ length: count }, (_, si) => ({
+        sets: entries.map((s, si) => ({
           setNumber: si + 1,
-          reps: ex.reps ?? null,
-          weight: ex.weight ?? null,
-          completed: setDone[i]?.has(si) ?? false,
+          reps: s.reps,
+          weight: s.weight,
+          rir: s.rir,
+          completed: s.done,
         })),
       };
     }),
@@ -169,38 +191,80 @@ function ExerciseMedia({ url, description }: { url: string; description?: string
 function SetRow({
   setIdx,
   ex,
-  done,
+  entry,
   canToggle,
   completing,
-  onToggle,
+  onToggleDone,
+  onChange,
 }: {
   setIdx: number;
   ex: Exercise;
-  done: boolean;
+  entry: SetEntry;
   canToggle: boolean;
   completing: boolean;
-  onToggle: () => void;
+  onToggleDone: () => void;
+  onChange: (patch: Partial<SetEntry>) => void;
 }) {
+  const isTimed = ex.type === "cardio" || ex.type === "isometric";
+
   return (
-    <div
-      className={`flex items-center gap-3 py-2 pl-8 pr-2 border-t border-dashed border-border/40 ${canToggle ? "cursor-pointer" : ""}`}
-      onClick={canToggle ? onToggle : undefined}
-    >
+    <div className="flex items-center gap-2 py-2 pl-8 pr-2 border-t border-dashed border-border/40">
       <div
-        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-          done ? "bg-primary border-primary" : "border-muted-foreground/40"
+        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${canToggle ? "cursor-pointer" : ""} ${
+          entry.done ? "bg-primary border-primary" : "border-muted-foreground/40"
         } ${completing ? "opacity-50" : ""}`}
+        onClick={canToggle ? onToggleDone : undefined}
       >
-        {done && (
+        {entry.done && (
           <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 12 12">
             <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </div>
-      <span className={`text-xs font-medium shrink-0 text-muted-foreground w-10`}>Set {setIdx + 1}</span>
-      <span className={`text-sm flex-1 transition-colors ${done ? "line-through text-muted-foreground" : ""}`}>
-        {setLabel(ex)}
-      </span>
+      <span className="text-xs font-medium shrink-0 text-muted-foreground w-10">Set {setIdx + 1}</span>
+
+      {isTimed ? (
+        <span className={`text-sm flex-1 transition-colors ${entry.done ? "line-through text-muted-foreground" : ""}`}>
+          {setLabel(ex)}
+        </span>
+      ) : (
+        <div className="flex items-center gap-1.5 flex-1">
+          <input
+            type="number"
+            inputMode="decimal"
+            placeholder="kg"
+            disabled={!canToggle}
+            value={entry.weight ?? ""}
+            onChange={(e) => onChange({ weight: e.target.value === "" ? null : Number(e.target.value) })}
+            onClick={(e) => e.stopPropagation()}
+            className="w-14 h-7 rounded-md border border-border bg-background text-xs text-center tabular-nums disabled:opacity-60"
+          />
+          <span className="text-[10px] text-muted-foreground shrink-0">kg ×</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="tekrar"
+            disabled={!canToggle}
+            value={entry.reps ?? ""}
+            onChange={(e) => onChange({ reps: e.target.value === "" ? null : Number(e.target.value) })}
+            onClick={(e) => e.stopPropagation()}
+            className="w-14 h-7 rounded-md border border-border bg-background text-xs text-center tabular-nums disabled:opacity-60"
+          />
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={5}
+            placeholder="RIR"
+            disabled={!canToggle}
+            value={entry.rir ?? ""}
+            onChange={(e) => onChange({ rir: e.target.value === "" ? null : Number(e.target.value) })}
+            onClick={(e) => e.stopPropagation()}
+            title="Reps In Reserve — sette kaç tekrar rezervde kaldı"
+            className="w-12 h-7 rounded-md border border-border bg-background text-xs text-center tabular-nums disabled:opacity-60"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -224,10 +288,8 @@ function EventCard({
   const exercises = session?.exercises ?? [];
   const hasExercises = exercises.length > 0;
 
-  // Per-exercise set completion: setDone[exIdx] = Set of done set indices
-  const [setDone, setSetDone] = useState<Set<number>[]>(() =>
-    exercises.map(() => new Set<number>())
-  );
+  // Per-exercise, per-set logged data (weight/reps/rir/done)
+  const [setData, setSetData] = useState<SetEntry[][]>(() => makeInitialSetData(exercises));
   const [expanded, setExpanded] = useState<Set<number>>(new Set<number>());
   const [openMedia, setOpenMedia] = useState<number | null>(null);
   const [altLoading, setAltLoading] = useState<number | null>(null);
@@ -260,25 +322,29 @@ function EventCard({
 
   useEffect(() => {
     if (event.status === "completed") {
-      setSetDone(exercises.map(() => new Set<number>()));
+      setSetData(makeInitialSetData(exercises));
       autoTriggered.current = false;
     }
   }, [event.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalSets = exercises.reduce((sum, ex) => sum + (ex.sets ?? 1), 0);
-  const doneSets = setDone.reduce((acc, s) => acc + s.size, 0);
+  const doneSets = setData.reduce((acc, entries) => acc + entries.filter((s) => s.done).length, 0);
   const progress = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
 
-  const toggleSet = (exIdx: number, setIdx: number) => {
+  const updateSet = (exIdx: number, setIdx: number, patch: Partial<SetEntry>) => {
     if (!canComplete || completing) return;
-    const next = setDone.map((s, i) => {
-      if (i !== exIdx) return s;
-      const ns = new Set(s);
-      if (ns.has(setIdx)) ns.delete(setIdx); else ns.add(setIdx);
-      return ns;
-    });
-    setSetDone(next);
-    const newDone = next.reduce((acc, s) => acc + s.size, 0);
+    setSetData((prev) =>
+      prev.map((entries, i) => (i !== exIdx ? entries : entries.map((s, si) => (si !== setIdx ? s : { ...s, ...patch }))))
+    );
+  };
+
+  const toggleSetDone = (exIdx: number, setIdx: number) => {
+    if (!canComplete || completing) return;
+    const next = setData.map((entries, i) =>
+      i !== exIdx ? entries : entries.map((s, si) => (si !== setIdx ? s : { ...s, done: !s.done }))
+    );
+    setSetData(next);
+    const newDone = next.reduce((acc, entries) => acc + entries.filter((s) => s.done).length, 0);
     if (newDone === totalSets && totalSets > 0 && !autoTriggered.current) {
       autoTriggered.current = true;
       onComplete(event._id, buildLog(exercises, next));
@@ -335,7 +401,7 @@ function EventCard({
           <div>
             {exercises.map((ex, exIdx) => {
               const setCount = ex.sets ?? 1;
-              const exDone = setDone[exIdx]?.size ?? 0;
+              const exDone = setData[exIdx]?.filter((s) => s.done).length ?? 0;
               const allDone = exDone === setCount;
               const isExpanded = expanded.has(exIdx);
               const hasMedia = ex.videoUrls?.some(v => v.url);
@@ -432,7 +498,7 @@ function EventCard({
                           ? `${sugg.lastWeight}kg → ${sugg.suggestedWeight}kg dene`
                           : sugg.suggestedReps
                           ? `${sugg.lastReps} → ${sugg.suggestedReps} tekrar dene`
-                          : null}
+                          : sugg.note ?? null}
                       </span>
                     </div>
                   )}
@@ -453,10 +519,11 @@ function EventCard({
                           key={si}
                           setIdx={si}
                           ex={ex}
-                          done={setDone[exIdx]?.has(si) ?? false}
+                          entry={setData[exIdx]?.[si] ?? { done: false, weight: ex.weight ?? null, reps: ex.reps ?? null, rir: null }}
                           canToggle={canComplete && !completing}
                           completing={completing}
-                          onToggle={() => toggleSet(exIdx, si)}
+                          onToggleDone={() => toggleSetDone(exIdx, si)}
+                          onChange={(patch) => updateSet(exIdx, si, patch)}
                         />
                       ))}
                     </div>

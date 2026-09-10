@@ -119,8 +119,12 @@ export const completeEvent = async (req, res) => {
           ? Math.min(100, Math.round((completedCount / totalSessions) * 100))
           : 0;
 
-        // 1. Update Progress collection (used by analytics + programs pages)
-        const sessionKey = ev.externalKey || ev.sessionId || ev._id.toString();
+        // 1. Update Progress collection (used by analytics + programs pages).
+        // ev.sessionId mirrors the session's own _id/sessionId from the
+        // program schedule — that's what ProgramDetailsView matches against
+        // to render a session as completed, so it must take priority over
+        // the assignment-scoped externalKey (which nothing else reads).
+        const sessionKey = ev.sessionId || ev.externalKey || ev._id.toString();
         let progress = await Progress.findOne({ userId, programId: ev.programId });
         if (!progress) {
           progress = new Progress({ userId, programId: ev.programId, completedSessions: [] });

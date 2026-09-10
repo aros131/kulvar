@@ -10,6 +10,8 @@ const CheckInSchema = new mongoose.Schema({
   energyLevel:    { type: Number, min: 1, max: 5, default: null }, // 1-5
   sleepQuality:   { type: Number, min: 1, max: 5, default: null },
   stressLevel:    { type: Number, min: 1, max: 5, default: null },
+  soreness:       { type: Number, min: 1, max: 5, default: null }, // kas ağrısı
+  steps:          { type: Number, default: null },      // günlük ortalama adım
   completedWorkouts: { type: Number, default: null },   // bu hafta tamamlanan antrenman
   note:      { type: String, default: '' },
 }, { timestamps: true });

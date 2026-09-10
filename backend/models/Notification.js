@@ -21,6 +21,7 @@ const NotificationSchema = new mongoose.Schema({
       "session_completed",
       "weekly_report",
       "adaptation_suggestion",
+      "check_in",
     ],
     required: true,
   },

@@ -7,6 +7,7 @@ import { generateEventsForAssignment } from './programController.js';
 
 const APP_URL = (process.env.APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
 const API_PUBLIC_URL = (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5001}`).replace(/\/+$/, '');
+const PLATFORM_COMMISSION_RATE = Number(process.env.PLATFORM_COMMISSION_RATE ?? 0.15);
 
 export const createInvoice = async (req, res) => {
   try {
@@ -200,6 +201,8 @@ export const buyProgram = async (req, res) => {
     }
 
     const amountTL = priceCents / 100;
+    const platformFeeCents = Math.round(priceCents * PLATFORM_COMMISSION_RATE);
+    const coachNetCents = priceCents - platformFeeCents;
 
     const payment = await Payment.create({
       coachId: program.coachId,
@@ -208,6 +211,9 @@ export const buyProgram = async (req, res) => {
       amount: amountTL,
       description: program.name,
       status: "Pending",
+      commissionRate: PLATFORM_COMMISSION_RATE,
+      platformFeeCents,
+      coachNetCents,
     });
 
     const callbackUrl = `${API_PUBLIC_URL}/payment/iyzico/callback`;

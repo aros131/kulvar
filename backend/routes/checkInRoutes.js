@@ -12,7 +12,7 @@ const uid = (req) => req.user._id || req.user.id;
 router.post('/', protect, roleMiddleware(['user']), async (req, res) => {
   try {
     const userId = uid(req);
-    const { programId, week, weight, energyLevel, sleepQuality, stressLevel, completedWorkouts, note } = req.body;
+    const { programId, week, weight, energyLevel, sleepQuality, stressLevel, soreness, steps, completedWorkouts, note } = req.body;
 
     // Koç ID'sini program atamasından bul
     let coachId = null;
@@ -25,7 +25,7 @@ router.post('/', protect, roleMiddleware(['user']), async (req, res) => {
 
     const checkin = await CheckIn.create({
       userId, coachId, programId: programId || null,
-      week: week ?? 1, weight, energyLevel, sleepQuality, stressLevel, completedWorkouts, note,
+      week: week ?? 1, weight, energyLevel, sleepQuality, stressLevel, soreness, steps, completedWorkouts, note,
     });
 
     // Koça bildirim gönder

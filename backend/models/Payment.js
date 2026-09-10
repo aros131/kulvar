@@ -7,6 +7,14 @@ const PaymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   description: { type: String },
   status: { type: String, enum: ["Pending", "Paid", "Failed"], default: "Pending" },
+  // Platform sales commission, computed at creation time (currently only for
+  // program purchases via buyProgram — manual coach invoices aren't cut).
+  // Money still settles into the platform's own iyzico merchant account;
+  // there's no automated payout to coaches yet, so these are bookkeeping
+  // fields, not a real transfer.
+  commissionRate: { type: Number, default: null },
+  platformFeeCents: { type: Number, default: null },
+  coachNetCents: { type: Number, default: null },
   conversationId: { type: String },
   iyzicoToken: { type: String },
   iyzicoPaymentId: { type: String },

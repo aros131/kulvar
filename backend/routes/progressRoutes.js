@@ -86,12 +86,38 @@ router.get('/overload-suggestions', protect, async (req, res) => {
         const lastWeight = ex.sets[ex.sets.length - 1]?.weight ?? ex.plannedWeight ?? 0;
         const lastReps   = ex.sets[ex.sets.length - 1]?.reps   ?? ex.plannedReps   ?? 0;
         const hasWeight  = lastWeight > 0;
+
+        // Average RIR across sets that logged one; null if this log predates RIR capture.
+        const rirValues = ex.sets.map(s => s.rir).filter(r => r != null);
+        const avgRir = rirValues.length ? rirValues.reduce((a, b) => a + b, 0) / rirValues.length : null;
+
+        let suggestedWeight = null;
+        let suggestedReps = null;
+        let note = null;
+
+        if (avgRir == null) {
+          // No RIR data on this log — fall back to the original naive heuristic.
+          suggestedWeight = hasWeight ? Math.round((lastWeight + 2.5) * 2) / 2 : null;
+          suggestedReps   = !hasWeight && lastReps ? lastReps + 1 : null;
+        } else if (avgRir >= 3) {
+          suggestedWeight = hasWeight ? Math.round((lastWeight + 2.5) * 2) / 2 : null;
+          suggestedReps   = !hasWeight && lastReps ? lastReps + 2 : null;
+          note = 'RIR yüksekti, yükü artırabilirsin';
+        } else if (avgRir <= 1) {
+          suggestedWeight = hasWeight ? Math.round((lastWeight * 0.95) * 2) / 2 : null;
+          note = 'RIR düşüktü, aynı yükte kal ya da hafif azalt';
+        } else {
+          note = 'İyi gidiyor, aynı yükte devam et';
+        }
+
         return {
           exerciseName:    ex.name,
           lastWeight:      lastWeight || null,
           lastReps:        lastReps   || null,
-          suggestedWeight: hasWeight ? Math.round((lastWeight + 2.5) * 2) / 2 : null,
-          suggestedReps:   !hasWeight && lastReps ? lastReps + 1 : null,
+          suggestedWeight,
+          suggestedReps,
+          avgRir,
+          note,
         };
       });
 

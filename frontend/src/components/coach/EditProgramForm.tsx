@@ -666,6 +666,48 @@ export default function EditProgramForm({ program: initialProgram, mode, onSucce
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Beslenme Planı</h2>
         <div>
+          <Label>Günlük Hedefler</Label>
+          <div className="grid md:grid-cols-4 gap-2 mt-2">
+            <Input
+              type="number"
+              placeholder="Kalori (kcal)"
+              value={(program as any).nutritionPlan?.dailyCalorieTarget ?? ""}
+              onChange={(e) => setProgram((prev: any) => ({
+                ...prev,
+                nutritionPlan: { ...prev.nutritionPlan, dailyCalorieTarget: e.target.value === "" ? null : Number(e.target.value) },
+              }))}
+            />
+            <Input
+              type="number"
+              placeholder="Protein (g)"
+              value={(program as any).nutritionPlan?.macroTargets?.protein ?? ""}
+              onChange={(e) => setProgram((prev: any) => ({
+                ...prev,
+                nutritionPlan: { ...prev.nutritionPlan, macroTargets: { ...prev.nutritionPlan?.macroTargets, protein: e.target.value === "" ? null : Number(e.target.value) } },
+              }))}
+            />
+            <Input
+              type="number"
+              placeholder="Karbonhidrat (g)"
+              value={(program as any).nutritionPlan?.macroTargets?.carbs ?? ""}
+              onChange={(e) => setProgram((prev: any) => ({
+                ...prev,
+                nutritionPlan: { ...prev.nutritionPlan, macroTargets: { ...prev.nutritionPlan?.macroTargets, carbs: e.target.value === "" ? null : Number(e.target.value) } },
+              }))}
+            />
+            <Input
+              type="number"
+              placeholder="Yağ (g)"
+              value={(program as any).nutritionPlan?.macroTargets?.fat ?? ""}
+              onChange={(e) => setProgram((prev: any) => ({
+                ...prev,
+                nutritionPlan: { ...prev.nutritionPlan, macroTargets: { ...prev.nutritionPlan?.macroTargets, fat: e.target.value === "" ? null : Number(e.target.value) } },
+              }))}
+            />
+          </div>
+        </div>
+
+        <div>
           <div className="flex items-center justify-between mb-2">
             <Label>İpuçları</Label>
             <Button type="button" variant="secondary" onClick={addTip}>İpucu ekle</Button>

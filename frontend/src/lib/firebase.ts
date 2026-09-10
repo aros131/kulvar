@@ -3,6 +3,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth, setPersistence, browserLocalPersistence, signInWithCustomToken } from "firebase/auth";
+import { getMessaging, getToken, onMessage, isSupported, type Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyBqblbrETRgYJpX3UDNhRw2ET1SEJl3260",
@@ -39,5 +40,45 @@ export async function signInToFirebase(backendToken: string) {
     await signInWithCustomToken(auth, token);
   } catch (err) {
     console.error("Firebase sign-in failed:", err);
+  }
+}
+
+// Requests notification permission, registers the FCM service worker, and
+// saves the resulting device token on the backend so NotificationService can
+// push to it. Swallows all failures — push is a progressive enhancement,
+// never something login/notifications should block on.
+export async function registerPushNotifications(backendToken: string) {
+  try {
+    if (typeof window === "undefined" || !(await isSupported())) return;
+
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return;
+
+    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    const messaging: Messaging = getMessaging(app);
+    const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+    if (!vapidKey) {
+      console.warn("NEXT_PUBLIC_FIREBASE_VAPID_KEY not set — skipping push registration.");
+      return;
+    }
+
+    const fcmToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+    if (!fcmToken) return;
+
+    await fetch(`${API}/profile/fcm-token`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${backendToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ fcmToken }),
+    });
+
+    onMessage(messaging, (payload) => {
+      const title = payload.notification?.title || "Kulvar";
+      const body = payload.notification?.body;
+      if (Notification.permission === "granted") {
+        new Notification(title, { body, icon: "/icons/icon-192.png" });
+      }
+    });
+  } catch (err) {
+    console.error("Push notification registration failed:", err);
   }
 }

@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getMessaging } from 'firebase-admin/messaging';
 
 // Mints Firebase Auth custom tokens so the frontend can sign into Firebase
 // (Firestore chat, Storage uploads) using the same identity as our own JWT,
@@ -36,4 +37,15 @@ function getFirebaseAdminApp() {
 export async function mintFirebaseCustomToken(userId, claims = {}) {
   const firebaseApp = getFirebaseAdminApp();
   return getAuth(firebaseApp).createCustomToken(String(userId), claims);
+}
+
+// Best-effort web push via FCM. Errors (missing config, expired token, etc.)
+// are the caller's responsibility to swallow — push is a progressive
+// enhancement, never something a notification flow should fail over.
+export async function sendPushNotification(fcmToken, { title, body }) {
+  const firebaseApp = getFirebaseAdminApp();
+  await getMessaging(firebaseApp).send({
+    token: fcmToken,
+    notification: { title, body },
+  });
 }
