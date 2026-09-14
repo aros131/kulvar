@@ -525,7 +525,7 @@ export default function UserDashboardPage() {
       </div>
 
       {/* Add bottom padding on mobile so content doesn't sit under the fixed nav */}
-      <main className="ml-0 md:ml-16 w-full min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 pb-20 md:pb-0">
+      <main className="ml-0 md:ml-16 w-full min-h-screen bg-background pb-20 md:pb-0">
         {/* Decorative gradient blob */}
         <div
           aria-hidden

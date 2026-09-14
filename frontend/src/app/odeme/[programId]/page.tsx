@@ -93,7 +93,7 @@ export default function OdemePage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-muted/30 flex items-start justify-center p-4 pt-12">
+    <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-12">
       <div className="w-full max-w-lg">
         <button
           onClick={() => router.back()}

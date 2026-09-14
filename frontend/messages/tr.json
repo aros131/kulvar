@@ -227,6 +227,7 @@
     "checkInFormNoteLabel": "Not",
     "checkInFormNotePlaceholder": "Bugün hakkında bir şey yaz…",
     "send": "Gönder",
+    "recordVoice": "Sesli mesaj kaydet",
     "downloadFile": "Dosyayı indir",
     "messageDeleted": "Mesaj silindi",
     "pinned": "📌 Sabitlendi",
@@ -288,6 +289,7 @@
     }
   },
   "messagesList": {
+    "conversationsCount": "{count} konuşma",
     "loading": "Yükleniyor...",
     "pleaseLogin": "Devam etmek için lütfen giriş yapın.",
     "title": "📨 Mesajlar",
@@ -717,6 +719,11 @@
     "errorLabel": "Hata: {error}"
   },
   "programsCoach": {
+    "searchProgramsPlaceholder": "Program ara...",
+    "noSearchResults": "Aramanla eşleşen program yok.",
+    "moreActions": "Diğer işlemler",
+    "programsCount": "{count} program",
+    "emptyHint": "İlk programını oluşturarak danışanlarına içerik sunmaya başla.",
     "free": "Ücretsiz",
     "loadError": "Veriler yüklenemedi.",
     "deleteWarningWithClients": "\"{name}\" programını silmek istediğine emin misin? {count} danışana atanmış — onlar da bu programa erişimini kaybeder. Bu işlem geri alınamaz.",

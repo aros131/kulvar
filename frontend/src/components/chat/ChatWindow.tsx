@@ -215,7 +215,7 @@ function CheckInFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
           <p className="text-sm font-medium mb-1">{t("checkInFormWeightLabel")} <span className="text-muted-foreground font-normal">{t("optional")}</span></p>
           <div className="relative">
             <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="68.5" step="0.1"
-              className="w-full border rounded-xl px-3 py-2 pr-10 text-sm bg-background outline-none focus:ring-2 focus:ring-ring border-border" />
+              className="w-full border rounded-xl px-3 py-2 pr-10 text-base bg-background outline-none focus:ring-2 focus:ring-ring border-border" />
             <span className="absolute right-3 top-2 text-sm text-muted-foreground">kg</span>
           </div>
         </div>
@@ -226,9 +226,9 @@ function CheckInFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
         <div>
           <p className="text-sm font-medium mb-1">{t("checkInFormNoteLabel")} <span className="text-muted-foreground font-normal">{t("optional")}</span></p>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder={t("checkInFormNotePlaceholder")}
-            className="w-full border rounded-xl px-3 py-2 text-sm bg-background outline-none focus:ring-2 focus:ring-ring resize-none border-border" />
+            className="w-full border rounded-xl px-3 py-2 text-base bg-background outline-none focus:ring-2 focus:ring-ring resize-none border-border" />
         </div>
-        <button onClick={() => onSubmit({ mood, weight: weight ? Number(weight) : undefined, completed, note: note.trim() || undefined })}
+        <button onClick={() => onSubmit({ mood, completed, ...(weight ? { weight: Number(weight) } : {}), ...(note.trim() ? { note: note.trim() } : {}) })}
           className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:opacity-90 transition">
           {t("send")}
         </button>
@@ -359,25 +359,25 @@ function MessageBubble({
     );
   }
 
-  const bubbleBase = `relative max-w-[80%] md:max-w-[65%] rounded-2xl px-4 py-3 text-sm shadow-sm`;
+  const bubbleBase = `relative max-w-[75vw] md:max-w-md min-w-0 rounded-2xl px-4 py-3 text-sm shadow-sm`;
   const mineStyle = `${bubbleBase} bg-indigo-600 text-white rounded-br-sm`;
   const otherStyle = `${bubbleBase} bg-card dark:bg-zinc-800 border border-border text-foreground rounded-bl-sm`;
   const bubbleCls = mine ? mineStyle : otherStyle;
 
   return (
-    <div className={`flex flex-col ${mine ? "items-end" : "items-start"} px-2 group`} data-msg={msg.id}>
+    <div className={`flex flex-col w-full min-w-0 ${mine ? "items-end" : "items-start"} px-2 group`} data-msg={msg.id}>
       {!mine && <p className="text-[11px] text-muted-foreground ml-1 mb-0.5">{otherName}</p>}
       {isPinned && <p className={`text-[10px] mb-0.5 ${mine ? "text-white/50" : "text-muted-foreground"}`}>{t("pinned")}</p>}
 
       {/* Reply preview */}
       {msg.replyTo && (
-        <div className={`max-w-[80%] md:max-w-[65%] mb-1 px-3 py-1.5 rounded-xl border-l-4 text-xs ${mine ? "bg-indigo-800/60 border-indigo-300/60 text-indigo-100" : "bg-muted border-border text-muted-foreground"}`}>
+        <div className={`max-w-[75vw] md:max-w-md mb-1 px-3 py-1.5 rounded-xl border-l-4 text-xs ${mine ? "bg-indigo-800/60 border-indigo-300/60 text-indigo-100" : "bg-muted border-border text-muted-foreground"}`}>
           <p className="font-medium">{msg.replyTo.senderName}</p>
           <p className="truncate">{msg.replyTo.text || (msg.replyTo.imageUrl ? t("image") : "")}</p>
         </div>
       )}
 
-      <div className="flex items-end gap-1.5">
+      <div className="flex items-end gap-1.5 max-w-full min-w-0">
         {!mine && (
           <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
             <button onClick={() => setReactionPickerOpen(!reactionPickerOpen)} className="p-1 rounded-lg bg-background border border-border hover:bg-muted shadow-sm"><Smile className="w-3.5 h-3.5 text-muted-foreground" /></button>
@@ -471,9 +471,12 @@ interface ChatWindowProps {
   chatId: string;
   myRole: "coach" | "user";
   backHref: string;
+  /** Fires when the message composer gains/loses focus — lets the page shell
+   * hide the mobile tab bar while the keyboard is up, like native chat apps. */
+  onComposerFocusChange?: (focused: boolean) => void;
 }
 
-export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps) {
+export default function ChatWindow({ chatId, myRole, backHref, onComposerFocusChange }: ChatWindowProps) {
   const t = useTranslations("chat");
   const locale = useLocale();
   const [user, setUser] = useState<LocalUser | null>(null);
@@ -507,6 +510,13 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const suppressAutoScrollRef = useRef(false);
+  const didInitialScrollRef = useRef(false);
+
+  const scrollToBottom = useCallback((smooth: boolean) => {
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "end" });
+  }, []);
   const liveUnsubRef = useRef<(() => void) | null>(null);
 
   const myId = user?.id || "";
@@ -599,8 +609,22 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
     const snap = await getDocs(query(col, orderBy("createdAt", "desc"), startAfter(firstCursor), limit(PAGE_SIZE)));
     setHasMore(snap.docs.length === PAGE_SIZE);
     setFirstCursor(snap.docs[snap.docs.length - 1] || null);
+    suppressAutoScrollRef.current = true;
     setMessages(prev => [...snap.docs.map(d => ({ id: d.id, ...(d.data() as MsgBase) })).reverse() as Message[], ...prev]);
   }, [chatId, hasMore, firstCursor]);
+
+  /* ── Keep the latest message in view — instantly on first load, smoothly
+   * after that — but skip it when the length changed because older history
+   * was prepended (scrolling up to load more shouldn't yank you back down). */
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (suppressAutoScrollRef.current) {
+      suppressAutoScrollRef.current = false;
+      return;
+    }
+    scrollToBottom(didInitialScrollRef.current);
+    didInitialScrollRef.current = true;
+  }, [messages.length, scrollToBottom]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -667,7 +691,13 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
     if (payload.audioDuration !== undefined) clean.audioDuration = payload.audioDuration;
     if (payload.fileUrl) clean.fileUrl = payload.fileUrl;
     if (payload.fileName) clean.fileName = payload.fileName;
-    if (payload.checkInData) clean.checkInData = payload.checkInData;
+    if (payload.checkInData) {
+      // Firestore rejects any field whose value is `undefined` (even nested) —
+      // strip the optional ones (weight/note) instead of writing them as-is.
+      clean.checkInData = Object.fromEntries(
+        Object.entries(payload.checkInData).filter(([, v]) => v !== undefined)
+      );
+    }
     if (payload.checkInRequestMsgId) clean.checkInRequestMsgId = payload.checkInRequestMsgId;
     if (payload.replyTo) clean.replyTo = payload.replyTo;
 
@@ -753,7 +783,18 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
 
   const retrySend = async (m: Message) => {
     setMessages(prev => prev.filter(x => x.id !== m.id));
-    await sendOne({ type: m.type || "text", text: m.text, imageUrl: m.imageUrl, replyTo: m.replyTo });
+    await sendOne({
+      type: m.type || "text",
+      text: m.text,
+      imageUrl: m.imageUrl,
+      audioUrl: m.audioUrl,
+      audioDuration: m.audioDuration,
+      fileUrl: m.fileUrl,
+      fileName: m.fileName,
+      checkInData: m.checkInData,
+      checkInRequestMsgId: m.checkInRequestMsgId,
+      replyTo: m.replyTo,
+    });
   };
 
   /* ── Grouped messages ── */
@@ -785,7 +826,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
   /* ─────────────────────────────── Render ────────────────────────────── */
 
   return (
-    <div className="flex flex-col h-full min-h-0 max-w-3xl mx-auto">
+    <div className="flex flex-col h-full min-h-0 w-full min-w-0 max-w-3xl mx-auto overflow-x-hidden">
       {/* Header */}
       <div className="shrink-0 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
@@ -823,7 +864,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
         {searchOpen && (
           <div className="mt-2 flex items-center gap-2">
             <input value={queryText} onChange={e => setQueryText(e.target.value)} placeholder={t("searchInChat")}
-              className="flex-1 h-9 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+              className="flex-1 h-9 rounded-xl border border-border bg-background px-3 text-base outline-none focus:ring-2 focus:ring-ring" />
             <button onClick={() => { setSearchOpen(false); setQueryText(""); }} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
           </div>
         )}
@@ -845,7 +886,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
       </div>
 
       {/* Messages */}
-      <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 py-4 space-y-2 bg-zinc-50 dark:bg-zinc-900">
+      <div ref={listRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 py-4 space-y-2 bg-zinc-50 dark:bg-zinc-900">
         {hasMore && (
           <div className="flex justify-center">
             <button onClick={loadOlder} className="text-xs text-primary hover:underline px-3 py-1">{t("loadOlderMessages")}</button>
@@ -885,6 +926,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
             </div>
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
 
       {/* Composer */}
@@ -935,10 +977,10 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
 
         {/* Input row */}
         {!recording && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full min-w-0">
             {/* Popups above input */}
             <div className="relative">
-              <button onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowTemplates(false); }}
+              <button onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowTemplates(false); }} onMouseDown={e => e.preventDefault()}
                 className={`p-2 rounded-xl hover:bg-muted transition ${showEmojiPicker ? "bg-muted" : ""}`}>
                 <Smile className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -951,7 +993,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
 
             {myRole === "coach" && (
               <div className="relative">
-                <button onClick={() => { setShowTemplates(!showTemplates); setShowEmojiPicker(false); }}
+                <button onClick={() => { setShowTemplates(!showTemplates); setShowEmojiPicker(false); }} onMouseDown={e => e.preventDefault()}
                   className={`p-2 rounded-xl hover:bg-muted transition ${showTemplates ? "bg-muted" : ""}`}>
                   <Zap className="w-5 h-5 text-muted-foreground" />
                 </button>
@@ -968,6 +1010,8 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
               value={text}
               onChange={e => handleTyping(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+              onFocus={() => { onComposerFocusChange?.(true); scrollToBottom(true); }}
+              onBlur={() => onComposerFocusChange?.(false)}
               onPaste={e => {
                 const picked: File[] = [];
                 for (const item of Array.from(e.clipboardData?.items || [])) {
@@ -977,40 +1021,45 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
               }}
               placeholder={isBlocked ? t("chatBlockedPlaceholder") : t("messagePlaceholder")}
               disabled={isBlocked || !ready}
-              className="flex-1 border border-border rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground"
+              className="flex-1 min-w-0 border border-border rounded-2xl px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground"
             />
 
-            {/* Attachments */}
+            {/* Attachments — one button, images go to the image preview strip, everything else to the file-chip strip */}
             <label className="cursor-pointer p-2 rounded-xl hover:bg-muted transition">
-              <input type="file" accept="image/*" multiple className="hidden"
-                onChange={e => setFiles(p => [...p, ...Array.from(e.target.files || [])])} />
+              <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" multiple className="hidden"
+                onChange={e => {
+                  const picked = Array.from(e.target.files || []);
+                  const images = picked.filter(f => f.type.startsWith("image/"));
+                  const docs = picked.filter(f => !f.type.startsWith("image/"));
+                  if (images.length) setFiles(p => [...p, ...images]);
+                  if (docs.length) setDocFiles(p => [...p, ...docs]);
+                  e.target.value = "";
+                }} />
               <Paperclip className="w-5 h-5 text-muted-foreground" />
-            </label>
-            <label className="cursor-pointer p-2 rounded-xl hover:bg-muted transition">
-              <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" multiple className="hidden"
-                onChange={e => setDocFiles(p => [...p, ...Array.from(e.target.files || [])])} />
-              <FileText className="w-5 h-5 text-muted-foreground" />
             </label>
 
             {/* Mic / Check-in (coach) / Send */}
             {myRole === "coach" && (
-              <button onClick={sendCheckIn} title={t("sendCheckInTitle")}
+              <button onClick={sendCheckIn} onMouseDown={e => e.preventDefault()} title={t("sendCheckInTitle")}
                 className="p-2 rounded-xl hover:bg-muted transition text-muted-foreground">
                 <span className="text-base">📋</span>
               </button>
             )}
 
-            {text.trim() || files.length > 0 || docFiles.length > 0 ? (
-              <button onClick={handleSend} disabled={sending || isBlocked}
-                className="bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground rounded-2xl p-2.5 transition">
-                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              </button>
-            ) : (
-              <button onClick={startRecording} disabled={!ready}
-                className="p-2.5 rounded-2xl bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground transition">
+            {!(text.trim() || files.length > 0 || docFiles.length > 0) && (
+              <button onClick={startRecording} onMouseDown={e => e.preventDefault()} disabled={!ready}
+                title={t("recordVoice")}
+                className="p-2.5 rounded-2xl border border-border hover:bg-muted disabled:opacity-50 text-muted-foreground transition">
                 <Mic className="w-5 h-5" />
               </button>
             )}
+
+            <button onClick={handleSend} onMouseDown={e => e.preventDefault()}
+              disabled={sending || isBlocked || !(text.trim() || files.length > 0 || docFiles.length > 0)}
+              title={t("send")}
+              className="bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground rounded-2xl p-2.5 transition">
+              {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            </button>
           </div>
         )}
       </div>

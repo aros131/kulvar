@@ -39,7 +39,7 @@ export default function ContactPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
+    <main className="min-h-screen bg-background px-4 py-10">
       <PublicNavbar />
 
       <section className="max-w-2xl mx-auto py-16 px-4">

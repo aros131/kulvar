@@ -227,6 +227,7 @@
     "checkInFormNoteLabel": "Note",
     "checkInFormNotePlaceholder": "Écris quelque chose sur ta journée…",
     "send": "Envoyer",
+    "recordVoice": "Enregistrer un message vocal",
     "downloadFile": "Télécharger le fichier",
     "messageDeleted": "Message supprimé",
     "pinned": "📌 Épinglé",
@@ -288,6 +289,7 @@
     }
   },
   "messagesList": {
+    "conversationsCount": "{count} conversations",
     "loading": "Chargement...",
     "pleaseLogin": "Merci de te connecter pour continuer.",
     "title": "📨 Messages",
@@ -717,6 +719,11 @@
     "errorLabel": "Erreur : {error}"
   },
   "programsCoach": {
+    "searchProgramsPlaceholder": "Rechercher un programme...",
+    "noSearchResults": "Aucun programme ne correspond à votre recherche.",
+    "moreActions": "Autres actions",
+    "programsCount": "{count} programmes",
+    "emptyHint": "Crée ton premier programme pour commencer à proposer du contenu à tes clients.",
     "free": "Gratuit",
     "loadError": "Impossible de charger les données.",
     "deleteWarningWithClients": "Es-tu sûr(e) de vouloir supprimer \"{name}\" ? Il est assigné à {count} clients — ils perdront aussi l'accès. Cette action est irréversible.",

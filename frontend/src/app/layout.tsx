@@ -8,6 +8,8 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import CookieBanner from "@/components/CookieBanner";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import PwaServiceWorker from "@/components/PwaServiceWorker";
+import IosSafeAreaFix from "@/components/IosSafeAreaFix";
+import NativeSplash from "@/components/NativeSplash";
 
 // Google Fonts
 const geistSans = Geist({
@@ -73,6 +75,8 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased pt-[env(safe-area-inset-top)]`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <NativeSplash />
+          <IosSafeAreaFix />
           <PwaServiceWorker />
           <EmailVerificationBanner />
           {children}

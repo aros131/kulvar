@@ -5,21 +5,61 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import clsx from "clsx";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
+const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+
 interface SidebarNavUserProps {
-  unreadCount?: number;       // notifications
-  unreadMessages?: number;    // NEW: messages
+  unreadCount?: number;       // notifications (fallback until the live fetch below resolves)
+  unreadMessages?: number;    // messages (fallback until the live fetch below resolves)
 }
 
 export default function SidebarNavUser({
-  unreadCount = 0,
-  unreadMessages = 0,
+  unreadCount: unreadCountProp = 0,
+  unreadMessages: unreadMessagesProp = 0,
 }: SidebarNavUserProps) {
   const t = useTranslations("navUser");
   const pathname = usePathname();
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(unreadCountProp);
+  const [unreadMessages, setUnreadMessages] = useState(unreadMessagesProp);
+
+  // Self-sufficient like the coach sidebar: fetch live counts here instead of
+  // trusting whatever the current page happens to pass in (most pages never
+  // computed a real value, so the badge only ever showed on the one page —
+  // the messages list — where you don't need it).
+  useEffect(() => {
+    const token = localStorage.getItem("token")?.replace(/^"+|"+$/g, "").replace(/^Bearer\s+/i, "");
+    if (!token) return;
+    fetch(`${API}/notifications/user`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+      .then(r => r.json())
+      .then(d => {
+        const notifications = Array.isArray(d?.notifications) ? d.notifications : [];
+        setUnreadCount(notifications.filter((n: { isRead: boolean }) => !n.isRead).length);
+      })
+      .catch(() => {});
+  }, [pathname]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored) return;
+    const userId = (JSON.parse(stored) as { id?: string }).id;
+    if (!userId) return;
+    const unsub = onSnapshot(query(collection(db, "chats")), (snap) => {
+      let total = 0;
+      snap.docs.forEach(d => {
+        const data = d.data() as any;
+        if (Array.isArray(data.participants) && data.participants.includes(userId)) {
+          total += Number(data[`unread_${userId}`] || 0);
+        }
+      });
+      setUnreadMessages(total);
+    });
+    return () => unsub();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

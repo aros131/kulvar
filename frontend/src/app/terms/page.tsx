@@ -9,7 +9,7 @@ export default function TermsOfServicePage() {
   const section4List = t.raw('section4List') as string[];
 
   return (
-    <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
+    <main className="min-h-screen bg-background px-4 py-10">
       <section className="max-w-3xl mx-auto prose prose-zinc dark:prose-invert">
         <h1 className="text-3xl md:text-4xl font-bold mb-2 text-foreground dark:text-white">
           {t('title')}

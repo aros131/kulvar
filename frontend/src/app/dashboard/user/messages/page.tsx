@@ -16,9 +16,10 @@ import {
 } from "firebase/firestore";
 import { useTranslations, useLocale } from "next-intl";
 import { db } from "@/lib/firebase";
-import SidebarNavUser from "@/components/ui/SidebarNavUser";
-import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
-import { ArrowRight } from "lucide-react";
+import UserPageShell from "@/components/user/UserPageShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { MessageCirclePlus, MessageSquare, Search } from "lucide-react";
 
 const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
@@ -294,142 +295,124 @@ export default function UserMessagesPage() {
   // Loading / unauth states
   if (token === undefined || loading) {
     return (
-      <div className="relative flex">
-        <div className="hidden md:block">
-          <SidebarNavUser unreadCount={0} unreadMessages={0} />
+      <UserPageShell>
+        <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
+          <p className="text-center text-muted-foreground">{t("loading")}</p>
         </div>
-        <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-          <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-            <p className="text-center text-muted-foreground">{t("loading")}</p>
-          </div>
-        </main>
-        <MobileUserBottomNav unreadNotifications={0} unreadMessages={0} />
-      </div>
+      </UserPageShell>
     );
   }
 
   if (!token) {
     return (
-      <div className="relative flex">
-        <div className="hidden md:block">
-          <SidebarNavUser unreadCount={0} unreadMessages={0} />
+      <UserPageShell>
+        <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
+          <p className="text-center text-muted-foreground">{t("pleaseLogin")}</p>
         </div>
-        <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-          <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-            <p className="text-center text-muted-foreground">{t("pleaseLogin")}</p>
-          </div>
-        </main>
-        <MobileUserBottomNav unreadNotifications={0} unreadMessages={0} />
-      </div>
+      </UserPageShell>
     );
   }
 
   return (
-    <div className="relative flex">
-      {/* Sidebar on md+ only */}
-      <div className="hidden md:block">
-        <SidebarNavUser
-          unreadCount={unreadNotifications}
-          unreadMessages={unreadMessagesTotal}
-        />
-      </div>
-
-      {/* Content */}
-      <main className="w-full min-h-screen md:ml-16 pb-16 md:pb-0">
-        <div className="mx-auto max-w-3xl px-4 md:px-6 py-6 md:py-8">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
-            <div className="flex gap-2">
-              <button
-                onClick={markAllAsRead}
-                className="text-sm text-muted-foreground hover:text-foreground transition"
-              >
-                {t("markAllRead")}
-              </button>
-              <Link
-                href="/dashboard/user/messages/start"
-                className="flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 px-3 py-2 rounded-md text-sm transition"
-              >
-                {t("newMessage")} <ArrowRight size={16} />
+    <UserPageShell unreadCount={unreadNotifications} unreadMessages={unreadMessagesTotal}>
+      <div className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-5">
+        {/* Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t("title").replace(/^📨\s*/, '')}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t("conversationsCount", { count: chats.length })}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={markAllAsRead}
+              className="text-sm text-muted-foreground hover:text-foreground transition whitespace-nowrap"
+            >
+              {t("markAllRead")}
+            </button>
+            <Button asChild size="sm" className="gap-1.5">
+              <Link href="/dashboard/user/messages/start">
+                <MessageCirclePlus className="h-4 w-4" />
+                {t("newMessage").replace(/^➕\s*/, '')}
               </Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder={t("searchPlaceholder")}
+            value={searchTerm}
+            onChange={handleSearch}
+            className="pl-9"
+          />
+        </div>
+
+        {/* List */}
+        {chats.length === 0 ? (
+          <div className="rounded-2xl border border-dashed bg-card p-10 text-center space-y-2">
+            <div className="mx-auto h-12 w-12 grid place-items-center rounded-2xl bg-primary/10">
+              <MessageSquare className="h-6 w-6 text-primary" />
             </div>
+            <p className="text-sm text-muted-foreground">{t("noMessages")}</p>
           </div>
-
-          {/* Search */}
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder={t("searchPlaceholder")}
-              value={searchTerm}
-              onChange={handleSearch}
-              className="w-full h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring border-border"
-            />
-          </div>
-
-          {/* List */}
-          {chats.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center">{t("noMessages")}</p>
-          ) : (
-            <ul className="space-y-3">
-              {chats.map((chat) => (
-                <li key={chat.id}>
-                  <Link
-                    href={`/dashboard/${user?.role || "user"}/messages/${chat.id}`}
-                    className="flex items-center gap-3 rounded-xl border border-border p-4 hover:bg-muted/50 transition"
-                  >
-                    {/* Avatar */}
-                    <div className="relative w-10 h-10 shrink-0">
-                      {chat.otherUserAvatar ? (
-                        <Image
-                          src={chat.otherUserAvatar}
-                          alt={chat.otherUserName || "profil"}
-                          fill
-                          sizes="40px"
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-foreground dark:text-zinc-100 flex items-center justify-center text-xs font-semibold">
-                          {initials(chat.otherUserName)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Texts */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-foreground truncate">
-                          {chat.otherUserName}
-                        </span>
-                        {chat.unreadCount && chat.unreadCount > 0 && (
-                          <span className="ml-2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
-                            {chat.unreadCount}
-                          </span>
-                        )}
+        ) : (
+          <ul className="space-y-2.5">
+            {chats.map((chat) => (
+              <li key={chat.id}>
+                <Link
+                  href={`/dashboard/${user?.role || "user"}/messages/${chat.id}`}
+                  className="flex items-center gap-3 rounded-2xl border bg-card p-4 hover:shadow-sm hover:border-primary/40 transition-all"
+                >
+                  {/* Avatar */}
+                  <div className="relative w-11 h-11 shrink-0">
+                    {chat.otherUserAvatar ? (
+                      <Image
+                        src={chat.otherUserAvatar}
+                        alt={chat.otherUserName || "profil"}
+                        fill
+                        sizes="44px"
+                        className="rounded-xl object-cover"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-700 dark:to-zinc-600 text-foreground dark:text-zinc-100 flex items-center justify-center text-sm font-semibold">
+                        {initials(chat.otherUserName)}
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {chat.lastMessage || t("noMessagePreview")}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                    )}
+                  </div>
+
+                  {/* Texts */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-foreground truncate">
+                        {chat.otherUserName}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">
                         {chat.updatedAt.toDate().toLocaleString(LOCALE_TAG[locale] || "tr-TR", {
                           dateStyle: "short",
                           timeStyle: "short",
                         })}
-                      </div>
+                      </span>
                     </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </main>
-
-      {/* Bottom nav on mobile */}
-      <MobileUserBottomNav
-        unreadNotifications={unreadNotifications}
-        unreadMessages={unreadMessagesTotal}
-      />
-    </div>
+                    <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <p className="text-sm text-muted-foreground truncate">
+                        {chat.lastMessage || t("noMessagePreview")}
+                      </p>
+                      {chat.unreadCount && chat.unreadCount > 0 && (
+                        <span className="shrink-0 bg-primary text-primary-foreground text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full grid place-items-center">
+                          {chat.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </UserPageShell>
   );
 }

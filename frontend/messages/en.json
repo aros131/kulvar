@@ -227,6 +227,7 @@
     "checkInFormNoteLabel": "Note",
     "checkInFormNotePlaceholder": "Write something about today…",
     "send": "Send",
+    "recordVoice": "Record a voice message",
     "downloadFile": "Download file",
     "messageDeleted": "Message deleted",
     "pinned": "📌 Pinned",
@@ -288,6 +289,7 @@
     }
   },
   "messagesList": {
+    "conversationsCount": "{count} conversations",
     "loading": "Loading...",
     "pleaseLogin": "Please log in to continue.",
     "title": "📨 Messages",
@@ -717,6 +719,11 @@
     "errorLabel": "Error: {error}"
   },
   "programsCoach": {
+    "searchProgramsPlaceholder": "Search programs...",
+    "noSearchResults": "No programs match your search.",
+    "moreActions": "More actions",
+    "programsCount": "{count} programs",
+    "emptyHint": "Create your first program to start offering content to your clients.",
     "free": "Free",
     "loadError": "Couldn't load data.",
     "deleteWarningWithClients": "Are you sure you want to delete \"{name}\"? It's assigned to {count} clients — they'll lose access to it too. This can't be undone.",

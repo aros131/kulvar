@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 px-4">
+    <main className="min-h-screen flex items-center justify-center bg-background px-4">
       <form onSubmit={handleSubmit} className="bg-card dark:bg-primary/90 p-8 rounded-lg shadow-md w-full max-w-md space-y-6">
         <h1 className="text-2xl font-bold text-center">{t('heading')}</h1>
         {errorMsg && <p className="text-red-500 text-sm">{errorMsg}</p>}

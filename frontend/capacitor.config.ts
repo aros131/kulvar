@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
     // 'https://kulvar-9kz2.vercel.app' (not persecoaching.com — that custom
     // domain still redirects to the waitlist page, see next.config.js) and
     // drop `cleartext` — a real tester can't reach your LAN IP.
-    url: 'http://192.168.16.116:3000',
+    url: 'http://192.168.16.123:3000',
     cleartext: true,
   },
 };
