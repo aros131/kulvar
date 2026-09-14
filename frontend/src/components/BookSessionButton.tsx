@@ -4,6 +4,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import BookSession from "./BookSession";
 
@@ -28,9 +29,11 @@ function cleanToken(): string | null {
 
 export default function BookSessionButton({
   coachId,
-  label = "Randevu Al",
+  label,
   isAuthed: isAuthedProp,
 }: BookSessionButtonProps) {
+  const t = useTranslations("bookSession");
+  const resolvedLabel = label ?? t("bookButton");
   const pathname = usePathname();
   const [openOnMount, setOpenOnMount] = useState(false);
   const [authed, setAuthed] = useState<boolean>(
@@ -63,12 +66,12 @@ export default function BookSessionButton({
     return (
       <Button asChild size="lg">
         <Link href={`/signup?redirect=${encodeURIComponent(redirect)}`}>
-          {label}
+          {resolvedLabel}
         </Link>
       </Button>
     );
   }
 
-  // Girişliyse: BookSession aç/kapat butonu (hash geldiyse otomatik açık)
-  return <BookSession coachId={coachId} label={label} defaultOpen={openOnMount} />;
+  // If logged in: BookSession open/close button (auto-open if hash present)
+  return <BookSession coachId={coachId} label={resolvedLabel} defaultOpen={openOnMount} />;
 }

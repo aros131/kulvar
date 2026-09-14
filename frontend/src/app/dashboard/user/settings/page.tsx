@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function UserSettingsPage() {
+  const t = useTranslations('settingsUser');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword,     setNewPassword]     = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -57,8 +59,8 @@ export default function UserSettingsPage() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) { toast.error('Yeni şifreler eşleşmiyor.'); return; }
-    if (newPassword.length < 6)          { toast.error('Şifre en az 6 karakter olmalı.'); return; }
+    if (newPassword !== confirmPassword) { toast.error(t('passwordMismatch')); return; }
+    if (newPassword.length < 6)          { toast.error(t('passwordTooShort')); return; }
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -69,24 +71,24 @@ export default function UserSettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      toast.success('Şifre başarıyla güncellendi.');
+      toast.success(t('passwordUpdated'));
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Bir hata oluştu.');
+      toast.error(err instanceof Error ? err.message : t('errorGeneric'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     const token = localStorage.getItem('token');
     const res = await fetch(`${API}/auth/delete-account`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) { localStorage.clear(); document.cookie = "token=; path=/; max-age=0; SameSite=Lax"; window.location.href = '/'; }
-    else toast.error('Hesap silinemedi.');
+    else toast.error(t('deleteError'));
   };
 
   const savePrefs = async () => {
@@ -99,9 +101,9 @@ export default function UserSettingsPage() {
         body: JSON.stringify(prefs),
       });
       if (!res.ok) throw new Error();
-      toast.success('Bildirim tercihleri kaydedildi.');
+      toast.success(t('prefsSaved'));
     } catch {
-      toast.error('Kaydedilemedi.');
+      toast.error(t('prefsSaveError'));
     } finally {
       setSavingPrefs(false);
     }
@@ -111,50 +113,50 @@ export default function UserSettingsPage() {
     <UserPageShell>
       <div className="max-w-xl mx-auto px-4 py-8 md:py-10 space-y-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ayarlar</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Hesap ve bildirim tercihlerini yönet.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('heading')}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('subtitle')}</p>
         </div>
 
         {/* Hesap */}
-        <Section title="Hesap Bilgileri">
+        <Section title={t('accountInfo')}>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">E-posta</Label>
+            <Label className="text-xs text-muted-foreground">{t('emailLabel')}</Label>
             <Input value={email} disabled className="bg-muted/50" />
-            <p className="text-xs text-muted-foreground">E-posta değişikliği için destek ekibiyle iletişime geçin.</p>
+            <p className="text-xs text-muted-foreground">{t('emailChangeHint')}</p>
           </div>
         </Section>
 
         {/* Şifre */}
-        <Section title="Şifre Değiştir">
+        <Section title={t('changePassword')}>
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Mevcut Şifre</Label>
+              <Label className="text-xs text-muted-foreground">{t('currentPassword')}</Label>
               <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Yeni Şifre</Label>
+              <Label className="text-xs text-muted-foreground">{t('newPassword')}</Label>
               <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Yeni Şifre (Tekrar)</Label>
+              <Label className="text-xs text-muted-foreground">{t('confirmNewPassword')}</Label>
               <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Kaydediliyor…' : 'Şifreyi Güncelle'}
+              {loading ? t('saving') : t('updatePassword')}
             </Button>
           </form>
         </Section>
 
         {/* Bildirim tercihleri */}
-        <Section title="Bildirim Tercihleri">
+        <Section title={t('notifPrefs')}>
           <div className="space-y-5">
             <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Uygulama İçi</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('inApp')}</p>
               {([
-                ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
-                ['bookingUpdates',  'Randevu durumu değişiklikleri'],
-                ['messages',        'Mesajlar'],
-                ['reviews',         'Değerlendirme bildirimleri'],
+                ['bookingRequests', t('bookingRequests')],
+                ['bookingUpdates',  t('bookingUpdates')],
+                ['messages',        t('messages')],
+                ['reviews',         t('reviews')],
               ] as [keyof NotifPrefs['inApp'], string][]).map(([key, label]) => (
                 <div key={key} className="flex items-center justify-between">
                   <Label className="font-normal text-sm">{label}</Label>
@@ -169,12 +171,12 @@ export default function UserSettingsPage() {
             <div className="h-px bg-border" />
 
             <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">E-posta</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('email')}</p>
               {([
-                ['bookingRequests', 'Randevu onayları ve ret bildirimleri'],
-                ['bookingUpdates',  'Randevu durumu değişiklikleri'],
-                ['messages',        'Mesajlar'],
-                ['weeklyReport',    'Haftalık özet'],
+                ['bookingRequests', t('bookingRequests')],
+                ['bookingUpdates',  t('bookingUpdates')],
+                ['messages',        t('messages')],
+                ['weeklyReport',    t('weeklyReport')],
               ] as [keyof NotifPrefs['email'], string][]).map(([key, label]) => (
                 <div key={key} className="flex items-center justify-between">
                   <Label className="font-normal text-sm">{label}</Label>
@@ -188,15 +190,15 @@ export default function UserSettingsPage() {
           </div>
 
           <Button onClick={savePrefs} disabled={savingPrefs} className="w-full mt-2">
-            {savingPrefs ? 'Kaydediliyor…' : 'Tercihleri Kaydet'}
+            {savingPrefs ? t('saving') : t('savePrefs')}
           </Button>
         </Section>
 
         {/* Tehlikeli Alan */}
         <section className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 space-y-3">
-          <h2 className="text-base font-semibold text-destructive">Tehlikeli Alan</h2>
-          <p className="text-sm text-muted-foreground">Hesabınızı silerseniz tüm verileriniz kalıcı olarak silinir.</p>
-          <Button variant="destructive" onClick={handleDeleteAccount}>Hesabı Sil</Button>
+          <h2 className="text-base font-semibold text-destructive">{t('dangerZone')}</h2>
+          <p className="text-sm text-muted-foreground">{t('dangerZoneDesc')}</p>
+          <Button variant="destructive" onClick={handleDeleteAccount}>{t('deleteAccount')}</Button>
         </section>
       </div>
     </UserPageShell>

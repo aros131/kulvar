@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import UserPageShell from "@/components/user/UserPageShell";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 interface Program { _id: string; name: string; }
 interface CheckIn {
@@ -36,17 +38,10 @@ function currentWeekRange() {
 }
 
 const SCALE = [1, 2, 3, 4, 5];
-const SCALE_LABELS: Record<string, [string, string]> = {
-  energyLevel:  ["Çok Düşük", "Çok Yüksek"],
-  sleepQuality: ["Çok Kötü",  "Mükemmel"],
-  stressLevel:  ["Hiç Yok",   "Çok Fazla"],
-  soreness:     ["Hiç Yok",   "Çok Fazla"],
-};
 
-function ScaleInput({ label, field, value, onChange }: {
-  label: string; field: string; value: number | null; onChange: (v: number) => void;
+function ScaleInput({ label, lo, hi, value, onChange }: {
+  label: string; lo: string; hi: string; value: number | null; onChange: (v: number) => void;
 }) {
-  const [lo, hi] = SCALE_LABELS[field] ?? ["", ""];
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">{label}</label>
@@ -72,21 +67,23 @@ function ScaleInput({ label, field, value, onChange }: {
 }
 
 function CheckInCard({ c }: { c: CheckIn }) {
+  const t = useTranslations("checkIn");
+  const locale = useLocale();
   const d = new Date(c.date);
   return (
     <div className="rounded-2xl border bg-card px-4 py-3 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-sm">{c.week}. Hafta</span>
-        <span className="text-xs text-muted-foreground">{d.toLocaleDateString("tr-TR")}</span>
+        <span className="font-semibold text-sm">{t("weekLabel", { week: c.week })}</span>
+        <span className="text-xs text-muted-foreground">{d.toLocaleDateString(LOCALE_TAG[locale] || "tr-TR")}</span>
       </div>
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
         {c.weight != null && <span>⚖️ {c.weight} kg</span>}
-        {c.energyLevel != null && <span>⚡ Enerji {c.energyLevel}/5</span>}
-        {c.sleepQuality != null && <span>😴 Uyku {c.sleepQuality}/5</span>}
-        {c.stressLevel != null && <span>🧠 Stres {c.stressLevel}/5</span>}
-        {c.soreness != null && <span>🤕 Kas Ağrısı {c.soreness}/5</span>}
-        {c.steps != null && <span>👣 {c.steps.toLocaleString("tr-TR")} adım</span>}
-        {c.completedWorkouts != null && <span>💪 {c.completedWorkouts} antrenman</span>}
+        {c.energyLevel != null && <span>{t("energyShort", { value: c.energyLevel })}</span>}
+        {c.sleepQuality != null && <span>{t("sleepShort", { value: c.sleepQuality })}</span>}
+        {c.stressLevel != null && <span>{t("stressShort", { value: c.stressLevel })}</span>}
+        {c.soreness != null && <span>{t("sorenessShort", { value: c.soreness })}</span>}
+        {c.steps != null && <span>{t("stepsShort", { value: c.steps.toLocaleString(LOCALE_TAG[locale] || "tr-TR") })}</span>}
+        {c.completedWorkouts != null && <span>{t("workoutsShort", { value: c.completedWorkouts })}</span>}
       </div>
       {c.note && <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">{c.note}</p>}
     </div>
@@ -94,6 +91,7 @@ function CheckInCard({ c }: { c: CheckIn }) {
 }
 
 export default function CheckInPage() {
+  const t = useTranslations("checkIn");
   const [programs, setPrograms] = useState<Program[]>([]);
   const [history, setHistory] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,9 +158,9 @@ export default function CheckInPage() {
       setHistory(prev => [data.checkIn, ...prev]);
       setShowForm(false);
       setWeight(""); setEnergy(null); setSleep(null); setStress(null); setSoreness(null); setSteps(""); setNote("");
-      toast.success("Check-in gönderildi! Koçun görebilir.");
+      toast.success(t("submitSuccess"));
     } catch {
-      toast.error("Gönderilemedi.");
+      toast.error(t("submitError"));
     } finally {
       setSubmitting(false);
     }
@@ -172,14 +170,14 @@ export default function CheckInPage() {
     <UserPageShell>
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Haftalık Check-in</h1>
+          <h1 className="text-2xl font-bold">{t("heading")}</h1>
           <Button onClick={() => setShowForm(v => !v)} variant={showForm ? "outline" : "default"}>
-            {showForm ? "İptal" : "Check-in Gönder"}
+            {showForm ? t("cancel") : t("sendCheckIn")}
           </Button>
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Her hafta nasıl hissettiğini koçunla paylaş. Bu bilgiler programını optimize etmesine yardımcı olur.
+          {t("intro")}
         </p>
 
         {/* Form */}
@@ -187,7 +185,7 @@ export default function CheckInPage() {
           <form onSubmit={submit} className="rounded-2xl border bg-card p-5 space-y-5">
             {programs.length > 1 && (
               <div>
-                <label className="text-sm font-medium">Program</label>
+                <label className="text-sm font-medium">{t("programLabel")}</label>
                 <select
                   value={programId}
                   onChange={e => setProgramId(e.target.value)}
@@ -199,7 +197,7 @@ export default function CheckInPage() {
             )}
 
             <div>
-              <label className="text-sm font-medium">Hafta</label>
+              <label className="text-sm font-medium">{t("weekFormLabel")}</label>
               <input
                 type="number"
                 min={1}
@@ -210,56 +208,56 @@ export default function CheckInPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Kilo (kg, isteğe bağlı)</label>
+              <label className="text-sm font-medium">{t("weightLabel")}</label>
               <input
                 type="number"
                 step="0.1"
                 min="0"
                 value={weight}
                 onChange={e => setWeight(e.target.value)}
-                placeholder="örn. 78.5"
+                placeholder={t("weightPlaceholder")}
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Günlük Ortalama Adım (isteğe bağlı)</label>
+              <label className="text-sm font-medium">{t("stepsLabel")}</label>
               <input
                 type="number"
                 min="0"
                 value={steps}
                 onChange={e => setSteps(e.target.value)}
-                placeholder="örn. 8000"
+                placeholder={t("stepsPlaceholder")}
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               />
             </div>
 
-            <ScaleInput label="Enerji Seviyesi" field="energyLevel" value={energy} onChange={setEnergy} />
-            <ScaleInput label="Uyku Kalitesi" field="sleepQuality" value={sleep} onChange={setSleep} />
-            <ScaleInput label="Stres Seviyesi" field="stressLevel" value={stress} onChange={setStress} />
-            <ScaleInput label="Kas Ağrısı" field="soreness" value={soreness} onChange={setSoreness} />
+            <ScaleInput label={t("energyLevel")} lo={t("energyLow")} hi={t("energyHigh")} value={energy} onChange={setEnergy} />
+            <ScaleInput label={t("sleepQuality")} lo={t("sleepLow")} hi={t("sleepHigh")} value={sleep} onChange={setSleep} />
+            <ScaleInput label={t("stressLevel")} lo={t("stressLow")} hi={t("stressHigh")} value={stress} onChange={setStress} />
+            <ScaleInput label={t("sorenessLevel")} lo={t("sorenessLow")} hi={t("sorenessHigh")} value={soreness} onChange={setSoreness} />
 
             <div>
-              <label className="text-sm font-medium">Bu hafta tamamlanan antrenman sayısı</label>
+              <label className="text-sm font-medium">{t("completedWorkoutsLabel")}</label>
               <div className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-                <span className="font-semibold">💪 {autoWorkoutCount ?? 0} antrenman</span>
-                <span className="text-xs text-muted-foreground">— takviminden otomatik hesaplandı</span>
+                <span className="font-semibold">{t("workoutsAuto", { count: autoWorkoutCount ?? 0 })}</span>
+                <span className="text-xs text-muted-foreground">{t("workoutsAutoHint")}</span>
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Not / Koça mesaj (isteğe bağlı)</label>
+              <label className="text-sm font-medium">{t("noteLabel")}</label>
               <textarea
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 rows={3}
-                placeholder="Bu hafta nasıl geçti? Zorluk yaşadın mı?"
+                placeholder={t("notePlaceholder")}
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
               />
             </div>
 
             <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? "Gönderiliyor..." : "Gönder"}
+              {submitting ? t("submitting") : t("send")}
             </Button>
           </form>
         )}
@@ -272,12 +270,12 @@ export default function CheckInPage() {
         ) : history.length === 0 ? (
           <div className="text-center py-12 space-y-2">
             <p className="text-4xl">📋</p>
-            <p className="font-semibold">Henüz check-in yok</p>
-            <p className="text-sm text-muted-foreground">İlk haftalık check-in'ini gönder.</p>
+            <p className="font-semibold">{t("emptyTitle")}</p>
+            <p className="text-sm text-muted-foreground">{t("emptyDesc")}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Geçmiş</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t("historyTitle")}</h2>
             {history.map(c => <CheckInCard key={c._id} c={c} />)}
           </div>
         )}

@@ -1,30 +1,70 @@
-async function chat(systemPrompt, userPrompt, maxTokens = 800) {
+const DEFAULT_TIMEOUT_MS = 20000;
+const DEFAULT_RETRIES = 2; // total attempts = retries + 1
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Single entry point for every AI feature. `critical` marks features where a
+// wrong-but-confident answer (injury risk, nutrition extraction) is worse than
+// no answer: on total failure it throws with `.aiUnavailable = true` instead
+// of ever letting a caller fall back to a fabricated default.
+async function chat(systemPrompt, userPrompt, {
+  maxTokens = 800,
+  model,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  retries = DEFAULT_RETRIES,
+  critical = false,
+} = {}) {
   const BASE_URL = process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1';
   const API_KEY  = process.env.NVIDIA_API_KEY;
-  const MODEL    = process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct';
+  const MODEL    = model || process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct';
 
-  const res = await fetch(`${BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userPrompt },
-      ],
-      max_tokens: maxTokens,
-      temperature: 0.7,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`NVIDIA API hatası: ${res.status} ${err}`);
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${BASE_URL}/chat/completions`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: userPrompt },
+          ],
+          max_tokens: maxTokens,
+          temperature: 0.7,
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        // Retrying a bad request (4xx other than 429) would just fail again identically.
+        if (res.status !== 429 && res.status < 500) {
+          throw Object.assign(new Error(`NVIDIA API hatası: ${res.status} ${errText}`), { noRetry: true });
+        }
+        throw new Error(`NVIDIA API hatası: ${res.status} ${errText}`);
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content?.trim() || '';
+    } catch (e) {
+      lastErr = e.name === 'AbortError' ? new Error(`NVIDIA API zaman aşımı (${timeoutMs}ms)`) : e;
+      if (e.noRetry || attempt === retries) break;
+      await sleep(Math.min(2000, 400 * 2 ** attempt));
+    } finally {
+      clearTimeout(timer);
+    }
   }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || '';
+
+  if (critical) {
+    throw Object.assign(new Error(`AI servisi şu an yanıt veremiyor: ${lastErr?.message}`), { aiUnavailable: true });
+  }
+  throw lastErr;
 }
 
 // ─── Check-in Analizi ────────────────────────────────────────────────────────
@@ -51,7 +91,7 @@ Bu verilere göre:
 
 Kısa tut, madde madde yaz.`;
 
-  return chat(system, user, 600);
+  return chat(system, user, { maxTokens: 600 });
 }
 
 // ─── Check-in Yanıtı ─────────────────────────────────────────────────────────
@@ -68,7 +108,7 @@ Not: ${checkIn.note || 'yok'}
 
 Bu danışana 3-5 cümlelik, motive edici, kişisel bir yanıt yaz. Selamlama ile başla, veriyi referans al, haftaya dair bir öneri ile bitir.`;
 
-  return chat(system, user, 400);
+  return chat(system, user, { maxTokens: 400 });
 }
 
 // ─── Program Üretici ─────────────────────────────────────────────────────────
@@ -104,7 +144,7 @@ Aşağıdaki JSON formatında ${daysPerWeek} günlük program oluştur:
 
 Sadece JSON döndür, başka açıklama ekleme.`;
 
-  const raw = await chat(system, user, 1200);
+  const raw = await chat(system, user, { maxTokens: 1200 });
   // JSON'u ayıkla
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('AI geçerli JSON üretmedi');
@@ -125,7 +165,7 @@ Bu egzersizin 3 alternatifini öner. Her biri için:
 - Neden iyi bir alternatif olduğu (1 cümle)
 - Set/tekrar önerisi`;
 
-  return chat(system, user, 400);
+  return chat(system, user, { maxTokens: 400 });
 }
 
 // ─── Beslenme Planı ──────────────────────────────────────────────────────────
@@ -149,7 +189,7 @@ Danışan Bilgileri:
 
 Kısa ve pratik tut.`;
 
-  return chat(system, user, 700);
+  return chat(system, user, { maxTokens: 700 });
 }
 
 // ─── Öğün Kalori/Makro Tahmini ───────────────────────────────────────────────
@@ -169,7 +209,7 @@ JSON formatında dön:
 
 Sadece JSON döndür, başka açıklama ekleme. Değerler tam sayı olsun.`;
 
-  const raw = await chat(system, user, 200);
+  const raw = await chat(system, user, { maxTokens: 200, critical: true });
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('AI geçerli JSON üretmedi');
   const parsed = JSON.parse(match[0]);
@@ -178,6 +218,60 @@ Sadece JSON döndür, başka açıklama ekleme. Değerler tam sayı olsun.`;
     protein: Number(parsed.protein) || 0,
     carbs: Number(parsed.carbs) || 0,
     fat: Number(parsed.fat) || 0,
+  };
+}
+
+// ─── PDF'ten Beslenme Planı Çıkarımı ────────────────────────────────────────
+export async function extractNutritionPlanFromText(text) {
+  const trimmed = (text || '').replace(/\s+/g, ' ').trim().slice(0, 8000);
+  if (!trimmed) throw new Error('PDF içinde okunabilir metin bulunamadı. Taranmış bir görüntü olabilir.');
+
+  const system = `Sen bir beslenme planı belgesi analiz eden asistansın. Sana bir PDF'ten çıkarılmış ham metin verilecek (bir diyetisyen/koç tarafından hazırlanmış beslenme planı). Bu metindeki öğünleri, günlük kalori hedefini, makro hedeflerini ve varsa pratik ipuçlarını ayıklayıp yapılandırılmış JSON'a dönüştürüyorsun. Metin PDF çıkışı olduğu için dağınık olabilir (satır kırılmaları, tablo kalıntıları vb.) — anlamı çıkar, birebir kopyalama. Metinde gerçekten geçmeyen bilgiyi uydurma.`;
+
+  const user = `Aşağıdaki beslenme planı metninden bilgileri çıkar:
+
+"""${trimmed}"""
+
+Aşağıdaki JSON formatında dön:
+{
+  "meals": [ { "name": "Kahvaltı", "description": "2 yumurta, tam buğday ekmek, ...", "time": "08:00" } ],
+  "dailyCalorieTarget": 0000,
+  "macroTargets": { "protein": 000, "carbs": 000, "fat": 00 },
+  "tips": ["..."]
+}
+
+Kurallar:
+- Sadece metinde gerçekten geçen/anlaşılan bilgileri kullan.
+- Bir alan metinde yoksa null bırak (meals ve tips için boş dizi kullan).
+- "time" alanı HH:mm formatında olsun, belirtilmemişse boş string bırak.
+- Sadece JSON döndür, başka açıklama ekleme.`;
+
+  const raw = await chat(system, user, { maxTokens: 1500, critical: true });
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('AI geçerli JSON üretmedi');
+  const parsed = JSON.parse(match[0]);
+
+  const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+
+  return {
+    meals: Array.isArray(parsed.meals)
+      ? parsed.meals
+          .filter((m) => m && (m.name || m.description))
+          .map((m) => ({
+            name: String(m.name || '').trim(),
+            description: String(m.description || '').trim(),
+            time: String(m.time || '').trim(),
+          }))
+      : [],
+    dailyCalorieTarget: num(parsed.dailyCalorieTarget),
+    macroTargets: {
+      protein: num(parsed?.macroTargets?.protein),
+      carbs: num(parsed?.macroTargets?.carbs),
+      fat: num(parsed?.macroTargets?.fat),
+    },
+    tips: Array.isArray(parsed.tips)
+      ? parsed.tips.filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim())
+      : [],
   };
 }
 
@@ -212,7 +306,7 @@ JSON formatında dön:
 
 Sadece JSON döndür.`;
 
-  const raw = await chat(system, user, 600);
+  const raw = await chat(system, user, { maxTokens: 600 });
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('AI geçerli JSON üretmedi');
   return JSON.parse(match[0]);
@@ -257,7 +351,7 @@ JSON formatında dön:
 
 Sadece JSON döndür, başka hiçbir şey yazma.`;
 
-  const raw = await chat(system, user, 500);
+  const raw = await chat(system, user, { maxTokens: 500 });
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('AI geçerli JSON üretmedi');
   const parsed = JSON.parse(match[0]);
@@ -302,7 +396,7 @@ Bu verilere göre danışanın platformu terk etme riskini değerlendir. Sadece 
 }
 Sadece JSON dön.`;
 
-  const raw = await chat(system, user, 400);
+  const raw = await chat(system, user, { maxTokens: 400 });
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) return { level: 'low', reasons: ['Veri yetersiz'], action: 'Düzenli takip edin.' };
   try {
@@ -333,7 +427,7 @@ Mevcut program:
 
 Bu verilere göre koça 2-3 somut program düzenleme önerisi ver. Örneğin: yoğunluk azaltma, dinlenme haftası, egzersiz değişikliği, kalori ayarı. Her öneri 1-2 cümle olsun.`;
 
-  return chat(system, user, 500);
+  return chat(system, user, { maxTokens: 500 });
 }
 
 // ─── Yaralanma Risk Tespiti ──────────────────────────────────────────────────
@@ -365,7 +459,7 @@ Bu bilgilere göre:
 
 Kısa tut, 4-6 cümle.`;
 
-  return chat(system, user, 400);
+  return chat(system, user, { maxTokens: 400, critical: true });
 }
 
 // ─── Sosyal Medya İçerik Üretici ─────────────────────────────────────────────
@@ -387,7 +481,7 @@ JSON formatında dön:
 }
 Sadece JSON dön.`;
 
-  const raw = await chat(system, user, 500);
+  const raw = await chat(system, user, { maxTokens: 500 });
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('AI içerik üretemedi');
   return JSON.parse(match[0]);
@@ -426,7 +520,7 @@ Bu verileri değerlendir:
 
 Profesyonel ama samimi bir dil kullan, 200-250 kelime.`;
 
-  return chat(system, user, 600);
+  return chat(system, user, { maxTokens: 600 });
 }
 
 // ─── Haftalık Danışan Raporu ──────────────────────────────────────────────────
@@ -451,7 +545,7 @@ Bu haftanın özet raporunu yaz:
 
 Samimi, kişisel ve motive edici bir dil kullan. Toplam 4-6 cümle.`;
 
-  return chat(system, user, 400);
+  return chat(system, user, { maxTokens: 400 });
 }
 
 // ─── İlerleme Raporu ─────────────────────────────────────────────────────────
@@ -480,5 +574,5 @@ Bu verilerle:
 
 Profesyonel ama sıcak bir dil kullan.`;
 
-  return chat(system, user, 700);
+  return chat(system, user, { maxTokens: 700 });
 }

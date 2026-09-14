@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface ProgramGeneralFormProps {
   programId: string;
@@ -36,6 +37,21 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
   programId,
   onSuccess,
 }) => {
+  const t = useTranslations("programGeneralForm");
+  const tp = useTranslations("programCreate");
+  const difficultyLabels: Record<string, string> = {
+    "Başlangıç": tp("difficultyBeginner"),
+    "Orta Düzey": tp("difficultyIntermediate"),
+    "İleri Seviye": tp("difficultyAdvanced"),
+  };
+  const goalLabels: Record<string, string> = {
+    "Kilo Kaybı": tp("goalWeightLoss"),
+    "Kas Kazanımı": tp("goalMuscleGain"),
+    "Dayanıklılık": tp("goalEndurance"),
+    "Genel Fitness": tp("goalGeneralFitness"),
+    "Genel Fitness ve Güç Geliştirme": tp("goalGeneralFitnessStrength"),
+    "Hedefe Özel Gelişim": tp("goalCustom"),
+  };
   const [program, setProgram] = useState<Program | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -63,7 +79,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
         setProgram(res.data.program);
       } catch (error) {
         console.error("❌ Program verisi alınamadı:", error);
-        toast.error("Program verisi alınamadı.");
+        toast.error(t("loadError"));
       } finally {
         setLoading(false);
       }
@@ -72,9 +88,9 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
     fetchProgram();
   }, [programId]);
 
-  if (!programId) return <p>Program ID geçersiz.</p>;
-  if (loading) return <p>Yükleniyor...</p>;
-  if (!program) return <p>Program bulunamadı.</p>;
+  if (!programId) return <p>{t("invalidId")}</p>;
+  if (loading) return <p>{t("loading")}</p>;
+  if (!program) return <p>{t("notFound")}</p>;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -106,7 +122,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
 
       if (!res.ok) throw new Error("Sunucu hatası");
 
-      toast.success("✅ Program başarıyla güncellendi.");
+      toast.success(t("updateSuccess"));
 
       if (onSuccess) {
         onSuccess();
@@ -115,7 +131,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
       }
     } catch (err) {
       console.error("❌ Güncelleme hatası:", err);
-      toast.error("Program güncellenirken hata oluştu.");
+      toast.error(t("updateError"));
     } finally {
       setSubmitting(false);
     }
@@ -124,12 +140,12 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <Label htmlFor="name">Program Adı</Label>
+        <Label htmlFor="name">{tp("programNameLabel")}</Label>
         <Input name="name" value={program.name} onChange={handleChange} />
       </div>
 
       <div>
-        <Label htmlFor="description">Açıklama</Label>
+        <Label htmlFor="description">{tp("descriptionLabel")}</Label>
         <Textarea
           name="description"
           value={program.description}
@@ -138,7 +154,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="duration">Süre (hafta)</Label>
+        <Label htmlFor="duration">{tp("durationLabel")}</Label>
         <Input
           name="duration"
           type="number"
@@ -148,18 +164,18 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
       </div>
 
       <div>
-        <Label>Zorluk Seviyesi</Label>
+        <Label>{tp("difficultyLabel")}</Label>
         <Select
           value={program.difficulty}
           onValueChange={(val) => handleSelectChange("difficulty", val)}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Seçin" />
+            <SelectValue placeholder={t("selectPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
             {difficultyOptions.map((level) => (
               <SelectItem key={level} value={level}>
-                {level}
+                {difficultyLabels[level]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -167,18 +183,18 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
       </div>
 
       <div>
-        <Label>Fitness Hedefi</Label>
+        <Label>{tp("goalLabel")}</Label>
         <Select
           value={program.fitnessGoal}
           onValueChange={(val) => handleSelectChange("fitnessGoal", val)}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Seçin" />
+            <SelectValue placeholder={t("selectPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
             {fitnessGoals.map((goal) => (
               <SelectItem key={goal} value={goal}>
-                {goal}
+                {goalLabels[goal]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -186,7 +202,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="priceCents">Program Fiyatı (₺)</Label>
+        <Label htmlFor="priceCents">{tp("priceLabel")}</Label>
         <div className="relative mt-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₺</span>
           <Input
@@ -194,7 +210,7 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
             type="number"
             min={0}
             step={1}
-            placeholder="0 — ücretsiz"
+            placeholder={tp("pricePlaceholder")}
             value={program.priceCents != null ? program.priceCents / 100 : ""}
             onChange={(e) => {
               const val = e.target.value === "" ? null : Math.round(Number(e.target.value) * 100);
@@ -202,11 +218,11 @@ const ProgramGeneralForm: React.FC<ProgramGeneralFormProps> = ({
             }}
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Boş bırakırsanız program ücretsiz görünür.</p>
+        <p className="text-xs text-muted-foreground mt-1">{t("priceHint")}</p>
       </div>
 
       <Button className="w-full" onClick={handleSubmit} disabled={submitting}>
-        {submitting ? "Güncelleniyor..." : "Güncelle"}
+        {submitting ? t("updating") : t("update")}
       </Button>
     </div>
   );

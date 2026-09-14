@@ -9,6 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 interface DeleteProgramDialogProps {
   programId: string;
@@ -21,6 +22,7 @@ export default function DeleteProgramDialog({
   programName,
   onDelete,
 }: DeleteProgramDialogProps) {
+  const t = useTranslations("deleteProgramDialog");
   const handleDelete = async () => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/programs/${programId}`, {
@@ -31,8 +33,8 @@ export default function DeleteProgramDialog({
       });
 
       if (res.ok) {
-        alert("✅ Program silindi.");
-        onDelete(); // üst listeyi refreshle
+        alert(t("deleted"));
+        onDelete(); // refresh parent list
       }
     } catch (err) {
       console.error("❌ Silme hatası:", err);
@@ -42,20 +44,17 @@ export default function DeleteProgramDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="bg-red-500 text-white px-3 py-1 rounded">Sil</button>
+        <button className="bg-red-500 text-white px-3 py-1 rounded">{t("deleteButton")}</button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Programı Sil</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
-        <p>
-          <strong>{programName}</strong> adlı programı silmek istediğinizden emin
-          misiniz?
-        </p>
+        <p>{t.rich("confirmText", { name: programName, b: (chunks) => <strong>{chunks}</strong> })}</p>
         <DialogFooter className="mt-4">
-          <Button variant="outline">Vazgeç</Button>
+          <Button variant="outline">{t("cancel")}</Button>
           <Button variant="destructive" onClick={handleDelete}>
-            Sil
+            {t("deleteButton")}
           </Button>
         </DialogFooter>
       </DialogContent>

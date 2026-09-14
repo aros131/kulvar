@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { MessageCircle, ChevronRight, Search, Sparkles, Loader2 } from 'lucide-react';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
@@ -21,10 +22,10 @@ interface RiskResult {
   action: string;
 }
 
-const RISK_BADGE: Record<string, { label: string; cls: string }> = {
-  high: { label: 'Yüksek Risk', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  medium: { label: 'İzle', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-  low: { label: 'İyi', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+const RISK_BADGE_CLS: Record<string, string> = {
+  high: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  medium: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  low: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
 };
 
 interface Program {
@@ -55,6 +56,7 @@ function getChatId(coachId: string, clientId: string) {
 }
 
 export default function CoachClientsPage() {
+  const t = useTranslations('clientsCoach');
   const [clients, setClients] = useState<Client[]>([]);
   const [clientPrograms, setClientPrograms] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
@@ -93,9 +95,29 @@ export default function CoachClientsPage() {
         setClients(Array.from(clientMap.values()));
         setClientPrograms(programMap);
       })
-      .catch(() => toast.error('Danışanlar yüklenemedi.'))
+      .catch(() => toast.error(t('loadError')))
       .finally(() => setLoading(false));
   }, []);
+
+  // Followers without an assigned program yet still count as "my clients" here —
+  // merge them in without clobbering the richer program-derived entries above.
+  useEffect(() => {
+    if (!coachId) return;
+    fetch(`${API}/coaches/${coachId}/followers?limit=100`)
+      .then((r) => r.json())
+      .then((data) => {
+        const items: { id: string; name: string; avatarUrl?: string }[] = Array.isArray(data.items) ? data.items : [];
+        setClients((prev) => {
+          const map = new Map(prev.map((c) => [c._id, c]));
+          for (const f of items) {
+            if (!f.id || map.has(f.id)) continue;
+            map.set(f.id, { _id: f.id, name: f.name, email: '', profilePicture: f.avatarUrl || undefined });
+          }
+          return Array.from(map.values());
+        });
+      })
+      .catch(() => {});
+  }, [coachId]);
 
   const analyzeAllRisks = async () => {
     if (clients.length === 0) return;
@@ -118,8 +140,8 @@ export default function CoachClientsPage() {
     setRiskResults(results);
     setRiskLoading(false);
     const highCount = Object.values(results).filter(r => r.level === 'high').length;
-    if (highCount > 0) toast.error(`${highCount} danışan yüksek risk taşıyor!`);
-    else toast.success('Risk analizi tamamlandı.');
+    if (highCount > 0) toast.error(t('highRiskWarning', { count: highCount }));
+    else toast.success(t('riskAnalysisDone'));
   };
 
   const q = search.toLowerCase();
@@ -144,8 +166,8 @@ export default function CoachClientsPage() {
       <div className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Danışanlarım</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{clients.length} danışan atanmış</p>
+            <h1 className="text-2xl font-bold">{t('heading')}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t('clientsAssigned', { count: clients.length })}</p>
           </div>
           {clients.length > 0 && (
             <button
@@ -154,7 +176,7 @@ export default function CoachClientsPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-60 transition-colors"
             >
               {riskLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {riskLoading ? 'Analiz ediliyor...' : 'AI Risk Analizi'}
+              {riskLoading ? t('analyzing') : t('aiRiskAnalysis')}
             </button>
           )}
         </div>
@@ -164,7 +186,7 @@ export default function CoachClientsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="İsim veya e-posta ara..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-10 rounded-xl border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -175,11 +197,11 @@ export default function CoachClientsPage() {
           <div className="text-center py-16 space-y-2 text-muted-foreground">
             <p className="text-4xl">👥</p>
             <p className="font-semibold">
-              {clients.length === 0 ? 'Henüz danışan atanmamış' : 'Sonuç bulunamadı'}
+              {clients.length === 0 ? t('noClientsYet') : t('noResults')}
             </p>
             {clients.length === 0 && (
               <Link href="/dashboard/coach/programs" className="text-sm text-primary hover:underline">
-                Programlarınıza danışan atayın →
+                {t('assignClientsCta')}
               </Link>
             )}
           </div>
@@ -190,7 +212,9 @@ export default function CoachClientsPage() {
               const chatId = coachId ? getChatId(coachId, client._id) : null;
 
               const risk = riskResults[client._id];
-              const badge = risk ? RISK_BADGE[risk.level] : null;
+              const badge = risk
+                ? { label: t(risk.level === 'high' ? 'riskHigh' : risk.level === 'medium' ? 'riskMedium' : 'riskLow'), cls: RISK_BADGE_CLS[risk.level] }
+                : null;
 
               return (
                 <li key={client._id} className="group bg-card border rounded-xl hover:shadow-sm transition-all">
@@ -238,7 +262,7 @@ export default function CoachClientsPage() {
                       {risk && (
                         <button
                           onClick={(e) => { e.preventDefault(); setExpandedRisk(expandedRisk === client._id ? null : client._id); }}
-                          title="Detay"
+                          title={t('detail')}
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-violet-600 hover:bg-violet-100 transition-colors"
                         >
                           <Sparkles className="h-4 w-4" />
@@ -247,7 +271,7 @@ export default function CoachClientsPage() {
                       {chatId && (
                         <Link
                           href={`/dashboard/coach/messages/${chatId}`}
-                          title="Mesaj Gönder"
+                          title={t('sendMessage')}
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >

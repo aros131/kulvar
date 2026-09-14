@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2, Copy, Clock, Paperclip, X, Play, ImageIcon, Loader2 } from "lucide-react";
 const MEDIA_API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   EXERCISE_LIBRARY,
   PROGRAM_TEMPLATES,
@@ -64,28 +65,20 @@ interface Props {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DAY_NAMES = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-
-const TYPE_LABELS: Record<ExerciseType, string> = {
-  strength: "Güç",
-  cardio: "Kardiyo",
-  isometric: "İzometrik",
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeBlankExercise(): Exercise {
   return { name: "", type: "strength", sets: 3, reps: 10, weight: null, restTime: 60, videoUrls: [] };
 }
-function makeEmptyDay(idx: number): DailyEntry {
-  return { day: DAY_NAMES[idx % 7], notes: "", sessions: [] };
+function makeEmptyDay(idx: number, dayNames: string[]): DailyEntry {
+  return { day: dayNames[idx % 7], notes: "", sessions: [] };
 }
-function ensureDaysLength(days: DailyEntry[], weeks: number): DailyEntry[] {
+function ensureDaysLength(days: DailyEntry[], weeks: number, dayNames: string[]): DailyEntry[] {
   const target = Math.max(1, weeks) * 7;
   const next = [...days];
   for (let i = 0; i < target; i++) {
-    if (!next[i]) next[i] = makeEmptyDay(i);
-    else next[i] = { ...next[i], day: DAY_NAMES[i % 7] };
+    if (!next[i]) next[i] = makeEmptyDay(i, dayNames);
+    else next[i] = { ...next[i], day: dayNames[i % 7] };
   }
   if (next.length > target) next.length = target;
   return next;
@@ -108,11 +101,15 @@ function ExerciseNameInput({
   onChange,
   onSelectLibrary,
   onSelectApi,
+  typeLabels,
+  t,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSelectLibrary: (entry: (typeof EXERCISE_LIBRARY)[number]) => void;
   onSelectApi: (ex: ApiExercise) => void;
+  typeLabels: Record<ExerciseType, string>;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const [open, setOpen] = useState(false);
   const [apiResults, setApiResults] = useState<ApiExercise[]>([]);
@@ -143,7 +140,7 @@ function ExerciseNameInput({
   return (
     <div className="relative flex-1">
       <Input
-        placeholder="Egzersiz ara (kütüphane)..."
+        placeholder={t("exerciseSearchPlaceholder")}
         value={value}
         onChange={(e) => { onChange(e.target.value); setOpen(true); fetchApi(e.target.value); }}
         onFocus={() => { setOpen(true); fetchApi(value); }}
@@ -193,7 +190,7 @@ function ExerciseNameInput({
                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted flex items-center justify-between"
               >
                 <span>{ex.name}</span>
-                <span className="text-[10px] text-muted-foreground ml-2">{TYPE_LABELS[ex.type]}</span>
+                <span className="text-[10px] text-muted-foreground ml-2">{typeLabels[ex.type]}</span>
               </button>
             </li>
           ))}
@@ -245,9 +242,11 @@ function uploadExerciseMedia(
 function MediaSection({
   media,
   onUpdate,
+  t,
 }: {
   media: { url: string; description: string }[];
   onUpdate: (urls: { url: string; description: string }[]) => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   // pct (0-100) per file index
@@ -274,11 +273,11 @@ function MediaSection({
         )
       );
       onUpdate([...media, ...uploads]);
-      toast.success(`${uploads.length} medya yüklendi.`);
+      toast.success(t("mediaUploaded", { count: uploads.length }));
     } catch (err: any) {
       const msg = err?.message || err?.code || String(err);
       console.error("Upload error:", err);
-      toast.error(`Medya yüklenemedi: ${msg}`);
+      toast.error(t("mediaUploadError", { error: msg }));
     } finally {
       setFileProgress([]);
     }
@@ -311,7 +310,7 @@ function MediaSection({
             <Input
               value={m.description}
               onChange={(e) => updateDesc(idx, e.target.value)}
-              placeholder="Açıklama (opsiyonel)"
+              placeholder={t("mediaDescPlaceholder")}
               className="h-7 text-xs"
             />
             <div className="flex items-center gap-1">
@@ -321,7 +320,7 @@ function MediaSection({
                 <ImageIcon className="h-3 w-3 text-muted-foreground" />
               )}
               <a href={m.url} target="_blank" rel="noreferrer" className="text-[10px] text-primary hover:underline truncate">
-                Görüntüle
+                {t("viewMedia")}
               </a>
             </div>
           </div>
@@ -349,7 +348,7 @@ function MediaSection({
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <Loader2 className="h-3 w-3 animate-spin" />
-              Yükleniyor…
+              {t("uploading")}
             </span>
             <span className="tabular-nums font-medium">{aggProgress}%</span>
           </div>
@@ -367,7 +366,7 @@ function MediaSection({
           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
         >
           <Paperclip className="h-3 w-3" />
-          Medya ekle (video veya resim)
+          {t("addMedia")}
         </button>
       )}
     </div>
@@ -381,11 +380,15 @@ function ExerciseRow({
   onUpdate,
   onDelete,
   onCopy,
+  typeLabels,
+  t,
 }: {
   ex: Exercise;
   onUpdate: (patch: Partial<Exercise>) => void;
   onDelete: () => void;
   onCopy: () => void;
+  typeLabels: Record<ExerciseType, string>;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const type = ex.type ?? "strength";
   const [showMedia, setShowMedia] = useState(false);
@@ -402,6 +405,8 @@ function ExerciseRow({
         <ExerciseNameInput
           value={ex.name}
           onChange={(name) => onUpdate({ name })}
+          typeLabels={typeLabels}
+          t={t}
           onSelectLibrary={(lib) => onUpdate({
             name: lib.name,
             type: lib.type,
@@ -432,7 +437,7 @@ function ExerciseRow({
         <button
           type="button"
           onClick={() => setShowMedia((v) => !v)}
-          title="Medya ekle"
+          title={t("addMediaTitle")}
           className={`h-8 w-7 flex items-center justify-center rounded-md transition-colors ${showMedia || media.length > 0 ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary hover:bg-muted"}`}
         >
           <Paperclip size={13} />
@@ -440,10 +445,10 @@ function ExerciseRow({
             <span className="sr-only">{media.length} medya</span>
           )}
         </button>
-        <button type="button" onClick={onCopy} className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title="Egzersizi kopyala">
+        <button type="button" onClick={onCopy} className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title={t("copyExerciseTitle")}>
           <Copy size={13} />
         </button>
-        <button type="button" onClick={onDelete} className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Egzersizi sil">
+        <button type="button" onClick={onDelete} className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title={t("deleteExerciseTitle")}>
           <Trash2 size={13} />
         </button>
       </div>
@@ -451,39 +456,39 @@ function ExerciseRow({
       {/* Row 2: type-specific fields */}
       {type === "strength" && (
         <div className="grid grid-cols-4 gap-1.5">
-          <FieldCell label="Set">
+          <FieldCell label={t("setLabel")}>
             <Input type="number" min={1} placeholder="3" value={ex.sets || ""} onChange={(e) => onUpdate({ sets: Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
-          <FieldCell label="Tekrar">
+          <FieldCell label={t("repsLabel")}>
             <Input type="number" min={1} placeholder="10" value={ex.reps || ""} onChange={(e) => onUpdate({ reps: Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
-          <FieldCell label="Ağırlık (kg)">
+          <FieldCell label={t("weightLabel")}>
             <Input type="number" min={0} step={2.5} placeholder="—" value={ex.weight ?? ""} onChange={(e) => onUpdate({ weight: e.target.value === "" ? null : Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
-          <FieldCell label="Dinlenme (sn)">
+          <FieldCell label={t("restLabel")}>
             <Input type="number" min={0} step={5} placeholder="60" value={ex.restTime || ""} onChange={(e) => onUpdate({ restTime: Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
         </div>
       )}
       {type === "isometric" && (
         <div className="grid grid-cols-3 gap-1.5">
-          <FieldCell label="Set">
+          <FieldCell label={t("setLabel")}>
             <Input type="number" min={1} placeholder="3" value={ex.sets || ""} onChange={(e) => onUpdate({ sets: Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
-          <FieldCell label="Süre (sn)">
+          <FieldCell label={t("holdLabel")}>
             <Input type="number" min={5} step={5} placeholder="60" value={ex.holdSeconds ?? ""} onChange={(e) => onUpdate({ holdSeconds: Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
-          <FieldCell label="Dinlenme (sn)">
+          <FieldCell label={t("restLabel")}>
             <Input type="number" min={0} step={5} placeholder="30" value={ex.restTime || ""} onChange={(e) => onUpdate({ restTime: Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
         </div>
       )}
       {type === "cardio" && (
         <div className="grid grid-cols-2 gap-1.5">
-          <FieldCell label="Süre (dk)">
+          <FieldCell label={t("cardioMinutesLabel")}>
             <Input type="number" min={1} placeholder="20" value={ex.cardioMinutes ?? ""} onChange={(e) => onUpdate({ cardioMinutes: Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
-          <FieldCell label="Mesafe (km) — opsiyonel">
+          <FieldCell label={t("cardioKmLabel")}>
             <Input type="number" min={0} step={0.5} placeholder="—" value={ex.cardioKm ?? ""} onChange={(e) => onUpdate({ cardioKm: e.target.value === "" ? undefined : Number(e.target.value) })} className="h-7 text-sm text-center px-1" />
           </FieldCell>
         </div>
@@ -493,11 +498,12 @@ function ExerciseRow({
       {(showMedia || media.length > 0) && (
         <div className="border-t border-border/60 pt-1.5">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
-            Medya {media.length > 0 ? `(${media.length})` : ""}
+            {media.length > 0 ? t("mediaLabelCount", { count: media.length }) : t("mediaLabel")}
           </p>
           <MediaSection
             media={media}
             onUpdate={(urls) => onUpdate({ videoUrls: urls })}
+            t={t}
           />
         </div>
       )}
@@ -516,7 +522,7 @@ function FieldCell({ label, children }: { label: string; children: React.ReactNo
 
 // ─── Template Picker ──────────────────────────────────────────────────────────
 
-function TemplatePicker({ onApply }: { onApply: (t: (typeof PROGRAM_TEMPLATES)[number]) => void }) {
+function TemplatePicker({ onApply, t }: { onApply: (tpl: (typeof PROGRAM_TEMPLATES)[number]) => void; t: ReturnType<typeof useTranslations> }) {
   const [open, setOpen] = useState(false);
 
   if (!open) {
@@ -526,7 +532,7 @@ function TemplatePicker({ onApply }: { onApply: (t: (typeof PROGRAM_TEMPLATES)[n
         onClick={() => setOpen(true)}
         className="text-sm text-primary underline hover:no-underline"
       >
-        📋 Hazır şablonla başla
+        {t("startWithTemplate")}
       </button>
     );
   }
@@ -534,24 +540,24 @@ function TemplatePicker({ onApply }: { onApply: (t: (typeof PROGRAM_TEMPLATES)[n
   return (
     <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">Bir şablon seç</p>
+        <p className="text-sm font-semibold">{t("chooseTemplate")}</p>
         <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground hover:text-muted-foreground text-sm">✕</button>
       </div>
       <div className="grid sm:grid-cols-2 gap-2">
-        {PROGRAM_TEMPLATES.map((t) => (
+        {PROGRAM_TEMPLATES.map((tpl) => (
           <button
-            key={t.id}
+            key={tpl.id}
             type="button"
             onClick={() => {
-              if (confirm(`"${t.label}" şablonu mevcut programın üzerine yazacak. Devam et?`)) {
-                onApply(t);
+              if (confirm(t("templateOverwriteConfirm", { name: tpl.label }))) {
+                onApply(tpl);
                 setOpen(false);
               }
             }}
             className="text-left p-3 rounded-lg border border-border bg-background hover:bg-muted transition-colors"
           >
-            <p className="font-semibold text-sm">{t.emoji} {t.label}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+            <p className="font-semibold text-sm">{tpl.emoji} {tpl.label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{tpl.description}</p>
           </button>
         ))}
       </div>
@@ -562,18 +568,26 @@ function TemplatePicker({ onApply }: { onApply: (t: (typeof PROGRAM_TEMPLATES)[n
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DailyScheduleForm({ onChange, initial }: Props) {
+  const t = useTranslations("dailyScheduleForm");
+  const DAY_NAMES = t.raw("dayNamesFull") as string[];
+  const TYPE_LABELS: Record<ExerciseType, string> = {
+    strength: t("typeStrength"),
+    cardio: t("typeCardio"),
+    isometric: t("typeIsometric"),
+  };
   const [durationWeeks, setDurationWeeks] = useState(initial?.durationWeeks ?? 4);
   const [defaultTimeOfDay, setDefaultTimeOfDay] = useState(initial?.defaultTimeOfDay ?? "18:00");
   const [defaultDurationMin, setDefaultDurationMin] = useState(initial?.defaultDurationMin ?? 60);
   const [schedule, setSchedule] = useState<DailyEntry[]>(
-    ensureDaysLength(initial?.dailySchedule ?? [], initial?.durationWeeks ?? 4)
+    ensureDaysLength(initial?.dailySchedule ?? [], initial?.durationWeeks ?? 4, DAY_NAMES)
   );
   const [week, setWeek] = useState(1);
   const [weekClipboard, setWeekClipboard] = useState<DailyEntry[] | null>(null);
   const [dayClipboard, setDayClipboard] = useState<DailyEntry | null>(null);
 
   useEffect(() => {
-    setSchedule((prev) => ensureDaysLength(prev, durationWeeks));
+    setSchedule((prev) => ensureDaysLength(prev, durationWeeks, DAY_NAMES));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [durationWeeks]);
 
   const weeksCount = Math.max(1, durationWeeks);
@@ -590,7 +604,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
   const addSession = (dIdx: number) => {
     const gi = startIdx + dIdx;
     const next = [...schedule];
-    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const day = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)) };
     day.sessions = [...(day.sessions || []), { name: "", timeOfDay: defaultTimeOfDay, durationMin: defaultDurationMin, exercises: [] }];
     next[gi] = day;
     push(next);
@@ -598,7 +612,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
 
   const updateSessionField = (gi: number, si: number, patch: Partial<Session>) => {
     const next = [...schedule];
-    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const day = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)) };
     day.sessions = (day.sessions || []).map((s, i) => i === si ? { ...s, ...patch } : s);
     next[gi] = day;
     push(next);
@@ -606,7 +620,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
 
   const deleteSession = (gi: number, si: number) => {
     const next = [...schedule];
-    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const day = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)) };
     day.sessions = (day.sessions || []).filter((_, i) => i !== si);
     next[gi] = day;
     push(next);
@@ -615,7 +629,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
   // ── Exercise mutations ──
   const addExercise = (gi: number, si: number) => {
     const next = [...schedule];
-    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const day = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)) };
     const sessions = [...(day.sessions || [])];
     sessions[si] = { ...(sessions[si] || { name: "", exercises: [] }), exercises: [...(sessions[si]?.exercises || []), makeBlankExercise()] };
     day.sessions = sessions;
@@ -625,7 +639,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
 
   const updateExercise = (gi: number, si: number, ei: number, patch: Partial<Exercise>) => {
     const next = [...schedule];
-    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const day = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)) };
     const sessions = [...(day.sessions || [])];
     const exs = [...(sessions[si]?.exercises || [])];
     exs[ei] = { ...exs[ei], ...patch };
@@ -637,7 +651,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
 
   const deleteExercise = (gi: number, si: number, ei: number) => {
     const next = [...schedule];
-    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const day = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)) };
     const sessions = [...(day.sessions || [])];
     sessions[si] = { ...(sessions[si] || { name: "", exercises: [] }), exercises: sessions[si].exercises.filter((_, i) => i !== ei) };
     day.sessions = sessions;
@@ -647,7 +661,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
 
   const copyExercise = (gi: number, si: number, ei: number) => {
     const next = [...schedule];
-    const day = { ...(next[gi] || makeEmptyDay(gi)) };
+    const day = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)) };
     const sessions = [...(day.sessions || [])];
     const exs = [...(sessions[si]?.exercises || [])];
     exs.splice(ei + 1, 0, clone(exs[ei]));
@@ -667,7 +681,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
     const base = (w - 1) * 7;
     const next = [...schedule];
     for (let i = 0; i < 7; i++) {
-      const inc = clone(weekClipboard[i] || makeEmptyDay(base + i));
+      const inc = clone(weekClipboard[i] || makeEmptyDay(base + i, DAY_NAMES));
       inc.day = DAY_NAMES[(base + i) % 7];
       next[base + i] = inc;
     }
@@ -679,12 +693,12 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
     const next = [...schedule, ...src.map((d, i) => ({ ...d, day: DAY_NAMES[(schedule.length + i) % 7] }))];
     const needed = Math.ceil(next.length / 7);
     setDurationWeeks((p) => Math.max(p, needed));
-    push(ensureDaysLength(next, Math.max(durationWeeks, needed)));
+    push(ensureDaysLength(next, Math.max(durationWeeks, needed), DAY_NAMES));
     setWeek(Math.min(needed, weeksCount + 1));
   };
 
   // ── Day copy/paste ──
-  const copyDay = (gi: number) => setDayClipboard(clone(schedule[gi] || makeEmptyDay(gi)));
+  const copyDay = (gi: number) => setDayClipboard(clone(schedule[gi] || makeEmptyDay(gi, DAY_NAMES)));
   const pasteDay = (gi: number) => {
     if (!dayClipboard) return;
     const next = [...schedule];
@@ -695,16 +709,16 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
   };
   const duplicateDay = (gi: number) => {
     const next = [...schedule];
-    next.splice(gi + 1, 0, clone(next[gi] || makeEmptyDay(gi)));
+    next.splice(gi + 1, 0, clone(next[gi] || makeEmptyDay(gi, DAY_NAMES)));
     const needed = Math.ceil(next.length / 7);
     setDurationWeeks((p) => Math.max(p, needed));
-    push(ensureDaysLength(next, Math.max(durationWeeks, needed)));
+    push(ensureDaysLength(next, Math.max(durationWeeks, needed), DAY_NAMES));
   };
 
   // ── Template ──
   const applyTemplate = (t: (typeof PROGRAM_TEMPLATES)[number]) => {
     const week1 = t.week1.map((d, i) => ({ ...d, day: DAY_NAMES[i % 7] }));
-    const newSchedule = ensureDaysLength(week1, t.weeks);
+    const newSchedule = ensureDaysLength(week1, t.weeks, DAY_NAMES);
     setDurationWeeks(t.weeks);
     setSchedule(newSchedule);
     onChange(newSchedule, { durationWeeks: t.weeks, defaultTimeOfDay, defaultDurationMin });
@@ -713,20 +727,20 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
 
   return (
     <div className="space-y-4">
-      <TemplatePicker onApply={applyTemplate} />
+      <TemplatePicker onApply={applyTemplate} t={t} />
 
       {/* Meta */}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-muted-foreground dark:text-zinc-300">Süre (hafta)</span>
+          <span className="text-sm text-muted-foreground dark:text-zinc-300">{t("durationWeeksLabel")}</span>
           <Input type="number" min={1} value={durationWeeks} onChange={(e) => setDurationWeeks(Math.max(1, Number(e.target.value || 1)))} />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-muted-foreground dark:text-zinc-300">Varsayılan Saat</span>
+          <span className="text-sm text-muted-foreground dark:text-zinc-300">{t("defaultTimeLabel")}</span>
           <Input value={defaultTimeOfDay} onChange={(e) => setDefaultTimeOfDay(e.target.value)} placeholder="18:00" />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-muted-foreground dark:text-zinc-300">Varsayılan Süre (dk)</span>
+          <span className="text-sm text-muted-foreground dark:text-zinc-300">{t("defaultDurationLabel")}</span>
           <Input type="number" min={5} step={5} value={defaultDurationMin} onChange={(e) => setDefaultDurationMin(Math.max(5, Number(e.target.value || 60)))} />
         </div>
       </div>
@@ -735,16 +749,16 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
       <div className="flex flex-wrap gap-2">
         {Array.from({ length: weeksCount }).map((_, i) => (
           <Button key={i} variant={week === i + 1 ? "default" : "secondary"} size="sm" onClick={() => setWeek(i + 1)}>
-            {i + 1}. Hafta
+            {t("weekTab", { n: i + 1 })}
           </Button>
         ))}
       </div>
 
       {/* Week actions */}
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" size="sm" onClick={() => copyWeek(week)}>Haftayı Kopyala</Button>
-        <Button variant="secondary" size="sm" onClick={() => pasteWeek(week)} disabled={!weekClipboard}>Yapıştır</Button>
-        <Button variant="secondary" size="sm" onClick={() => duplicateWeek(week)}>Haftayı Sona Ekle</Button>
+        <Button variant="secondary" size="sm" onClick={() => copyWeek(week)}>{t("copyWeek")}</Button>
+        <Button variant="secondary" size="sm" onClick={() => pasteWeek(week)} disabled={!weekClipboard}>{t("paste")}</Button>
+        <Button variant="secondary" size="sm" onClick={() => duplicateWeek(week)}>{t("appendWeek")}</Button>
       </div>
 
       {/* Schedule */}
@@ -754,11 +768,11 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
           return (
             <div key={`${gi}`} className="mb-5 border rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold">{day.day} <span className="text-xs text-muted-foreground font-normal">Gün {gi + 1}</span></h3>
+                <h3 className="font-bold">{day.day} <span className="text-xs text-muted-foreground font-normal">{t("dayLabel", { n: gi + 1 })}</span></h3>
                 <div className="flex gap-1.5">
-                  <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => copyDay(gi)}>Kopyala</Button>
-                  <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => pasteDay(gi)} disabled={!dayClipboard}>Yapıştır</Button>
-                  <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => duplicateDay(gi)}>Çoğalt</Button>
+                  <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => copyDay(gi)}>{t("copy")}</Button>
+                  <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => pasteDay(gi)} disabled={!dayClipboard}>{t("paste")}</Button>
+                  <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={() => duplicateDay(gi)}>{t("duplicate")}</Button>
                 </div>
               </div>
 
@@ -769,24 +783,24 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
                     {/* Session header */}
                     <div className="flex items-center gap-2 mb-3">
                       <Input
-                        placeholder="Oturum adı (ör. Sabah Antrenmanı)"
+                        placeholder={t("sessionNamePlaceholder")}
                         value={session.name}
                         onChange={(e) => updateSessionField(gi, si, { name: e.target.value })}
                         className="flex-1 h-8 text-sm font-medium"
                       />
                       <Input
-                        placeholder="18:00"
+                        placeholder={t("timePlaceholder")}
                         value={session.timeOfDay ?? defaultTimeOfDay}
                         onChange={(e) => updateSessionField(gi, si, { timeOfDay: e.target.value })}
                         className="w-20 h-8 text-sm text-center"
                       />
                       {est > 0 && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap shrink-0">
-                          <Clock size={12} />~{est} dk
+                          <Clock size={12} />{t("estimatedMinutes", { min: est })}
                         </span>
                       )}
                       <Button size="sm" variant="ghost" className="text-xs h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 shrink-0" onClick={() => deleteSession(gi, si)}>
-                        Sil
+                        {t("delete")}
                       </Button>
                     </div>
 
@@ -799,23 +813,25 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
                           onUpdate={(patch) => updateExercise(gi, si, ei, patch)}
                           onDelete={() => deleteExercise(gi, si, ei)}
                           onCopy={() => copyExercise(gi, si, ei)}
+                          typeLabels={TYPE_LABELS}
+                          t={t}
                         />
                       ))}
                     </div>
 
                     <Button size="sm" variant="secondary" className="mt-2 h-7 text-xs" onClick={() => addExercise(gi, si)}>
-                      + Egzersiz Ekle
+                      {t("addExercise")}
                     </Button>
                   </div>
                 );
               })}
 
               <Textarea
-                placeholder="Günlük not (opsiyonel)..."
+                placeholder={t("dayNotePlaceholder")}
                 value={day.notes}
                 onChange={(e) => {
                   const next = [...schedule];
-                  next[gi] = { ...(next[gi] || makeEmptyDay(gi)), notes: e.target.value };
+                  next[gi] = { ...(next[gi] || makeEmptyDay(gi, DAY_NAMES)), notes: e.target.value };
                   push(next);
                 }}
                 className="mb-2 text-sm"
@@ -823,7 +839,7 @@ export default function DailyScheduleForm({ onChange, initial }: Props) {
               />
 
               <Button size="sm" onClick={() => addSession(dIdx)} className="h-7 text-xs">
-                + Oturum Ekle
+                {t("addSession")}
               </Button>
             </div>
           );

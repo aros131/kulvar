@@ -20,8 +20,8 @@ type Props = {
   coachId: string;
   /** Optional visible count before fetching. */
   initialCount?: number;
-  /** TR by default; supports "en" */
-  locale?: "tr" | "en";
+  /** TR by default; supports "en" and "fr" */
+  locale?: "tr" | "en" | "fr";
   /** Extra classes for trigger */
   className?: string;
   /** If true, prefetch count on mount/coachId change (default: true) */
@@ -51,6 +51,7 @@ const STR = {
     noFollowers: "Henüz takipçi yok.",
     close: "Kapat",
     loadErr: "Yüklenemedi",
+    userFallback: "Kullanıcı",
   },
   en: {
     followers: "Followers",
@@ -58,6 +59,15 @@ const STR = {
     noFollowers: "No followers yet.",
     close: "Close",
     loadErr: "Failed to load",
+    userFallback: "User",
+  },
+  fr: {
+    followers: "Abonnés",
+    followersLower: "abonnés",
+    noFollowers: "Pas encore d'abonnés.",
+    close: "Fermer",
+    loadErr: "Échec du chargement",
+    userFallback: "Utilisateur",
   },
 } as const;
 
@@ -204,7 +214,7 @@ useEffect(() => {
               .map((u: any) => {
                 const user = u.user || u.userId || u;
                 const id = String(user?.id || user?._id || u?.id || u?._id || "");
-                const name = String(user?.name || u?.name || "Kullanıcı");
+                const name = String(user?.name || u?.name || t.userFallback);
                 const avatarUrl =
                   user?.avatarUrl || user?.avatar || user?.profilePicture || u?.avatarUrl || "";
                 return { id, name, avatarUrl };
@@ -270,6 +280,8 @@ useEffect(() => {
           <DialogDescription id="followers-desc">
             {locale === "tr"
               ? "Bu koçu takip eden kullanıcıların listesi."
+              : locale === "fr"
+              ? "Les personnes qui suivent ce coach."
               : "People who follow this coach."}
           </DialogDescription>
         </DialogHeader>

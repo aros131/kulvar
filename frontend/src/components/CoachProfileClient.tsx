@@ -41,7 +41,7 @@ export type CoachProfileClientProps = {
   coach: Coach;
   programs?: Program[];
   reviews?: Review[];
-  locale?: "tr" | "en";
+  locale?: "tr" | "en" | "fr";
   isFollowing?: boolean;
   loading?: boolean;
   onFollowToggle?: (next: boolean) => Promise<void> | void;
@@ -123,10 +123,35 @@ const STRINGS = {
     specializations: "Uzmanlıklar",
     signupRedirect: "Devam etmek için lütfen kayıt olun.",
   },
+  fr: {
+    follow: "Suivre",
+    following: "Suivi(e)",
+    message: "Message",
+    share: "Partager",
+    overview: "Aperçu",
+    programs: "Programmes",
+    reviews: "Avis",
+    about: "À propos",
+    verified: "Vérifié",
+    copyLink: "Copier le lien",
+    linkCopied: "Lien copié",
+    emptyPrograms: "Pas encore de programme — suis ce coach pour être informé.",
+    totalReviews: "Total des avis",
+    avgRating: "Note moyenne",
+    activeClients: "Clients actifs",
+    clientsWord: "clients",
+    location: "Lieu",
+    certifications: "Certifications",
+    specializations: "Spécialités",
+    signupRedirect: "Merci de t'inscrire pour continuer.",
+  },
 } satisfies Record<string, Record<string, string>>;
 
 const SIGNUP_PATH = "/signup";
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(" ");
+/** 3-way locale text picker — replaces the old locale === "tr" ? a : b ternaries now that French is supported too. */
+const L3 = (locale: "tr" | "en" | "fr", tr: string, en: string, fr: string) =>
+  locale === "tr" ? tr : locale === "fr" ? fr : en;
 
 function apiBase() {
   const raw = process.env.NEXT_PUBLIC_API_URL || "";
@@ -277,10 +302,10 @@ export default function CoachProfileClient({
       setIsFollowing(next); // optimistic
       try {
         await onFollowToggle?.(next);
-        toast.success(next ? (locale === "tr" ? "Takip edildi" : "Followed") : (locale === "tr" ? "Takipten çıkıldı" : "Unfollowed"));
+        toast.success(next ? (L3(locale, "Takip edildi", "Followed", "Suivi(e)")) : (L3(locale, "Takipten çıkıldı", "Unfollowed", "Ne suit plus")));
       } catch {
         setIsFollowing(!next);
-        toast.error(locale === "tr" ? "Bir hata oluştu" : "Something went wrong");
+        toast.error(L3(locale, "Bir hata oluştu", "Something went wrong", "Une erreur est survenue"));
       }
     });
 
@@ -305,17 +330,17 @@ export default function CoachProfileClient({
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         if (res.status === 403) {
-          toast.error(locale === "tr" ? "Sadece bu koçun danışanları yorum yapabilir." : "Only this coach's clients can review.");
+          toast.error(L3(locale, "Sadece bu koçun danışanları yorum yapabilir.", "Only this coach's clients can review.", "Seuls les clients de ce coach peuvent laisser un avis."));
         } else {
           throw new Error(j?.message || "failed");
         }
         return;
       }
-      toast.success(locale === "tr" ? "Yorumun gönderildi." : "Your review was submitted.");
+      toast.success(L3(locale, "Yorumun gönderildi.", "Your review was submitted.", "Ton avis a été envoyé."));
       setShowReviewForm(false);
       refreshReviews();
     } catch {
-      toast.error(locale === "tr" ? "Yorum gönderilemedi." : "Could not submit review.");
+      toast.error(L3(locale, "Yorum gönderilemedi.", "Could not submit review.", "Impossible d'envoyer l'avis."));
     } finally {
       setSubmittingReview(false);
     }
@@ -434,7 +459,7 @@ export default function CoachProfileClient({
                 <BookSessionButton
                   coachId={coach.id}
                   isAuthed={isAuthed}
-                  label={locale === "tr" ? "Randevu Al" : "Book Session"}
+                  label={L3(locale, "Randevu Al", "Book Session", "Réserver une séance")}
                 />
               </div>
               <p className="mt-1 text-muted-foreground">{coach.role}</p>
@@ -584,12 +609,15 @@ export default function CoachProfileClient({
           <div className="mt-3 flex justify-center">
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setShowAllPrograms((v) => !v)}>
               {showAllPrograms ? (
-                <>{locale === "tr" ? "Daha az göster" : "Show less"} <ChevronUp className="h-4 w-4" /></>
+                <>{L3(locale, "Daha az göster", "Show less", "Afficher moins")} <ChevronUp className="h-4 w-4" /></>
               ) : (
                 <>
-                  {locale === "tr"
-                    ? `${programs.length - PROGRAMS_COLLAPSED_COUNT} program daha`
-                    : `${programs.length - PROGRAMS_COLLAPSED_COUNT} more programs`}{" "}
+                  {L3(
+                    locale,
+                    `${programs.length - PROGRAMS_COLLAPSED_COUNT} program daha`,
+                    `${programs.length - PROGRAMS_COLLAPSED_COUNT} more programs`,
+                    `${programs.length - PROGRAMS_COLLAPSED_COUNT} programmes de plus`
+                  )}{" "}
                   <ChevronDown className="h-4 w-4" />
                 </>
               )}
@@ -605,7 +633,7 @@ export default function CoachProfileClient({
           {!showReviewForm && (
             <Button size="sm" variant="outline" onClick={handleOpenReviewForm} className="gap-2">
               <Pencil className="h-4 w-4" />
-              {locale === "tr" ? "Yorum Yap" : "Write a Review"}
+              {L3(locale, "Yorum Yap", "Write a Review", "Laisser un avis")}
             </Button>
           )}
         </div>
@@ -622,7 +650,7 @@ export default function CoachProfileClient({
         {reviewsError ? (
           <Card>
             <CardContent className="py-6 text-destructive text-sm">
-              {locale === "tr" ? "Yorumlar yüklenemedi." : "Failed to load reviews."}
+              {L3(locale, "Yorumlar yüklenemedi.", "Failed to load reviews.", "Impossible de charger les avis.")}
             </CardContent>
           </Card>
         ) : loadingReviews && (liveReviews?.length ?? 0) === 0 ? (
@@ -658,7 +686,7 @@ export default function CoachProfileClient({
             {hasMore && (
               <div className="mt-4 flex justify-center">
                 <Button onClick={loadMore} disabled={loadingReviews} variant="outline">
-                  {loadingReviews ? (locale === "tr" ? "Yükleniyor..." : "Loading...") : (locale === "tr" ? "Daha Fazla Yükle" : "Load More")}
+                  {loadingReviews ? (L3(locale, "Yükleniyor...", "Loading...", "Chargement...")) : (L3(locale, "Daha Fazla Yükle", "Load More", "Charger plus"))}
                 </Button>
               </div>
             )}
@@ -678,7 +706,7 @@ function ReviewForm({
   onCancel,
   onSubmit,
 }: {
-  locale?: "tr" | "en";
+  locale?: "tr" | "en" | "fr";
   submitting: boolean;
   onCancel: () => void;
   onSubmit: (rating: number, comment: string) => void;
@@ -698,7 +726,7 @@ function ReviewForm({
               onClick={() => setRating(n)}
               onMouseEnter={() => setHoverRating(n)}
               onMouseLeave={() => setHoverRating(0)}
-              aria-label={`${n} ${locale === "tr" ? "yıldız" : "stars"}`}
+              aria-label={`${n} ${L3(locale, "yıldız", "stars", "étoiles")}`}
             >
               <Star
                 className={cx(
@@ -710,20 +738,20 @@ function ReviewForm({
           ))}
         </div>
         <Textarea
-          placeholder={locale === "tr" ? "Deneyimini paylaş..." : "Share your experience..."}
+          placeholder={L3(locale, "Deneyimini paylaş...", "Share your experience...", "Partage ton expérience...")}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={3}
         />
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onCancel} disabled={submitting}>
-            {locale === "tr" ? "İptal" : "Cancel"}
+            {L3(locale, "İptal", "Cancel", "Annuler")}
           </Button>
           <Button
             onClick={() => onSubmit(rating, comment)}
             disabled={submitting || rating < 1}
           >
-            {submitting ? (locale === "tr" ? "Gönderiliyor..." : "Submitting...") : (locale === "tr" ? "Gönder" : "Submit")}
+            {submitting ? (L3(locale, "Gönderiliyor...", "Submitting...", "Envoi en cours...")) : (L3(locale, "Gönder", "Submit", "Envoyer"))}
           </Button>
         </div>
       </CardContent>
@@ -731,7 +759,7 @@ function ReviewForm({
   );
 }
 
-function ReviewRow({ r, locale = "tr" }: { r: Review; locale?: "tr" | "en" }) {
+function ReviewRow({ r, locale = "tr" }: { r: Review; locale?: "tr" | "en" | "fr" }) {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -758,7 +786,7 @@ function ReviewRow({ r, locale = "tr" }: { r: Review; locale?: "tr" | "en" }) {
           {r.verified && (
             <Badge variant="secondary" className="gap-1 text-xs">
               <BadgeCheck className="h-3.5 w-3.5" />
-              {locale === "tr" ? "Doğrulanmış" : "Verified"}
+              {L3(locale, "Doğrulanmış", "Verified", "Vérifié")}
             </Badge>
           )}
         </div>

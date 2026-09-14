@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,17 +23,12 @@ import { toast } from "sonner";
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 /** Fixed specialization options:
- *  - UI label: capitalized
- *  - value sent to server: lowercase
+ *  - UI label: translated
+ *  - value sent to server: lowercase Turkish (backend stores/filters on this)
  */
-const SPEC_OPTIONS = [
-  { value: "yoga", label: "Yoga" },
-  { value: "fitness", label: "Fitness" },
-  { value: "pilates", label: "Pilates" },
-  { value: "beslenme", label: "Beslenme" },
-] as const;
+const SPEC_VALUES = ["yoga", "fitness", "pilates", "beslenme"] as const;
 
-type SpecValue = (typeof SPEC_OPTIONS)[number]["value"];
+type SpecValue = (typeof SPEC_VALUES)[number];
 
 type Coach = {
   _id: string;
@@ -55,7 +51,7 @@ const toArray = (x?: string | string[]) => (!x ? [] : Array.isArray(x) ? x : [x]
 const capFirst = (s: string) =>
   s ? s.charAt(0).toLocaleUpperCase("tr") + s.slice(1).toLocaleLowerCase("tr") : s;
 
-const allowedSpec = new Set<SpecValue>(SPEC_OPTIONS.map((o) => o.value));
+const allowedSpec = new Set<SpecValue>(SPEC_VALUES);
 const normalizeSpecParam = (s: string): SpecValue | "" => {
   const v = toTRLower(s) as SpecValue;
   return allowedSpec.has(v) ? v : "";
@@ -64,6 +60,14 @@ const normalizeSpecParam = (s: string): SpecValue | "" => {
 export default function CoachesPageBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("coachesDirectory");
+
+  const specLabels: Record<SpecValue, string> = {
+    yoga: t("specLabels.yoga"),
+    fitness: t("specLabels.fitness"),
+    pilates: t("specLabels.pilates"),
+    beslenme: t("specLabels.beslenme"),
+  };
 
   const rawSpec = (searchParams?.get("spec") || "").trim();
   const initialSpec = normalizeSpecParam(rawSpec === "all" ? "" : rawSpec); // sanitize ?spec
@@ -84,7 +88,7 @@ export default function CoachesPageBody() {
 
   // AI Coach Matching
   const [showAIMatch, setShowAIMatch] = useState(false);
-  const [matchParams, setMatchParams] = useState({ goal: '', level: 'Başlangıç', preferences: '', budget: '', city: '' });
+  const [matchParams, setMatchParams] = useState({ goal: '', level: t('aiMatch.levelBeginner'), preferences: '', budget: '', city: '' });
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchResult, setMatchResult] = useState<string | null>(null);
 
@@ -93,7 +97,7 @@ export default function CoachesPageBody() {
     setMatchLoading(true);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (!token) { toast.error('Bu özelliği kullanmak için giriş yapmalısın.'); setMatchLoading(false); return; }
+      if (!token) { toast.error(t('aiMatch.loginRequired')); setMatchLoading(false); return; }
       const res = await fetch(`${API}/ai/coach-match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -102,7 +106,7 @@ export default function CoachesPageBody() {
       const data = await res.json();
       setMatchResult(data.result);
     } catch {
-      toast.error('AI yanıt veremedi. Lütfen tekrar dene.');
+      toast.error(t('aiMatch.errorGeneric'));
     } finally {
       setMatchLoading(false);
     }
@@ -123,7 +127,7 @@ export default function CoachesPageBody() {
     (async () => {
       setLoading(true);
       setError(null);
-      const items = await fetchCoaches(initialQuery, initialSpec, setError, setDebugInfo);
+      const items = await fetchCoaches(initialQuery, initialSpec, setError, setDebugInfo, t);
       if (!active) return;
       setLoading(false);
       if (items) {
@@ -132,7 +136,7 @@ export default function CoachesPageBody() {
       } else {
         setCoachesRaw([]);
         setCoaches([]);
-        if (!error) setError("Koçlar yüklenemedi.");
+        if (!error) setError(t('errorFetch'));
       }
     })();
     return () => { active = false; };
@@ -142,10 +146,10 @@ export default function CoachesPageBody() {
   // live search or spec change (debounced)
   useEffect(() => {
     if (loading) return;
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setFetching(true);
       setError(null);
-      const items = await fetchCoaches(query, specFilter, setError, setDebugInfo);
+      const items = await fetchCoaches(query, specFilter, setError, setDebugInfo, t);
       setFetching(false);
       if (items) {
         setCoachesRaw(items);
@@ -153,17 +157,17 @@ export default function CoachesPageBody() {
       } else {
         setCoachesRaw([]);
         setCoaches([]);
-        setError("Arama sırasında bir sorun oluştu.");
+        setError(t('errorSearch'));
       }
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, specFilter]);
 
   const handleManualSearch = async () => {
     setFetching(true);
     setError(null);
-    const items = await fetchCoaches(query, specFilter, setError, setDebugInfo);
+    const items = await fetchCoaches(query, specFilter, setError, setDebugInfo, t);
     setFetching(false);
     if (items) {
       setCoachesRaw(items);
@@ -171,7 +175,7 @@ export default function CoachesPageBody() {
     } else {
       setCoachesRaw([]);
       setCoaches([]);
-      setError("Arama sırasında bir sorun oluştu.");
+      setError(t('errorSearch'));
     }
   };
 
@@ -181,18 +185,18 @@ export default function CoachesPageBody() {
 
   const resultCountText = useMemo(() => {
     if (loading) return "";
-    if (!coaches?.length) return "Sonuç bulunamadı";
-    return `${coaches.length} koç bulundu`;
-  }, [loading, coaches]);
+    if (!coaches?.length) return t('noResults');
+    return t('resultsCount', { count: coaches.length });
+  }, [loading, coaches, t]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Koçlar</h1>
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Uzman koçları keşfet, profillerini incele ve sana uygun olanı seç.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -201,12 +205,12 @@ export default function CoachesPageBody() {
           <div className="relative flex-1 md:w-[360px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="İsim, uzmanlık, şehir..."
+              placeholder={t('searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               className="pl-9"
-              aria-label="Koç ara"
+              aria-label={t('searchAriaLabel')}
             />
           </div>
 
@@ -215,24 +219,24 @@ export default function CoachesPageBody() {
             value={specFilter || "all"}
             onValueChange={(v) => setSpecFilter(v === "all" ? "" : normalizeSpecParam(v))}
           >
-            <SelectTrigger className="w-[180px]" aria-label="Uzmanlık filtresi">
+            <SelectTrigger className="w-[180px]" aria-label={t('specFilterAriaLabel')}>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                <SelectValue placeholder="Uzmanlık" />
+                <SelectValue placeholder={t('specPlaceholder')} />
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tümü</SelectItem>
-              {SPEC_OPTIONS.map(({ value, label }) => (
+              <SelectItem value="all">{t('specAll')}</SelectItem>
+              {SPEC_VALUES.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {label}
+                  {specLabels[value]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           <Button onClick={handleManualSearch} disabled={fetching}>
-            {fetching ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Aranıyor</>) : "Ara"}
+            {fetching ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('searching')}</>) : t('searchButton')}
           </Button>
         </div>
       </div>
@@ -244,8 +248,8 @@ export default function CoachesPageBody() {
           onClick={() => setShowAIMatch(v => !v)}
         >
           <span className="flex items-center gap-2 font-semibold text-violet-700 dark:text-violet-300">
-            <Sparkles className="w-4 h-4" /> AI ile Koç Bul
-            <span className="text-xs font-normal text-violet-500">Hedefini anlat, sana özel koç tipini öğren</span>
+            <Sparkles className="w-4 h-4" /> {t('aiMatch.toggleTitle')}
+            <span className="text-xs font-normal text-violet-500">{t('aiMatch.toggleSubtitle')}</span>
           </span>
           {showAIMatch ? <ChevronUp className="w-4 h-4 text-violet-500" /> : <ChevronDown className="w-4 h-4 text-violet-500" />}
         </button>
@@ -254,41 +258,41 @@ export default function CoachesPageBody() {
           <div className="px-5 py-4 space-y-4 bg-white dark:bg-violet-950/10">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <div className="sm:col-span-2 md:col-span-1">
-                <label className="text-xs text-muted-foreground">Hedefin nedir?</label>
+                <label className="text-xs text-muted-foreground">{t('aiMatch.goalLabel')}</label>
                 <input value={matchParams.goal} onChange={e => setMatchParams(p => ({ ...p, goal: e.target.value }))}
-                  placeholder="örn. 10kg vermek, kas yapmak, dayanıklılık..."
+                  placeholder={t('aiMatch.goalPlaceholder')}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Fitness seviyesi</label>
+                <label className="text-xs text-muted-foreground">{t('aiMatch.levelLabel')}</label>
                 <select value={matchParams.level} onChange={e => setMatchParams(p => ({ ...p, level: e.target.value }))}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                  <option>Başlangıç</option>
-                  <option>Orta Düzey</option>
-                  <option>İleri Seviye</option>
+                  <option>{t('aiMatch.levelBeginner')}</option>
+                  <option>{t('aiMatch.levelIntermediate')}</option>
+                  <option>{t('aiMatch.levelAdvanced')}</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Şehir (isteğe bağlı)</label>
+                <label className="text-xs text-muted-foreground">{t('aiMatch.cityLabel')}</label>
                 <input value={matchParams.city} onChange={e => setMatchParams(p => ({ ...p, city: e.target.value }))}
-                  placeholder="örn. İstanbul"
+                  placeholder={t('aiMatch.cityPlaceholder')}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Tercihler</label>
+                <label className="text-xs text-muted-foreground">{t('aiMatch.prefsLabel')}</label>
                 <input value={matchParams.preferences} onChange={e => setMatchParams(p => ({ ...p, preferences: e.target.value }))}
-                  placeholder="örn. online, sabah, kadın koç"
+                  placeholder={t('aiMatch.prefsPlaceholder')}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </div>
             </div>
             <button onClick={runCoachMatch} disabled={matchLoading || !matchParams.goal.trim()}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
-              {matchLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Analiz ediliyor...</> : <><Sparkles className="w-4 h-4" /> Koç Önerisi Al</>}
+              {matchLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('aiMatch.submitAnalyzing')}</> : <><Sparkles className="w-4 h-4" /> {t('aiMatch.submit')}</>}
             </button>
 
             {matchResult && (
               <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 rounded-xl p-4">
-                <p className="text-[10px] font-semibold text-violet-500 mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Koç Önerisi</p>
+                <p className="text-[10px] font-semibold text-violet-500 mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {t('aiMatch.resultLabel')}</p>
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">{matchResult}</p>
               </div>
             )}
@@ -324,7 +328,7 @@ export default function CoachesPageBody() {
       ) : coaches.length === 0 ? (
         <Card>
           <CardContent className="py-6">
-            <p className="text-muted-foreground">Aramanızla eşleşen koç bulunamadı.</p>
+            <p className="text-muted-foreground">{t('errorNoMatch')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -336,7 +340,7 @@ export default function CoachesPageBody() {
                   <CardHeader className="flex flex-row items-center gap-3 pb-2">
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={c.avatar || c.profilePicture || ""} alt={c.name} />
-                      <AvatarFallback>{initials(c.name)}</AvatarFallback>
+                      <AvatarFallback>{initials(c.name, t('initialsFallback'))}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <CardTitle className="truncate group-hover:underline">{c.name}</CardTitle>
@@ -361,7 +365,7 @@ export default function CoachesPageBody() {
                       {toArray(c.specialization).slice(0, 3).map((spec) => (
                         <Badge key={spec} variant="secondary" className="capitalize">
                           <Dumbbell className="h-3.5 w-3.5 mr-1" />
-                          {capFirst(spec)}
+                          {specLabels[toTRLower(spec) as SpecValue] || capFirst(spec)}
                         </Badge>
                       ))}
                       {toArray(c.specialization).length > 3 && (
@@ -379,9 +383,9 @@ export default function CoachesPageBody() {
                     )}
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-primary">
-                        {c.price != null ? `₺${c.price}/saat` : ""}
+                        {c.price != null ? t('perHour', { price: c.price }) : ""}
                       </span>
-                      <Button size="sm" variant="secondary" className="ml-auto">Profili Gör</Button>
+                      <Button size="sm" variant="secondary" className="ml-auto">{t('viewProfile')}</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -395,11 +399,11 @@ export default function CoachesPageBody() {
 }
 
 /* ------- Helpers ------- */
-function initials(name?: string) {
-  if (!name) return "KÇ";
+function initials(name: string | undefined, fallback: string) {
+  if (!name) return fallback;
   const parts = name.trim().split(/\s+/);
   const two = (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
-  return two.toUpperCase() || parts[0]?.[0]?.toUpperCase() || "KÇ";
+  return two.toUpperCase() || parts[0]?.[0]?.toUpperCase() || fallback;
 }
 function CoachSkeletonGrid() {
   return (
@@ -450,7 +454,8 @@ async function fetchCoaches(
   q: string,
   spec: string,
   setError: (e: string | null) => void,
-  setDebug?: (d: any) => void
+  setDebug: ((d: any) => void) | undefined,
+  t: (key: string) => string
 ): Promise<Coach[] | null> {
   const p = (key?: string) => {
     const params = new URLSearchParams();
@@ -497,6 +502,6 @@ async function fetchCoaches(
     }
   }
 
-  setError("Veri alınamadı (URL, CORS veya JSON şeması).");
+  setError(t('errorDataShape'));
   return null;
 }

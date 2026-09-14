@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import ProgramGeneralForm from "@/components/program/edit/ProgramGeneralForm";
 
 interface EditProgramDialogProps {
@@ -20,6 +21,7 @@ const EditProgramDialog: React.FC<EditProgramDialogProps> = ({
   programId,
   onUpdated,
 }) => {
+  const t = useTranslations("editProgramDialog");
   const [open, setOpen] = useState(false);
 
   if (!programId) return null;
@@ -28,14 +30,14 @@ const EditProgramDialog: React.FC<EditProgramDialogProps> = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default" className="bg-blue-500 hover:bg-blue-600">
-          Düzenle
+          {t("edit")}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogTitle>Programı Düzenle</DialogTitle>
+        <DialogTitle>{t("title")}</DialogTitle>
         <DialogDescription>
-          Program bilgilerini buradan güncelleyebilirsiniz.
+          {t("subtitle")}
         </DialogDescription>
 
         <ProgramGeneralForm

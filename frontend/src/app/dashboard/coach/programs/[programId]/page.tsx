@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 interface Exercise { name: string; sets?: number; reps?: number; duration?: string; }
 interface Session { name: string; exercises?: Exercise[]; }
@@ -26,6 +28,8 @@ interface Program {
 }
 
 export default function CoachProgramDetailPage() {
+  const t = useTranslations('programDetailCoach');
+  const locale = useLocale();
   const { programId } = useParams<{ programId: string }>();
   const router = useRouter();
   const [program, setProgram] = useState<Program | null>(null);
@@ -43,9 +47,9 @@ export default function CoachProgramDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      toast.success(`Takvim düzeltildi. Başlangıç: ${new Date(data.startDate).toLocaleDateString('tr-TR')}`);
+      toast.success(t('calendarFixed', { date: new Date(data.startDate).toLocaleDateString(LOCALE_TAG[locale] || 'tr-TR') }));
     } catch (e: any) {
-      toast.error(e?.message || 'Takvim düzeltilemedi.');
+      toast.error(e?.message || t('calendarFixError'));
     } finally {
       setRebuilding(null);
     }
@@ -61,17 +65,17 @@ export default function CoachProgramDetailPage() {
       .catch(() => setLoading(false));
   }, [programId]);
 
-  if (loading) return <div className="p-8">Yükleniyor...</div>;
-  if (!program) return <CoachPageShell><div className="p-8 text-sm text-muted-foreground">Program bulunamadı.</div></CoachPageShell>;
+  if (loading) return <div className="p-8">{t('loading')}</div>;
+  if (!program) return <CoachPageShell><div className="p-8 text-sm text-muted-foreground">{t('notFound')}</div></CoachPageShell>;
 
   return (
     <CoachPageShell>
     <div className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-8">
       {/* Üst bar */}
       <div className="flex items-center justify-between">
-        <button onClick={() => router.back()} className="text-sm text-muted-foreground hover:text-foreground">← Geri</button>
+        <button onClick={() => router.back()} className="text-sm text-muted-foreground hover:text-foreground">{t('back')}</button>
         <Link href={`/dashboard/coach/programs/${programId}/edit`}>
-          <Button variant="outline">Düzenle</Button>
+          <Button variant="outline">{t('edit')}</Button>
         </Link>
       </div>
 
@@ -84,10 +88,10 @@ export default function CoachProgramDetailPage() {
       {/* Bilgi kartları */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Süre', value: `${program.duration} hafta` },
-          { label: 'Zorluk', value: program.difficulty },
-          { label: 'Hedef', value: program.fitnessGoal },
-          { label: 'Durum', value: program.status },
+          { label: t('durationLabel'), value: t('weeksUnit', { value: program.duration }) },
+          { label: t('difficultyLabel'), value: program.difficulty },
+          { label: t('goalLabel'), value: program.fitnessGoal },
+          { label: t('statusLabel'), value: program.status },
         ].map((item) => (
           <div key={item.label} className="bg-card dark:bg-primary/90 rounded-xl p-4 shadow text-center">
             <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
@@ -98,7 +102,7 @@ export default function CoachProgramDetailPage() {
 
       {/* Atanmış Danışanlar */}
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">
-        <h2 className="text-lg font-semibold mb-3">Atanmış Danışanlar ({program.assignedClients?.length || 0})</h2>
+        <h2 className="text-lg font-semibold mb-3">{t('assignedClientsTitle', { count: program.assignedClients?.length || 0 })}</h2>
         {program.assignedClients?.length ? (
           <ul className="space-y-2">
             {program.assignedClients.map((c) => (
@@ -117,19 +121,19 @@ export default function CoachProgramDetailPage() {
                   disabled={rebuilding === c._id}
                   onClick={() => handleRebuild(c._id)}
                 >
-                  {rebuilding === c._id ? 'Düzeltiliyor…' : 'Takvimi Düzelt'}
+                  {rebuilding === c._id ? t('fixing') : t('fixCalendar')}
                 </Button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-muted-foreground text-sm">Henüz danışan atanmamış.</p>
+          <p className="text-muted-foreground text-sm">{t('noClientsAssigned')}</p>
         )}
       </section>
 
       {/* Haftalık Program */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Haftalık Program</h2>
+        <h2 className="text-lg font-semibold">{t('weeklyProgramTitle')}</h2>
         {program.dailySchedule?.length ? (
           program.dailySchedule.map((day, i) => (
             <div key={i} className="bg-card dark:bg-primary/90 rounded-xl p-5 shadow">
@@ -143,8 +147,8 @@ export default function CoachProgramDetailPage() {
                   {session.exercises?.map((ex, k) => (
                     <div key={k} className="flex items-center gap-4 text-xs text-muted-foreground pl-4 border-l-2 border-border mb-1">
                       <span className="font-medium text-zinc-700 dark:text-zinc-300">{ex.name}</span>
-                      {ex.sets ? <span>{ex.sets} set</span> : null}
-                      {ex.reps ? <span>{ex.reps} tekrar</span> : null}
+                      {ex.sets ? <span>{t('setsUnit', { count: ex.sets })}</span> : null}
+                      {ex.reps ? <span>{t('repsUnit', { count: ex.reps })}</span> : null}
                       {ex.duration ? <span>{ex.duration}</span> : null}
                     </div>
                   ))}
@@ -153,7 +157,7 @@ export default function CoachProgramDetailPage() {
             </div>
           ))
         ) : (
-          <p className="text-muted-foreground text-sm">Program içeriği henüz eklenmemiş.</p>
+          <p className="text-muted-foreground text-sm">{t('noContentYet')}</p>
         )}
       </section>
     </div>

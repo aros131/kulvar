@@ -39,8 +39,8 @@ export default function TreeBackground() {
     }
 
     function resize() {
-      W = canvas.width  = canvas.offsetWidth;
-      H = canvas.height = canvas.offsetHeight;
+      W = canvas!.width  = canvas!.offsetWidth;
+      H = canvas!.height = canvas!.offsetHeight;
       initParticleSprite();
     }
     resize();

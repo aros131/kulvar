@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Loader2, Trash2, Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Asset = {
   kind: "image" | "video";
@@ -27,12 +32,14 @@ function errMsg(err: unknown) {
 }
 
 export default function ProgramMediaSection({ programId }: Props) {
+  const t = useTranslations("programMediaSection");
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [progress, setProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
   const [busyPath, setBusyPath] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -77,10 +84,11 @@ export default function ProgramMediaSection({ programId }: Props) {
     if (!file) return;
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Not authenticated");
+      toast.error(t("loginRequired"));
       return;
     }
     try {
+      setUploading(true);
       setProgress(0);
 
       const form = new FormData();
@@ -100,6 +108,7 @@ export default function ProgramMediaSection({ programId }: Props) {
 
       const asset = res.data.asset;
       setAssets((prev) => [asset, ...prev]);
+      toast.success(t("uploaded"));
 
       // reset
       setFile(null);
@@ -108,7 +117,9 @@ export default function ProgramMediaSection({ programId }: Props) {
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (e) {
       console.error(e);
-      alert(errMsg(e));
+      toast.error(errMsg(e));
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -122,81 +133,80 @@ export default function ProgramMediaSection({ programId }: Props) {
         data: { storagePath },
       });
       setAssets((prev) => prev.filter((a) => a.storagePath !== storagePath));
+      toast.success(t("deleted"));
     } catch (e) {
       console.error(e);
-      alert(errMsg(e));
+      toast.error(errMsg(e));
     } finally {
       setBusyPath(null);
     }
   };
 
   return (
-    <section className="max-w-3xl w-full mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">📁 Program Medyası</h2>
-      </div>
-
-      <input
-        type="text"
-        placeholder="Ara: başlık, tür (image/video) veya MIME..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full mb-4 p-2 rounded border border-zinc-300 dark:border-zinc-600"
-      />
-
-      <div className="flex flex-col md:flex-row gap-2 mb-4">
-        <input
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Input
           type="text"
-          placeholder="Başlık (opsiyonel)"
+          placeholder={t("titlePlaceholder")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="flex-1 p-2 rounded border border-zinc-300 dark:border-zinc-600"
+          className="flex-1"
         />
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*,video/*"
           onChange={onSelect}
-          className="p-2 rounded border border-zinc-300 dark:border-zinc-600"
+          className="text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-muted file:text-foreground file:text-sm rounded border border-border bg-transparent px-2 py-1.5"
         />
-        <button
-          onClick={uploadOne}
-          disabled={!file}
-          className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
-        >
-          Yükle
-        </button>
+        <Button type="button" onClick={uploadOne} disabled={!file || uploading} className="shrink-0 gap-2">
+          {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("uploading")}</> : <><Upload className="w-4 h-4" /> {t("upload")}</>}
+        </Button>
       </div>
 
       {progress > 0 && (
-        <div className="w-full mb-4">
+        <div className="w-full">
           <div className="h-2 rounded bg-zinc-200 dark:bg-primary/80 overflow-hidden">
-            <div className="h-2 bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
+            <div className="h-2 bg-primary transition-all" style={{ width: `${progress}%` }} />
           </div>
           <div className="text-xs text-muted-foreground mt-1">{progress}%</div>
         </div>
       )}
 
+      {assets.length > 0 && (
+        <Input
+          type="text"
+          placeholder={t("searchPlaceholder")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      )}
+
       {loading ? (
         <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="animate-pulse h-20 bg-zinc-200 dark:bg-primary/80 rounded-xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center">Medya bulunamadı.</p>
+        <p className="text-muted-foreground text-sm py-2">
+          {assets.length === 0
+            ? t("emptyNoFiles")
+            : t("emptyNoMatch")}
+        </p>
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filtered.map((a) => (
             <li key={a.storagePath} className="border border-border dark:border-primary/50 rounded-xl p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-semibold truncate">{a.title || "(Başlıksız)"}</div>
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <div className="font-semibold truncate">{a.title || t("untitled")}</div>
                 <button
                   onClick={() => deleteOne(a.storagePath)}
                   disabled={busyPath === a.storagePath}
-                  className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                  className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  aria-label={t("deleteFileAria")}
                 >
-                  Sil
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
 
@@ -204,7 +214,7 @@ export default function ProgramMediaSection({ programId }: Props) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={a.url} alt={a.title || ""} className="w-full h-auto rounded" />
               ) : (
-                <video src={a.url} controls className="w-full rounded" />
+                <video src={a.url} controls playsInline preload="metadata" className="w-full rounded" />
               )}
 
               <div className="text-xs text-muted-foreground mt-2">
@@ -214,6 +224,6 @@ export default function ProgramMediaSection({ programId }: Props) {
           ))}
         </ul>
       )}
-    </section>
+    </div>
   );
 }

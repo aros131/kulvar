@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslations, useLocale } from 'next-intl';
 import { Star, CheckCircle2, MessageCircle, Bookmark, BookmarkCheck, CircleDashed } from 'lucide-react';
 // shadcn/ui hover card
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
@@ -39,6 +40,8 @@ export default function CoachCard({
   bio,
   tags = [],
 }: CoachCardProps) {
+  const t = useTranslations('coachCard');
+  const locale = useLocale();
   const router = useRouter();
   const [imgError, setImgError] = useState(false);
 
@@ -90,11 +93,11 @@ export default function CoachCard({
   const formattedPrice = useMemo(() => {
     if (typeof priceFrom !== 'number') return null;
     try {
-      return new Intl.NumberFormat('tr-TR').format(priceFrom);
+      return new Intl.NumberFormat(locale).format(priceFrom);
     } catch {
       return String(priceFrom);
     }
-  }, [priceFrom]);
+  }, [priceFrom, locale]);
 
   return (
     <motion.div
@@ -107,7 +110,7 @@ export default function CoachCard({
           {/* Outer link for the whole card */}
           <Link
             href={`/koc/${id}`}
-            aria-label={`${name} profiline git`}
+            aria-label={t('goToProfile', { name })}
             className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl"
             prefetch
           >
@@ -117,12 +120,12 @@ export default function CoachCard({
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-semibold text-foreground dark:text-white flex items-center gap-1">
                     {name}
-                    {isVerified && <CheckCircle2 className="h-4 w-4 text-indigo-500" aria-label="Doğrulanmış" />}
+                    {isVerified && <CheckCircle2 className="h-4 w-4 text-indigo-500" aria-label={t('verified')} />}
                   </h3>
                 </div>
                 <button
                   onClick={toggleFav}
-                  aria-label={fav ? 'Favorilerden kaldır' : 'Favorilere ekle'}
+                  aria-label={fav ? t('removeFavorite') : t('addFavorite')}
                   className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-primary/80 text-muted-foreground dark:text-zinc-300"
                 >
                   {fav ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
@@ -139,7 +142,7 @@ export default function CoachCard({
                   ) : (
                     <Image
                       src={profilePicture}
-                      alt={`${name} profil fotoğrafı`}
+                      alt={t('profilePhotoAlt', { name })}
                       fill
                       sizes="80px"
                       className="rounded-2xl object-cover border-2 border-indigo-500"
@@ -164,7 +167,7 @@ export default function CoachCard({
                         {typeof reviewCount === 'number' && <span>({reviewCount})</span>}
                       </>
                     ) : (
-                      <span className="italic text-muted-foreground">Henüz puan yok</span>
+                      <span className="italic text-muted-foreground">{t('noRatingYet')}</span>
                     )}
                   </div>
 
@@ -172,12 +175,12 @@ export default function CoachCard({
                     {isOnline ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                        Çevrimiçi
+                        {t('online')}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-primary/80 dark:text-zinc-200">
                         <CircleDashed className="h-3 w-3" />
-                        Müsait değil
+                        {t('notAvailable')}
                       </span>
                     )}
 
@@ -200,7 +203,7 @@ export default function CoachCard({
               {/* CTA row (button now, no nested link) */}
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">
-                  Profili Gör
+                  {t('viewProfile')}
                 </span>
                 <button
                   type="button"
@@ -208,7 +211,7 @@ export default function CoachCard({
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  Mesaj
+                  {t('message')}
                 </button>
               </div>
             </div>
@@ -221,17 +224,17 @@ export default function CoachCard({
             {bio && <p className="text-sm text-zinc-700 dark:text-zinc-200 line-clamp-4">{bio}</p>}
             {tags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {tags.slice(0, 6).map((t) => (
+                {tags.slice(0, 6).map((tag) => (
                   <span
-                    key={t}
+                    key={tag}
                     className="text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-primary/80 text-zinc-700 dark:text-zinc-200"
                   >
-                    #{t}
+                    #{tag}
                   </span>
                 ))}
               </div>
             )}
-            <div className="mt-3 text-xs text-muted-foreground dark:text-muted-foreground">İpucu: Profili açmadan hızlı önizleme.</div>
+            <div className="mt-3 text-xs text-muted-foreground dark:text-muted-foreground">{t('previewHint')}</div>
           </HoverCardContent>
         )}
       </HoverCard>

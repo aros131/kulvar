@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, LayoutGrid, Users, MessageSquare, User, Bell, MoreHorizontal, BarChart2, CreditCard, Settings, LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Home, LayoutGrid, Users, MessageSquare, User, Bell, MoreHorizontal, BarChart2, CreditCard, Settings, LogOut, Copy } from "lucide-react";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
@@ -13,6 +14,7 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -25,6 +27,7 @@ export default function MobileCoachBottomNav({
   unreadNotifications: propNotif = 0,
   unreadMessages: propMsgs = 0,
 }: Props) {
+  const t = useTranslations("navCoach");
   const pathname = usePathname();
   const router = useRouter();
   const [unreadNotifications, setUnreadNotifications] = useState(propNotif);
@@ -61,20 +64,21 @@ export default function MobileCoachBottomNav({
   }, []);
 
   const primaryItems = [
-    { href: "/dashboard/coach", label: "Panel", Icon: Home },
-    { href: "/dashboard/coach/programs", label: "Programlar", Icon: LayoutGrid },
-    { href: "/dashboard/coach/clients", label: "Danışanlar", Icon: Users },
-    { href: "/dashboard/coach/messages", label: "Mesajlar", Icon: MessageSquare, badge: unreadMessages },
-    { href: "/dashboard/coach/notifications?tab=unread", label: "Bildirimler", Icon: Bell, badge: unreadNotifications },
+    { href: "/dashboard/coach", label: t("panel"), Icon: Home },
+    { href: "/dashboard/coach/programs", label: t("programs"), Icon: LayoutGrid },
+    { href: "/dashboard/coach/clients", label: t("clients"), Icon: Users },
+    { href: "/dashboard/coach/messages", label: t("messages"), Icon: MessageSquare, badge: unreadMessages },
+    { href: "/dashboard/coach/notifications?tab=unread", label: t("notifications"), Icon: Bell, badge: unreadNotifications },
   ];
 
-  // Everything that doesn't fit in the bottom bar lives in the "Diğer" sheet —
+  // Everything that doesn't fit in the bottom bar lives in the "More" sheet —
   // same set of destinations the desktop sidebar (SidebarNavCoach) exposes directly.
   const moreItems = [
-    { href: "/dashboard/coach/profile", label: "Profil", Icon: User },
-    { href: "/dashboard/coach/analytics", label: "Analitik", Icon: BarChart2 },
-    { href: "/dashboard/coach/payments", label: "Ödemeler", Icon: CreditCard },
-    { href: "/dashboard/coach/settings", label: "Ayarlar", Icon: Settings },
+    { href: "/dashboard/coach/templates", label: t("templates"), Icon: Copy },
+    { href: "/dashboard/coach/profile", label: t("profile"), Icon: User },
+    { href: "/dashboard/coach/analytics", label: t("analytics"), Icon: BarChart2 },
+    { href: "/dashboard/coach/payments", label: t("payments"), Icon: CreditCard },
+    { href: "/dashboard/coach/settings", label: t("settings"), Icon: Settings },
   ];
 
   const isActive = (href: string) => {
@@ -92,8 +96,8 @@ export default function MobileCoachBottomNav({
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 h-14 bg-background/95 backdrop-blur border-t md:hidden">
-      <ul className="h-full grid grid-cols-6">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 min-h-14 pb-[env(safe-area-inset-bottom)] bg-background/95 backdrop-blur border-t md:hidden">
+      <ul className="h-14 grid grid-cols-6">
         {primaryItems.map(({ href, label, Icon, badge }) => {
           const active = isActive(href);
           const badgeNum = Math.max(0, Number(badge || 0));
@@ -127,15 +131,15 @@ export default function MobileCoachBottomNav({
                 className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-colors ${
                   moreActive ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Diğer"
-                aria-label="Diğer"
+                title={t("more")}
+                aria-label={t("more")}
               >
                 <MoreHorizontal className="h-5 w-5" />
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Diğer</SheetTitle>
+                <SheetTitle>{t("more")}</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 px-4 pb-4">
                 {moreItems.map(({ href, label, Icon }) => (
@@ -152,13 +156,15 @@ export default function MobileCoachBottomNav({
                   </SheetClose>
                 ))}
                 <div className="my-2 border-t" />
+                <LanguageSwitcher variant="inline" />
+                <div className="my-2 border-t" />
                 <SheetClose asChild>
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"
                   >
                     <LogOut className="h-5 w-5" />
-                    Çıkış Yap
+                    {t("logout")}
                   </button>
                 </SheetClose>
               </div>

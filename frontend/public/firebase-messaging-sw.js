@@ -16,7 +16,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title || "Kulvar";
+  const title = payload.notification?.title || "PerSe Coaching";
   const options = {
     body: payload.notification?.body,
     icon: "/icons/icon-192.png",

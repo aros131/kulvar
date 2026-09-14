@@ -3,9 +3,11 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
@@ -13,6 +15,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
+  const t = useTranslations('auth');
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,9 +26,9 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!token) { setError('Geçersiz bağlantı. Lütfen yeni bir sıfırlama talebi oluşturun.'); return; }
-    if (newPassword.length < 6) { setError('Şifre en az 6 karakter olmalı.'); return; }
-    if (newPassword !== confirmPassword) { setError('Şifreler eşleşmiyor.'); return; }
+    if (!token) { setError(t('resetPassword.invalidLink')); return; }
+    if (newPassword.length < 6) { setError(t('resetPassword.tooShort')); return; }
+    if (newPassword !== confirmPassword) { setError(t('resetPassword.mismatch')); return; }
     setLoading(true);
     try {
       const res = await fetch(`${API}/auth/reset-password`, {
@@ -38,7 +41,7 @@ function ResetPasswordForm() {
       setDone(true);
       setTimeout(() => router.push('/login'), 2500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu.');
+      setError(err instanceof Error ? err.message : t('resetPassword.errorGeneric'));
     } finally {
       setLoading(false);
     }
@@ -46,18 +49,21 @@ function ResetPasswordForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 px-4">
+      <div className="fixed right-4 top-[calc(1rem+env(safe-area-inset-top))]">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">PerSe Coaching</h1>
-          <p className="text-sm text-muted-foreground mt-1">Yeni şifrenizi belirleyin.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('brand')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('resetPassword.subtitle')}</p>
         </div>
 
         <div className="bg-card dark:bg-primary/90 rounded-2xl shadow-lg p-8 space-y-5">
-          <h2 className="text-xl font-semibold">Şifre Sıfırla</h2>
+          <h2 className="text-xl font-semibold">{t('resetPassword.heading')}</h2>
 
           {done ? (
             <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-4 py-4 text-sm text-emerald-700 dark:text-emerald-300">
-              Şifreniz başarıyla güncellendi! Giriş sayfasına yönlendiriliyorsunuz…
+              {t('resetPassword.doneMessage')}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,36 +74,36 @@ function ResetPasswordForm() {
               )}
 
               <div className="space-y-1">
-                <Label htmlFor="newPassword">Yeni Şifre</Label>
+                <Label htmlFor="newPassword">{t('resetPassword.newPasswordLabel')}</Label>
                 <Input
                   id="newPassword"
                   type="password"
-                  placeholder="En az 6 karakter"
+                  placeholder={t('resetPassword.newPasswordPlaceholder')}
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="confirmPassword">Yeni Şifre (Tekrar)</Label>
+                <Label htmlFor="confirmPassword">{t('resetPassword.confirmPasswordLabel')}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="Şifreyi tekrar girin"
+                  placeholder={t('resetPassword.confirmPasswordPlaceholder')}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                 />
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Kaydediliyor…' : 'Şifremi Güncelle'}
+                {loading ? t('resetPassword.submitting') : t('resetPassword.submit')}
               </Button>
             </form>
           )}
 
           <p className="text-center text-sm text-muted-foreground">
             <Link href="/login" className="text-primary font-medium hover:underline">
-              ← Giriş sayfasına dön
+              {t('resetPassword.backToLogin')}
             </Link>
           </p>
         </div>

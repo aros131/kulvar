@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
@@ -81,6 +82,8 @@ export default function CalendarHeatmap({
   month?: string;
   events?: CalEvent[];
 }) {
+  const t = useTranslations("calendarHeatmap");
+  const tDays = useTranslations("programDetailsView");
   const router = useRouter();
   const [cells, setCells] = useState<DayCell[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -186,7 +189,7 @@ source = events.filter(e => {
     : s === 'planned'  ? 'bg-sky-400'
     :                    'bg-zinc-300 dark:bg-primary/80';
 
-  const wk = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const wk = tDays.raw("weekdaysShort") as string[];
 
   return (
     <div className="rounded-xl border bg-card dark:bg-zinc-900 p-4 relative">
@@ -195,10 +198,10 @@ source = events.filter(e => {
           {baseDate.getFullYear()} / {pad(baseDate.getMonth() + 1)}
         </h3>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-green-500 inline-block" /> Tamamlandı</span>
-          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-amber-500 inline-block" /> Kaçırıldı</span>
-          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-sky-400 inline-block" /> Planlı</span>
-          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-zinc-300 dark:bg-primary/80 inline-block" /> Boş</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-green-500 inline-block" /> {t("completed")}</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-amber-500 inline-block" /> {t("missed")}</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-sky-400 inline-block" /> {t("planned")}</span>
+          <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-zinc-300 dark:bg-primary/80 inline-block" /> {t("empty")}</span>
         </div>
       </div>
 
@@ -239,13 +242,13 @@ source = events.filter(e => {
         >
           <div className="font-medium mb-1">{hoverDay.ymd}</div>
           {hoverDay.events.length === 0 ? (
-            <div className="text-muted-foreground">Etkinlik yok.</div>
+            <div className="text-muted-foreground">{t("noEvents")}</div>
           ) : (
             <ul className="space-y-1">
               {hoverDay.events.map((e, idx) => (
                 <li key={e._id || idx} className="flex items-start justify-between gap-2">
                   <div className="text-foreground dark:text-zinc-200">
-                    {e.title || 'Seans'}
+                    {e.title || t("sessionFallback")}
                   </div>
                   <span className={[
                     'px-1.5 py-0.5 rounded text-[10px]',
@@ -253,7 +256,7 @@ source = events.filter(e => {
                     : new Date(e.end || e.start) < new Date() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
                     : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
                   ].join(' ')}>
-                    {e.status === 'completed' ? 'Tamamlandı' : (new Date(e.end || e.start) < new Date() ? 'Kaçırıldı' : 'Planlı')}
+                    {e.status === 'completed' ? t("completed") : (new Date(e.end || e.start) < new Date() ? t("missed") : t("planned"))}
                   </span>
                 </li>
               ))}
@@ -261,7 +264,7 @@ source = events.filter(e => {
           )}
           <div className="mt-2">
             <a href={`/takvim?date=${encodeURIComponent(hoverDay.ymd)}`} className="underline text-muted-foreground dark:text-zinc-300">
-              Günü aç →
+              {t("openDay")}
             </a>
           </div>
         </div>
@@ -280,15 +283,15 @@ source = events.filter(e => {
           >
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">{openDay.ymd}</div>
-              <button onClick={() => setOpenDay(null)} className="text-sm px-2 py-1 rounded border">Kapat</button>
+              <button onClick={() => setOpenDay(null)} className="text-sm px-2 py-1 rounded border">{t("close")}</button>
             </div>
             {openDay.events.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Etkinlik yok.</div>
+              <div className="text-sm text-muted-foreground">{t("noEvents")}</div>
             ) : (
               <ul className="space-y-2">
                 {openDay.events.map((e, idx) => (
                   <li key={e._id || idx} className="rounded border p-2">
-                    <div className="text-sm font-medium">{e.title || 'Seans'}</div>
+                    <div className="text-sm font-medium">{e.title || t("sessionFallback")}</div>
                     <div className="text-[12px] text-muted-foreground">
                       {new Date(e.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(e.end || e.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -299,7 +302,7 @@ source = events.filter(e => {
                         : new Date(e.end || e.start) < new Date() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
                         : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
                       ].join(' ')}>
-                        {e.status === 'completed' ? 'Tamamlandı' : (new Date(e.end || e.start) < new Date() ? 'Kaçırıldı' : 'Planlı')}
+                        {e.status === 'completed' ? t("completed") : (new Date(e.end || e.start) < new Date() ? t("missed") : t("planned"))}
                       </span>
                     </div>
                   </li>
@@ -311,15 +314,15 @@ source = events.filter(e => {
                 href={`/takvim?date=${encodeURIComponent(openDay.ymd)}`}
                 className="text-sm px-3 py-1.5 rounded-lg border inline-block"
               >
-                Günü aç
+                {t("openDayBtn")}
               </a>
             </div>
           </div>
         </div>
       )}
 
-      {loading && <div className="mt-2 text-sm text-muted-foreground">Yükleniyor…</div>}
-      {err && <div className="mt-2 text-sm text-red-600">Hata: {String(err)}</div>}
+      {loading && <div className="mt-2 text-sm text-muted-foreground">{t("loading")}</div>}
+      {err && <div className="mt-2 text-sm text-red-600">{t("errorLabel", { error: String(err) })}</div>}
     </div>
   );
 }

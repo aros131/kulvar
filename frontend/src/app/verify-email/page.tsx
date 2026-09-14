@@ -3,19 +3,21 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token");
+  const t = useTranslations("auth.verifyEmail");
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setMessage("Geçersiz doğrulama bağlantısı.");
+      setMessage(t("invalidLink"));
       return;
     }
     fetch(`${API}/auth/verify-email?token=${token}`)
@@ -23,16 +25,17 @@ function VerifyEmailInner() {
         const data = await res.json();
         if (res.ok) {
           setStatus("success");
-          setMessage(data.message || "E-posta başarıyla doğrulandı.");
+          setMessage(data.message || t("defaultSuccess"));
         } else {
           setStatus("error");
-          setMessage(data.message || "Doğrulama başarısız.");
+          setMessage(data.message || t("defaultError"));
         }
       })
       .catch(() => {
         setStatus("error");
-        setMessage("Sunucuya bağlanılamadı. Tekrar deneyin.");
+        setMessage(t("connectionError"));
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   return (
@@ -41,32 +44,32 @@ function VerifyEmailInner() {
         {status === "loading" && (
           <>
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-muted-foreground">Doğrulanıyor...</p>
+            <p className="text-muted-foreground">{t("verifying")}</p>
           </>
         )}
         {status === "success" && (
           <>
             <div className="text-5xl">✅</div>
-            <h1 className="text-xl font-bold">E-posta Doğrulandı!</h1>
+            <h1 className="text-xl font-bold">{t("successTitle")}</h1>
             <p className="text-muted-foreground">{message}</p>
             <Link
               href="/login"
               className="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground px-6 py-3 font-semibold hover:opacity-90 transition-opacity"
             >
-              Giriş Yap
+              {t("loginCta")}
             </Link>
           </>
         )}
         {status === "error" && (
           <>
             <div className="text-5xl">❌</div>
-            <h1 className="text-xl font-bold">Doğrulama Başarısız</h1>
+            <h1 className="text-xl font-bold">{t("errorTitle")}</h1>
             <p className="text-muted-foreground">{message}</p>
             <Link
               href="/login"
               className="inline-flex items-center justify-center rounded-xl border border-border px-6 py-3 font-semibold hover:bg-muted transition-colors"
             >
-              Giriş Sayfasına Dön
+              {t("backToLoginCta")}
             </Link>
           </>
         )}

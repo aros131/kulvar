@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import CoachProfileClient, { Coach, Program, Review } from "@/components/CoachProfileClient";
 
 type Props = {
@@ -31,8 +32,10 @@ const cleanToken = (): string | null => {
 };
 
 export default function ClientBridge({ coach, programs, reviews, isAuthed
-  
+
  }: Props) {
+  const t = useTranslations("followersDialogFallback");
+  const locale = useLocale() as "tr" | "en" | "fr";
   const API = useMemo(apiBase, []);
   const [isFollowing, setIsFollowing] = useState<boolean>(!!coach.isFollowing);
   const [checkingFollow, setCheckingFollow] = useState<boolean>(false);
@@ -83,7 +86,7 @@ export default function ClientBridge({ coach, programs, reviews, isAuthed
           const parsed: Follower[] = (items as any[])
             .map((u: any): Follower => ({
               id: String(u?.id ?? u?._id ?? ""),
-              name: typeof u?.name === "string" ? u.name : "Kullanıcı",
+              name: typeof u?.name === "string" ? u.name : t("userFallback"),
             }))
             .filter((x: Follower) => !!x.id); // <-- typed param fixes TS7006
 
@@ -130,7 +133,7 @@ export default function ClientBridge({ coach, programs, reviews, isAuthed
   coach={coach}
   programs={programs}
   reviews={reviews}
-  locale="tr"
+  locale={locale}
   isFollowing={isFollowing}
   loading={checkingFollow && typeof coach.isFollowing === "undefined"}
   onFollowToggle={handleFollowToggle}

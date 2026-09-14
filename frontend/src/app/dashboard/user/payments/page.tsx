@@ -2,12 +2,14 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import UserPageShell from '@/components/user/UserPageShell';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 interface Invoice {
   _id: string;
@@ -16,6 +18,23 @@ interface Invoice {
   description: string;
   status: 'Pending' | 'Paid' | 'Failed';
   createdAt: string;
+  programId?: string | null;
+  engagementId?: { _id: string; billingType: 'monthly' | 'weekly' | 'per_session' } | string | null;
+}
+
+function invoiceSourceLabel(inv: Invoice, t: ReturnType<typeof useTranslations>): string {
+  if (inv.programId) return t('sourceProgramPurchase');
+  if (inv.engagementId && typeof inv.engagementId === 'object') {
+    const billingKey: Record<string, string> = {
+      monthly: 'billingMonthly',
+      weekly: 'billingWeekly',
+      per_session: 'billingPerSession',
+    };
+    const key = billingKey[inv.engagementId.billingType];
+    return key ? t(key) : t('sourceEngagement');
+  }
+  if (inv.engagementId) return t('sourceEngagement');
+  return t('sourceCoachInvoice');
 }
 
 /** Browsers don't execute <script> tags inserted via innerHTML, so iyzico's
@@ -46,6 +65,8 @@ function CheckoutFormRenderer({ html }: { html: string }) {
 }
 
 function UserPaymentsInner() {
+  const t = useTranslations('paymentsUser');
+  const locale = useLocale();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState<string | null>(null);
@@ -63,7 +84,7 @@ function UserPaymentsInner() {
       const data = await res.json();
       setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
     } catch {
-      toast.error('Faturalar yüklenemedi.');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -101,28 +122,28 @@ function UserPaymentsInner() {
       if (!res.ok) throw new Error(data?.message || 'init failed');
       setCheckoutHtml(data.checkoutFormContent);
     } catch {
-      toast.error('Ödeme başlatılamadı. Lütfen tekrar deneyin.');
+      toast.error(t('initError'));
     } finally {
       setInitializing(null);
     }
   };
 
-  if (loading) return <UserPageShell><div className="p-8 text-sm text-muted-foreground">Yükleniyor...</div></UserPageShell>;
+  if (loading) return <UserPageShell><div className="p-8 text-sm text-muted-foreground">{t('loading')}</div></UserPageShell>;
 
   return (
     <UserPageShell>
       <div className="max-w-2xl mx-auto px-4 py-8 md:py-10 space-y-6">
-        <h1 className="text-2xl font-bold">Ödemelerim</h1>
+        <h1 className="text-2xl font-bold">{t('heading')}</h1>
 
         {resultBanner?.status === 'success' && (
           <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-start gap-3">
             <span className="text-2xl">🎉</span>
             <div>
-              <p className="font-semibold text-green-800 dark:text-green-300">Ödeme başarılı!</p>
+              <p className="font-semibold text-green-800 dark:text-green-300">{t('successTitle')}</p>
               <p className="text-sm text-green-700 dark:text-green-400 mt-0.5">
-                Programınıza erişiminiz aktif edildi.{' '}
+                {t('successDesc')}{' '}
                 {resultBanner.programId && (
-                  <a href="/dashboard/user/programs" className="underline font-medium">Programlarıma Git →</a>
+                  <a href="/dashboard/user/programs" className="underline font-medium">{t('goToPrograms')}</a>
                 )}
               </p>
             </div>
@@ -131,14 +152,14 @@ function UserPaymentsInner() {
 
         {resultBanner?.status === 'failed' && (
           <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-4">
-            <p className="font-semibold text-red-700 dark:text-red-400">Ödeme başarısız oldu.</p>
-            <p className="text-sm text-red-600 dark:text-red-500 mt-0.5">Lütfen kart bilgilerinizi kontrol edip tekrar deneyin.</p>
+            <p className="font-semibold text-red-700 dark:text-red-400">{t('failedTitle')}</p>
+            <p className="text-sm text-red-600 dark:text-red-500 mt-0.5">{t('failedDesc')}</p>
           </div>
         )}
 
         {invoices.length === 0 ? (
           <div className="bg-card dark:bg-primary/90 rounded-2xl p-8 shadow text-center text-muted-foreground">
-            Henüz size ait fatura yok.
+            {t('empty')}
           </div>
         ) : (
           <div className="space-y-3">
@@ -150,17 +171,20 @@ function UserPaymentsInner() {
                 <div>
                   <p className="font-medium">{inv.description}</p>
                   {inv.coachId?.name && (
-                    <p className="text-sm text-muted-foreground">Koç: {inv.coachId.name}</p>
+                    <p className="text-sm text-muted-foreground">{t('coachLabel', { name: inv.coachId.name })}</p>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(inv.createdAt).toLocaleDateString('tr-TR')}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{invoiceSourceLabel(inv, t)}</span>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(inv.createdAt).toLocaleDateString(LOCALE_TAG[locale] || 'tr-TR')}
+                    </p>
+                  </div>
                 </div>
                 <div className="text-right flex flex-col items-end gap-2">
                   <p className="font-bold text-lg">₺{inv.amount}</p>
                   {inv.status === 'Paid' ? (
                     <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
-                      Ödendi
+                      {t('paid')}
                     </span>
                   ) : (
                     <Button
@@ -168,11 +192,11 @@ function UserPaymentsInner() {
                       disabled={initializing === inv._id}
                       onClick={() => startPayment(inv._id)}
                     >
-                      {initializing === inv._id ? 'Hazırlanıyor...' : 'Öde'}
+                      {initializing === inv._id ? t('preparing') : t('pay')}
                     </Button>
                   )}
                   {inv.status === 'Failed' && (
-                    <span className="text-xs text-red-500">Son ödeme denemesi başarısız oldu</span>
+                    <span className="text-xs text-red-500">{t('lastAttemptFailed')}</span>
                   )}
                 </div>
               </div>
@@ -184,7 +208,7 @@ function UserPaymentsInner() {
       <Dialog open={!!checkoutHtml} onOpenChange={(open) => !open && setCheckoutHtml(null)}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Ödeme</DialogTitle>
+            <DialogTitle>{t('checkoutTitle')}</DialogTitle>
           </DialogHeader>
           {checkoutHtml && <CheckoutFormRenderer html={checkoutHtml} />}
         </DialogContent>

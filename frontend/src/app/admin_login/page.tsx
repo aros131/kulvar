@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 export default function AdminLoginPage() {
+  const t = useTranslations('adminLogin');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +26,7 @@ export default function AdminLoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.message || 'Giriş başarısız.');
+        setErrorMsg(data.message || t('loginFailed'));
         return;
       }
       localStorage.setItem('token', data.token);
@@ -32,7 +34,7 @@ export default function AdminLoginPage() {
       localStorage.setItem('name', data.user.name);
       router.push('/admin-dashboard');
     } catch {
-      setErrorMsg('Bir hata oluştu.');
+      setErrorMsg(t('genericError'));
     } finally {
       setLoading(false);
     }
@@ -41,11 +43,11 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 px-4">
       <form onSubmit={handleSubmit} className="bg-card dark:bg-primary/90 p-8 rounded-lg shadow-md w-full max-w-md space-y-6">
-        <h1 className="text-2xl font-bold text-center">Admin Girişi</h1>
+        <h1 className="text-2xl font-bold text-center">{t('heading')}</h1>
         {errorMsg && <p className="text-red-500 text-sm">{errorMsg}</p>}
         <input
           type="email"
-          placeholder="Email"
+          placeholder={t('emailPlaceholder')}
           required
           value={email}
           onChange={e => setEmail(e.target.value)}
@@ -53,14 +55,14 @@ export default function AdminLoginPage() {
         />
         <input
           type="password"
-          placeholder="Şifre"
+          placeholder={t('passwordPlaceholder')}
           required
           value={password}
           onChange={e => setPassword(e.target.value)}
           className="w-full p-3 rounded border dark:bg-primary/80 dark:text-white"
         />
         <button type="submit" disabled={loading} className="w-full bg-primary/80 hover:bg-primary/90 text-white py-2 rounded disabled:opacity-60">
-          {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+          {loading ? t('loggingIn') : t('loginButton')}
         </button>
       </form>
     </main>

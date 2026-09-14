@@ -4,6 +4,11 @@ const PaymentSchema = new mongoose.Schema({
   coachId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   programId: { type: mongoose.Schema.Types.ObjectId, ref: "Program", default: null },
+  // Set when this invoice was generated from a recurring/per-session coaching
+  // engagement rather than a program purchase or a fully manual invoice.
+  engagementId: { type: mongoose.Schema.Types.ObjectId, ref: "CoachingEngagement", default: null },
+  // Set for per_session engagement invoices, linking back to the completed session.
+  bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
   amount: { type: Number, required: true },
   description: { type: String },
   status: { type: String, enum: ["Pending", "Paid", "Failed"], default: "Pending" },

@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Gizlilik Politikası",
-  description: "PerSe Coaching gizlilik politikası — verilerinizi nasıl topladığımız ve koruduğumuz.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("seo");
+  return {
+    title: t("privacyTitle"),
+    description: t("privacyDescription"),
+  };
+}
 
 export default function PrivacyLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

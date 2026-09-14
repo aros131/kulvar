@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import PublicNavbar from '@/components/nav/PublicNavbar';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
 export default function ContactPage() {
+  const t = useTranslations('contact');
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -28,9 +30,9 @@ export default function ContactPage() {
       if (!res.ok) throw new Error();
       setSent(true);
       setFormData({ name: '', email: '', message: '' });
-      toast.success('Mesajınız iletildi. En kısa sürede dönüş yapacağız.');
+      toast.success(t('toastSuccess'));
     } catch {
-      toast.error('Gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      toast.error(t('toastError'));
     } finally {
       setLoading(false);
     }
@@ -38,29 +40,22 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen bg-zinc-100 dark:bg-zinc-900 px-4 py-10">
-      <nav className="bg-card dark:bg-primary/90 shadow-md px-6 py-4 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold text-indigo-600">PerSe Coaching</Link>
-        <ul className="hidden md:flex space-x-6">
-          <li><Link href="/" className="hover:underline">Anasayfa</Link></li>
-          <li><Link href="/koc" className="hover:underline">Koçlarımız</Link></li>
-          <li><Link href="/contact" className="underline text-indigo-600">İletişim</Link></li>
-        </ul>
-      </nav>
+      <PublicNavbar />
 
       <section className="max-w-2xl mx-auto py-16 px-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-center mb-6">Bize Ulaşın</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-center mb-6">{t('heading')}</h1>
         <p className="text-center text-muted-foreground dark:text-zinc-300 mb-10">
-          Herhangi bir sorunuz, öneriniz veya iş birliği teklifiniz için bizimle iletişime geçebilirsiniz.
+          {t('subtitle')}
         </p>
 
         {sent && (
           <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 rounded-lg p-4 text-green-700 dark:text-green-300 text-center mb-6">
-            Mesajınız alındı! En kısa sürede size dönüş yapacağız.
+            {t('successBanner')}
           </div>
         )}
         <form onSubmit={handleSubmit} className="bg-card dark:bg-primary/90 rounded-lg shadow-md p-8 space-y-6">
           <div>
-            <label htmlFor="name" className="block mb-2 font-medium">Adınız</label>
+            <label htmlFor="name" className="block mb-2 font-medium">{t('nameLabel')}</label>
             <input
               type="text"
               id="name"
@@ -73,7 +68,7 @@ export default function ContactPage() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block mb-2 font-medium">Email</label>
+            <label htmlFor="email" className="block mb-2 font-medium">{t('emailLabel')}</label>
             <input
               type="email"
               id="email"
@@ -86,7 +81,7 @@ export default function ContactPage() {
           </div>
 
           <div>
-            <label htmlFor="message" className="block mb-2 font-medium">Mesajınız</label>
+            <label htmlFor="message" className="block mb-2 font-medium">{t('messageLabel')}</label>
             <textarea
               id="message"
               name="message"
@@ -99,13 +94,13 @@ export default function ContactPage() {
           </div>
 
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Gönderiliyor...' : 'Gönder'}
+            {loading ? t('submitting') : t('submit')}
           </Button>
         </form>
       </section>
 
       <footer className="bg-zinc-200 dark:bg-primary/90 py-6 mt-16 text-center text-sm text-muted-foreground dark:text-zinc-300">
-        © 2025 PerSe Coaching. Tüm hakları saklıdır.
+        {t('footer')}
       </footer>
     </main>
   );

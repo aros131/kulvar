@@ -3,8 +3,10 @@
 import { Home, User, MessageSquare, Settings, Bell, LayoutGrid, CreditCard, Users, LogOut, Camera, Target, ClipboardList, Apple } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import clsx from "clsx";
 import { ReactNode } from "react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface SidebarNavUserProps {
   unreadCount?: number;       // notifications
@@ -15,6 +17,7 @@ export default function SidebarNavUser({
   unreadCount = 0,
   unreadMessages = 0,
 }: SidebarNavUserProps) {
+  const t = useTranslations("navUser");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -46,15 +49,15 @@ export default function SidebarNavUser({
   );
 
   const navItems = [
-    { href: "/dashboard/user", icon: <Home size={24} />, label: "Ana Sayfa" },
-    { href: "/dashboard/user/profile", icon: <User size={24} />, label: "Profil" },
-    { href: "/dashboard/user/programs", icon: <LayoutGrid size={24} />, label: "Programlarım" },
-    { href: "/dashboard/user/koclarimiz", icon: <Users size={24} />, label: "Koçlarım" },
-    { href: "/dashboard/user/ilerleme", icon: <Camera size={24} />, label: "İlerleme" },
-    { href: "/dashboard/user/aliskanliklar", icon: <Target size={24} />, label: "Alışkanlıklar" },
-    { href: "/dashboard/user/check-in", icon: <ClipboardList size={24} />, label: "Check-in" },
-    { href: "/dashboard/user/nutrition", icon: <Apple size={24} />, label: "Beslenme" },
-    { href: "/dashboard/user/payments", icon: <CreditCard size={24} />, label: "Ödemelerim" },
+    { href: "/dashboard/user", icon: <Home size={24} />, label: t("home") },
+    { href: "/dashboard/user/profile", icon: <User size={24} />, label: t("profile") },
+    { href: "/dashboard/user/programs", icon: <LayoutGrid size={24} />, label: t("programs") },
+    { href: "/dashboard/user/koclarimiz", icon: <Users size={24} />, label: t("coaches") },
+    { href: "/dashboard/user/ilerleme", icon: <Camera size={24} />, label: t("progress") },
+    { href: "/dashboard/user/aliskanliklar", icon: <Target size={24} />, label: t("habits") },
+    { href: "/dashboard/user/check-in", icon: <ClipboardList size={24} />, label: t("checkin") },
+    { href: "/dashboard/user/nutrition", icon: <Apple size={24} />, label: t("nutrition") },
+    { href: "/dashboard/user/payments", icon: <CreditCard size={24} />, label: t("payments") },
     {
       href: "/dashboard/user/messages",
       icon: (
@@ -62,7 +65,7 @@ export default function SidebarNavUser({
           <MessageSquare size={24} />
         </BadgeIcon>
       ),
-      label: "Mesajlar",
+      label: t("messages"),
     },
     {
       href: "/dashboard/user/notifications",
@@ -71,9 +74,9 @@ export default function SidebarNavUser({
           <Bell size={24} />
         </BadgeIcon>
       ),
-      label: "Bildirimler",
+      label: t("notifications"),
     },
-    { href: "/dashboard/user/settings", icon: <Settings size={24} />, label: "Ayarlar" },
+    { href: "/dashboard/user/settings", icon: <Settings size={24} />, label: t("settings") },
   ];
 
   return (
@@ -95,14 +98,17 @@ export default function SidebarNavUser({
           </Link>
         ))}
       </div>
-      <button
-        onClick={handleLogout}
-        title="Çıkış Yap"
-        aria-label="Çıkış Yap"
-        className="flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-      >
-        <LogOut size={24} />
-      </button>
+      <div className="space-y-1">
+        <LanguageSwitcher variant="icon" />
+        <button
+          onClick={handleLogout}
+          title={t("logout")}
+          aria-label={t("logout")}
+          className="flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+        >
+          <LogOut size={24} />
+        </button>
+      </div>
     </aside>
   );
 }

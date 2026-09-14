@@ -1,3 +1,6 @@
+const createNextIntlPlugin = require('next-intl/plugin');
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -7,6 +10,13 @@ const nextConfig = {
   typescript: {
     // ✅ Don't fail builds because of TS type errors
     ignoreBuildErrors: true,
+  },
+  images: {
+    // Profile pictures / progress photos come from Firebase Storage or the
+    // backend's own host, which changes across dev (LAN IP), prod (Render)
+    // and previews. Rather than whitelisting every possible remote hostname,
+    // skip Next's image optimizer so <Image> just renders the URL directly.
+    unoptimized: true,
   },
   async redirects() {
     return [
@@ -38,4 +48,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

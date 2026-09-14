@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,6 +9,7 @@ import { Bell, CheckCheck, Circle } from "lucide-react";
 import UserPageShell from "@/components/user/UserPageShell";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 interface Notification {
   _id: string;
@@ -16,8 +18,8 @@ interface Notification {
   createdAt: string;
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleString("tr-TR", {
+function fmtDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(LOCALE_TAG[locale] || "tr-TR", {
     day: "numeric", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
@@ -40,10 +42,19 @@ function NotifSkeleton() {
 }
 
 function NotifItem({ n, onRead }: { n: Notification; onRead: (id: string) => void }) {
+  const t = useTranslations("notificationsUser");
+  const locale = useLocale();
+  // The whole card is the tap target — a tiny corner link is easy to miss
+  // on a phone, and tapping a notification to dismiss it is the behavior
+  // people already expect from every other notification list.
   return (
     <div
+      role={n.isRead ? undefined : "button"}
+      tabIndex={n.isRead ? undefined : 0}
+      onClick={() => { if (!n.isRead) onRead(n._id); }}
+      onKeyDown={(e) => { if (!n.isRead && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onRead(n._id); } }}
       className={`rounded-2xl border bg-card p-4 flex items-start gap-3 transition-colors ${
-        !n.isRead ? "border-primary/30 bg-primary/[0.03]" : ""
+        !n.isRead ? "border-primary/30 bg-primary/[0.03] cursor-pointer active:bg-primary/[0.08]" : ""
       }`}
     >
       <div className={`mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
@@ -55,16 +66,13 @@ function NotifItem({ n, onRead }: { n: Notification; onRead: (id: string) => voi
         <p className={`text-sm leading-snug ${n.isRead ? "text-muted-foreground" : "font-medium text-foreground"}`}>
           {n.message}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">{fmtDate(n.createdAt)}</p>
+        <p className="text-xs text-muted-foreground mt-1">{fmtDate(n.createdAt, locale)}</p>
       </div>
       {!n.isRead && (
-        <button
-          onClick={() => onRead(n._id)}
-          className="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline"
-        >
+        <span className="shrink-0 flex items-center gap-1 text-xs text-primary">
           <Circle className="h-2 w-2 fill-primary" />
-          okundu
-        </button>
+          {t("readBadge")}
+        </span>
       )}
     </div>
   );
@@ -80,6 +88,7 @@ function EmptyState({ text }: { text: string }) {
 }
 
 export default function UserNotificationsPage() {
+  const t = useTranslations("notificationsUser");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -116,7 +125,7 @@ export default function UserNotificationsPage() {
       headers: { Authorization: `Bearer ${token}` },
     });
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    toast.success("Tüm bildirimler okundu.");
+    toast.success(t("markAllReadToast"));
   };
 
   const unread = notifications.filter((n) => !n.isRead);
@@ -127,13 +136,13 @@ export default function UserNotificationsPage() {
       <section className="max-w-2xl mx-auto px-4 py-8 md:py-10 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Bildirimler</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Koçundan ve sistemden gelen bildirimler</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("heading")}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t("subtitle")}</p>
           </div>
           {unread.length > 0 && (
             <Button variant="outline" size="sm" onClick={markAllAsRead} className="shrink-0">
               <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
-              Tümünü okundu yap
+              {t("markAllRead")}
             </Button>
           )}
         </div>
@@ -143,26 +152,26 @@ export default function UserNotificationsPage() {
         ) : (
           <Tabs defaultValue="all" className="space-y-4">
             <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="all">Tümü{notifications.length > 0 && ` (${notifications.length})`}</TabsTrigger>
-              <TabsTrigger value="unread">Okunmamış{unread.length > 0 && ` (${unread.length})`}</TabsTrigger>
-              <TabsTrigger value="read">Okunmuş</TabsTrigger>
+              <TabsTrigger value="all">{t("tabAll")}{notifications.length > 0 && ` (${notifications.length})`}</TabsTrigger>
+              <TabsTrigger value="unread">{t("tabUnread")}{unread.length > 0 && ` (${unread.length})`}</TabsTrigger>
+              <TabsTrigger value="read">{t("tabRead")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="all" className="space-y-3 mt-4">
               {notifications.length === 0
-                ? <EmptyState text="Hiç bildirimin yok." />
+                ? <EmptyState text={t("emptyAll")} />
                 : notifications.map((n) => <NotifItem key={n._id} n={n} onRead={markAsRead} />)}
             </TabsContent>
 
             <TabsContent value="unread" className="space-y-3 mt-4">
               {unread.length === 0
-                ? <EmptyState text="Okunmamış bildirimin yok." />
+                ? <EmptyState text={t("emptyUnread")} />
                 : unread.map((n) => <NotifItem key={n._id} n={n} onRead={markAsRead} />)}
             </TabsContent>
 
             <TabsContent value="read" className="space-y-3 mt-4">
               {read.length === 0
-                ? <EmptyState text="Okunmuş bildirimin yok." />
+                ? <EmptyState text={t("emptyRead")} />
                 : read.map((n) => <NotifItem key={n._id} n={n} onRead={markAsRead} />)}
             </TabsContent>
           </Tabs>

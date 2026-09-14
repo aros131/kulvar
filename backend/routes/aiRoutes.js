@@ -1,4 +1,6 @@
 import express from 'express';
+import multer from 'multer';
+import { PDFParse } from 'pdf-parse';
 import protect from '../middleware/authMiddleware.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
 import CheckIn from '../models/CheckIn.js';
@@ -11,6 +13,7 @@ import {
   suggestAlternatives,
   generateNutritionPlan,
   estimateMealNutrition,
+  extractNutritionPlanFromText,
   generateProgressReport,
   matchCoach,
   generateOnboardingPlan,
@@ -22,6 +25,7 @@ import {
 } from '../services/aiService.js';
 
 const router = express.Router();
+const pdfUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
 // POST /ai/check-in-analysis   (koç)
 router.post('/check-in-analysis', protect, roleMiddleware(['coach']), async (req, res) => {
@@ -98,6 +102,27 @@ router.post('/estimate-meal', protect, async (req, res) => {
     const estimate = await estimateMealNutrition(description.trim());
     res.json({ estimate });
   } catch (err) {
+    if (err.aiUnavailable) return res.status(503).json({ message: 'AI şu an kalori/makro tahmini yapamıyor, lütfen birazdan tekrar dene.' });
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /ai/extract-meals-from-pdf   (koç — bir beslenme planı PDF'i yükler, öğünler/hedefler otomatik çıkarılır)
+router.post('/extract-meals-from-pdf', protect, roleMiddleware(['coach']), pdfUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'PDF dosyası gerekli' });
+    if (req.file.mimetype !== 'application/pdf') {
+      return res.status(400).json({ message: 'Sadece PDF dosyası yükleyebilirsin' });
+    }
+
+    const parser = new PDFParse({ data: req.file.buffer });
+    const { text } = await parser.getText();
+    await parser.destroy();
+
+    const plan = await extractNutritionPlanFromText(text);
+    res.json({ plan });
+  } catch (err) {
+    if (err.aiUnavailable) return res.status(503).json({ message: 'AI şu an PDF\'ten plan çıkaramıyor, lütfen birazdan tekrar dene.' });
     res.status(500).json({ message: err.message });
   }
 });
@@ -214,6 +239,7 @@ router.post('/injury-risk', protect, roleMiddleware(['coach']), async (req, res)
     const assessment = await assessInjuryRisk(client?.name || 'Danışan', checkIns);
     res.json({ assessment });
   } catch (err) {
+    if (err.aiUnavailable) return res.status(503).json({ message: 'AI şu an yaralanma riski değerlendiremiyor, lütfen birazdan tekrar dene.' });
     res.status(500).json({ message: err.message });
   }
 });

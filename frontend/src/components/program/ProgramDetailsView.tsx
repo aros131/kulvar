@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useTranslations } from "next-intl";
 import type { Program } from "@/types/program";
 import { completeSession } from "@/utils/completeSession";
 import CalendarHeatmap from "./CalendarHeatmap";
@@ -66,6 +67,7 @@ type Props = {
 };
 
 export default function ProgramDetailsView({ program, programId, completedSessionIds, completedSessions }: Props) {
+  const t = useTranslations("programDetailsView");
   // ✅ derive a safe program id automatically
   const pid = useMemo(
     () => String((programId || (program as any)?._id || (program as any)?.id || "")).trim(),
@@ -190,11 +192,11 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       const sessions = arr<DSSession>(day?.sessions);
       sessions.forEach((s, sIdx) => {
-        const t = typeof s?.timeOfDay === "string" ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
+        const tm = typeof s?.timeOfDay === "string" ? parseHHmm(s.timeOfDay) : { h: defH, m: defM };
         const dur = Number(s?.durationMin) || defaultDurationMin;
 
         const st = new Date(base);
-        st.setHours(t.h, t.m, 0, 0);
+        st.setHours(tm.h, tm.m, 0, 0);
         const en = new Date(st);
         en.setMinutes(en.getMinutes() + dur);
 
@@ -202,7 +204,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
         const done = isDone(s, fallbackKey);
 
         evs.push({
-          title: s?.name || `Seans ${sIdx + 1}`,
+          title: s?.name || t("sessionFallback", { n: sIdx + 1 }),
           start: st.toISOString(),
           end: en.toISOString(),
           status: done ? "completed" : (en < now ? "missed" : "planned"),
@@ -227,7 +229,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
     return days.slice(start, start + 7);
   }, [days, week]);
 
-  const wkNames = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const wkNames = t.raw("weekdaysShort") as string[];
   const weekChips = (w: number) => {
     const start = (w - 1) * 7;
     const items: JSX.Element[] = [];
@@ -255,13 +257,13 @@ export default function ProgramDetailsView({ program, programId, completedSessio
       <Card className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold">{program.name ?? "Program"}</h2>
+            <h2 className="text-xl font-semibold">{program.name ?? t("programFallback")}</h2>
             {program.description && <p className="text-sm text-muted-foreground dark:text-zinc-300 mt-1">{program.description}</p>}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Info label="Süre (hafta)" value={String((program as any).duration ?? "—")} />
-              <Info label="Zorluk" value={String((program as any).difficulty ?? "—")} />
-              <Info label="Hedef" value={String((program as any).fitnessGoal ?? "—")} />
-              <Info label="Durum" value={String((program as any).status ?? "—")} />
+              <Info label={t("durationWeeks")} value={String((program as any).duration ?? "—")} />
+              <Info label={t("difficulty")} value={String((program as any).difficulty ?? "—")} />
+              <Info label={t("goal")} value={String((program as any).fitnessGoal ?? "—")} />
+              <Info label={t("status")} value={String((program as any).status ?? "—")} />
             </div>
           </div>
           {days.length > 0 && (
@@ -275,7 +277,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       {/* CALENDAR */}
       <Card className="p-4">
-        <h3 className="text-lg font-semibold mb-2">Takvim</h3>
+        <h3 className="text-lg font-semibold mb-2">{t("calendar")}</h3>
         <CalendarHeatmap programId={pid} events={calEvents} />
       </Card>
 
@@ -283,7 +285,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       {/* DAILY SCHEDULE */}
       <section className="space-y-3">
-        <h3 className="text-lg font-semibold">Günlük Program</h3>
+        <h3 className="text-lg font-semibold">{t("dailySchedule")}</h3>
         {weekCount > 1 && (
           <div className="flex flex-wrap items-center gap-2 mb-2">
             {Array.from({ length: weekCount }).map((_, i) => (
@@ -294,14 +296,14 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                 className={`px-3 py-1.5 rounded-xl border text-sm flex items-center gap-2 ${week === i + 1 ? 'bg-zinc-900 text-white dark:bg-card dark:text-foreground' : 'bg-card dark:bg-zinc-900'}`}
                 aria-pressed={week === i + 1}
               >
-                <span className="whitespace-nowrap">{i + 1}. Hafta</span>
+                <span className="whitespace-nowrap">{t("weekLabel", { n: i + 1 })}</span>
                 {weekChips(i + 1)}
               </button>
             ))}
           </div>
         )}
         {renderedDays.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Plan yok.</p>
+          <p className="text-sm text-muted-foreground">{t("noPlan")}</p>
         ) : (
           <div
             ref={scrollerRef}
@@ -309,17 +311,17 @@ export default function ProgramDetailsView({ program, programId, completedSessio
           >
             {renderedDays.map((day, dIdx) => {
               const globalIdx = (week - 1) * 7 + dIdx;
-              const dayLabel = day?.day || `Gün ${dIdx + 1}`;
+              const dayLabel = day?.day || t("dayFallback", { n: dIdx + 1 });
               const sessions = arr<DSSession>(day?.sessions);
               return (
                 <Card key={dIdx} className="snap-start shrink-0 w-[86vw] sm:w-[520px] xl:w-[640px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="font-semibold">{dayLabel}</div>
-                    {day?.notes && <div className="text-xs text-muted-foreground">Not: {day.notes}</div>}
+                    {day?.notes && <div className="text-xs text-muted-foreground">{t("noteLabel", { note: day.notes })}</div>}
                   </div>
 
                   {sessions.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">Seans yok.</div>
+                    <div className="text-sm text-muted-foreground">{t("noSessions")}</div>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {sessions.map((s, sIdx) => {
@@ -328,15 +330,15 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                         const done = isDone(s, fallbackKey);
                         return (
                           <div key={`${fallbackKey}-${sid}`} className={`rounded-xl border p-3 ${tileClass(done)}`}>
-                            <div className="text-sm font-medium truncate" title={s?.name || `Seans ${sIdx + 1}`}>
-                              {s?.name || `Seans ${sIdx + 1}`}
+                            <div className="text-sm font-medium truncate" title={s?.name || t("sessionFallback", { n: sIdx + 1 })}>
+                              {s?.name || t("sessionFallback", { n: sIdx + 1 })}
                             </div>
                             <div className="mt-1 text-[11px] text-muted-foreground">
-                              {tileMeta(arr<DSExercise>(s?.exercises))}
+                              {tileMeta(arr<DSExercise>(s?.exercises), t)}
                             </div>
                             <div className="mt-2 flex items-center justify-between">
                               <span className={done ? "px-2 py-0.5 rounded-full text-[10px] bg-green-100 text-green-700" : "px-2 py-0.5 rounded-full text-[10px] bg-sky-100 text-sky-700"}>
-                                {done ? "Tamamlandı" : "Planlandı"}
+                                {done ? t("completed") : t("planned")}
                               </span>
                               {!done && (
                                 <button
@@ -348,7 +350,7 @@ export default function ProgramDetailsView({ program, programId, completedSessio
                                   }}
                                   className="text-xs px-2 py-1 rounded-lg border bg-card hover:bg-zinc-50 dark:bg-zinc-900"
                                 >
-                                  Tamamla
+                                  {t("complete")}
                                 </button>
                               )}
                             </div>
@@ -377,31 +379,31 @@ export default function ProgramDetailsView({ program, programId, completedSessio
         return (
           <>
             <section className="space-y-3">
-              <h3 className="text-lg font-semibold">Beslenme Planı</h3>
+              <h3 className="text-lg font-semibold">{t("nutritionPlan")}</h3>
               {(calorieTarget || macros?.protein || macros?.carbs || macros?.fat) && (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {calorieTarget && <Info label="Günlük Kalori" value={`${calorieTarget} kcal`} />}
-                  {macros?.protein && <Info label="Protein" value={`${macros.protein} g`} />}
-                  {macros?.carbs && <Info label="Karbonhidrat" value={`${macros.carbs} g`} />}
-                  {macros?.fat && <Info label="Yağ" value={`${macros.fat} g`} />}
+                  {calorieTarget && <Info label={t("dailyCalories")} value={`${calorieTarget} kcal`} />}
+                  {macros?.protein && <Info label={t("protein")} value={`${macros.protein} g`} />}
+                  {macros?.carbs && <Info label={t("carbs")} value={`${macros.carbs} g`} />}
+                  {macros?.fat && <Info label={t("fat")} value={`${macros.fat} g`} />}
                 </div>
               )}
               {tips.length > 0 && (
                 <Card className="p-4">
-                  <div className="text-sm font-medium mb-2">İpuçları</div>
+                  <div className="text-sm font-medium mb-2">{t("tips")}</div>
                   <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                    {tips.map((t, i) => <li key={i}>{t}</li>)}
+                    {tips.map((tip, i) => <li key={i}>{tip}</li>)}
                   </ul>
                 </Card>
               )}
               {meals.length > 0 && (
                 <Card className="p-4">
-                  <div className="text-sm font-medium mb-2">Öğünler</div>
+                  <div className="text-sm font-medium mb-2">{t("meals")}</div>
                   <ul className="divide-y divide-border dark:divide-zinc-800">
                     {meals.map((m, i) => (
                       <li key={i} className="py-2 flex items-center justify-between gap-3 text-sm">
                         <div>
-                          <span className="font-medium">{m.name || "Öğün"}</span>
+                          <span className="font-medium">{m.name || t("mealFallback")}</span>
                           {m.description && <span className="text-muted-foreground"> — {m.description}</span>}
                         </div>
                         {m.time && <span className="text-xs text-muted-foreground shrink-0">{m.time}</span>}
@@ -418,9 +420,9 @@ export default function ProgramDetailsView({ program, programId, completedSessio
 
       {/* ANNOUNCEMENTS (kept) */}
       <section className="space-y-3">
-        <h3 className="text-lg font-semibold">Duyurular</h3>
+        <h3 className="text-lg font-semibold">{t("announcements")}</h3>
         {arr<any>(program.announcements).length === 0 ? (
-          <p className="text-sm text-muted-foreground">Duyuru yok.</p>
+          <p className="text-sm text-muted-foreground">{t("noAnnouncements")}</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {arr<any>(program.announcements).map((a, i) => (
@@ -451,13 +453,13 @@ function tileClass(done: boolean) {
     : "border-sky-300 bg-sky-50 dark:bg-sky-900/30 dark:border-sky-700";
 }
 
-function tileMeta(exs: DSExercise[]) {
+function tileMeta(exs: DSExercise[], t: ReturnType<typeof useTranslations>) {
   if (!exs || exs.length === 0) return "";
   const first = exs[0];
   const bits: string[] = [];
   if (first.name) bits.push(first.name);
-  if (typeof first.sets === "number") bits.push(`${first.sets} set`);
-  if (typeof first.reps === "number") bits.push(`${first.reps} tekrar`);
+  if (typeof first.sets === "number") bits.push(t("setsUnit", { count: first.sets }));
+  if (typeof first.reps === "number") bits.push(t("repsUnit", { count: first.reps }));
   if (first.duration) bits.push(first.duration);
   return bits.join(" • ");
 }

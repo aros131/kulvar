@@ -26,6 +26,7 @@ import meRoutes from "./routes/meRoutes.js";
 import availabilityRoutes from "./routes/availabilityRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import engagementRoutes from "./routes/engagementRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
@@ -37,6 +38,7 @@ import exerciseRoutes from "./routes/exerciseRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import { startBookingReminderJob } from "./services/bookingReminderJob.js";
 import { startWeeklyReportJob } from "./services/weeklyReportJob.js";
+import { startEngagementBillingJob } from "./services/engagementBillingJob.js";
 import rateLimit from "express-rate-limit";
 /* --------------------------------- Setup ---------------------------------- */
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -62,20 +64,34 @@ const generalLimiter = rateLimit({
 });
 app.use(express.urlencoded({ extended: true })); // needed for iyzico's checkout form callback POST
 
-/* ------------------------ CORS: allow ALL (TEST MODE) ---------------------- */
-/* Reflects the request Origin (so credentials can work) */
+/* --------------------------------- CORS ------------------------------------ */
+// Allowlist instead of reflecting any origin: production domain, any Vercel
+// deployment (prod + previews get their own *.vercel.app subdomain), and
+// local dev (localhost + LAN IPs, for simulator/device testing).
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/(www\.)?persecoaching\.com$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
+  /^http:\/\/localhost:\d+$/,
+  /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+];
+
+function isAllowedOrigin(origin) {
+  return ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
+
 function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
 
-  if (origin) {
-    // Reflect the exact Origin (so credentialed requests are allowed)
+  if (origin && isAllowedOrigin(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Credentials", "true"); // only if you intend to allow cookies/credentials
-  } else {
-    // No Origin header (e.g., curl/Postman) — '*' is fine here
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  } else if (!origin) {
+    // No Origin header (e.g., curl/Postman, or iyzico's server-to-server callback)
     res.setHeader("Access-Control-Allow-Origin", "*");
   }
+  // else: origin present but not allowlisted — no CORS header set, browser blocks it.
 
   // Echo requested headers when present to satisfy preflight
   const reqHeaders = req.headers["access-control-request-headers"];
@@ -146,6 +162,7 @@ app.use("/admin", adminRoutes);
 app.use("/dashboard", availabilityRoutes);
 app.use("/", availabilityRoutes);
 app.use("/", bookingRoutes);
+app.use("/", engagementRoutes);
 /* --------------------------------- Health --------------------------------- */
 app.get("/", (_req, res) => res.send("Welcome to the backend API!"));
 
@@ -168,4 +185,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   startBookingReminderJob();
   startWeeklyReportJob();
+  startEngagementBillingJob();
 });

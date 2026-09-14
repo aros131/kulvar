@@ -6,6 +6,9 @@ import { notify } from "../services/NotificationService.js"; // must export noti
 import { getCoachAvailabilityConfig } from "../services/availability.js"; // must export getCoachAvailabilityConfig(...)
 import User from "../models/User.js";
 import { sendBookingConfirmed } from "../services/emailService.js";
+import CoachingEngagement from "../models/CoachingEngagement.js";
+import Payment from "../models/Payment.js";
+import { notify as notifyInvoice } from "../utils/notify.js";
 
 // ---------------------------------------------------------------------------
 // constants & helpers
@@ -393,6 +396,38 @@ export async function complete(req, res) {
       });
     } catch (e) {
       console.warn("notify(booking_completed) failed:", e?.message || e);
+    }
+
+    // Per-session engagements bill automatically off of completed bookings.
+    try {
+      const engagement = await CoachingEngagement.findOne({
+        coachId,
+        userId: booking.userId,
+        billingType: "per_session",
+        status: "active",
+      });
+      if (engagement) {
+        const dateStr = new Date(booking.startUtc).toLocaleDateString("tr-TR", {
+          day: "numeric", month: "long", year: "numeric",
+        });
+        const payment = await Payment.create({
+          coachId,
+          userId: booking.userId,
+          engagementId: engagement._id,
+          bookingId: booking._id,
+          amount: engagement.rate,
+          description: `Seans ücreti - ${dateStr}`,
+          status: "Pending",
+        });
+        await notifyInvoice({
+          recipientId: booking.userId,
+          senderId: coachId,
+          type: "payment_request",
+          message: `Koçundan ₺${payment.amount} tutarında yeni bir ödeme talebi geldi: "${payment.description}"`,
+        });
+      }
+    } catch (e) {
+      console.warn("auto-invoice(per_session) failed:", e?.message || e);
     }
 
     return res.json({ ok: true });

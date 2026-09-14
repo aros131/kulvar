@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { fetchCoachPrograms } from "@/utils/api";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -35,6 +36,7 @@ interface ProgramListProps {
 
 /* ----------------------------- Component ----------------------------- */
 const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader = true }) => {
+  const t = useTranslations("programList");
   const [programsWithClients, setProgramsWithClients] = useState<ProgramWithClients[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -105,26 +107,26 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
       {/* Header + controls */}
       {showHeader && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold">Programlarınız</h2>
+          <h2 className="text-lg font-semibold">{t("heading")}</h2>
           <div className="flex w-full sm:w-auto items-center gap-2">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Program ara..."
+                placeholder={t("searchPlaceholder")}
                 className="pl-8"
               />
             </div>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
               <SelectTrigger className="w-[140px]">
                 <ListFilter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Sırala" />
+                <SelectValue placeholder={t("sortPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="recent">En yeni</SelectItem>
-                <SelectItem value="name">İsim A→Z</SelectItem>
-                <SelectItem value="clients">En çok danışan</SelectItem>
+                <SelectItem value="recent">{t("sortRecent")}</SelectItem>
+                <SelectItem value="name">{t("sortName")}</SelectItem>
+                <SelectItem value="clients">{t("sortClients")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -157,18 +159,18 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
                   <Dumbbell className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                 </div>
                 <div>
-                  <p className="font-semibold">Henüz programın yok</p>
-                  <p className="text-sm text-muted-foreground mt-1">İlk programını oluşturarak danışanlarına içerik sunmaya başla.</p>
+                  <p className="font-semibold">{t("noProgramsYet")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("noProgramsHint")}</p>
                 </div>
                 <Button asChild size="sm" className="gap-2">
                   <Link href="/dashboard/coach/programs/create">
                     <Plus className="h-4 w-4" />
-                    İlk Programı Oluştur
+                    {t("createFirstProgram")}
                   </Link>
                 </Button>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">Arama kriterlerine uygun program bulunamadı.</p>
+              <p className="text-sm text-muted-foreground">{t("noSearchResults")}</p>
             )}
           </CardContent>
         </Card>
@@ -204,7 +206,7 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
                     ) : null}
                     <div className="text-xs text-muted-foreground inline-flex items-center gap-1">
                       <Users className="h-3.5 w-3.5" />
-                      {assignedCount} atanmış danışan
+                      {t("assignedClients", { count: assignedCount })}
                     </div>
                   </CardContent>
 
@@ -239,7 +241,7 @@ const ProgramList: React.FC<ProgramListProps> = ({ onClientsFetched, showHeader 
                       className="h-9 px-3 text-sm gap-1 w-full whitespace-nowrap"
                     >
                       <Link href={`/dashboard/coach/programs/${program._id}/edit`}>
-                        Programa git <ArrowRight className="h-3.5 w-3.5" />
+                        {t("goToProgram")} <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
                   </CardFooter>

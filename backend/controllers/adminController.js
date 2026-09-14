@@ -95,6 +95,59 @@ export const setCoachApproval = async (req, res) => {
   }
 };
 
+export const listVerificationRequests = async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const cursor = req.query.cursor;
+    const status = req.query.status || "pending";
+
+    const q = { role: "coach", "coachVerification.status": status };
+    if (cursor) q._id = { $lt: cursor };
+
+    const coaches = await User.find(q)
+      .select("name email city coachVerification isVerifiedCoach")
+      .sort({ _id: -1 })
+      .limit(limit)
+      .lean();
+
+    res.status(200).json({
+      coaches,
+      nextCursor: coaches.length === limit ? String(coaches[coaches.length - 1]._id) : null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving verification requests", error: error.message });
+  }
+};
+
+export const reviewVerificationRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { approve, note } = req.body;
+    if (typeof approve !== "boolean") {
+      return res.status(400).json({ message: "approve must be a boolean" });
+    }
+
+    const coach = await User.findOneAndUpdate(
+      { _id: id, role: "coach" },
+      {
+        $set: {
+          isVerifiedCoach: approve,
+          "coachVerification.status": approve ? "approved" : "rejected",
+          "coachVerification.note": note || "",
+          "coachVerification.reviewedAt": new Date(),
+        },
+      },
+      { new: true }
+    ).select("name email isVerifiedCoach coachVerification");
+
+    if (!coach) return res.status(404).json({ message: "Coach not found" });
+
+    res.status(200).json({ coach });
+  } catch (error) {
+    res.status(500).json({ message: "Error reviewing verification request", error: error.message });
+  }
+};
+
 export const listPayments = async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);

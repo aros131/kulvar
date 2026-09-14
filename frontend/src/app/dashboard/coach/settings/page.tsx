@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ const defaultPrefs = (): NotifPrefs => ({
 });
 
 export default function CoachSettingsPage() {
+  const t = useTranslations('settingsCoach');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -59,7 +61,7 @@ export default function CoachSettingsPage() {
 
   const savePrice = async () => {
     const parsed = Number(price);
-    if (price !== '' && (isNaN(parsed) || parsed < 0)) { toast.error('Geçerli bir fiyat girin.'); return; }
+    if (price !== '' && (isNaN(parsed) || parsed < 0)) { toast.error(t('invalidPrice')); return; }
     setSavingPrice(true);
     try {
       const token = localStorage.getItem('token');
@@ -69,9 +71,9 @@ export default function CoachSettingsPage() {
         body: JSON.stringify({ price: price === '' ? null : parsed }),
       });
       if (!res.ok) throw new Error();
-      toast.success('Fiyat güncellendi.');
+      toast.success(t('priceUpdated'));
     } catch {
-      toast.error('Kaydedilemedi.');
+      toast.error(t('saveError'));
     } finally {
       setSavingPrice(false);
     }
@@ -79,8 +81,8 @@ export default function CoachSettingsPage() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) { toast.error('Yeni şifreler eşleşmiyor.'); return; }
-    if (newPassword.length < 6) { toast.error('Şifre en az 6 karakter olmalı.'); return; }
+    if (newPassword !== confirmPassword) { toast.error(t('passwordMismatch')); return; }
+    if (newPassword.length < 6) { toast.error(t('passwordTooShort')); return; }
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -91,24 +93,24 @@ export default function CoachSettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      toast.success('Şifre başarıyla güncellendi.');
+      toast.success(t('passwordUpdated'));
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Bir hata oluştu.');
+      toast.error(err instanceof Error ? err.message : t('errorGeneric'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     const token = localStorage.getItem('token');
     const res = await fetch(`${API}/auth/delete-account`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) { localStorage.clear(); document.cookie = "token=; path=/; max-age=0; SameSite=Lax"; window.location.href = '/'; }
-    else toast.error('Hesap silinemedi.');
+    else toast.error(t('deleteError'));
   };
 
   const saveListed = async (val: boolean) => {
@@ -122,10 +124,10 @@ export default function CoachSettingsPage() {
         body: JSON.stringify({ isListedCoach: val }),
       });
       if (!res.ok) throw new Error();
-      toast.success(val ? 'Profiliniz "Koç Bul" listesinde gösteriliyor.' : 'Profiliniz listeden kaldırıldı.');
+      toast.success(val ? t('listedOn') : t('listedOff'));
     } catch {
       setIsListed(!val);
-      toast.error('Kaydedilemedi.');
+      toast.error(t('saveError'));
     } finally {
       setSavingListed(false);
     }
@@ -141,9 +143,9 @@ export default function CoachSettingsPage() {
         body: JSON.stringify({ brandColor, brandLogoUrl }),
       });
       if (!res.ok) throw new Error();
-      toast.success('Marka ayarları kaydedildi.');
+      toast.success(t('brandSaved'));
     } catch {
-      toast.error('Kaydedilemedi.');
+      toast.error(t('saveError'));
     } finally {
       setSavingBrand(false);
     }
@@ -167,9 +169,9 @@ export default function CoachSettingsPage() {
         body: JSON.stringify(prefs),
       });
       if (!res.ok) throw new Error();
-      toast.success('Bildirim tercihleri kaydedildi.');
+      toast.success(t('prefsSaved'));
     } catch {
-      toast.error('Kaydedilemedi.');
+      toast.error(t('saveError'));
     } finally {
       setSavingPrefs(false);
     }
@@ -178,19 +180,19 @@ export default function CoachSettingsPage() {
   return (
     <CoachPageShell>
     <div className="max-w-xl mx-auto px-4 py-8 md:py-10 space-y-10">
-      <h1 className="text-2xl font-bold">Ayarlar</h1>
+      <h1 className="text-2xl font-bold">{t('heading')}</h1>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-3">
-        <h2 className="text-lg font-semibold">Hesap Bilgileri</h2>
+        <h2 className="text-lg font-semibold">{t('accountInfo')}</h2>
         <div>
-          <Label>E-posta</Label>
+          <Label>{t('emailLabel')}</Label>
           <Input value={email} disabled className="mt-1 bg-zinc-100 dark:bg-primary/80" />
-          <p className="text-xs text-muted-foreground mt-1">E-posta değişikliği için destek ekibiyle iletişime geçin.</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('emailChangeHint')}</p>
         </div>
       </section>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-4">
-        <h2 className="text-lg font-semibold">Saat Başı Ücret</h2>
+        <h2 className="text-lg font-semibold">{t('hourlyRate')}</h2>
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₺</span>
@@ -199,32 +201,32 @@ export default function CoachSettingsPage() {
               min={0}
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder="örn. 500"
+              placeholder={t('pricePlaceholder')}
               className="mt-1 pl-7"
             />
           </div>
           <Button onClick={savePrice} disabled={savingPrice} className="mt-1">
-            {savingPrice ? 'Kaydediliyor...' : 'Kaydet'}
+            {savingPrice ? t('saving') : t('save')}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">Bu fiyat profilinizde ve koç listesinde görünecektir.</p>
+        <p className="text-xs text-muted-foreground">{t('priceHint')}</p>
       </section>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">
-        <h2 className="text-lg font-semibold mb-1">Koç Listesi</h2>
-        <p className="text-sm text-muted-foreground mb-4">Danışanlar seni &quot;Koç Bul&quot; sayfasında görebilir.</p>
+        <h2 className="text-lg font-semibold mb-1">{t('coachListTitle')}</h2>
+        <p className="text-sm text-muted-foreground mb-4">{t('coachListDesc')}</p>
         <div className="flex items-center justify-between">
-          <Label className="font-normal">Listede görün</Label>
+          <Label className="font-normal">{t('showInList')}</Label>
           <Switch checked={isListed} onCheckedChange={saveListed} disabled={savingListed} />
         </div>
       </section>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-4">
-        <h2 className="text-lg font-semibold">Marka Ayarları</h2>
-        <p className="text-sm text-muted-foreground -mt-2">Profil sayfanda gösterilecek marka rengi ve logo.</p>
+        <h2 className="text-lg font-semibold">{t('brandSettings')}</h2>
+        <p className="text-sm text-muted-foreground -mt-2">{t('brandSettingsDesc')}</p>
 
         <div>
-          <Label>Marka Rengi</Label>
+          <Label>{t('brandColor')}</Label>
           <div className="flex items-center gap-3 mt-1">
             <input
               type="color"
@@ -247,7 +249,7 @@ export default function CoachSettingsPage() {
         </div>
 
         <div>
-          <Label>Logo URL (isteğe bağlı)</Label>
+          <Label>{t('logoUrl')}</Label>
           <Input
             value={brandLogoUrl}
             onChange={e => setBrandLogoUrl(e.target.value)}
@@ -256,46 +258,46 @@ export default function CoachSettingsPage() {
           />
           {brandLogoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={brandLogoUrl} alt="Logo önizleme" className="mt-2 h-12 object-contain rounded" onError={e => (e.currentTarget.style.display = 'none')} />
+            <img src={brandLogoUrl} alt={t('logoPreviewAlt')} className="mt-2 h-12 object-contain rounded" onError={e => (e.currentTarget.style.display = 'none')} />
           )}
         </div>
 
         <Button onClick={saveBrand} disabled={savingBrand}>
-          {savingBrand ? 'Kaydediliyor...' : 'Kaydet'}
+          {savingBrand ? t('saving') : t('save')}
         </Button>
       </section>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow">
-        <h2 className="text-lg font-semibold mb-4">Şifre Değiştir</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('changePassword')}</h2>
         <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
-            <Label>Mevcut Şifre</Label>
+            <Label>{t('currentPassword')}</Label>
             <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="mt-1" required />
           </div>
           <div>
-            <Label>Yeni Şifre</Label>
+            <Label>{t('newPassword')}</Label>
             <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1" required />
           </div>
           <div>
-            <Label>Yeni Şifre (Tekrar)</Label>
+            <Label>{t('confirmNewPassword')}</Label>
             <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1" required />
           </div>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
+            {loading ? t('saving') : t('updatePassword')}
           </Button>
         </form>
       </section>
 
       <section className="bg-card dark:bg-primary/90 rounded-xl p-6 shadow space-y-6">
-        <h2 className="text-lg font-semibold">Bildirim Tercihleri</h2>
+        <h2 className="text-lg font-semibold">{t('notifPrefs')}</h2>
 
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">Uygulama İçi</h3>
+          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">{t('inApp')}</h3>
           {([
-            ['bookingRequests', 'Yeni randevu istekleri'],
-            ['bookingUpdates',  'Randevu durumu değişiklikleri'],
-            ['messages',        'Mesajlar'],
-            ['reviews',         'Yeni yorumlar'],
+            ['bookingRequests', t('newBookingRequests')],
+            ['bookingUpdates',  t('bookingUpdates')],
+            ['messages',        t('messages')],
+            ['reviews',         t('newReviews')],
           ] as [keyof NotifPrefs['inApp'], string][]).map(([key, label]) => (
             <div key={key} className="flex items-center justify-between">
               <Label className="font-normal">{label}</Label>
@@ -305,12 +307,12 @@ export default function CoachSettingsPage() {
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">E-posta</h3>
+          <h3 className="text-sm font-medium text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">{t('email')}</h3>
           {([
-            ['bookingRequests', 'Yeni randevu istekleri'],
-            ['bookingUpdates',  'Randevu durumu değişiklikleri'],
-            ['messages',        'Mesajlar'],
-            ['weeklyReport',    'Haftalık rapor özeti'],
+            ['bookingRequests', t('newBookingRequests')],
+            ['bookingUpdates',  t('bookingUpdates')],
+            ['messages',        t('messages')],
+            ['weeklyReport',    t('weeklyReportSummary')],
           ] as [keyof NotifPrefs['email'], string][]).map(([key, label]) => (
             <div key={key} className="flex items-center justify-between">
               <Label className="font-normal">{label}</Label>
@@ -320,14 +322,14 @@ export default function CoachSettingsPage() {
         </div>
 
         <Button onClick={savePrefs} disabled={savingPrefs} className="w-full">
-          {savingPrefs ? 'Kaydediliyor...' : 'Tercihleri Kaydet'}
+          {savingPrefs ? t('saving') : t('savePrefs')}
         </Button>
       </section>
 
       <section className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-red-600 mb-2">Tehlikeli Alan</h2>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-4">Hesabınızı silerseniz tüm verileriniz kalıcı olarak silinir.</p>
-        <Button variant="destructive" onClick={handleDeleteAccount}>Hesabı Sil</Button>
+        <h2 className="text-lg font-semibold text-red-600 mb-2">{t('dangerZone')}</h2>
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-4">{t('dangerZoneDesc')}</p>
+        <Button variant="destructive" onClick={handleDeleteAccount}>{t('deleteAccount')}</Button>
       </section>
     </div>
     </CoachPageShell>

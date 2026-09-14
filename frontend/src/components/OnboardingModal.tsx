@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { X, Sparkles, Loader2, ChevronRight } from 'lucide-react';
 import { GOAL_TYPES, WEIGHT_GOALS, type GoalType } from '@/lib/fitnessGoals';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+const DAY_LABEL_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'];
 
 interface CoachMatch {
   coachId: string;
@@ -31,23 +33,22 @@ function initials(name: string) {
   return name?.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
 }
 
-const coachSteps = [
-  { icon: '👤', title: 'Profilini Tamamla', desc: 'Biyografini, uzmanlık alanını ve fotoğrafını ekle.', href: '/dashboard/coach/profile' },
-  { icon: '📋', title: 'İlk Programını Oluştur', desc: 'Danışanlarına verebileceğin bir program hazırla.', href: '/dashboard/coach/programs/create' },
-  { icon: '💬', title: 'Danışanlarınla İletişime Geç', desc: 'Mesajlaşma sistemiyle danışanlarınla bağlantı kur.', href: '/dashboard/coach/messages' },
-];
-
-const userSteps = [
-  { icon: '👤', title: 'Profilini Tamamla', desc: 'Fitness hedeflerini ve bilgilerini doldur.', href: '/dashboard/user/profile' },
-  { icon: '🏋️', title: 'Koçlarımızı Keşfet', desc: 'Sana uygun koçu bul ve iletişime geç.', href: '/koc' },
-  { icon: '📊', title: 'Programlarını Takip Et', desc: 'Koçun sana program atadığında buradan takip edersin.', href: '/dashboard/user/programs' },
-];
-
 export default function OnboardingModal({ role, name, onboardingCompleted }: Props) {
+  const t = useTranslations('onboarding');
+  const coachSteps = [
+    { icon: '👤', title: t('coachStep1Title'), desc: t('coachStep1Desc'), href: '/dashboard/coach/profile' },
+    { icon: '📋', title: t('coachStep2Title'), desc: t('coachStep2Desc'), href: '/dashboard/coach/programs/create' },
+    { icon: '💬', title: t('coachStep3Title'), desc: t('coachStep3Desc'), href: '/dashboard/coach/messages' },
+  ];
+  const userSteps = [
+    { icon: '👤', title: t('userStep1Title'), desc: t('userStep1Desc'), href: '/dashboard/user/profile' },
+    { icon: '🏋️', title: t('userStep2Title'), desc: t('userStep2Desc'), href: '/koc' },
+    { icon: '📊', title: t('userStep3Title'), desc: t('userStep3Desc'), href: '/dashboard/user/programs' },
+  ];
   const [open, setOpen] = useState(false);
   // user onboarding: 'body-info' | 'welcome' | 'ai-form' | 'ai-result' | 'steps'
   const [step, setStep] = useState<'body-info' | 'welcome' | 'ai-form' | 'ai-result' | 'steps'>('welcome');
-  const [aiParams, setAiParams] = useState({ level: 'Başlangıç', days: [] as string[], age: '', gender: '', notes: '' });
+  const [aiParams, setAiParams] = useState({ level: t('levelBeginner'), days: [] as string[], age: '', gender: '', notes: '' });
   const [aiLoading, setAiLoading] = useState(false);
   const [matches, setMatches] = useState<CoachMatch[] | null>(null);
 
@@ -110,7 +111,7 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
     try {
       const token = localStorage.getItem('token');
       const preferences = [
-        aiParams.age ? `${aiParams.age} yaşında` : '',
+        aiParams.age ? t('ageYearsOld', { age: aiParams.age }) : '',
         aiParams.gender,
         aiParams.notes,
       ].filter(Boolean).join(', ');
@@ -119,14 +120,14 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          goal: bodyInfo.goalType || 'Genel Fitness',
+          goal: bodyInfo.goalType || t('generalFitnessGoal'),
           level: aiParams.level,
           availableDays: aiParams.days,
           preferences,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Eşleştirme yapılamadı');
+      if (!res.ok) throw new Error(data.message || t('matchError'));
       setMatches(Array.isArray(data.matches) ? data.matches : []);
       setStep('ai-result');
 
@@ -149,55 +150,55 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
 
   if (!open) return null;
 
-  const firstName = name?.split(' ')[0] ?? 'Hoş geldin';
+  const firstName = name?.split(' ')[0] ?? t('defaultFirstName');
   const steps = role === 'coach' ? coachSteps : userSteps;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-foreground/60 backdrop-blur-sm">
       <div className="bg-card dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden">
-        <button onClick={dismiss} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-10" aria-label="Kapat">
+        <button onClick={dismiss} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-10" aria-label={t('close')}>
           <X size={20} />
         </button>
 
-        {/* ── BODY INFO (kilo/boy/hedef — profil sayfasındaki ilerleme çubuğunun başlangıç noktası) ── */}
+        {/* ── BODY INFO (weight/height/goal — starting point for the progress bar on the profile page) ── */}
         {step === 'body-info' && (
           <div className="p-6 sm:p-8">
             <div className="text-3xl mb-2">📏</div>
-            <h2 className="text-2xl font-bold mb-1">Merhaba, {firstName}!</h2>
+            <h2 className="text-2xl font-bold mb-1">{t('greeting', { name: firstName })}</h2>
             <p className="text-muted-foreground text-sm mb-6">
-              Boyunu, kilonu ve hedefini şimdi belirt — profilinde ilerlemeni buna göre takip edelim. İstersen sonra da girebilirsin.
+              {t('bodyInfoSubtitle')}
             </p>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Boy (cm)</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('heightLabel')}</label>
                   <input
                     type="number"
                     value={bodyInfo.height}
                     onChange={(e) => setBodyInfo((p) => ({ ...p, height: e.target.value }))}
-                    placeholder="örn. 168"
+                    placeholder={t('heightPlaceholder')}
                     className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Güncel Kilo (kg)</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('weightLabel')}</label>
                   <input
                     type="number"
                     value={bodyInfo.weight}
                     onChange={(e) => setBodyInfo((p) => ({ ...p, weight: e.target.value }))}
-                    placeholder="örn. 72"
+                    placeholder={t('weightPlaceholder')}
                     className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Hedefin</label>
+                <label className="text-xs font-medium text-muted-foreground">{t('goalLabel')}</label>
                 <select
                   value={bodyInfo.goalType}
                   onChange={(e) => setBodyInfo((p) => ({ ...p, goalType: e.target.value as GoalType }))}
                   className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">Seç…</option>
+                  <option value="">{t('selectPlaceholder')}</option>
                   {GOAL_TYPES.map((g) => (
                     <option key={g} value={g}>{g}</option>
                   ))}
@@ -205,12 +206,12 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
               </div>
               {bodyInfo.goalType && WEIGHT_GOALS.includes(bodyInfo.goalType) && (
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Hedef Kilo (kg)</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('targetWeightLabel')}</label>
                   <input
                     type="number"
                     value={bodyInfo.targetWeight}
                     onChange={(e) => setBodyInfo((p) => ({ ...p, targetWeight: e.target.value }))}
-                    placeholder="örn. 65"
+                    placeholder={t('targetWeightPlaceholder')}
                     className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
@@ -218,10 +219,10 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
             </div>
             <div className="flex gap-2 mt-5">
               <Button variant="ghost" onClick={() => setStep('welcome')} className="flex-1" disabled={savingBodyInfo}>
-                Atla
+                {t('skip')}
               </Button>
               <Button onClick={saveBodyInfo} disabled={savingBodyInfo} className="flex-1 gap-2">
-                {savingBodyInfo ? <><Loader2 className="w-4 h-4 animate-spin" /> Kaydediliyor...</> : 'Kaydet ve Devam Et'}
+                {savingBodyInfo ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('saving')}</> : t('saveAndContinue')}
               </Button>
             </div>
           </div>
@@ -231,9 +232,9 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
         {step === 'welcome' && (
           <div className="p-6 sm:p-8">
             <div className="text-3xl mb-2">👋</div>
-            <h2 className="text-2xl font-bold mb-1">Merhaba, {firstName}!</h2>
+            <h2 className="text-2xl font-bold mb-1">{t('greeting', { name: firstName })}</h2>
             <p className="text-muted-foreground text-sm mb-6">
-              PerSe'ye hoş geldin. Hızlıca başlamak için iki yol var:
+              {t('welcomeSubtitle')}
             </p>
             <div className="space-y-3">
               {role === 'user' && (
@@ -245,8 +246,8 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-sm">AI ile Sana Uygun Koçu Bul</p>
-                    <p className="text-xs text-muted-foreground">Müsaitliğini ve seviyeni söyle, AI gerçek koç listesinden sana en uygunlarını seçsin</p>
+                    <p className="font-semibold text-sm">{t('aiMatchTitle')}</p>
+                    <p className="text-xs text-muted-foreground">{t('aiMatchDesc')}</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                 </button>
@@ -259,8 +260,8 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
                   <span className="text-lg">🗺️</span>
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm">Başlangıç Adımlarını Gör</p>
-                  <p className="text-xs text-muted-foreground">Genel başlangıç rehberi ile devam et</p>
+                  <p className="font-semibold text-sm">{t('stepsTitle')}</p>
+                  <p className="text-xs text-muted-foreground">{t('stepsDesc')}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
               </button>
@@ -273,17 +274,17 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
           <div className="p-6 sm:p-8">
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-5 h-5 text-violet-500" />
-              <h2 className="text-xl font-bold">Sana Uygun Koçu Bulalım</h2>
+              <h2 className="text-xl font-bold">{t('aiFormTitle')}</h2>
             </div>
             <p className="text-muted-foreground text-sm mb-5">
-              {bodyInfo.goalType ? <>Hedefin: <span className="font-medium text-foreground">{bodyInfo.goalType}</span>. </> : null}
-              Müsaitliğini ve seviyeni söyle, AI gerçek koç listemizden en uygunlarını seçsin.
+              {bodyInfo.goalType ? <>{t('aiFormGoalPrefix')} <span className="font-medium text-foreground">{bodyInfo.goalType}</span>. </> : null}
+              {t('aiFormSubtitle')}
             </p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Hangi günler müsaitsin? *</label>
+                <label className="text-xs font-medium text-muted-foreground">{t('daysLabel')}</label>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {DAYS.map((d) => (
+                  {DAYS.map((d, i) => (
                     <button
                       key={d}
                       type="button"
@@ -294,48 +295,48 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
                           : 'border-border hover:border-violet-400'
                       }`}
                     >
-                      {d.slice(0, 3)}
+                      {t(DAY_LABEL_KEYS[i])}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Seviye</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('levelLabel')}</label>
                   <select value={aiParams.level} onChange={e => setAiParams(p => ({ ...p, level: e.target.value }))}
                     className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm">
-                    <option>Başlangıç</option>
-                    <option>Orta Düzey</option>
-                    <option>İleri Seviye</option>
+                    <option>{t('levelBeginner')}</option>
+                    <option>{t('levelIntermediate')}</option>
+                    <option>{t('levelAdvanced')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Yaş (isteğe bağlı)</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('ageLabel')}</label>
                   <input type="number" value={aiParams.age} onChange={e => setAiParams(p => ({ ...p, age: e.target.value }))}
-                    placeholder="örn. 25"
+                    placeholder={t('agePlaceholder')}
                     className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Cinsiyet (isteğe bağlı)</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('genderLabel')}</label>
                   <select value={aiParams.gender} onChange={e => setAiParams(p => ({ ...p, gender: e.target.value }))}
                     className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm">
-                    <option value="">Belirtme</option>
-                    <option>Erkek</option>
-                    <option>Kadın</option>
+                    <option value="">{t('genderUnspecified')}</option>
+                    <option>{t('genderMale')}</option>
+                    <option>{t('genderFemale')}</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Eklemek istediğin bir şey? (isteğe bağlı)</label>
+                <label className="text-xs font-medium text-muted-foreground">{t('notesLabel')}</label>
                 <input value={aiParams.notes} onChange={e => setAiParams(p => ({ ...p, notes: e.target.value }))}
-                  placeholder="örn. diz ağrım var, sabahları antrenman yapıyorum..."
+                  placeholder={t('notesPlaceholder')}
                   className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
-              <Button variant="ghost" onClick={() => setStep('welcome')} className="flex-1">← Geri</Button>
+              <Button variant="ghost" onClick={() => setStep('welcome')} className="flex-1">{t('back')}</Button>
               <Button onClick={runAI} disabled={aiLoading || aiParams.days.length === 0} className="flex-1 gap-2 bg-violet-600 hover:bg-violet-700 text-white">
-                {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Aranıyor...</> : <><Sparkles className="w-4 h-4" /> Koç Bul</>}
+                {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('searching')}</> : <><Sparkles className="w-4 h-4" /> {t('findCoach')}</>}
               </Button>
             </div>
           </div>
@@ -349,13 +350,13 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <h2 className="text-xl font-bold">
-                {matches.length > 0 ? 'Senin İçin Uygun Koçlar' : 'Şu An Uygun Koç Bulamadık'}
+                {matches.length > 0 ? t('resultTitleFound') : t('resultTitleNotFound')}
               </h2>
             </div>
 
             {matches.length > 0 ? (
               <>
-                <p className="text-sm text-muted-foreground mb-4">AI, bilgilerine göre platformdaki koçlar arasından bunları önerdi:</p>
+                <p className="text-sm text-muted-foreground mb-4">{t('resultIntro')}</p>
                 <div className="space-y-3 mb-5">
                   {matches.map((m) => {
                     const specs = Array.isArray(m.specialization) ? m.specialization.join(', ') : m.specialization;
@@ -394,13 +395,13 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
               </>
             ) : (
               <p className="text-sm text-muted-foreground mb-5">
-                Şu an kriterlerine tam uyan bir koç bulamadık — ama bu değişebilir.{' '}
+                {t('noMatchText')}{' '}
                 <Link href="/koc" onClick={dismiss} className="text-violet-600 dark:text-violet-400 font-medium hover:underline">
-                  Tüm koçları kendin de gezebilirsin
+                  {t('browseAllCoaches')}
                 </Link>.
               </p>
             )}
-            <Button onClick={dismiss} className="w-full">Devam Et</Button>
+            <Button onClick={dismiss} className="w-full">{t('continueBtn')}</Button>
           </div>
         )}
 
@@ -408,8 +409,8 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
         {step === 'steps' && (
           <div className="p-6 sm:p-8">
             <div className="text-3xl mb-2">🗺️</div>
-            <h2 className="text-xl font-bold mb-1">Başlarken</h2>
-            <p className="text-muted-foreground text-sm mb-6">Bu adımları takip ederek hızlıca ilerleyebilirsin:</p>
+            <h2 className="text-xl font-bold mb-1">{t('gettingStartedTitle')}</h2>
+            <p className="text-muted-foreground text-sm mb-6">{t('gettingStartedSubtitle')}</p>
             <ul className="space-y-4 mb-8">
               {steps.map((s, i) => (
                 <li key={i} className="flex items-start gap-4">
@@ -418,11 +419,11 @@ export default function OnboardingModal({ role, name, onboardingCompleted }: Pro
                     <p className="font-semibold text-sm">{s.title}</p>
                     <p className="text-xs text-muted-foreground">{s.desc}</p>
                   </div>
-                  <Link href={s.href} onClick={dismiss} className="text-xs text-primary font-medium hover:underline shrink-0">Git →</Link>
+                  <Link href={s.href} onClick={dismiss} className="text-xs text-primary font-medium hover:underline shrink-0">{t('goTo')}</Link>
                 </li>
               ))}
             </ul>
-            <Button onClick={dismiss} className="w-full rounded-xl">Tamam, başlayalım!</Button>
+            <Button onClick={dismiss} className="w-full rounded-xl">{t('allSet')}</Button>
           </div>
         )}
       </div>

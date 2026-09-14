@@ -7,6 +7,8 @@ import {
   deleteReview,
   listCoachApplications,
   setCoachApproval,
+  listVerificationRequests,
+  reviewVerificationRequest,
   listPayments,
 } from '../controllers/adminController.js';
 
@@ -15,6 +17,9 @@ router.delete("/reviews/:id", protect, roleMiddleware(["admin"]), deleteReview);
 
 router.get("/coaches", protect, roleMiddleware(["admin"]), listCoachApplications);
 router.patch("/coaches/:id/approval", protect, roleMiddleware(["admin"]), setCoachApproval);
+
+router.get("/verification-requests", protect, roleMiddleware(["admin"]), listVerificationRequests);
+router.patch("/verification-requests/:id", protect, roleMiddleware(["admin"]), reviewVerificationRequest);
 
 router.get("/payments", protect, roleMiddleware(["admin"]), listPayments);
 

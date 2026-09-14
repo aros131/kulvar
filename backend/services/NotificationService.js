@@ -49,7 +49,7 @@ export async function notify({ toUserId, type, title, message, data = {} }) {
     });
 
     if (recipient?.fcmToken) {
-      sendPushNotification(recipient.fcmToken, { title: title || "Kulvar", body: message }).catch(() => {});
+      sendPushNotification(recipient.fcmToken, { title: title || "PerSe Coaching", body: message }).catch(() => {});
     }
 
     return { ok: true, notification: doc };

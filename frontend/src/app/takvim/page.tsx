@@ -2,12 +2,14 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Clock, Dumbbell, Play, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import UserPageShell from "@/components/user/UserPageShell";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,15 +69,9 @@ interface SetEntry {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const TR_DAYS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
-const TR_MONTHS = [
-  "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-  "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
-];
-
-function formatDate(ymd: string) {
+function formatDate(ymd: string, localeTag: string) {
   const d = new Date(ymd + "T12:00:00");
-  return `${TR_DAYS[d.getDay()]}, ${d.getDate()} ${TR_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return new Intl.DateTimeFormat(localeTag, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(d);
 }
 
 function shiftDay(ymd: string, delta: number) {
@@ -84,8 +80,8 @@ function shiftDay(ymd: string, delta: number) {
   return d.toISOString().slice(0, 10);
 }
 
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+function fmtTime(iso: string, localeTag: string) {
+  return new Date(iso).toLocaleTimeString(localeTag, { hour: "2-digit", minute: "2-digit" });
 }
 
 function isPast(iso: string) {
@@ -102,13 +98,13 @@ function parseKey(key?: string) {
   return { dayIdx, sessionIdx };
 }
 
-function setLabel(ex: Exercise) {
-  if (ex.type === "cardio") return `${ex.cardioMinutes ?? "?"} dk`;
-  if (ex.type === "isometric") return `${ex.holdSeconds ?? "?"}sn`;
+function setLabel(ex: Exercise, t: (key: string, vals?: Record<string, any>) => string) {
+  if (ex.type === "cardio") return t("cardioMinUnit", { count: ex.cardioMinutes ?? "?" });
+  if (ex.type === "isometric") return t("isometricSecUnit", { count: ex.holdSeconds ?? "?" });
   const parts: string[] = [];
-  if (ex.reps) parts.push(`${ex.reps} tekrar`);
+  if (ex.reps) parts.push(t("repsUnit", { count: ex.reps }));
   if (ex.weight) parts.push(`${ex.weight} kg`);
-  if (ex.restTime) parts.push(`${ex.restTime}sn dinlenme`);
+  if (ex.restTime) parts.push(t("restUnit", { count: ex.restTime }));
   return parts.length ? parts.join(" · ") : "—";
 }
 
@@ -153,14 +149,14 @@ function buildLog(exercises: Exercise[], setData: SetEntry[][]) {
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-function StatusBadge({ status, end }: { status: CalEvent["status"]; end: string }) {
+function StatusBadge({ status, end, t }: { status: CalEvent["status"]; end: string; t: (key: string) => string }) {
   if (status === "completed")
-    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">✓ Tamamlandı</span>;
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">{t("statusCompleted")}</span>;
   if (status === "missed" || (status === "planned" && isPast(end)))
-    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Kaçırıldı</span>;
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("statusMissed")}</span>;
   if (status === "canceled")
-    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-muted-foreground dark:bg-primary/90">İptal</span>;
-  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">Planlı</span>;
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-muted-foreground dark:bg-primary/90">{t("statusCanceled")}</span>;
+  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">{t("statusPlanned")}</span>;
 }
 
 // ─── Exercise media ───────────────────────────────────────────────────────────
@@ -177,7 +173,9 @@ function ExerciseMedia({ url, description }: { url: string; description?: string
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         />
       ) : (
-        <video src={url} controls className="w-full aspect-video" />
+        // playsInline keeps iOS Safari from bouncing to its native fullscreen
+        // player on tap, which can stall and look like the video "won't open".
+        <video src={url} controls playsInline preload="metadata" className="w-full aspect-video" />
       )}
       {description && (
         <p className="text-xs text-muted-foreground px-3 py-2">{description}</p>
@@ -196,6 +194,7 @@ function SetRow({
   completing,
   onToggleDone,
   onChange,
+  t,
 }: {
   setIdx: number;
   ex: Exercise;
@@ -204,6 +203,7 @@ function SetRow({
   completing: boolean;
   onToggleDone: () => void;
   onChange: (patch: Partial<SetEntry>) => void;
+  t: (key: string, vals?: Record<string, any>) => string;
 }) {
   const isTimed = ex.type === "cardio" || ex.type === "isometric";
 
@@ -221,11 +221,11 @@ function SetRow({
           </svg>
         )}
       </div>
-      <span className="text-xs font-medium shrink-0 text-muted-foreground w-10">Set {setIdx + 1}</span>
+      <span className="text-xs font-medium shrink-0 text-muted-foreground w-10">{t("setLabel", { n: setIdx + 1 })}</span>
 
       {isTimed ? (
         <span className={`text-sm flex-1 transition-colors ${entry.done ? "line-through text-muted-foreground" : ""}`}>
-          {setLabel(ex)}
+          {setLabel(ex, t)}
         </span>
       ) : (
         <div className="flex items-center gap-1.5 flex-1">
@@ -243,7 +243,7 @@ function SetRow({
           <input
             type="number"
             inputMode="numeric"
-            placeholder="tekrar"
+            placeholder={t("repsPlaceholder")}
             disabled={!canToggle}
             value={entry.reps ?? ""}
             onChange={(e) => onChange({ reps: e.target.value === "" ? null : Number(e.target.value) })}
@@ -260,7 +260,7 @@ function SetRow({
             value={entry.rir ?? ""}
             onChange={(e) => onChange({ rir: e.target.value === "" ? null : Number(e.target.value) })}
             onClick={(e) => e.stopPropagation()}
-            title="Reps In Reserve — sette kaç tekrar rezervde kaldı"
+            title={t("rirTitle")}
             className="w-12 h-7 rounded-md border border-border bg-background text-xs text-center tabular-nums disabled:opacity-60"
           />
         </div>
@@ -277,12 +277,16 @@ function EventCard({
   suggestions,
   onComplete,
   completing,
+  t,
+  localeTag,
 }: {
   event: CalEvent;
   session: SessionInfo | null;
   suggestions: OverloadSuggestion[];
   onComplete: (id: string, log: object) => void;
   completing: boolean;
+  t: (key: string, vals?: Record<string, any>) => string;
+  localeTag: string;
 }) {
   const canComplete = event.status === "planned";
   const exercises = session?.exercises ?? [];
@@ -309,12 +313,12 @@ function EventCard({
         body: JSON.stringify({ exerciseName: exName }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || `Hata ${res.status}`);
-      const text = data.alternatives || "Şu an öneri üretilemedi.";
+      if (!res.ok) throw new Error(data.message || t("altErrorStatus", { status: res.status }));
+      const text = data.alternatives || t("altNoSuggestion");
       setAltResults(prev => ({ ...prev, [exIdx]: text }));
       setOpenAlt(exIdx);
     } catch (err: any) {
-      toast.error("AI öneri: " + (err.message || "Bağlantı hatası"));
+      toast.error(t("altToastError", { error: err.message || t("connectionError") }));
     } finally {
       setAltLoading(null);
     }
@@ -371,19 +375,19 @@ function EventCard({
             <h3 className="font-semibold text-base leading-tight">{event.title}</h3>
             <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>{fmtTime(event.start)} – {fmtTime(event.end)}</span>
+              <span>{fmtTime(event.start, localeTag)} – {fmtTime(event.end, localeTag)}</span>
             </div>
           </div>
         </div>
-        <StatusBadge status={event.status} end={event.end} />
+        <StatusBadge status={event.status} end={event.end} t={t} />
       </div>
 
       {/* Session progress bar */}
       {canComplete && hasExercises && (
         <div className="px-4 pt-4 pb-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-            <span className="font-medium">Seans İlerlemesi</span>
-            <span className="tabular-nums">{doneSets}/{totalSets} set</span>
+            <span className="font-medium">{t("sessionProgress")}</span>
+            <span className="tabular-nums">{t("setsProgress", { done: doneSets, total: totalSets })}</span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <div
@@ -397,7 +401,7 @@ function EventCard({
       {/* Exercise list with per-set rows */}
       {hasExercises && (
         <div className="px-4 pb-2 pt-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Egzersizler</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t("exercisesHeading")}</p>
           <div>
             {exercises.map((ex, exIdx) => {
               const setCount = ex.sets ?? 1;
@@ -437,43 +441,43 @@ function EventCard({
                     {/* Set counter */}
                     <span className="text-muted-foreground text-xs tabular-nums shrink-0">
                       {canComplete
-                        ? `${exDone}/${setCount} set`
+                        ? t("setsProgress", { done: exDone, total: setCount })
                         : ex.type === "cardio"
-                        ? `${ex.cardioMinutes ?? "?"} dk`
+                        ? t("cardioMinUnit", { count: ex.cardioMinutes ?? "?" })
                         : ex.type === "isometric"
-                        ? `${setCount}×${ex.holdSeconds ?? "?"}sn`
+                        ? t("isometricSetsUnit", { sets: setCount, sec: ex.holdSeconds ?? "?" })
                         : `${setCount}×${ex.reps ?? "?"}`}
                     </span>
 
-                    {/* Koç videosu varsa → oynat, yoksa → YouTube "nasıl yapılır" */}
+                    {/* Coach video if available → play, otherwise → YouTube "how to do it" */}
                     {hasMedia ? (
                       <button
                         className={`p-1.5 rounded-lg transition-colors shrink-0 ${
                           openMedia === exIdx ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground hover:text-foreground"
                         }`}
                         onClick={e => { e.stopPropagation(); setOpenMedia(openMedia === exIdx ? null : exIdx); }}
-                        title="Koç videosunu izle"
+                        title={t("watchCoachVideo")}
                       >
                         <Play className="w-3.5 h-3.5" fill="currentColor" />
                       </button>
                     ) : (
                       <a
-                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' nasıl yapılır')}`}
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' ' + t("howToSearchSuffix"))}`}
                         target="_blank"
                         rel="noreferrer"
                         onClick={e => e.stopPropagation()}
-                        title="Nasıl yapılır? (YouTube)"
+                        title={t("howToDoIt")}
                         className="p-1.5 rounded-lg transition-colors shrink-0 hover:bg-muted text-muted-foreground hover:text-red-500"
                       >
                         <Play className="w-3.5 h-3.5" />
                       </a>
                     )}
 
-                    {/* AI Alternatif butonu */}
+                    {/* AI Alternative button */}
                     <button
                       className={`p-1.5 rounded-lg transition-colors shrink-0 ${openAlt === exIdx ? "bg-violet-100 text-violet-600 dark:bg-violet-950/40" : "hover:bg-muted text-muted-foreground hover:text-violet-500"}`}
                       onClick={e => { e.stopPropagation(); fetchAlternatives(exIdx, ex.name); }}
-                      title="AI ile alternatif egzersiz öner"
+                      title={t("aiAltSuggest")}
                     >
                       {altLoading === exIdx
                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -495,18 +499,18 @@ function EventCard({
                     <div className="ml-8 mb-1 mt-0.5">
                       <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full px-2 py-0.5">
                         💡 {sugg.suggestedWeight
-                          ? `${sugg.lastWeight}kg → ${sugg.suggestedWeight}kg dene`
+                          ? t("suggestWeight", { last: sugg.lastWeight, suggested: sugg.suggestedWeight })
                           : sugg.suggestedReps
-                          ? `${sugg.lastReps} → ${sugg.suggestedReps} tekrar dene`
+                          ? t("suggestReps", { last: sugg.lastReps, suggested: sugg.suggestedReps })
                           : sugg.note ?? null}
                       </span>
                     </div>
                   )}
 
-                  {/* AI Alternatifler paneli */}
+                  {/* AI Alternatives panel */}
                   {openAlt === exIdx && altResults[exIdx] && (
                     <div className="ml-8 mb-2 mt-1 bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800 rounded-lg p-3 max-h-48 overflow-y-auto">
-                      <p className="text-[10px] font-semibold text-violet-500 mb-1.5 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Alternatif Öneriler</p>
+                      <p className="text-[10px] font-semibold text-violet-500 mb-1.5 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {t("aiAltHeading")}</p>
                       <p className="text-xs whitespace-pre-wrap leading-relaxed">{altResults[exIdx]}</p>
                     </div>
                   )}
@@ -524,6 +528,7 @@ function EventCard({
                           completing={completing}
                           onToggleDone={() => toggleSetDone(exIdx, si)}
                           onChange={(patch) => updateSet(exIdx, si, patch)}
+                          t={t}
                         />
                       ))}
                     </div>
@@ -561,14 +566,14 @@ function EventCard({
             disabled={completing}
             onClick={() => onComplete(event._id, {})}
           >
-            {completing ? "İşaretleniyor..." : "Tamamlandı Olarak İşaretle"}
+            {completing ? t("marking") : t("markComplete")}
           </Button>
         </div>
       )}
 
       {completing && hasExercises && (
         <div className="px-4 pb-4">
-          <p className="text-xs text-center text-muted-foreground animate-pulse">Seans tamamlanıyor…</p>
+          <p className="text-xs text-center text-muted-foreground animate-pulse">{t("completingSession")}</p>
         </div>
       )}
     </div>
@@ -578,6 +583,9 @@ function EventCard({
 // ─── Main inner ───────────────────────────────────────────────────────────────
 
 function TakvimInner() {
+  const t = useTranslations("calendar");
+  const locale = useLocale();
+  const localeTag = LOCALE_TAG[locale] || "tr-TR";
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -636,7 +644,7 @@ function TakvimInner() {
         setSuggestionCache(next);
       }
     } catch {
-      toast.error("Etkinlikler yüklenemedi.");
+      toast.error(t("loadEventsError"));
     } finally {
       setLoading(false);
     }
@@ -668,9 +676,9 @@ function TakvimInner() {
       setEvents((prev) =>
         prev.map((e) => (e._id === eventId ? { ...e, status: "completed" } : e))
       );
-      toast.success("Antrenman tamamlandı! 💪");
+      toast.success(t("workoutCompleted"));
     } catch {
-      toast.error("İşlem başarısız.");
+      toast.error(t("actionFailed"));
     } finally {
       setCompleting(null);
     }
@@ -709,8 +717,8 @@ function TakvimInner() {
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <div className="text-center">
-            <h1 className="font-bold text-lg leading-tight">{formatDate(date)}</h1>
-            {isToday && <span className="text-xs text-primary font-medium">Bugün</span>}
+            <h1 className="font-bold text-lg leading-tight">{formatDate(date, localeTag)}</h1>
+            {isToday && <span className="text-xs text-primary font-medium">{t("today")}</span>}
           </div>
           <Button variant="ghost" size="icon" onClick={() => navigate(1)}>
             <ChevronRight className="h-5 w-5" />
@@ -727,10 +735,10 @@ function TakvimInner() {
         ) : events.length === 0 ? (
           <div className="text-center py-16 space-y-3">
             <p className="text-4xl">🏖️</p>
-            <p className="font-semibold text-lg">Bu gün için antrenman yok</p>
-            <p className="text-sm text-muted-foreground">Dinlenme günü veya henüz planlanmamış.</p>
+            <p className="font-semibold text-lg">{t("noWorkoutHeading")}</p>
+            <p className="text-sm text-muted-foreground">{t("noWorkoutSubtitle")}</p>
             <Button variant="outline" onClick={() => router.push("/dashboard/user")}>
-              Anasayfaya Dön
+              {t("backToHome")}
             </Button>
           </div>
         ) : (
@@ -743,6 +751,8 @@ function TakvimInner() {
                 suggestions={event.programId ? (suggestionCache[event.programId] ?? []) : []}
                 onComplete={handleComplete}
                 completing={completing === event._id}
+                t={t}
+                localeTag={localeTag}
               />
             ))}
           </div>
@@ -751,7 +761,7 @@ function TakvimInner() {
         {!isToday && (
           <div className="text-center pt-2">
             <Button variant="ghost" size="sm" onClick={() => router.push(`/takvim?date=${today}`)}>
-              Bugüne Git
+              {t("goToToday")}
             </Button>
           </div>
         )}

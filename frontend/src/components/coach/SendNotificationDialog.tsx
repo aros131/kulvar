@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,24 +32,18 @@ interface Props {
   clients: Client[];
 }
 
-const templates = [
-  "Harika gidiyorsun! Bugünkü antrenmanı da unutma 💪",
-  "Bugün motivasyonun düşükse bile küçük bir adım at 💫",
-  "Takıldığın bir yer olursa bana yazabilirsin! 📩",
- 
-];
-
-const typeLabels: Record<string, string> = {
-  reminder: "Hatırlatma",
-  program_update: "Program Güncellemesi",
-  feedback: "Geri Bildirim",
-};
-
-const types = Object.keys(typeLabels);
+const types = ["reminder", "program_update", "feedback"];
 
 export default function SendNotificationDialog({ clients }: Props) {
+  const t = useTranslations("sendNotificationDialog");
+  const templates = t.raw("templates") as string[];
+  const typeLabels: Record<string, string> = {
+    reminder: t("typeReminder"),
+    program_update: t("typeProgramUpdate"),
+    feedback: t("typeFeedback"),
+  };
   const [selectedClient, setSelectedClient] = useState<string>("");
-  
+
   const [message, setMessage] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("reminder");
 
@@ -68,31 +63,31 @@ export default function SendNotificationDialog({ clients }: Props) {
     });
 
     if (res.ok) {
-      toast.success("Bildirim gönderildi!");
+      toast.success(t("toastSuccess"));
     } else {
       const err = await res.json();
-      toast.error("Hata: " + err.message);
+      toast.error(t("toastError", { message: err.message }));
     }
   };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="default">📨 Bildirim Gönder</Button>
+        <Button variant="default">{t("trigger")}</Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Hızlı Bildirim Gönder</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Danışan */}
           <div>
-            <Label>Danışan Seç</Label>
+            <Label>{t("clientLabel")}</Label>
             <Select onValueChange={setSelectedClient}>
               <SelectTrigger>
-                <SelectValue placeholder="Danışan seçin" />
+                <SelectValue placeholder={t("clientPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {clients.map((client) => (
@@ -106,15 +101,14 @@ export default function SendNotificationDialog({ clients }: Props) {
 
           {/* Şablon seç */}
           <div>
-            <Label>Hazır Mesaj Şablonu</Label>
+            <Label>{t("templateLabel")}</Label>
             <Select
               onValueChange={(value) => {
-                
                 setMessage(value); // otomatik doldur
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Şablon seçin (opsiyonel)" />
+                <SelectValue placeholder={t("templatePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {templates.map((template, idx) => (
@@ -128,23 +122,23 @@ export default function SendNotificationDialog({ clients }: Props) {
 
           {/* Özel mesaj */}
           <div>
-            <Label>Mesaj İçeriği</Label>
+            <Label>{t("messageLabel")}</Label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Mesajınızı buraya yazın..."
+              placeholder={t("messagePlaceholder")}
             />
           </div>
 
           {/* Tür */}
           <div>
-            <Label>Bildirim Türü</Label>
+            <Label>{t("typeLabel")}</Label>
             <Select
               onValueChange={setSelectedType}
               defaultValue="reminder"
             >
               <SelectTrigger>
-                <SelectValue placeholder="Tür seçin" />
+                <SelectValue placeholder={t("typePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {types.map((type) => (
@@ -159,7 +153,7 @@ export default function SendNotificationDialog({ clients }: Props) {
           {/* Önizleme */}
           {message && (
             <Card className="p-4 mt-4 border border-gray-300">
-              <p className="text-sm text-muted-foreground mb-1 font-medium">Önizleme:</p>
+              <p className="text-sm text-muted-foreground mb-1 font-medium">{t("previewLabel")}</p>
               <p className="text-base">{message}</p>
             </Card>
           )}
@@ -170,7 +164,7 @@ export default function SendNotificationDialog({ clients }: Props) {
             onClick={handleSend}
             disabled={!selectedClient || !message || !selectedType}
           >
-            Gönder
+            {t("send")}
           </Button>
         </DialogFooter>
       </DialogContent>

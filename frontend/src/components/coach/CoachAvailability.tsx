@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,15 +36,7 @@ function authedFetch(path: string, init: RequestInit = {}) {
   return fetch(`${API}${path}`, { ...init, headers, credentials: "include" });
 }
 
-const DAYS: { key: number; label: string }[] = [
-  { key: 1, label: "Pazartesi" },
-  { key: 2, label: "Salı" },
-  { key: 3, label: "Çarşamba" },
-  { key: 4, label: "Perşembe" },
-  { key: 5, label: "Cuma" },
-  { key: 6, label: "Cumartesi" },
-  { key: 0, label: "Pazar" },
-];
+const DAY_KEYS = [1, 2, 3, 4, 5, 6, 0];
 
 function hhmmToMin(hhmm: string): number {
   const [h, m] = hhmm.split(":").map((x) => parseInt(x, 10));
@@ -60,6 +53,10 @@ export default function CoachAvailability({
 }: {
   embedded?: boolean;
 }) {
+  const t = useTranslations("coachAvailability");
+  const tDays = useTranslations("dailyScheduleForm");
+  const dayNames = tDays.raw("dayNamesFull") as string[];
+  const DAYS = DAY_KEYS.map((key, i) => ({ key, label: dayNames[i] }));
   const localTz = useMemo(() => DateTime.local().zoneName, []);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,7 +89,7 @@ export default function CoachAvailability({
             _end[d] = minToHHMM(r.endMin);
           }
         }
-        for (const d of DAYS.map((x) => x.key)) {
+        for (const d of DAY_KEYS) {
           if (_enabled[d] == null) _enabled[d] = false;
           if (!_start[d]) _start[d] = "10:00";
           if (!_end[d]) _end[d] = "18:00";
@@ -103,7 +100,7 @@ export default function CoachAvailability({
         setStepMin(step);
       } catch (e) {
         console.error(e);
-        toast.error("Uygunluk kuralları alınamadı.");
+        toast.error(t("loadError"));
       } finally {
         if (alive) setLoading(false);
       }
@@ -111,12 +108,13 @@ export default function CoachAvailability({
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function save() {
     try {
       setSaving(true);
-      const rules: Rule[] = DAYS.map((d) => d.key)
+      const rules: Rule[] = DAY_KEYS
         .filter((d) => enabled[d])
         .map((d) => ({
           weekdays: [d],
@@ -131,10 +129,10 @@ export default function CoachAvailability({
         body: JSON.stringify({ rules }),
       });
       if (!res.ok) throw new Error("save_failed");
-      toast.success("Uygunluk kuralları kaydedildi.");
+      toast.success(t("saved"));
     } catch (e) {
       console.error(e);
-      toast.error("Kaydedilemedi.");
+      toast.error(t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -146,17 +144,17 @@ export default function CoachAvailability({
       {/* Top meta + global slot length */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="text-sm text-muted-foreground">
-          Yerel saat: <span className="font-medium text-foreground">{localTz}</span>
+          {t("localTime", { tz: localTz })}
         </div>
         <div className="flex items-center gap-2">
-          <Label className="text-sm text-muted-foreground">Slot uzunluğu</Label>
+          <Label className="text-sm text-muted-foreground">{t("slotLength")}</Label>
           <Select value={String(stepMin)} onValueChange={(v) => setStepMin(parseInt(v, 10))}>
             <SelectTrigger className="w-40 sm:w-48">
-              <SelectValue placeholder="Adım (dk)" />
+              <SelectValue placeholder={t("stepPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {[15, 20, 30, 45, 60].map((m) => (
-                <SelectItem key={m} value={String(m)}>{m} dk</SelectItem>
+                <SelectItem key={m} value={String(m)}>{t("minutesUnit", { value: m })}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -180,7 +178,7 @@ export default function CoachAvailability({
             </div>
 
             <div className="sm:col-span-4">
-              <Label className="sr-only">Başlangıç</Label>
+              <Label className="sr-only">{t("startLabel")}</Label>
               <Input
                 type="time"
                 className="w-full"
@@ -191,7 +189,7 @@ export default function CoachAvailability({
             </div>
 
             <div className="sm:col-span-4">
-              <Label className="sr-only">Bitiş</Label>
+              <Label className="sr-only">{t("endLabel")}</Label>
               <Input
                 type="time"
                 className="w-full"
@@ -206,7 +204,7 @@ export default function CoachAvailability({
 
       <div className="pt-2">
         <Button onClick={save} disabled={saving}>
-          {saving ? "Kaydediliyor…" : "Kaydet"}
+          {saving ? t("saving") : t("save")}
         </Button>
       </div>
     </>
@@ -214,13 +212,13 @@ export default function CoachAvailability({
 
   if (loading) {
     return embedded ? (
-      <div className="text-sm text-muted-foreground">Yükleniyor…</div>
+      <div className="text-sm text-muted-foreground">{t("loading")}</div>
     ) : (
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle>Uygunluk</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
         </CardHeader>
-        <CardContent>Yükleniyor…</CardContent>
+        <CardContent>{t("loading")}</CardContent>
       </Card>
     );
   }
@@ -230,8 +228,8 @@ export default function CoachAvailability({
   ) : (
     <Card className="rounded-2xl">
       <CardHeader className="pb-2">
-        <CardTitle>Haftalık Çalışma Saatleri</CardTitle>
-        <div className="text-sm text-muted-foreground">Yerel saat: {localTz}</div>
+        <CardTitle>{t("weeklyHoursTitle")}</CardTitle>
+        <div className="text-sm text-muted-foreground">{t("localTime", { tz: localTz })}</div>
       </CardHeader>
       <CardContent className="space-y-4">{Content}</CardContent>
     </Card>

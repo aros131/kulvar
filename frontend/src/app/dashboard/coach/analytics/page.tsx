@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations, useLocale } from 'next-intl';
 import { Users, Dumbbell, CalendarCheck, CalendarClock, TrendingUp, Star, Wallet, Clock, Sparkles, Loader2 } from 'lucide-react';
 import CoachPageShell from '@/components/coach/CoachPageShell';
 
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 interface AnalyticsData {
   totalPrograms: number;
@@ -96,6 +98,8 @@ function LoadingSkeleton() {
 }
 
 export default function CoachAnalyticsPage() {
+  const t = useTranslations('analyticsCoach');
+  const locale = useLocale();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState<string | null>(null);
@@ -106,8 +110,9 @@ export default function CoachAnalyticsPage() {
     fetch(`${API}/analytics`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((d) => setData(d))
-      .catch(() => toast.error('Analitik veriler yüklenemedi.'))
+      .catch(() => toast.error(t('loadError')))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const runInsights = async () => {
@@ -124,7 +129,7 @@ export default function CoachAnalyticsPage() {
       if (!res.ok) throw new Error(d.message);
       setInsights(d.insights);
     } catch (err: any) {
-      toast.error('AI öngörü alınamadı: ' + (err.message || ''));
+      toast.error(t('insightsError', { error: err.message || '' }));
     } finally {
       setInsightsLoading(false);
     }
@@ -146,16 +151,16 @@ export default function CoachAnalyticsPage() {
 
           {/* Header */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analitik</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Programlarının ve danışanlarının genel görünümü.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('heading')}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t('subtitle')}</p>
           </div>
 
           {/* Top stat row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Toplam Danışan" value={data?.totalClients ?? 0} icon={Users} accent="bg-blue-500/10" />
-            <StatCard label="Toplam Program" value={data?.totalPrograms ?? 0} icon={Dumbbell} accent="bg-emerald-500/10" />
-            <StatCard label="Tamamlanan Seans" value={data?.completedSessions ?? 0} icon={CalendarCheck} accent="bg-green-500/10" />
-            <StatCard label="Yaklaşan Seans" value={data?.upcomingSessions ?? 0} icon={CalendarClock} accent="bg-orange-500/10" />
+            <StatCard label={t('totalClients')} value={data?.totalClients ?? 0} icon={Users} accent="bg-blue-500/10" />
+            <StatCard label={t('totalPrograms')} value={data?.totalPrograms ?? 0} icon={Dumbbell} accent="bg-emerald-500/10" />
+            <StatCard label={t('completedSessions')} value={data?.completedSessions ?? 0} icon={CalendarCheck} accent="bg-green-500/10" />
+            <StatCard label={t('upcomingSessions')} value={data?.upcomingSessions ?? 0} icon={CalendarClock} accent="bg-orange-500/10" />
           </div>
 
           {/* Middle row */}
@@ -164,20 +169,20 @@ export default function CoachAnalyticsPage() {
             {/* Revenue card */}
             <div className="rounded-2xl border bg-card p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Kazanç Özeti</h2>
+                <h2 className="text-sm font-semibold">{t('revenueSummary')}</h2>
                 <span className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/10">
                   <Wallet className="h-4 w-4 text-emerald-600" />
                 </span>
               </div>
 
               <div className="space-y-1">
-                <p className="text-3xl font-bold tabular-nums">₺{totalRevenue.toLocaleString('tr-TR')}</p>
-                <p className="text-xs text-muted-foreground">toplam gelir</p>
+                <p className="text-3xl font-bold tabular-nums">₺{totalRevenue.toLocaleString(LOCALE_TAG[locale] || 'tr-TR')}</p>
+                <p className="text-xs text-muted-foreground">{t('totalRevenueLabel')}</p>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Tahsilat oranı</span>
+                  <span>{t('collectionRate')}</span>
                   <span className="font-medium text-foreground">{collectionRate}%</span>
                 </div>
                 <ProgressBar pct={collectionRate} color="rgb(16 185 129)" />
@@ -185,12 +190,12 @@ export default function CoachAnalyticsPage() {
 
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div className="rounded-xl bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground mb-0.5">Tahsil Edilen</p>
-                  <p className="text-base font-semibold tabular-nums text-emerald-600">₺{collectedRevenue.toLocaleString('tr-TR')}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">{t('collected')}</p>
+                  <p className="text-base font-semibold tabular-nums text-emerald-600">₺{collectedRevenue.toLocaleString(LOCALE_TAG[locale] || 'tr-TR')}</p>
                 </div>
                 <div className="rounded-xl bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground mb-0.5">Bekleyen</p>
-                  <p className="text-base font-semibold tabular-nums text-orange-500">₺{pendingRevenue.toLocaleString('tr-TR')}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">{t('pending')}</p>
+                  <p className="text-base font-semibold tabular-nums text-orange-500">₺{pendingRevenue.toLocaleString(LOCALE_TAG[locale] || 'tr-TR')}</p>
                 </div>
               </div>
             </div>
@@ -198,7 +203,7 @@ export default function CoachAnalyticsPage() {
             {/* Performance card */}
             <div className="rounded-2xl border bg-card p-6 space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Performans</h2>
+                <h2 className="text-sm font-semibold">{t('performance')}</h2>
                 <span className="w-8 h-8 rounded-lg flex items-center justify-center bg-violet-500/10">
                   <TrendingUp className="h-4 w-4 text-violet-600" />
                 </span>
@@ -207,8 +212,8 @@ export default function CoachAnalyticsPage() {
               {/* Rating */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Ortalama Puan</p>
-                  <p className="text-xs text-muted-foreground">{data?.reviewCount ?? 0} yorum</p>
+                  <p className="text-xs text-muted-foreground">{t('avgRating')}</p>
+                  <p className="text-xs text-muted-foreground">{t('reviewCount', { count: data?.reviewCount ?? 0 })}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="text-3xl font-bold tabular-nums">{rating ? rating.toFixed(1) : '—'}</p>
@@ -222,7 +227,7 @@ export default function CoachAnalyticsPage() {
               {/* Avg progress */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Ort. Danışan İlerlemesi</p>
+                  <p className="text-xs text-muted-foreground">{t('avgClientProgress')}</p>
                   <p className="text-sm font-semibold tabular-nums">
                     {progress != null ? `%${progress}` : '—'}
                   </p>
@@ -234,7 +239,7 @@ export default function CoachAnalyticsPage() {
                   />
                 )}
                 {progress == null && (
-                  <p className="text-xs text-muted-foreground">Henüz yeterli veri yok.</p>
+                  <p className="text-xs text-muted-foreground">{t('notEnoughData')}</p>
                 )}
               </div>
 
@@ -242,8 +247,7 @@ export default function CoachAnalyticsPage() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5 shrink-0" />
                 <span>
-                  {(data?.completedSessions ?? 0) + (data?.upcomingSessions ?? 0)} toplam seans —{' '}
-                  {data?.upcomingSessions ?? 0} yaklaşıyor
+                  {t('sessionsSummary', { total: (data?.completedSessions ?? 0) + (data?.upcomingSessions ?? 0), upcoming: data?.upcomingSessions ?? 0 })}
                 </span>
               </div>
             </div>
@@ -254,7 +258,7 @@ export default function CoachAnalyticsPage() {
             <div className="rounded-2xl border border-dashed bg-card p-8 text-center space-y-2">
               <Users className="mx-auto h-8 w-8 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">
-                Henüz danışan atanmamış. Programlarına danışan atayarak istatistiklerini takip edebilirsin.
+                {t('noClientsYet')}
               </p>
             </div>
           )}
@@ -267,8 +271,8 @@ export default function CoachAnalyticsPage() {
                   <Sparkles className="h-4 w-4 text-violet-600" />
                 </span>
                 <div>
-                  <h2 className="text-sm font-semibold">AI Koç Öngörüleri</h2>
-                  <p className="text-xs text-muted-foreground">Verilerini analiz et, fırsatları gör</p>
+                  <h2 className="text-sm font-semibold">{t('aiInsightsTitle')}</h2>
+                  <p className="text-xs text-muted-foreground">{t('aiInsightsSubtitle')}</p>
                 </div>
               </div>
               <button
@@ -277,7 +281,7 @@ export default function CoachAnalyticsPage() {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-60 transition-colors"
               >
                 {insightsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {insightsLoading ? 'Analiz ediliyor...' : 'Öngörü Al'}
+                {insightsLoading ? t('analyzing') : t('getInsights')}
               </button>
             </div>
 
@@ -287,7 +291,7 @@ export default function CoachAnalyticsPage() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                AI, koçluk verilerini analiz ederek güçlü yönlerini ve gelişim alanlarını tespit eder.
+                {t('aiInsightsDefault')}
               </p>
             )}
           </div>

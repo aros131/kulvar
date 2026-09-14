@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import CoachPageShell from "@/components/coach/CoachPageShell";
 import SendNotificationDialog from "@/components/coach/SendNotificationDialog";
 import ProgramList from "@/components/coach/ProgramList";
 import SentNotificationsList from "@/components/coach/SentNotificationsList";
+
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 interface Notification {
   _id: string;
@@ -26,6 +29,8 @@ interface ClientForNotification {
 }
 
 export default function CoachNotificationsPage() {
+  const t = useTranslations("notificationsCoach");
+  const locale = useLocale();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<ClientForNotification[]>([]);
@@ -51,7 +56,7 @@ export default function CoachNotificationsPage() {
       headers: { Authorization: `Bearer ${token}` },
     });
     setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
-    toast("Bildirim okundu olarak işaretlendi.");
+    toast(t("markReadToast"));
   };
 
   const markAllAsRead = async () => {
@@ -61,7 +66,7 @@ export default function CoachNotificationsPage() {
       headers: { Authorization: `Bearer ${token}` },
     });
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    toast("Tüm bildirimler okundu olarak işaretlendi.");
+    toast(t("markAllReadToast"));
   };
 
   const unread = notifications.filter((n) => !n.isRead);
@@ -76,8 +81,8 @@ export default function CoachNotificationsPage() {
       <section className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Bildirimler</h1>
-            <p className="text-sm text-muted-foreground">Gelen bildirimlerini yönet, danışanlarına duyuru gönder.</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("heading")}</h1>
+            <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
           <SendNotificationDialog clients={clients} />
         </div>
@@ -85,27 +90,27 @@ export default function CoachNotificationsPage() {
         <Tabs defaultValue="inbox" className="space-y-4">
           <TabsList>
             <TabsTrigger value="inbox" className="gap-1.5">
-              Gelen
+              {t("tabInbox")}
               {unread.length > 0 && (
                 <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
                   {unread.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="unread">Okunmamış</TabsTrigger>
-            <TabsTrigger value="read">Okunmuş</TabsTrigger>
-            <TabsTrigger value="sent">Gönderilenler</TabsTrigger>
+            <TabsTrigger value="unread">{t("tabUnread")}</TabsTrigger>
+            <TabsTrigger value="read">{t("tabRead")}</TabsTrigger>
+            <TabsTrigger value="sent">{t("tabSent")}</TabsTrigger>
           </TabsList>
 
           {/* Gelen — tümü */}
           <TabsContent value="inbox">
             {loading ? (
-              <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+              <p className="text-sm text-muted-foreground">{t("loading")}</p>
             ) : notifications.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Hiç bildirimin yok.</p>
+              <p className="text-sm text-muted-foreground">{t("emptyAll")}</p>
             ) : (
               <div className="space-y-3">
-                {notifications.map((n) => <NotifCard key={n._id} n={n} onRead={markAsRead} />)}
+                {notifications.map((n) => <NotifCard key={n._id} n={n} onRead={markAsRead} locale={locale} t={t} />)}
               </div>
             )}
           </TabsContent>
@@ -113,16 +118,16 @@ export default function CoachNotificationsPage() {
           {/* Okunmamış */}
           <TabsContent value="unread">
             {loading ? (
-              <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+              <p className="text-sm text-muted-foreground">{t("loading")}</p>
             ) : unread.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Okunmamış bildirimin yok.</p>
+              <p className="text-sm text-muted-foreground">{t("emptyUnread")}</p>
             ) : (
               <>
                 <Button onClick={markAllAsRead} variant="outline" size="sm" className="mb-3">
-                  Tümünü okundu yap
+                  {t("markAllRead")}
                 </Button>
                 <div className="space-y-3">
-                  {unread.map((n) => <NotifCard key={n._id} n={n} onRead={markAsRead} />)}
+                  {unread.map((n) => <NotifCard key={n._id} n={n} onRead={markAsRead} locale={locale} t={t} />)}
                 </div>
               </>
             )}
@@ -131,12 +136,12 @@ export default function CoachNotificationsPage() {
           {/* Okunmuş */}
           <TabsContent value="read">
             {loading ? (
-              <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+              <p className="text-sm text-muted-foreground">{t("loading")}</p>
             ) : read.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Okunmuş bildirimin yok.</p>
+              <p className="text-sm text-muted-foreground">{t("emptyRead")}</p>
             ) : (
               <div className="space-y-3">
-                {read.map((n) => <NotifCard key={n._id} n={n} onRead={markAsRead} />)}
+                {read.map((n) => <NotifCard key={n._id} n={n} onRead={markAsRead} locale={locale} t={t} />)}
               </div>
             )}
           </TabsContent>
@@ -151,7 +156,14 @@ export default function CoachNotificationsPage() {
   );
 }
 
-function NotifCard({ n, onRead }: { n: { _id: string; message: string; isRead: boolean; createdAt: string }; onRead: (id: string) => void }) {
+function NotifCard({
+  n, onRead, locale, t,
+}: {
+  n: { _id: string; message: string; isRead: boolean; createdAt: string };
+  onRead: (id: string) => void;
+  locale: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
   return (
     <Card className={`p-4 border transition-all ${!n.isRead ? "border-blue-500" : ""}`}>
       <div className="flex justify-between items-start gap-2">
@@ -160,7 +172,7 @@ function NotifCard({ n, onRead }: { n: { _id: string; message: string; isRead: b
             {!n.isRead && (
               <Badge variant="default">
                 <Dot className="w-4 h-4 animate-pulse mr-1" />
-                Yeni
+                {t("newBadge")}
               </Badge>
             )}
             <p className={`text-sm ${n.isRead ? "text-muted-foreground" : "font-medium text-foreground"}`}>
@@ -168,14 +180,14 @@ function NotifCard({ n, onRead }: { n: { _id: string; message: string; isRead: b
             </p>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {new Date(n.createdAt).toLocaleString("tr-TR", {
+            {new Date(n.createdAt).toLocaleString(LOCALE_TAG[locale] || "tr-TR", {
               hour: "2-digit", minute: "2-digit", day: "numeric", month: "short", year: "numeric",
             })}
           </p>
         </div>
         {!n.isRead && (
           <Button variant="ghost" size="sm" className="text-xs px-2 shrink-0" onClick={() => onRead(n._id)}>
-            okundu
+            {t("markReadBtn")}
           </Button>
         )}
       </div>

@@ -48,6 +48,7 @@ export interface Program {
   coachName?: string;
   assignedClients?: string[];
   completionPercentage?: number;
+  priceCents?: number | null;
   dailySchedule: Day[];
   exercises?: Exercise[];
   videos: Video[];

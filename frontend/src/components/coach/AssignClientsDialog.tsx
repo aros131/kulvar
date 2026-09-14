@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { UserPlus, UserMinus } from "lucide-react";
 
 interface Client {
@@ -15,6 +16,7 @@ interface Client {
 }
 
 export default function AssignClientsDialog({ programId }: { programId: string }) {
+  const t = useTranslations("assignClientsDialog");
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Client[]>([]);
@@ -32,9 +34,9 @@ export default function AssignClientsDialog({ programId }: { programId: string }
       const data = await res.json();
       setAssignedClients(data.program?.assignedClients || []);
     } catch {
-      toast("❌ Atanmış kullanıcılar alınamadı");
+      toast(t("fetchAssignedError"));
     }
-  }, [API, programId]);
+  }, [API, programId, t]);
 
   // 🔍 Search clients (debounced)
   useEffect(() => {
@@ -51,11 +53,12 @@ export default function AssignClientsDialog({ programId }: { programId: string }
         const data = await res.json();
         setSearchResults(data.clients || []);
       } catch {
-        toast("❌ Kullanıcılar alınamadı");
+        toast(t("fetchUsersError"));
       }
     }, 400);
 
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, open, API]);
 
   // 🟢 When dialog opens, refresh assigned list
@@ -75,13 +78,13 @@ export default function AssignClientsDialog({ programId }: { programId: string }
       });
 
       if (res.ok) {
-        toast("✅ Kullanıcı başarıyla atandı!");
+        toast(t("assignSuccess"));
         fetchAssigned();
       } else {
-        toast("❌ Atama başarısız oldu.");
+        toast(t("assignFailed"));
       }
     } catch {
-      toast("❌ Sunucu hatası");
+      toast(t("serverError"));
     }
   };
 
@@ -97,13 +100,13 @@ export default function AssignClientsDialog({ programId }: { programId: string }
       });
 
       if (res.ok) {
-        toast("🚫 Kullanıcı atamadan kaldırıldı");
+        toast(t("unassignSuccess"));
         fetchAssigned();
       } else {
-        toast("❌ Kaldırma başarısız");
+        toast(t("unassignFailed"));
       }
     } catch {
-      toast("❌ Sunucu hatası");
+      toast(t("serverError"));
     }
   };
 
@@ -111,19 +114,19 @@ export default function AssignClientsDialog({ programId }: { programId: string }
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1">
-          <UserPlus className="h-4 w-4" /> Ata
+          <UserPlus className="h-4 w-4" /> {t("assignButton")}
         </Button>
       </DialogTrigger>
 
       {/* Radix/Dialog renders in a portal -> does NOT affect grid item height */}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Danışan Ata</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <h3 className="font-semibold text-sm mb-2">Atanmış Kullanıcılar</h3>
+            <h3 className="font-semibold text-sm mb-2">{t("assignedUsers")}</h3>
             <ScrollArea className="h-40 border rounded">
               <div className="p-2 space-y-2">
                 {assignedClients.length > 0 ? (
@@ -131,12 +134,12 @@ export default function AssignClientsDialog({ programId }: { programId: string }
                     <div key={client._id} className="flex justify-between items-center py-1">
                       <p className="text-sm">✅ {client.name} ({client.email})</p>
                       <Button variant="destructive" size="sm" onClick={() => handleUnassign(client._id)}>
-                        <UserMinus className="h-4 w-4 mr-1" /> Kaldır
+                        <UserMinus className="h-4 w-4 mr-1" /> {t("remove")}
                       </Button>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">Henüz atama yapılmamış.</p>
+                  <p className="text-sm text-muted-foreground">{t("noAssignmentsYet")}</p>
                 )}
               </div>
             </ScrollArea>
@@ -144,7 +147,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
 
           <div className="space-y-2">
             <Input
-              placeholder="İsim veya e-posta ile kullanıcı ara..."
+              placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -156,7 +159,7 @@ export default function AssignClientsDialog({ programId }: { programId: string }
                       <p className="font-medium text-sm">{client.name}</p>
                       <p className="text-xs text-muted-foreground">{client.email}</p>
                     </div>
-                    <Button size="sm" onClick={() => handleAssign(client._id)}>Ata</Button>
+                    <Button size="sm" onClick={() => handleAssign(client._id)}>{t("assignButton")}</Button>
                   </div>
                 ))}
               </div>

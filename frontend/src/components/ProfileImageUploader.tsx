@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { getCroppedImg } from "../lib/cropperUtils";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface ProfileImageUploaderProps {
   onCropped: (file: File) => void;
@@ -20,6 +21,7 @@ interface CroppedArea {
 }
 
 const ProfileImageUploader: React.FC<ProfileImageUploaderProps> = ({ onCropped }) => {
+  const t = useTranslations("profileImageUploader");
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -28,11 +30,11 @@ const ProfileImageUploader: React.FC<ProfileImageUploaderProps> = ({ onCropped }
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file.type.startsWith("image/")) {
-      toast.error("Sadece resim dosyaları desteklenir.");
+      toast.error(t("onlyImages"));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Dosya boyutu 2MB'den küçük olmalı.");
+      toast.error(t("fileTooLarge"));
       return;
     }
 
@@ -53,9 +55,9 @@ const ProfileImageUploader: React.FC<ProfileImageUploaderProps> = ({ onCropped }
       const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels);
       onCropped(croppedFile);
       setImageSrc(null);
-      toast.success("Kırpma tamamlandı.");
+      toast.success(t("cropDone"));
     } catch (error) {
-      toast.error("Kırpma işlemi başarısız oldu.");
+      toast.error(t("cropFailed"));
       console.error(error);
     }
   };
@@ -68,7 +70,7 @@ const ProfileImageUploader: React.FC<ProfileImageUploaderProps> = ({ onCropped }
           className="border border-dashed rounded-2xl w-full h-64 flex items-center justify-center text-sm text-muted-foreground cursor-pointer bg-muted hover:bg-muted"
         >
           <input {...getInputProps()} />
-          Fotoğrafı sürükleyin veya tıklayın
+          {t("dropHint")}
         </div>
       ) : (
         <div className="relative w-full h-64 bg-border rounded-2xl overflow-hidden">
@@ -89,7 +91,7 @@ const ProfileImageUploader: React.FC<ProfileImageUploaderProps> = ({ onCropped }
         <>
           <Slider min={1} max={3} step={0.1} value={[zoom]} onValueChange={(v) => setZoom(v[0])} />
           <Button variant="secondary" onClick={handleCrop}>
-            Kırp ve Yükle
+            {t("cropAndUpload")}
           </Button>
         </>
       )}

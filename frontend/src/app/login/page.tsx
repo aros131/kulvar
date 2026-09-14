@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { createUserIfNotExists } from "@/utils/firestore/createUserIfNotExists";
 import { signInToFirebase, registerPushNotifications } from "@/lib/firebase";
 
@@ -18,6 +20,7 @@ interface FieldErrors {
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -26,9 +29,9 @@ export default function LoginPage() {
 
   const validate = (): boolean => {
     const next: FieldErrors = {};
-    if (!email.trim()) next.email = 'E-posta zorunludur.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Geçerli bir e-posta girin.';
-    if (!password) next.password = 'Şifre zorunludur.';
+    if (!email.trim()) next.email = t('validation.emailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = t('validation.emailInvalid');
+    if (!password) next.password = t('validation.passwordRequired');
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -49,7 +52,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setServerError(data.message || 'Giriş başarısız. E-posta veya şifre hatalı.');
+        setServerError(data.message || t('login.errorInvalid'));
         return;
       }
 
@@ -70,10 +73,10 @@ export default function LoginPage() {
       } else if (data.user.role === 'admin') {
         router.push('/admin-dashboard');
       } else {
-        setServerError('Tanımlanamayan hesap rolü.');
+        setServerError(t('login.errorUnknownRole'));
       }
     } catch {
-      setServerError('Sunucu hatası oluştu. Lütfen tekrar deneyin.');
+      setServerError(t('login.errorGeneric'));
     } finally {
       setLoading(false);
     }
@@ -81,14 +84,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 px-4">
+      <div className="fixed right-4 top-[calc(1rem+env(safe-area-inset-top))]">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">PerSe Coaching</h1>
-          <p className="text-sm text-muted-foreground mt-1">Hesabınıza giriş yapın.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('brand')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('login.subtitle')}</p>
         </div>
 
         <form onSubmit={handleLogin} className="bg-card dark:bg-primary/90 rounded-2xl shadow-lg p-8 space-y-5">
-          <h2 className="text-xl font-semibold">Giriş Yap</h2>
+          <h2 className="text-xl font-semibold">{t('login.heading')}</h2>
 
           {serverError && (
             <div className="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
@@ -97,11 +103,11 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-1">
-            <Label htmlFor="email">E-posta</Label>
+            <Label htmlFor="email">{t('login.emailLabel')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="ornek@email.com"
+              placeholder={t('login.emailPlaceholder')}
               value={email}
               onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: undefined })); }}
               className={errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
@@ -110,11 +116,11 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="password">Şifre</Label>
+            <Label htmlFor="password">{t('login.passwordLabel')}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="Şifreniz"
+              placeholder={t('login.passwordPlaceholder')}
               value={password}
               onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({ ...p, password: undefined })); }}
               className={errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}
@@ -123,17 +129,17 @@ export default function LoginPage() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Giriş yapılıyor…' : 'Giriş Yap'}
+            {loading ? t('login.submitting') : t('login.submit')}
           </Button>
 
           <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
             <Link href="/forgot-password" className="hover:underline">
-              Şifremi Unuttum
+              {t('login.forgotPassword')}
             </Link>
             <span>
-              Hesabınız yok mu?{' '}
+              {t('login.noAccount')}{' '}
               <Link href="/signup" className="text-primary font-medium hover:underline">
-                Kayıt Ol
+                {t('login.signupLink')}
               </Link>
             </span>
           </div>

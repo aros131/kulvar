@@ -72,6 +72,19 @@ const UserSchema = new mongoose.Schema(
     // admin panel; other roles don't use this field, so they default true.
     isApproved:  { type: Boolean, default: function () { return this.role !== "coach"; } },
     isListedCoach: { type: Boolean, default: false }, // koç kendini listede görmek için açık etmeli
+
+    // "Doğrulanmış koç" rozeti — isApproved'dan ayrı, admin'in sertifika/instagram
+    // kontrolüyle verdiği ekstra bir güven rozeti. Koç profilden talep eder,
+    // admin admin panelden onaylar/reddeder.
+    isVerifiedCoach: { type: Boolean, default: false },
+    coachVerification: {
+      status: { type: String, enum: ["none", "pending", "approved", "rejected"], default: "none" },
+      certificateUrl: { type: String, default: "" },
+      instagram: { type: String, default: "" },
+      note: { type: String, default: "" },        // admin'in ret/onay notu
+      requestedAt: { type: Date, default: null },
+      reviewedAt: { type: Date, default: null },
+    },
     price:       { type: Number, default: null },
     brandColor:  { type: String, default: '' },       // hex renk kodu, koç profili için
     brandLogoUrl:{ type: String, default: '' },       // koç logo URL'i

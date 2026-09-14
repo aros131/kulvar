@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import CoachProfileClient from "@/components/CoachProfileClient";
 
 function apiBase() {
@@ -17,6 +18,7 @@ export default function ClientSection({
   reviews: any[];
 }) {
   const API = apiBase();
+  const locale = useLocale() as "tr" | "en" | "fr";
   const safePrograms = Array.isArray(programs) ? programs : [];
   const safeReviews = Array.isArray(reviews) ? reviews : [];
 
@@ -25,7 +27,7 @@ export default function ClientSection({
       coach={coach}
       programs={safePrograms}
       reviews={safeReviews}
-      locale="tr"
+      locale={locale}
       isFollowing={coach?.isFollowing}
       onFollowToggle={async (next: boolean) => {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;

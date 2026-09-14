@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import { db, storage } from "@/lib/firebase";
 import {
   addDoc, collection, deleteDoc, doc, getDoc, getDocs,
@@ -55,13 +56,15 @@ type LocalUser = { id: string; name: string; role: string };
 const initials = (name?: string) =>
   (name || "").trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
-const fmtDate = (d: Date) => {
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
+
+const fmtDate = (d: Date, locale: string, todayLabel: string, yesterdayLabel: string) => {
   const today = new Date();
   const yday = new Date(); yday.setDate(today.getDate() - 1);
   const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-  if (same(d, today)) return "Bugün";
-  if (same(d, yday)) return "Dün";
-  return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
+  if (same(d, today)) return todayLabel;
+  if (same(d, yday)) return yesterdayLabel;
+  return d.toLocaleDateString(LOCALE_TAG[locale] || "tr-TR", { day: "2-digit", month: "short", year: "numeric" });
 };
 
 const fmtTime = (s: number) => {
@@ -144,37 +147,40 @@ function VoicePlayer({ url, duration = 0, mine }: { url: string; duration?: numb
 /* ─────────────────────── Check-in Cards ────────────────────────────── */
 
 function CheckInRequestCard({ mine, responded, onRespond }: { mine: boolean; responded: boolean; onRespond: () => void }) {
+  const t = useTranslations("chat");
   return (
     <div className={`rounded-2xl p-4 space-y-3 w-64 ${mine ? "bg-white/10 border border-white/20" : "bg-amber-50 dark:bg-amber-900/20 border border-amber-300/40"}`}>
       <div className="flex items-center gap-2">
         <span className="text-2xl">📋</span>
         <div>
-          <p className="font-semibold text-sm">Günlük Check-in</p>
-          <p className={`text-xs ${mine ? "text-white/60" : "text-muted-foreground"}`}>Koçun bilgi istiyor</p>
+          <p className="font-semibold text-sm">{t("checkInRequestTitle")}</p>
+          <p className={`text-xs ${mine ? "text-white/60" : "text-muted-foreground"}`}>{t("checkInRequestSubtitle")}</p>
         </div>
       </div>
       {!mine && !responded && (
         <button onClick={onRespond}
           className="w-full bg-primary text-primary-foreground text-sm py-2 rounded-xl font-medium hover:opacity-90 transition">
-          Yanıtla →
+          {t("checkInReply")}
         </button>
       )}
-      {!mine && responded && <p className="text-xs text-green-600 dark:text-green-400 text-center">Yanıtlandı ✓</p>}
-      {mine && <p className={`text-xs text-center ${mine ? "text-white/50" : "text-muted-foreground"}`}>Yanıt bekleniyor…</p>}
+      {!mine && responded && <p className="text-xs text-green-600 dark:text-green-400 text-center">{t("checkInReplied")}</p>}
+      {mine && <p className={`text-xs text-center ${mine ? "text-white/50" : "text-muted-foreground"}`}>{t("checkInWaiting")}</p>}
     </div>
   );
 }
 
 function CheckInResponseCard({ data, mine }: { data: CheckInData; mine: boolean }) {
-  const moodLabel = ["", "Kötü 😞", "Zayıf 😕", "Orta 😐", "İyi 😊", "Harika 🤩"][data.mood] || "—";
+  const t = useTranslations("chat");
+  const moodLabels = t.raw("moodLabels") as string[];
+  const moodLabel = moodLabels[data.mood] || "—";
   return (
     <div className={`rounded-2xl p-4 space-y-2 w-64 ${mine ? "bg-white/10 border border-white/20" : "bg-green-50 dark:bg-green-900/20 border border-green-300/40"}`}>
-      <p className="font-semibold text-sm flex items-center gap-1.5">✅ Check-in Yanıtı</p>
+      <p className="font-semibold text-sm flex items-center gap-1.5">✅ {t("checkInResponseTitle")}</p>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-        <div><span className={`text-xs ${mine ? "text-white/50" : "text-muted-foreground"}`}>Ruh hali</span><p className="font-medium">{moodLabel}</p></div>
-        {data.weight && <div><span className={`text-xs ${mine ? "text-white/50" : "text-muted-foreground"}`}>Ağırlık</span><p className="font-medium">{data.weight} kg</p></div>}
-        <div className="col-span-2"><span className={`text-xs ${mine ? "text-white/50" : "text-muted-foreground"}`}>Antrenman</span>
-          <p className="font-medium">{data.completed ? "✅ Tamamlandı" : "❌ Yapılmadı"}</p></div>
+        <div><span className={`text-xs ${mine ? "text-white/50" : "text-muted-foreground"}`}>{t("mood")}</span><p className="font-medium">{moodLabel}</p></div>
+        {data.weight && <div><span className={`text-xs ${mine ? "text-white/50" : "text-muted-foreground"}`}>{t("weight")}</span><p className="font-medium">{data.weight} kg</p></div>}
+        <div className="col-span-2"><span className={`text-xs ${mine ? "text-white/50" : "text-muted-foreground"}`}>{t("workout")}</span>
+          <p className="font-medium">{data.completed ? t("workoutDone") : t("workoutNotDone")}</p></div>
       </div>
       {data.note && <p className={`text-xs border-t pt-2 ${mine ? "border-white/20 text-white/70" : "border-border text-muted-foreground"}`}>{data.note}</p>}
     </div>
@@ -182,6 +188,7 @@ function CheckInResponseCard({ data, mine }: { data: CheckInData; mine: boolean 
 }
 
 function CheckInFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (d: CheckInData) => void }) {
+  const t = useTranslations("chat");
   const [mood, setMood] = useState(3);
   const [weight, setWeight] = useState("");
   const [completed, setCompleted] = useState(false);
@@ -190,11 +197,11 @@ function CheckInFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
     <div className="fixed inset-0 z-50 bg-foreground/60 flex items-end sm:items-center justify-center p-4">
       <div className="bg-background rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg">Günlük Check-in</h3>
+          <h3 className="font-bold text-lg">{t("checkInFormTitle")}</h3>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted"><X className="w-5 h-5" /></button>
         </div>
         <div>
-          <p className="text-sm font-medium mb-3">Bugün nasıl hissediyorsun?</p>
+          <p className="text-sm font-medium mb-3">{t("checkInFormMoodQuestion")}</p>
           <div className="flex gap-2">
             {([{v:1,e:"😞"},{v:2,e:"😕"},{v:3,e:"😐"},{v:4,e:"😊"},{v:5,e:"🤩"}] as {v:number;e:string}[]).map(({v,e}) => (
               <button key={v} onClick={() => setMood(v)}
@@ -205,7 +212,7 @@ function CheckInFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
           </div>
         </div>
         <div>
-          <p className="text-sm font-medium mb-1">Ağırlık <span className="text-muted-foreground font-normal">(opsiyonel)</span></p>
+          <p className="text-sm font-medium mb-1">{t("checkInFormWeightLabel")} <span className="text-muted-foreground font-normal">{t("optional")}</span></p>
           <div className="relative">
             <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="68.5" step="0.1"
               className="w-full border rounded-xl px-3 py-2 pr-10 text-sm bg-background outline-none focus:ring-2 focus:ring-ring border-border" />
@@ -214,16 +221,16 @@ function CheckInFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
         </div>
         <button onClick={() => setCompleted(!completed)}
           className={`w-full py-3 rounded-xl border-2 text-sm font-medium transition ${completed ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "border-border text-muted-foreground"}`}>
-          {completed ? "✅ Antrenmanı tamamladım" : "🏋️ Antrenmanı tamamladım mı?"}
+          {completed ? t("checkInFormWorkoutDone") : t("checkInFormWorkoutQuestion")}
         </button>
         <div>
-          <p className="text-sm font-medium mb-1">Not <span className="text-muted-foreground font-normal">(opsiyonel)</span></p>
-          <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Bugün hakkında bir şey yaz…"
+          <p className="text-sm font-medium mb-1">{t("checkInFormNoteLabel")} <span className="text-muted-foreground font-normal">{t("optional")}</span></p>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder={t("checkInFormNotePlaceholder")}
             className="w-full border rounded-xl px-3 py-2 text-sm bg-background outline-none focus:ring-2 focus:ring-ring resize-none border-border" />
         </div>
         <button onClick={() => onSubmit({ mood, weight: weight ? Number(weight) : undefined, completed, note: note.trim() || undefined })}
           className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:opacity-90 transition">
-          Gönder
+          {t("send")}
         </button>
       </div>
     </div>
@@ -262,32 +269,14 @@ function EmojiPickerPanel({ onPick, forInput }: { onPick: (e: string) => void; f
 
 /* ─────────────────────── Templates Panel ───────────────────────────── */
 
-const TEMPLATES = [
-  { cat: "💪 Motivasyon", items: [
-    "Harika antrenman! Böyle devam et! 💪🔥",
-    "Bu hafta çok iyi iş çıkardın, kendinle gurur duy! 🌟",
-    "Her gün biraz daha iyi oluyorsun! 📈",
-    "Zorlu geçiyor ama sen bunu başarabilirsin! 🔥",
-  ]},
-  { cat: "📋 Hatırlatma", items: [
-    "💧 Bugün en az 2 litre su içmeyi unutma!",
-    "😴 Uyku çok önemli, erken yat!",
-    "🥗 Beslenme planına bugün sadık kaldın mı?",
-    "Yarın antrenman var, hazır ol! 🏋️",
-  ]},
-  { cat: "📊 Takip", items: [
-    "Bu hafta nasıl geçti? Check-in yapalım!",
-    "Ağırlığını ölçtün mü?",
-    "Geçen haftaya göre nasıl hissediyorsun?",
-    "Hedeflerimize ne kadar yaklaştık? 🎯",
-  ]},
-];
-
 function TemplatesPanel({ onSelect }: { onSelect: (t: string) => void }) {
+  const t = useTranslations("chat");
+  const templates = t.raw("templates") as Record<string, { cat: string; items: string[] }>;
+  const TEMPLATES = Object.values(templates);
   const [open, setOpen] = useState<number | null>(0);
   return (
     <div className="border border-border bg-background rounded-xl shadow-xl p-2 w-72 max-h-72 overflow-y-auto">
-      <p className="text-xs text-muted-foreground px-2 py-1 font-medium">Hızlı mesajlar</p>
+      <p className="text-xs text-muted-foreground px-2 py-1 font-medium">{t("quickMessagesLabel")}</p>
       {TEMPLATES.map((cat, i) => (
         <div key={i}>
           <button onClick={() => setOpen(open === i ? null : i)}
@@ -313,6 +302,7 @@ function TemplatesPanel({ onSelect }: { onSelect: (t: string) => void }) {
 /* ─────────────────────── File Card ─────────────────────────────────── */
 
 function FileCard({ url, name, mine }: { url: string; name: string; mine: boolean }) {
+  const t = useTranslations("chat");
   const ext = name.split(".").pop()?.toUpperCase().slice(0, 4) || "FILE";
   return (
     <a href={url} target="_blank" rel="noreferrer"
@@ -322,7 +312,7 @@ function FileCard({ url, name, mine }: { url: string; name: string; mine: boolea
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium truncate">{name}</p>
-        <p className={`text-[10px] ${mine ? "text-white/50" : "text-muted-foreground"}`}>Dosyayı indir</p>
+        <p className={`text-[10px] ${mine ? "text-white/50" : "text-muted-foreground"}`}>{t("downloadFile")}</p>
       </div>
     </a>
   );
@@ -354,6 +344,8 @@ function MessageBubble({
   onReply, onCopy, onDelete, onPin, onReact, onRetry,
   onOpenImage, onCheckInRespond, readTicks,
 }: BubbleProps) {
+  const t = useTranslations("chat");
+  const locale = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const type = msg.type || (msg.imageUrl ? "image" : "text");
@@ -362,7 +354,7 @@ function MessageBubble({
   if (msg.deleted) {
     return (
       <div className={`flex ${mine ? "justify-end" : "justify-start"} px-2`} data-msg={msg.id}>
-        <p className="text-xs text-muted-foreground italic px-3 py-2 rounded-xl bg-muted">Mesaj silindi</p>
+        <p className="text-xs text-muted-foreground italic px-3 py-2 rounded-xl bg-muted">{t("messageDeleted")}</p>
       </div>
     );
   }
@@ -375,13 +367,13 @@ function MessageBubble({
   return (
     <div className={`flex flex-col ${mine ? "items-end" : "items-start"} px-2 group`} data-msg={msg.id}>
       {!mine && <p className="text-[11px] text-muted-foreground ml-1 mb-0.5">{otherName}</p>}
-      {isPinned && <p className={`text-[10px] mb-0.5 ${mine ? "text-white/50" : "text-muted-foreground"}`}>📌 Sabitlendi</p>}
+      {isPinned && <p className={`text-[10px] mb-0.5 ${mine ? "text-white/50" : "text-muted-foreground"}`}>{t("pinned")}</p>}
 
       {/* Reply preview */}
       {msg.replyTo && (
         <div className={`max-w-[80%] md:max-w-[65%] mb-1 px-3 py-1.5 rounded-xl border-l-4 text-xs ${mine ? "bg-indigo-800/60 border-indigo-300/60 text-indigo-100" : "bg-muted border-border text-muted-foreground"}`}>
           <p className="font-medium">{msg.replyTo.senderName}</p>
-          <p className="truncate">{msg.replyTo.text || (msg.replyTo.imageUrl ? "[Resim]" : "")}</p>
+          <p className="truncate">{msg.replyTo.text || (msg.replyTo.imageUrl ? t("image") : "")}</p>
         </div>
       )}
 
@@ -424,10 +416,10 @@ function MessageBubble({
           {/* Time + status */}
           <div className={`flex items-center gap-1 mt-1 ${mine ? "justify-end" : "justify-start"}`}>
             <span className={`text-[10px] ${mine ? "text-white/50" : "text-muted-foreground"}`}>
-              {msg.createdAt?.toDate().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) || ""}
+              {msg.createdAt?.toDate().toLocaleTimeString(LOCALE_TAG[locale] || "tr-TR", { hour: "2-digit", minute: "2-digit" }) || ""}
             </span>
             {mine && <span className={mine ? "text-white/70" : ""}>{readTicks}</span>}
-            {msg.error && <button onClick={() => onRetry(msg)} className="text-[10px] text-red-300 underline">yeniden dene</button>}
+            {msg.error && <button onClick={() => onRetry(msg)} className="text-[10px] text-red-300 underline">{t("retry")}</button>}
           </div>
         </div>
 
@@ -439,9 +431,9 @@ function MessageBubble({
               <button onClick={() => setMenuOpen(!menuOpen)} className="p-1 rounded-lg bg-background border border-border hover:bg-muted shadow-sm"><MoreVertical className="w-3.5 h-3.5 text-muted-foreground" /></button>
               {menuOpen && (
                 <div className="absolute right-8 top-0 w-36 border border-border rounded-xl bg-background shadow-xl p-1 z-30">
-                  {msg.text && <button onClick={() => { onCopy(msg.text); setMenuOpen(false); }} className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-xs">Kopyala</button>}
-                  <button onClick={() => { onPin(msg); setMenuOpen(false); }} className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-xs">{isPinned ? "Sabitlemeyi kaldır" : "Sabitle"}</button>
-                  <button onClick={() => { onDelete(msg); setMenuOpen(false); }} className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-xs text-red-500">Sil</button>
+                  {msg.text && <button onClick={() => { onCopy(msg.text); setMenuOpen(false); }} className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-xs">{t("copy")}</button>}
+                  <button onClick={() => { onPin(msg); setMenuOpen(false); }} className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-xs">{isPinned ? t("unpin") : t("pin")}</button>
+                  <button onClick={() => { onDelete(msg); setMenuOpen(false); }} className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-xs text-red-500">{t("delete")}</button>
                 </div>
               )}
             </div>
@@ -482,6 +474,8 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps) {
+  const t = useTranslations("chat");
+  const locale = useLocale();
   const [user, setUser] = useState<LocalUser | null>(null);
   const [other, setOther] = useState<{ id: string; name: string; avatarUrl?: string; lastSeen?: Timestamp } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -558,7 +552,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
       setPinned(convData?.pinnedMessageIds || []);
       setIsBlocked((convData?.blockedBy || []).includes(myId));
       if (convData?.lastReadAt?.[otherId]) setOtherLastReadAt(convData.lastReadAt[otherId]);
-      setOther({ id: otherId, name: fsData?.name || "Bilinmeyen", avatarUrl, lastSeen: fsData?.lastSeen });
+      setOther({ id: otherId, name: fsData?.name || t("unknownUser"), avatarUrl, lastSeen: fsData?.lastSeen });
     })();
   }, [otherId, chatId, myId]);
 
@@ -653,7 +647,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
       setRecordingTime(0);
       recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
     } catch {
-      alert("Mikrofon erişimi reddedildi.");
+      alert(t("micDenied"));
     }
   };
 
@@ -682,7 +676,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
 
     try {
       const docRef = await addDoc(collection(db, `chats/${chatId}/messages`), { ...clean, createdAt: serverTimestamp() });
-      const preview = clean.text || (clean.imageUrl ? "[Resim]" : clean.audioUrl ? "[Sesli mesaj]" : clean.fileUrl ? `[${clean.fileName}]` : clean.type === "checkin_request" ? "[Check-in isteği]" : clean.type === "checkin_response" ? "[Check-in yanıtı]" : "");
+      const preview = clean.text || (clean.imageUrl ? t("image") : clean.audioUrl ? t("voiceMessage") : clean.fileUrl ? `[${clean.fileName}]` : clean.type === "checkin_request" ? t("checkInRequestPreview") : clean.type === "checkin_response" ? t("checkInResponsePreview") : "");
       await updateDoc(doc(db, "chats", chatId), { lastMessage: preview, updatedAt: serverTimestamp(), [`unread_${otherId}`]: increment(1) });
       setMessages(prev => {
         const mapped = prev.map(m => m.id === tempId ? { ...m, id: docRef.id, pending: false } : m);
@@ -771,7 +765,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
     let lastDate = "";
     for (const m of base) {
       const d = m.createdAt?.toDate?.() || new Date();
-      const chip = fmtDate(d);
+      const chip = fmtDate(d, locale, t("today"), t("yesterday"));
       if (chip !== lastDate) { out.push({ type: "date", id: `d-${d.getTime()}`, date: chip }); lastDate = chip; }
       out.push({ type: "msg", id: m.id, msg: m });
     }
@@ -806,9 +800,9 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-background" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">{other?.name || "Yükleniyor…"}</p>
+            <p className="font-semibold text-sm truncate">{other?.name || t("loading")}</p>
             <p className="text-[11px] text-muted-foreground">
-              {typingOther ? "Yazıyor…" : other?.lastSeen ? `Son görülme ${other.lastSeen.toDate().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}` : "Çevrimdışı"}
+              {typingOther ? t("typing") : other?.lastSeen ? t("lastSeen", { time: other.lastSeen.toDate().toLocaleTimeString(LOCALE_TAG[locale] || "tr-TR", { hour: "2-digit", minute: "2-digit" }) }) : t("offline")}
             </p>
           </div>
           <div className="flex items-center gap-1">
@@ -817,10 +811,10 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
               <summary className="list-none p-2 rounded-lg hover:bg-muted cursor-pointer"><MoreVertical className="w-4 h-4" /></summary>
               <div className="absolute right-0 mt-1 w-48 border border-border rounded-xl bg-background shadow-xl p-1 z-30">
                 <button onClick={blockToggle} className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted flex items-center gap-2 text-sm">
-                  <Ban className="w-4 h-4" /> {isBlocked ? "Engeli Kaldır" : "Engelle"}
+                  <Ban className="w-4 h-4" /> {isBlocked ? t("unblock") : t("block")}
                 </button>
                 <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted flex items-center gap-2 text-sm">
-                  <Flag className="w-4 h-4" /> Rapor Et
+                  <Flag className="w-4 h-4" /> {t("report")}
                 </button>
               </div>
             </details>
@@ -828,7 +822,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
         </div>
         {searchOpen && (
           <div className="mt-2 flex items-center gap-2">
-            <input value={queryText} onChange={e => setQueryText(e.target.value)} placeholder="Bu sohbette ara…"
+            <input value={queryText} onChange={e => setQueryText(e.target.value)} placeholder={t("searchInChat")}
               className="flex-1 h-9 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
             <button onClick={() => { setSearchOpen(false); setQueryText(""); }} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
           </div>
@@ -842,7 +836,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
               return (
                 <button key={id} onClick={() => document.querySelector(`[data-msg="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
                   className="text-xs px-2 py-1 rounded-full bg-muted hover:bg-muted/80 whitespace-nowrap shrink-0">
-                  📌 {msg.text?.slice(0, 28) || "[Medya]"}
+                  📌 {msg.text?.slice(0, 28) || t("media")}
                 </button>
               );
             })}
@@ -854,7 +848,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
       <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 py-4 space-y-2 bg-zinc-50 dark:bg-zinc-900">
         {hasMore && (
           <div className="flex justify-center">
-            <button onClick={loadOlder} className="text-xs text-primary hover:underline px-3 py-1">Önceki mesajları yükle</button>
+            <button onClick={loadOlder} className="text-xs text-primary hover:underline px-3 py-1">{t("loadOlderMessages")}</button>
           </div>
         )}
         {grouped.map(row =>
@@ -872,7 +866,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
               otherName={other?.name || ""}
               pinned={pinned}
               checkInResponded={checkInResponseMap.has(row.msg!.id)}
-              onReply={m => setReplyTo({ id: m.id, text: m.text, imageUrl: m.imageUrl, senderName: m.senderId === myId ? (user?.name || "Sen") : (other?.name || "") })}
+              onReply={m => setReplyTo({ id: m.id, text: m.text, imageUrl: m.imageUrl, senderName: m.senderId === myId ? (user?.name || t("you")) : (other?.name || "") })}
               onCopy={async t => { await navigator.clipboard.writeText(t).catch(() => {}); }}
               onDelete={deleteMine}
               onPin={pinToggle}
@@ -901,7 +895,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
             <CornerUpLeft className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground">{replyTo.senderName}</p>
-              <p className="truncate text-muted-foreground">{replyTo.text || (replyTo.imageUrl ? "[Resim]" : "")}</p>
+              <p className="truncate text-muted-foreground">{replyTo.text || (replyTo.imageUrl ? t("image") : "")}</p>
             </div>
             <button onClick={() => setReplyTo(null)} className="shrink-0 p-0.5 rounded hover:bg-muted"><X className="w-3.5 h-3.5" /></button>
           </div>
@@ -933,8 +927,8 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
         {recording && (
           <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2.5">
             <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0" />
-            <span className="text-sm font-medium text-red-600 dark:text-red-400 flex-1">Kaydediliyor… {fmtTime(recordingTime)}</span>
-            <button onClick={stopRecording} className="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline">Gönder</button>
+            <span className="text-sm font-medium text-red-600 dark:text-red-400 flex-1">{t("recording", { time: fmtTime(recordingTime) })}</span>
+            <button onClick={stopRecording} className="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline">{t("send")}</button>
             <button onClick={() => { mediaRecorderRef.current?.stop(); setRecording(false); if (recordingTimerRef.current) clearInterval(recordingTimerRef.current); setRecordingTime(0); audioChunksRef.current = []; }} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
           </div>
         )}
@@ -981,7 +975,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
                 }
                 if (picked.length) setFiles(p => [...p, ...picked]);
               }}
-              placeholder={isBlocked ? "Bu sohbet engellendi" : "Mesaj yaz…"}
+              placeholder={isBlocked ? t("chatBlockedPlaceholder") : t("messagePlaceholder")}
               disabled={isBlocked || !ready}
               className="flex-1 border border-border rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground"
             />
@@ -1000,7 +994,7 @@ export default function ChatWindow({ chatId, myRole, backHref }: ChatWindowProps
 
             {/* Mic / Check-in (coach) / Send */}
             {myRole === "coach" && (
-              <button onClick={sendCheckIn} title="Check-in isteği gönder"
+              <button onClick={sendCheckIn} title={t("sendCheckInTitle")}
                 className="p-2 rounded-xl hover:bg-muted transition text-muted-foreground">
                 <span className="text-base">📋</span>
               </button>

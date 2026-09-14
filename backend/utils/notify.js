@@ -12,7 +12,7 @@ export async function notify({ recipientId, senderId, type, message }) {
 
     const recipient = await User.findById(recipientId).select('fcmToken').lean();
     if (recipient?.fcmToken) {
-      sendPushNotification(recipient.fcmToken, { title: 'Kulvar', body: message }).catch(() => {});
+      sendPushNotification(recipient.fcmToken, { title: 'PerSe Coaching', body: message }).catch(() => {});
     }
   } catch (err) {
     console.error('[notify] failed:', err.message);

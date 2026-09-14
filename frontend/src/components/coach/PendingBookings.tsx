@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -13,6 +14,8 @@ function token() {
 }
 
 export default function PendingBookings() {
+  const t = useTranslations("pendingBookings");
+  const locale = useLocale();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,13 +29,13 @@ export default function PendingBookings() {
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
     } catch {
-      toast.error("Bekleyen istekler alınamadı.");
+      toast.error(t("loadError"));
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function act(id: string, action: "approve" | "decline") {
     try {
@@ -42,31 +45,31 @@ export default function PendingBookings() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.message || "İşlem başarısız");
+        throw new Error(j.message || t("actionFailed"));
       }
-      toast.success(action === "approve" ? "Onaylandı" : "Reddedildi");
+      toast.success(action === "approve" ? t("approved") : t("declined"));
       setItems((prev) => prev.filter((x) => x._id !== id));
     } catch (e:any) {
-      toast.error(e.message || "Hata");
+      toast.error(e.message || t("genericError"));
     }
   }
 
-  if (loading) return <div className="text-sm text-muted-foreground">Yükleniyor…</div>;
-  if (items.length === 0) return <div className="text-sm text-muted-foreground">Bekleyen istek yok.</div>;
+  if (loading) return <div className="text-sm text-muted-foreground">{t("loading")}</div>;
+  if (items.length === 0) return <div className="text-sm text-muted-foreground">{t("empty")}</div>;
 
   return (
     <div className="space-y-3">
       {items.map((b) => (
         <div key={b._id} className="border rounded-md p-3 flex items-center justify-between">
           <div className="text-sm">
-            <div className="font-medium">{b?.userId?.name ?? "Kullanıcı"}</div>
+            <div className="font-medium">{b?.userId?.name ?? t("userFallback")}</div>
             <div className="text-muted-foreground">
-              {DateTime.fromISO(b.startUtc).toFormat("dd LLL yyyy, HH:mm")} – {DateTime.fromISO(b.endUtc).toFormat("HH:mm")} ({b.meetingMode === "online" ? "Online" : "Yüz Yüze"})
+              {DateTime.fromISO(b.startUtc).setLocale(locale).toFormat("dd LLL yyyy, HH:mm")} – {DateTime.fromISO(b.endUtc).setLocale(locale).toFormat("HH:mm")} ({b.meetingMode === "online" ? t("online") : t("inPerson")})
             </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => act(b._id, "approve")}>Onayla</Button>
-            <Button size="sm" variant="outline" onClick={() => act(b._id, "decline")}>Reddet</Button>
+            <Button size="sm" onClick={() => act(b._id, "approve")}>{t("approve")}</Button>
+            <Button size="sm" variant="outline" onClick={() => act(b._id, "decline")}>{t("decline")}</Button>
           </div>
         </div>
       ))}

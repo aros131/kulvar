@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Home, User, MessageSquare, Settings, Bell, LayoutGrid, BarChart2, CreditCard, Users, LogOut } from "lucide-react";
+import { Home, User, MessageSquare, Settings, Bell, LayoutGrid, BarChart2, CreditCard, Users, LogOut, Copy } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import clsx from "clsx";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -15,6 +17,7 @@ interface SidebarNavProps {
 }
 
 export default function SidebarNav({ unreadCount: unreadProp }: SidebarNavProps) {
+  const t = useTranslations("navCoach");
   const pathname = usePathname();
   const router = useRouter();
   const [unreadNotif, setUnreadNotif] = useState(unreadProp ?? 0);
@@ -61,12 +64,13 @@ export default function SidebarNav({ unreadCount: unreadProp }: SidebarNavProps)
     pathname === href || (href !== "/dashboard/coach" && pathname.startsWith(href + "/"));
 
   const navItems = [
-    { href: "/dashboard/coach", icon: <Home size={24} />, label: "Ana Sayfa" },
-    { href: "/dashboard/coach/profile", icon: <User size={24} />, label: "Profil" },
-    { href: "/dashboard/coach/programs", icon: <LayoutGrid size={24} />, label: "Programlar" },
-    { href: "/dashboard/coach/clients", icon: <Users size={24} />, label: "Danışanlar" },
-    { href: "/dashboard/coach/analytics", icon: <BarChart2 size={24} />, label: "Analitik" },
-    { href: "/dashboard/coach/payments", icon: <CreditCard size={24} />, label: "Ödemeler" },
+    { href: "/dashboard/coach", icon: <Home size={24} />, label: t("home") },
+    { href: "/dashboard/coach/profile", icon: <User size={24} />, label: t("profile") },
+    { href: "/dashboard/coach/programs", icon: <LayoutGrid size={24} />, label: t("programs") },
+    { href: "/dashboard/coach/templates", icon: <Copy size={24} />, label: t("templates") },
+    { href: "/dashboard/coach/clients", icon: <Users size={24} />, label: t("clients") },
+    { href: "/dashboard/coach/analytics", icon: <BarChart2 size={24} />, label: t("analytics") },
+    { href: "/dashboard/coach/payments", icon: <CreditCard size={24} />, label: t("payments") },
     {
       href: "/dashboard/coach/messages",
       icon: (
@@ -79,7 +83,7 @@ export default function SidebarNav({ unreadCount: unreadProp }: SidebarNavProps)
           )}
         </div>
       ),
-      label: "Mesajlar",
+      label: t("messages"),
     },
     {
       href: "/dashboard/coach/notifications",
@@ -93,9 +97,9 @@ export default function SidebarNav({ unreadCount: unreadProp }: SidebarNavProps)
           )}
         </div>
       ),
-      label: "Bildirimler",
+      label: t("notifications"),
     },
-    { href: "/dashboard/coach/settings", icon: <Settings size={24} />, label: "Ayarlar" },
+    { href: "/dashboard/coach/settings", icon: <Settings size={24} />, label: t("settings") },
   ];
 
   return (
@@ -115,13 +119,16 @@ export default function SidebarNav({ unreadCount: unreadProp }: SidebarNavProps)
           </Link>
         ))}
       </div>
-      <button
-        onClick={handleLogout}
-        title="Çıkış Yap"
-        className="flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-      >
-        <LogOut size={24} />
-      </button>
+      <div className="space-y-1">
+        <LanguageSwitcher variant="icon" />
+        <button
+          onClick={handleLogout}
+          title={t("logout")}
+          className="flex items-center justify-center w-12 h-12 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+        >
+          <LogOut size={24} />
+        </button>
+      </div>
     </aside>
   );
 }

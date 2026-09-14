@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -47,9 +48,23 @@ interface CoachProfile {
   certifications?: string[];
   city?: string;
   role: "coach";
+  isVerifiedCoach?: boolean;
+  coachVerification?: {
+    status: "none" | "pending" | "approved" | "rejected";
+    certificateUrl?: string;
+    instagram?: string;
+  };
 }
 
 const CoachProfilePage: React.FC = () => {
+  const t = useTranslations("profileCoach");
+  const tSpec = useTranslations("coachesDirectory");
+  const specLabels: Record<string, string> = {
+    fitness: tSpec("specLabels.fitness"),
+    yoga: tSpec("specLabels.yoga"),
+    pilates: tSpec("specLabels.pilates"),
+    beslenme: tSpec("specLabels.beslenme"),
+  };
   const router = useRouter();
   const [profile, setProfile] = useState<CoachProfile | null>(null);
   const [editData, setEditData] = useState<CoachProfile | null>(null);
@@ -59,6 +74,10 @@ const CoachProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [certUrl, setCertUrl] = useState("");
+  const [instagramHandle, setInstagramHandle] = useState("");
+  const [submittingVerification, setSubmittingVerification] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -72,13 +91,14 @@ const CoachProfilePage: React.FC = () => {
         setProfile(res.data);
         setEditData(res.data);
       } catch (err) {
-        toast.error("Profil yüklenemedi.");
+        toast.error(t("loadError"));
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleEditChange = (field: keyof CoachProfile, value: string) => {
@@ -114,19 +134,43 @@ const CoachProfilePage: React.FC = () => {
       if (!res.ok) throw new Error();
       const data = await res.json();
       setEditData((prev) => (prev ? { ...prev, profilePicture: data.url } : prev));
-      toast.success("Fotoğraf yüklendi.");
+      toast.success(t("photoUploaded"));
     } catch (err) {
-      toast.error("Fotoğraf yüklenemedi.");
+      toast.error(t("photoUploadError"));
       console.error(err);
     } finally {
       setUploading(false);
     }
   };
 
+  const submitVerificationRequest = async () => {
+    if (!certUrl.trim() && !instagramHandle.trim()) {
+      toast.error(t("verificationFieldRequired"));
+      return;
+    }
+    setSubmittingVerification(true);
+    try {
+      const token = cleanToken();
+      const res = await fetch(`${API}/profile/verification-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ certificateUrl: certUrl, instagram: instagramHandle }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setProfile((prev) => (prev ? { ...prev, coachVerification: data.coachVerification } : prev));
+      toast.success(t("verificationSubmitted"));
+    } catch {
+      toast.error(t("verificationSubmitError"));
+    } finally {
+      setSubmittingVerification(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!editData) return;
     if (!editData.name?.trim()) {
-      toast.error("İsim alanı boş bırakılamaz.");
+      toast.error(t("nameRequired"));
       return;
     }
     setSaving(true);
@@ -138,9 +182,9 @@ const CoachProfilePage: React.FC = () => {
       const updated = res.data?.user ?? res.data;
       setProfile(updated);
       setDialogOpen(false);
-      toast.success("Profil güncellendi.");
+      toast.success(t("profileUpdated"));
     } catch (err) {
-      toast.error("Profil güncellenemedi.");
+      toast.error(t("profileUpdateError"));
       console.error(err);
     } finally {
       setSaving(false);
@@ -152,73 +196,73 @@ const CoachProfilePage: React.FC = () => {
       <section className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Profil Bilgileri</h1>
-            <p className="text-sm text-muted-foreground">Bilgilerini güncel tutarak öne çık.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("heading")}</h1>
+            <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="default" className="gap-2">
                 <PencilLine className="h-4 w-4" />
-                Profili Düzenle
+                {t("editProfile")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Profili Düzenle</DialogTitle>
+                <DialogTitle>{t("editProfile")}</DialogTitle>
               </DialogHeader>
 
               <div className="flex flex-col gap-4 mt-2">
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">İsim *</label>
+                  <label className="text-xs text-muted-foreground">{t("nameLabel")}</label>
                   <Input
-                    placeholder="Adınız Soyadınız"
+                    placeholder={t("namePlaceholder")}
                     value={editData?.name || ""}
                     onChange={(e) => handleEditChange("name", e.target.value)}
                   />
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">Kısa Slogan</label>
+                  <label className="text-xs text-muted-foreground">{t("taglineLabel")}</label>
                   <Input
-                    placeholder="örn. Güç ve kondisyon uzmanı"
+                    placeholder={t("taglinePlaceholder")}
                     value={editData?.tagline || ""}
                     onChange={(e) => handleEditChange("tagline", e.target.value)}
                   />
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">Uzmanlık Alanı</label>
+                  <label className="text-xs text-muted-foreground">{t("specializationLabel")}</label>
                   <Select
                     value={editData?.specialization || ""}
                     onValueChange={(v) => handleEditChange("specialization", v === "none" ? "" : v)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seçiniz…" />
+                      <SelectValue placeholder={t("specializationPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">— Belirtilmemiş —</SelectItem>
-                      <SelectItem value="fitness">Fitness</SelectItem>
-                      <SelectItem value="yoga">Yoga</SelectItem>
-                      <SelectItem value="pilates">Pilates</SelectItem>
-                      <SelectItem value="beslenme">Beslenme</SelectItem>
+                      <SelectItem value="none">{t("specializationNone")}</SelectItem>
+                      <SelectItem value="fitness">{specLabels.fitness}</SelectItem>
+                      <SelectItem value="yoga">{specLabels.yoga}</SelectItem>
+                      <SelectItem value="pilates">{specLabels.pilates}</SelectItem>
+                      <SelectItem value="beslenme">{specLabels.beslenme}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">Şehir</label>
+                  <label className="text-xs text-muted-foreground">{t("cityLabel")}</label>
                   <Input
-                    placeholder="örn. İstanbul"
+                    placeholder={t("cityPlaceholder")}
                     value={editData?.city || ""}
                     onChange={(e) => handleEditChange("city", e.target.value)}
                   />
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">Hakkımda</label>
+                  <label className="text-xs text-muted-foreground">{t("bioLabel")}</label>
                   <Textarea
-                    placeholder="Kendinizi ve yaklaşımınızı anlatın..."
+                    placeholder={t("bioPlaceholder")}
                     rows={4}
                     value={editData?.bio || ""}
                     onChange={(e) => handleEditChange("bio", e.target.value)}
@@ -226,16 +270,16 @@ const CoachProfilePage: React.FC = () => {
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">Sertifikalar</label>
+                  <label className="text-xs text-muted-foreground">{t("certificationsLabel")}</label>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="örn. ACE Personal Trainer"
+                      placeholder={t("certificationPlaceholder")}
                       value={certInput}
                       onChange={(e) => setCertInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCertification(); } }}
                     />
                     <Button type="button" variant="secondary" size="sm" onClick={addCertification}>
-                      Ekle
+                      {t("add")}
                     </Button>
                   </div>
                   {(editData?.certifications || []).length > 0 && (
@@ -253,13 +297,13 @@ const CoachProfilePage: React.FC = () => {
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs text-muted-foreground">Profil Fotoğrafı</label>
+                  <label className="text-xs text-muted-foreground">{t("photoLabel")}</label>
                   <ProfileImageUploader onCropped={handleImageUpload} />
-                  {uploading && <p className="text-xs text-muted-foreground">Yükleniyor…</p>}
+                  {uploading && <p className="text-xs text-muted-foreground">{t("uploading")}</p>}
                   {editData?.profilePicture ? (
                     <Image
                       src={editData.profilePicture}
-                      alt="Yeni Profil"
+                      alt={t("newPhotoAlt")}
                       width={100}
                       height={100}
                       className="rounded-2xl object-cover w-[100px] h-[100px] border"
@@ -271,10 +315,10 @@ const CoachProfilePage: React.FC = () => {
 
               <DialogFooter className="mt-4 gap-2">
                 <Button variant="secondary" onClick={() => setDialogOpen(false)} disabled={saving || uploading}>
-                  İptal
+                  {t("cancel")}
                 </Button>
                 <Button onClick={handleSave} disabled={saving || uploading}>
-                  {saving ? "Kaydediliyor…" : "Kaydet"}
+                  {saving ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -305,7 +349,7 @@ const CoachProfilePage: React.FC = () => {
                     <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/40 to-green-600/40 blur-md" />
                     <Image
                       src={profile.profilePicture || "/images/user.png"}
-                      alt="Profil Fotoğrafı"
+                      alt={t("heading")}
                       width={96}
                       height={96}
                       className="relative rounded-2xl object-cover border border-border dark:border-zinc-800 w-[96px] h-[96px]"
@@ -316,10 +360,12 @@ const CoachProfilePage: React.FC = () => {
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <CardTitle className="text-xl leading-none">{profile.name}</CardTitle>
-                      <Badge variant="secondary" className="gap-1 rounded-lg">
-                        <BadgeCheck className="h-3.5 w-3.5" />
-                        Doğrulandı
-                      </Badge>
+                      {profile.isVerifiedCoach && (
+                        <Badge variant="secondary" className="gap-1 rounded-lg">
+                          <BadgeCheck className="h-3.5 w-3.5" />
+                          {t("verified")}
+                        </Badge>
+                      )}
                     </div>
                     {profile.tagline && (
                       <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{profile.tagline}</p>
@@ -332,7 +378,7 @@ const CoachProfilePage: React.FC = () => {
                       {profile.specialization && (
                         <span className="inline-flex items-center gap-1">
                           <User className="h-4 w-4" />
-                          {profile.specialization}
+                          {specLabels[profile.specialization] || profile.specialization}
                         </span>
                       )}
                       {profile.city && (
@@ -349,7 +395,7 @@ const CoachProfilePage: React.FC = () => {
                 {profile.bio && (
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                      <Quote className="h-3.5 w-3.5" /> Hakkımda
+                      <Quote className="h-3.5 w-3.5" /> {t("aboutTitle")}
                     </p>
                     <p className="text-sm text-foreground/80 leading-relaxed">{profile.bio}</p>
                   </div>
@@ -359,7 +405,7 @@ const CoachProfilePage: React.FC = () => {
                 {(profile.certifications || []).length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                      <Award className="h-3.5 w-3.5" /> Sertifikalar
+                      <Award className="h-3.5 w-3.5" /> {t("certificationsTitle")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {(profile.certifications || []).map((cert) => (
@@ -371,26 +417,59 @@ const CoachProfilePage: React.FC = () => {
                   </div>
                 )}
 
+                {/* Verification request */}
+                <div className="space-y-2 rounded-xl border border-dashed p-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                    <BadgeCheck className="h-3.5 w-3.5" /> {t("verifiedBadgeTitle")}
+                  </p>
+                  {profile.isVerifiedCoach ? (
+                    <p className="text-sm text-muted-foreground">{t("verifiedDesc")}</p>
+                  ) : profile.coachVerification?.status === "pending" ? (
+                    <p className="text-sm text-muted-foreground">{t("pendingDesc")}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {profile.coachVerification?.status === "rejected"
+                          ? t("rejectedDesc")
+                          : t("requestDesc")}
+                      </p>
+                      <Input
+                        placeholder={t("certUrlPlaceholder")}
+                        value={certUrl}
+                        onChange={(e) => setCertUrl(e.target.value)}
+                      />
+                      <Input
+                        placeholder={t("instagramPlaceholder")}
+                        value={instagramHandle}
+                        onChange={(e) => setInstagramHandle(e.target.value)}
+                      />
+                      <Button size="sm" onClick={submitVerificationRequest} disabled={submittingVerification}>
+                        {submittingVerification ? t("submitting") : t("submitVerification")}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Empty prompts */}
                 {!profile.bio && !profile.tagline && (profile.certifications || []).length === 0 && (
                   <div className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-                    Profilini zenginleştir — bio, slogan ve sertifikalarını ekle.
+                    {t("enrichPrompt")}
                   </div>
                 )}
               </motion.div>
             ) : (
-              <div className="text-sm text-muted-foreground">Profil bulunamadı.</div>
+              <div className="text-sm text-muted-foreground">{t("notFound")}</div>
             )}
           </CardContent>
         </Card>
         {/* Mobile-only quick links */}
         <div className="md:hidden mt-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Diğer</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{t("otherLinksTitle")}</p>
           <div className="rounded-2xl border overflow-hidden divide-y">
             {[
-              { href: "/dashboard/coach/analytics", label: "Analitik", Icon: BarChart2 },
-              { href: "/dashboard/coach/payments", label: "Ödemeler", Icon: CreditCard },
-              { href: "/dashboard/coach/settings", label: "Ayarlar", Icon: Settings },
+              { href: "/dashboard/coach/analytics", label: t("analytics"), Icon: BarChart2 },
+              { href: "/dashboard/coach/payments", label: t("payments"), Icon: CreditCard },
+              { href: "/dashboard/coach/settings", label: t("settings"), Icon: Settings },
             ].map(({ href, label, Icon }) => (
               <Link
                 key={href}
@@ -415,7 +494,7 @@ const CoachProfilePage: React.FC = () => {
             >
               <span className="flex items-center gap-3 text-sm font-medium">
                 <LogOut className="h-4 w-4" />
-                Çıkış Yap
+                {t("logout")}
               </span>
               <ChevronRight className="h-4 w-4" />
             </button>

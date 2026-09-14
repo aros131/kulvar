@@ -35,20 +35,25 @@ import {
   getAdaptiveAdjustments,
   getProgramMedia,
   getCoachPrograms,
+  getCoachTemplates,
+  convertProgramToTemplate,
+  createProgramFromTemplate,
   getAllClients,
   assignProgramToGroup,
   startProgram
 
- 
-  
- 
-  
+
+
+
+
 } from '../controllers/programController.js';
 router.post('/:programId/start', protect, roleMiddleware(['user']), startProgram);
 // 🟢 Program Management Routes
 router.post("/", protect, roleMiddleware(["coach"]), upload.array("documents"), createProgram);
 router.get("/coach", protect, roleMiddleware(["coach"]), getCoachPrograms); // ✅ MUST come before /:id
 router.get("/clients", protect, roleMiddleware(["coach"]), getAllClients);
+router.get("/templates", protect, roleMiddleware(["coach"]), getCoachTemplates); // ✅ MUST come before /:id
+router.post("/templates/:templateId/use", protect, roleMiddleware(["coach"]), createProgramFromTemplate);
 router.get("/user-programs", protect, getUserPrograms);
 router.get("/", protect, getPrograms);
 
@@ -60,6 +65,7 @@ router.delete("/:id", protect, roleMiddleware(["coach"]), deleteProgram);
 // 🟢 Assign & Clone
 router.post("/:programId/assign", protect, roleMiddleware(["coach"]), assignProgramToClients);
 router.post("/:programId/clone", protect, roleMiddleware(["coach"]), cloneProgram);
+router.post("/:programId/convert-to-template", protect, roleMiddleware(["coach"]), convertProgramToTemplate);
 
 // 🟢 Session & Progress Tracking
 router.post("/:programId/track-session", protect, roleMiddleware(["user"]), trackSessionCompletion);

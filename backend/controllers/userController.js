@@ -37,7 +37,8 @@ export const getClientById = async (req, res) => {
 export const searchClients = async (req, res) => {
   const query = req.query.q?.trim();
   try {
-    const filter = { role: "user" };
+    const assignedIds = await Program.find({ coachId: req.user._id }).distinct("assignedClients");
+    const filter = { role: "user", _id: { $in: assignedIds } };
     if (query) {
       filter.$or = [
         { name: { $regex: query, $options: "i" } },

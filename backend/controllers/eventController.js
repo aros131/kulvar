@@ -5,6 +5,7 @@ import ProgramAssignment from '../models/ProgramAssignment.js';
 import User from '../models/User.js';
 import WorkoutLog from '../models/WorkoutLog.js';
 import { notify } from '../utils/notify.js';
+import { buildRestDaySet, computeStreaksFromDates } from '../utils/streaks.js';
 
 const getUserId = (req) => req.user?.id || req.user?._id;
 
@@ -136,6 +137,20 @@ export const completeEvent = async (req, res) => {
           progress.completedSessions.push({ sessionId: sessionKey, completed: true, dateCompleted: new Date() });
         }
         progress.progressPercentage = progressPercentage;
+
+        // Recompute the streak — rest days (no sessions scheduled) keep it
+        // alive on their own, only a scheduled workout day with nothing
+        // completed breaks it. This is the live completion path (Takvim),
+        // so it's what actually needs to keep streakTracking up to date.
+        const completedDates = new Set(
+          progress.completedSessions.map((s) => (s.dateCompleted ? new Date(s.dateCompleted).toISOString().split('T')[0] : null)).filter(Boolean)
+        );
+        const assignment = ev.assignmentId
+          ? await ProgramAssignment.findById(ev.assignmentId).select('startDate').lean()
+          : null;
+        const restDays = buildRestDaySet(program.dailySchedule, assignment?.startDate);
+        progress.streakTracking = computeStreaksFromDates(completedDates, restDays);
+
         await progress.save();
 
         // 2. Update Program.progressTracking (used by coach client detail)

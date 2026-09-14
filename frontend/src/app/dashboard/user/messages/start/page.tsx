@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import UserPageShell from "@/components/user/UserPageShell";
@@ -19,6 +20,7 @@ type Coach = {
 };
 
 function StartUserChatInner() {
+  const t = useTranslations("startChat");
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [allCoaches, setAllCoaches] = useState<Coach[]>([]);
   const [user, setUser] = useState<LocalUser | null>(null);
@@ -76,7 +78,7 @@ function StartUserChatInner() {
           if (data?.role === "coach") {
             const fsCoach: Coach = {
               id: docSnap.id,
-              name: data.name || "Bilinmeyen",
+              name: data.name || t("unknownUser"),
               role: "coach",
               avatar: data.profilePicture || null,
             };
@@ -134,7 +136,7 @@ function StartUserChatInner() {
     <UserPageShell>
       <section className="max-w-3xl mx-auto px-4 py-8 md:py-10">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Yeni Mesaj</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
         </div>
 
         <div className="mb-4">
@@ -142,7 +144,7 @@ function StartUserChatInner() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Koç ara…"
+            placeholder={t("searchCoachPlaceholder")}
             className="w-full h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring border-border"
           />
         </div>
@@ -154,7 +156,7 @@ function StartUserChatInner() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <p className="text-muted-foreground text-sm text-center">Uygun koç bulunamadı.</p>
+          <p className="text-muted-foreground text-sm text-center">{t("noCoachFound")}</p>
         ) : (
           <ul className="space-y-3">
             {filtered.map((coach) => (
@@ -180,9 +182,9 @@ function StartUserChatInner() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-foreground truncate">{coach.name}</div>
-                    <div className="text-sm text-muted-foreground">Koç</div>
+                    <div className="text-sm text-muted-foreground">{t("coachRole")}</div>
                   </div>
-                  <span className="shrink-0 text-sm text-primary font-medium">Sohbete başla →</span>
+                  <span className="shrink-0 text-sm text-primary font-medium">{t("startChatCta")}</span>
                 </button>
               </li>
             ))}

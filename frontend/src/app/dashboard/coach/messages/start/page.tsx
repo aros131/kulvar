@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { db } from "@/lib/firebase";
 import { collection, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import CoachPageShell from "@/components/coach/CoachPageShell";
@@ -26,6 +27,7 @@ const initials = (name?: string) =>
     .toUpperCase();
 
 export default function StartCoachChatPage() {
+  const t = useTranslations("startChat");
   const [clients, setClients] = useState<Client[]>([]);
   const [coachId, setCoachId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export default function StartCoachChatPage() {
     <CoachPageShell>
       <section className="max-w-3xl mx-auto px-4 py-8 md:py-10">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight">Yeni Mesaj</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
         </div>
 
         <div className="mb-4">
@@ -88,7 +90,7 @@ export default function StartCoachChatPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Danışan ara…"
+            placeholder={t("searchClientPlaceholder")}
             className="w-full h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring border-border"
           />
         </div>
@@ -101,7 +103,7 @@ export default function StartCoachChatPage() {
           </div>
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-10">
-            {clients.length === 0 ? "Sistemde kayıtlı danışan yok." : "Arama sonucu bulunamadı."}
+            {clients.length === 0 ? t("noClientsRegistered") : t("noSearchResults")}
           </p>
         ) : (
           <ul className="space-y-3">
@@ -130,7 +132,7 @@ export default function StartCoachChatPage() {
                     <div className="font-medium text-foreground truncate">{client.name}</div>
                     <div className="text-sm text-muted-foreground truncate">{client.email}</div>
                   </div>
-                  <span className="shrink-0 text-sm text-primary font-medium">Sohbete başla →</span>
+                  <span className="shrink-0 text-sm text-primary font-medium">{t("startChatCta")}</span>
                 </button>
               </li>
             ))}

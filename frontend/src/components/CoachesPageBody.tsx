@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -12,12 +13,7 @@ import {
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
-const SPEC_OPTIONS = [
-  { value: "yoga",      label: "Yoga",      color: "bg-violet-100 text-violet-700" },
-  { value: "fitness",   label: "Fitness",   color: "bg-orange-100 text-orange-700" },
-  { value: "pilates",   label: "Pilates",   color: "bg-pink-100   text-pink-700"   },
-  { value: "beslenme",  label: "Beslenme",  color: "bg-green-100  text-green-700"  },
-] as const;
+const SPEC_VALUES = ["yoga", "fitness", "pilates", "beslenme"] as const;
 
 const SPEC_COLOR: Record<string, string> = {
   yoga:     "bg-violet-100 text-violet-700",
@@ -26,7 +22,7 @@ const SPEC_COLOR: Record<string, string> = {
   beslenme: "bg-green-100  text-green-700",
 };
 
-type SpecValue = (typeof SPEC_OPTIONS)[number]["value"];
+type SpecValue = (typeof SPEC_VALUES)[number];
 type SortKey   = "rating" | "price_asc" | "price_desc" | "newest";
 
 type Coach = {
@@ -50,7 +46,7 @@ type Coach = {
 /* ── Helpers ──────────────────────────────────────── */
 const toTRLower   = (s: string) => s.toLocaleLowerCase("tr");
 const toArray     = (x?: string | string[]) => (!x ? [] : Array.isArray(x) ? x : [x]);
-const allowedSpec = new Set<SpecValue>(SPEC_OPTIONS.map((o) => o.value));
+const allowedSpec = new Set<SpecValue>(SPEC_VALUES);
 
 const normalizeSpec = (s: string): SpecValue | "" => {
   const v = toTRLower(s) as SpecValue;
@@ -67,10 +63,10 @@ const capitalizeName = (name?: string) => {
     .join(" ");
 };
 
-function initials(name?: string) {
-  if (!name) return "KÇ";
+function initials(name: string | undefined, fallback: string) {
+  if (!name) return fallback;
   const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "KC";
+  return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || fallback;
 }
 
 function specColor(spec: string) {
@@ -105,11 +101,20 @@ function sortCoaches(list: Coach[], key: SortKey): Coach[] {
 export default function CoachesPageBody() {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("coachesDirectory");
+
+  const specLabels: Record<SpecValue, string> = {
+    yoga: t("specLabels.yoga"),
+    fitness: t("specLabels.fitness"),
+    pilates: t("specLabels.pilates"),
+    beslenme: t("specLabels.beslenme"),
+  };
 
   const [query,      setQuery]      = useState((searchParams?.get("q")    || "").trim());
   const [specFilter, setSpecFilter] = useState<SpecValue | "">(normalizeSpec(searchParams?.get("spec") || ""));
   const [sortKey,    setSortKey]    = useState<SortKey>("rating");
   const [minRating,  setMinRating]  = useState(0);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
 
   const [raw,     setRaw]     = useState<Coach[]>([]);
@@ -149,7 +154,7 @@ export default function CoachesPageBody() {
       const items = await fetchCoaches(query, specFilter);
       if (!active) return;
       setRaw(items ?? []);
-      setError(items ? null : "Koçlar yüklenemedi.");
+      setError(items ? null : t('errorFetch'));
       setLoading(false);
     })();
     return () => { active = false; };
@@ -158,14 +163,14 @@ export default function CoachesPageBody() {
 
   useEffect(() => {
     if (loading) return;
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setFetching(true);
       const items = await fetchCoaches(query, specFilter);
       setRaw(items ?? []);
-      setError(items ? null : "Arama sırasında sorun oluştu.");
+      setError(items ? null : t('errorSearch'));
       setFetching(false);
     }, 380);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, specFilter]);
 
@@ -173,14 +178,15 @@ export default function CoachesPageBody() {
   const coaches = useMemo(() => {
     let list = raw;
     if (minRating > 0) list = list.filter((c) => (c.rating ?? 0) >= minRating);
+    if (verifiedOnly) list = list.filter((c) => c.verified);
     return sortCoaches(list, sortKey);
-  }, [raw, sortKey, minRating]);
+  }, [raw, sortKey, minRating, verifiedOnly]);
 
   const SORT_LABELS: Record<SortKey, string> = {
-    rating:     "En Yüksek Puan",
-    price_asc:  "Fiyat: Düşük → Yüksek",
-    price_desc: "Fiyat: Yüksek → Düşük",
-    newest:     "En Yeni",
+    rating:     t('sortLabels.rating'),
+    price_asc:  t('sortLabels.price_asc'),
+    price_desc: t('sortLabels.price_desc'),
+    newest:     t('sortLabels.newest'),
   };
 
   return (
@@ -191,10 +197,10 @@ export default function CoachesPageBody() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs tracking-[0.2em] text-primary-foreground/60 mb-3">PERSE COACHING</p>
           <h1 className="text-4xl md:text-6xl font-black text-primary-foreground leading-tight mb-4">
-            Koçunu Bul
+            {t('heroTitle')}
           </h1>
           <p className="text-primary-foreground/70 mb-8 text-sm md:text-base">
-            Uzman koçları keşfet, profillerini incele ve sana en uygun olanı seç.
+            {t('heroSubtitle')}
           </p>
           {/* Search bar */}
           <div className="relative max-w-xl mx-auto">
@@ -202,7 +208,7 @@ export default function CoachesPageBody() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Isim, uzmanlık, şehir..."
+              placeholder={t('searchPlaceholder')}
               className="w-full pl-12 pr-4 py-4 rounded-2xl bg-background text-foreground placeholder:text-muted-foreground text-sm outline-none shadow-lg"
             />
             {query && (
@@ -226,17 +232,17 @@ export default function CoachesPageBody() {
                 specFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
-              Tümü
+              {t('specAll')}
             </button>
-            {SPEC_OPTIONS.map((s) => (
+            {SPEC_VALUES.map((value) => (
               <button
-                key={s.value}
-                onClick={() => setSpecFilter(specFilter === s.value ? "" : s.value)}
+                key={value}
+                onClick={() => setSpecFilter(specFilter === value ? "" : value)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  specFilter === s.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  specFilter === value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {s.label}
+                {specLabels[value]}
               </button>
             ))}
           </div>
@@ -275,12 +281,23 @@ export default function CoachesPageBody() {
                 onChange={(e) => setMinRating(Number(e.target.value))}
                 className="bg-transparent outline-none text-xs cursor-pointer"
               >
-                <option value={0}>Tümü</option>
+                <option value={0}>{t('ratingAll')}</option>
                 <option value={3}>3+</option>
                 <option value={4}>4+</option>
                 <option value={4.5}>4.5+</option>
               </select>
             </div>
+
+            {/* Verified only */}
+            <button
+              onClick={() => setVerifiedOnly((v) => !v)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                verifiedOnly ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+              }`}
+            >
+              <Award className="h-3.5 w-3.5" />
+              {t('verifiedFilter')}
+            </button>
           </div>
         </div>
       </div>
@@ -292,10 +309,10 @@ export default function CoachesPageBody() {
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground">
             {loading || fetching
-              ? "Yükleniyor…"
+              ? t('loadingText')
               : coaches.length === 0
-              ? "Sonuç bulunamadı"
-              : `${coaches.length} koç bulundu`}
+              ? t('noResults')
+              : t('resultsCount', { count: coaches.length })}
           </p>
           {fetching && <div className="h-1 w-24 rounded-full bg-primary/20 overflow-hidden"><div className="h-full w-1/2 bg-primary animate-pulse rounded-full" /></div>}
         </div>
@@ -310,8 +327,8 @@ export default function CoachesPageBody() {
         ) : coaches.length === 0 ? (
           <div className="rounded-2xl border border-border p-16 text-center">
             <Search className="h-10 w-10 text-muted-foreground/40 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm">Aramanızla eşleşen koç bulunamadı.</p>
-            <button onClick={() => { setQuery(""); setSpecFilter(""); }} className="mt-4 text-xs text-primary underline">Filtreleri temizle</button>
+            <p className="text-muted-foreground text-sm">{t('errorNoMatch')}</p>
+            <button onClick={() => { setQuery(""); setSpecFilter(""); setMinRating(0); setVerifiedOnly(false); }} className="mt-4 text-xs text-primary underline">{t('clearFilters')}</button>
           </div>
         ) : (
           /* Masonry-style: CSS columns */
@@ -324,6 +341,7 @@ export default function CoachesPageBody() {
                 isHovered={hovered === c._id}
                 onToggleFav={toggleFav}
                 onHover={setHovered}
+                t={t}
               />
             ))}
           </div>
@@ -335,13 +353,14 @@ export default function CoachesPageBody() {
 
 /* ── Coach Card ───────────────────────────────────── */
 function CoachCard({
-  coach: c, isFav, isHovered, onToggleFav, onHover,
+  coach: c, isFav, isHovered, onToggleFav, onHover, t,
 }: {
   coach: Coach;
   isFav: boolean;
   isHovered: boolean;
   onToggleFav: (id: string, e: React.MouseEvent) => void;
   onHover: (id: string | null) => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const photo  = photoUrl(c);
   const specs  = toArray(c.specialization).slice(0, 3);
@@ -367,7 +386,7 @@ function CoachCard({
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                <span className="text-5xl font-black text-primary/30 select-none">{initials(c.name)}</span>
+                <span className="text-5xl font-black text-primary/30 select-none">{initials(c.name, t('initialsFallback'))}</span>
               </div>
             )}
 
@@ -377,7 +396,7 @@ function CoachCard({
             {/* Favourite button */}
             <button
               onClick={(e) => onToggleFav(c._id, e)}
-              aria-label={isFav ? "Favorilerden çıkar" : "Favorilere ekle"}
+              aria-label={isFav ? t('favRemove') : t('favAdd')}
               className="absolute top-3 right-3 h-9 w-9 rounded-full bg-card/80 backdrop-blur flex items-center justify-center shadow transition hover:scale-110"
             >
               <Heart className={`h-4 w-4 transition-colors ${isFav ? "fill-rose-500 text-rose-500" : "text-foreground/60"}`} />
@@ -386,7 +405,7 @@ function CoachCard({
             {/* Verified badge */}
             {c.verified && (
               <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">
-                <Award className="h-3 w-3" /> Onaylı
+                <Award className="h-3 w-3" /> {t('verifiedFilter')}
               </div>
             )}
 
@@ -408,10 +427,10 @@ function CoachCard({
               <div className="shrink-0 flex flex-col items-end gap-1">
                 <span className="flex items-center gap-1 text-sm font-bold text-foreground">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  {hasRating ? c.rating!.toFixed(1) : "Yeni"}
+                  {hasRating ? c.rating!.toFixed(1) : t('newBadge')}
                 </span>
                 {c.price != null && (
-                  <span className="text-xs text-muted-foreground font-medium">₺{c.price}/ay</span>
+                  <span className="text-xs text-muted-foreground font-medium">{t('perMonth', { price: c.price })}</span>
                 )}
               </div>
             </div>
@@ -424,7 +443,7 @@ function CoachCard({
                 </span>
               )) : (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground/50 border border-dashed border-border">
-                  Uzmanlık belirtilmemiş
+                  {t('specNotSet')}
                 </span>
               )}
             </div>
@@ -444,10 +463,10 @@ function CoachCard({
             {/* CTA */}
             <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
               {c.programsCount != null && c.programsCount > 0 ? (
-                <span className="text-xs text-muted-foreground">{c.programsCount} program</span>
+                <span className="text-xs text-muted-foreground">{t('programsCount', { count: c.programsCount })}</span>
               ) : <span />}
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary group-hover:gap-2.5 transition-all">
-                Profili Gör →
+                {t('viewProfileArrow')}
               </span>
             </div>
           </div>

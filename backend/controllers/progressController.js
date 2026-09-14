@@ -1,6 +1,8 @@
 import Progress from '../models/Progress.js';
 import Program from '../models/Program.js';
 import Event from '../models/Event.js'; // ✅ correct file name
+import ProgramAssignment from '../models/ProgramAssignment.js';
+import { buildRestDaySet, computeStreaksFromDates } from '../utils/streaks.js';
 
 // ------- small utils -------
 const toISODate = (d) => {
@@ -9,37 +11,6 @@ const toISODate = (d) => {
   if (Number.isNaN(dt.getTime())) return null;
   return dt.toISOString().split('T')[0];
 };
-const ymd = (d) => {
-  const z = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
-};
-const computeStreaksFromDates = (dateStringsSet /* Set<string> */) => {
-  const today = new Date(); today.setHours(0,0,0,0);
-
-  // current streak: walk back from today
-  let current = 0;
-  const cur = new Date(today);
-  while (dateStringsSet.has(ymd(cur))) {
-    current += 1;
-    cur.setDate(cur.getDate() - 1);
-  }
-
-  // longest streak: scan all dates in order
-  const all = Array.from(dateStringsSet).sort();
-  let longest = 0, run = 0, prev = null;
-  for (const ds of all) {
-    if (prev) {
-      const p = new Date(prev); p.setDate(p.getDate() + 1);
-      run = (ymd(p) === ds) ? run + 1 : 1;
-    } else {
-      run = 1;
-    }
-    if (run > longest) longest = run;
-    prev = ds;
-  }
-  return { currentStreak: current, longestStreak: longest };
-};
-
 // ------- calendar helpers -------
 const NOW = () => new Date();
 
@@ -256,9 +227,13 @@ const markWorkoutCompleted = async (req, res) => {
       ? Math.min(100, Math.round((completedCount / totalSessions) * 100))
       : 0;
 
-    // recompute streaks from completion dates
+    // recompute streaks from completion dates — rest days (no sessions
+    // scheduled) keep the streak alive on their own, only a scheduled
+    // workout day with nothing completed breaks it.
     const completedDates = new Set(progress.completedSessions.map(s => toISODate(s?.dateCompleted)).filter(Boolean));
-    progress.streakTracking = computeStreaksFromDates(completedDates);
+    const assignment = await ProgramAssignment.findOne({ userId, programId }).sort({ createdAt: -1 }).lean();
+    const restDays = buildRestDaySet(days, assignment?.startDate);
+    progress.streakTracking = computeStreaksFromDates(completedDates, restDays);
 
     await progress.save();
 
@@ -357,7 +332,29 @@ const getUserStreaks = async (req, res) => {
       });
     });
 
-    const { currentStreak, longestStreak } = computeStreaksFromDates(completedDates);
+    // Rest days (no sessions scheduled) across every program this user has
+    // ever been assigned to keep the streak alive on their own — a day off
+    // isn't a missed day. Union across programs since this streak spans all
+    // of the user's programs, not just one.
+    const restDays = new Set();
+    const programIds = [...new Set(list.map((doc) => String(doc.programId)).filter(Boolean))];
+    if (programIds.length) {
+      const [programs, assignments] = await Promise.all([
+        Program.find({ _id: { $in: programIds } }).select('dailySchedule').lean(),
+        ProgramAssignment.find({ userId, programId: { $in: programIds } }).sort({ createdAt: -1 }).lean(),
+      ]);
+      const assignmentByProgram = new Map();
+      for (const a of assignments) {
+        const key = String(a.programId);
+        if (!assignmentByProgram.has(key)) assignmentByProgram.set(key, a); // most recent first
+      }
+      for (const program of programs) {
+        const assignment = assignmentByProgram.get(String(program._id));
+        for (const d of buildRestDaySet(program.dailySchedule, assignment?.startDate)) restDays.add(d);
+      }
+    }
+
+    const { currentStreak, longestStreak } = computeStreaksFromDates(completedDates, restDays);
     return res.status(200).json({ currentStreak, longestStreak });
   } catch (error) {
     console.error("getUserStreaks error:", error);
@@ -520,11 +517,15 @@ const markSessionCompleted = async (req, res) => {
       ? Math.min(100, Math.round((completedCount / totalSessions) * 100))
       : 0;
 
-    // Recompute streaks
+    // Recompute streaks — rest days (no sessions scheduled) keep the streak
+    // alive on their own, only a scheduled workout day with nothing
+    // completed breaks it.
     const completedDates = new Set(
       progress.completedSessions.map(s => toISODate(s?.dateCompleted)).filter(Boolean)
     );
-    progress.streakTracking = computeStreaksFromDates(completedDates);
+    const assignment = await ProgramAssignment.findOne({ userId, programId }).sort({ createdAt: -1 }).lean();
+    const restDays = buildRestDaySet(days, assignment?.startDate);
+    progress.streakTracking = computeStreaksFromDates(completedDates, restDays);
 
     await progress.save();
 

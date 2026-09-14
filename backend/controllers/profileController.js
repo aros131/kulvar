@@ -51,6 +51,8 @@ export const getProfile = async (req, res) => {
       price: user.price,
       isApproved: user.isApproved,
       isListedCoach: user.isListedCoach,
+      isVerifiedCoach: user.isVerifiedCoach,
+      coachVerification: user.coachVerification,
       brandColor: user.brandColor,
       brandLogoUrl: user.brandLogoUrl,
       createdAt: user.createdAt,
@@ -145,6 +147,37 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Error updating profile", error: error.message });
+  }
+};
+
+// POST /profile/verification-request — coach submits/updates a "doğrulanmış koç" request
+export const submitVerificationRequest = async (req, res) => {
+  try {
+    if (req.user.role !== "coach") {
+      return res.status(403).json({ message: "Only coaches can request verification" });
+    }
+    const { certificateUrl, instagram } = req.body;
+    if (!certificateUrl?.trim() && !instagram?.trim()) {
+      return res.status(400).json({ message: "Sertifika linki veya Instagram hesabından en az biri gerekli" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: {
+          "coachVerification.status": "pending",
+          "coachVerification.certificateUrl": certificateUrl?.trim() || "",
+          "coachVerification.instagram": instagram?.trim() || "",
+          "coachVerification.requestedAt": new Date(),
+          "coachVerification.note": "",
+        },
+      },
+      { new: true }
+    ).select("coachVerification isVerifiedCoach");
+
+    res.status(200).json({ coachVerification: user.coachVerification, isVerifiedCoach: user.isVerifiedCoach });
+  } catch (error) {
+    res.status(500).json({ message: "Error submitting verification request", error: error.message });
   }
 };
 

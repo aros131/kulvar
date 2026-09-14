@@ -36,7 +36,10 @@ export const createInvoice = async (req, res) => {
 
 export const getInvoices = async (req, res) => {
   try {
-    const invoices = await Payment.find({ coachId: req.user._id }).populate('userId', 'name email');
+    const invoices = await Payment.find({ coachId: req.user._id })
+      .populate('userId', 'name email')
+      .populate('engagementId', 'billingType')
+      .sort({ createdAt: -1 });
     res.status(200).json({ invoices });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving invoices", error: error.message });
@@ -45,7 +48,10 @@ export const getInvoices = async (req, res) => {
 
 export const getMyInvoices = async (req, res) => {
   try {
-    const invoices = await Payment.find({ userId: req.user._id }).populate('coachId', 'name');
+    const invoices = await Payment.find({ userId: req.user._id })
+      .populate('coachId', 'name')
+      .populate('engagementId', 'billingType')
+      .sort({ createdAt: -1 });
     res.status(200).json({ invoices });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving invoices", error: error.message });
@@ -114,25 +120,31 @@ export const iyzicoCallback = async (req, res) => {
     const payment = await Payment.findOne({ iyzicoToken: token });
     if (!payment) throw new Error("Invoice not found for token");
 
+    // Iyzico can call this back more than once (webhook retry + browser redirect)
+    // for the same token — only fire user-visible side effects once.
+    const alreadyPaid = payment.status === "Paid";
+
     if (result.status === "success" && result.paymentStatus === "SUCCESS") {
       payment.status = "Paid";
       payment.iyzicoPaymentId = result.paymentId;
       await payment.save();
 
-      // Kullanıcıya: ödeme tamamlandı
-      await notify({
-        recipientId: payment.userId,
-        senderId: payment.coachId,
-        type: 'payment_received',
-        message: `₺${payment.amount} tutarındaki ödemeniz başarıyla tamamlandı: "${payment.description}"`,
-      });
-      // Koça: ödeme alındı
-      await notify({
-        recipientId: payment.coachId,
-        senderId: payment.userId,
-        type: 'payment_received',
-        message: `Danışanından ₺${payment.amount} tutarında ödeme alındı: "${payment.description}"`,
-      });
+      if (!alreadyPaid) {
+        // Kullanıcıya: ödeme tamamlandı
+        await notify({
+          recipientId: payment.userId,
+          senderId: payment.coachId,
+          type: 'payment_received',
+          message: `₺${payment.amount} tutarındaki ödemeniz başarıyla tamamlandı: "${payment.description}"`,
+        });
+        // Koça: ödeme alındı
+        await notify({
+          recipientId: payment.coachId,
+          senderId: payment.userId,
+          type: 'payment_received',
+          message: `Danışanından ₺${payment.amount} tutarında ödeme alındı: "${payment.description}"`,
+        });
+      }
 
       // Auto-assign program to user after successful payment
       if (payment.programId) {

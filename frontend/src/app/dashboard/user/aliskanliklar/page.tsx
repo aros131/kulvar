@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Plus, Trash2, ChevronLeft, ChevronRight, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import UserPageShell from "@/components/user/UserPageShell";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 interface Habit {
   _id: string;
@@ -21,12 +23,9 @@ interface HabitLog {
   done: boolean;
 }
 
-const TR_DAYS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
-const TR_MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-
-function formatDate(ymd: string) {
+function formatDate(ymd: string, locale: string) {
   const d = new Date(ymd + "T12:00:00");
-  return `${TR_DAYS[d.getDay()]}, ${d.getDate()} ${TR_MONTHS[d.getMonth()]}`;
+  return d.toLocaleDateString(LOCALE_TAG[locale] || "tr-TR", { weekday: "long", day: "numeric", month: "long" });
 }
 
 function shiftDay(ymd: string, delta: number) {
@@ -38,6 +37,8 @@ function shiftDay(ymd: string, delta: number) {
 const EMOJI_PRESETS = ["💧", "🏃", "🧘", "😴", "🥗", "📖", "💊", "🚴", "🧘‍♂️", "🍎", "✅", "⭐"];
 
 export default function AliskanliklarPage() {
+  const t = useTranslations("habits");
+  const locale = useLocale();
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -70,7 +71,7 @@ export default function AliskanliklarPage() {
         await Promise.all([loadLogs(date), loadStreaks(list)]);
       }
     } catch {
-      toast.error("Alışkanlıklar yüklenemedi.");
+      toast.error(t("loadError"));
     } finally {
       setLoading(false);
     }
@@ -120,7 +121,7 @@ export default function AliskanliklarPage() {
       const data = await res.json();
       setStreaks(prev => ({ ...prev, [habitId]: data.streak ?? 0 }));
     } catch {
-      toast.error("Kaydedilemedi.");
+      toast.error(t("saveError"));
     }
   };
 
@@ -139,23 +140,23 @@ export default function AliskanliklarPage() {
       setNewName("");
       setNewEmoji("✅");
       setShowAdd(false);
-      toast.success("Alışkanlık eklendi.");
+      toast.success(t("added"));
     } catch {
-      toast.error("Eklenemedi.");
+      toast.error(t("addError"));
     } finally {
       setAdding(false);
     }
   };
 
   const deleteHabit = async (id: string) => {
-    if (!confirm("Bu alışkanlığı silmek istiyor musun?")) return;
+    if (!confirm(t("deleteConfirm"))) return;
     try {
       await fetch(`${API}/habits/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       setHabits(prev => prev.filter(h => h._id !== id));
       setLogs(prev => prev.filter(l => l.habitId !== id));
-      toast.success("Silindi.");
+      toast.success(t("deleted"));
     } catch {
-      toast.error("Silinemedi.");
+      toast.error(t("deleteError"));
     }
   };
 
@@ -167,10 +168,10 @@ export default function AliskanliklarPage() {
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Alışkanlıklar</h1>
+          <h1 className="text-2xl font-bold">{t("heading")}</h1>
           <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
             <Plus className="w-4 h-4" />
-            Ekle
+            {t("add")}
           </Button>
         </div>
 
@@ -183,8 +184,8 @@ export default function AliskanliklarPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="text-center">
-            <p className="font-semibold">{formatDate(date)}</p>
-            {isToday && <p className="text-xs text-primary font-medium">Bugün</p>}
+            <p className="font-semibold">{formatDate(date, locale)}</p>
+            {isToday && <p className="text-xs text-primary font-medium">{t("today")}</p>}
           </div>
           <button
             className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
@@ -198,7 +199,7 @@ export default function AliskanliklarPage() {
         {habits.length > 0 && (
           <div className="bg-card border rounded-2xl px-4 py-3 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Günlük İlerleme</span>
+              <span className="font-medium">{t("dailyProgress")}</span>
               <span className="tabular-nums text-muted-foreground">{doneCount}/{habits.length}</span>
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -213,7 +214,7 @@ export default function AliskanliklarPage() {
         {/* Add habit form */}
         {showAdd && (
           <div className="bg-card border rounded-2xl p-4 space-y-3">
-            <h2 className="font-semibold text-sm">Yeni Alışkanlık</h2>
+            <h2 className="font-semibold text-sm">{t("newHabit")}</h2>
             <div className="flex flex-wrap gap-2">
               {EMOJI_PRESETS.map(e => (
                 <button
@@ -230,16 +231,16 @@ export default function AliskanliklarPage() {
               value={newName}
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key === "Enter" && addHabit()}
-              placeholder="örn. 2 litre su iç"
+              placeholder={t("namePlaceholder")}
               autoFocus
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <div className="flex gap-2">
               <Button onClick={addHabit} disabled={adding || !newName.trim()} className="flex-1">
-                {adding ? "Ekleniyor..." : "Kaydet"}
+                {adding ? t("adding") : t("save")}
               </Button>
               <Button variant="outline" onClick={() => { setShowAdd(false); setNewName(""); setNewEmoji("✅"); }}>
-                İptal
+                {t("cancel")}
               </Button>
             </div>
           </div>
@@ -255,8 +256,8 @@ export default function AliskanliklarPage() {
         ) : habits.length === 0 ? (
           <div className="text-center py-16 space-y-3">
             <p className="text-4xl">🎯</p>
-            <p className="font-semibold text-lg">Henüz alışkanlık yok</p>
-            <p className="text-sm text-muted-foreground">Küçük adımlar büyük fark yaratır.</p>
+            <p className="font-semibold text-lg">{t("emptyTitle")}</p>
+            <p className="text-sm text-muted-foreground">{t("emptyDesc")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -279,7 +280,7 @@ export default function AliskanliklarPage() {
                     {streak > 0 && (
                       <p className="text-xs text-orange-500 flex items-center gap-0.5 mt-0.5">
                         <Flame className="w-3 h-3" />
-                        {streak} günlük seri
+                        {t("streakDays", { count: streak })}
                       </p>
                     )}
                   </div>

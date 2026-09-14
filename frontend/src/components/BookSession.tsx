@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +49,7 @@ function cleanToken(): string | null {
 
 export default function BookSession({
   coachId,
-  label = "Randevu Al",
+  label,
   durationMin = 30,
   defaultOpen = false,
   buttonSize = "sm",
@@ -56,6 +57,8 @@ export default function BookSession({
   className,
   onBooked,
 }: Props) {
+  const t = useTranslations("bookSession");
+  const resolvedLabel = label ?? t("bookButton");
   const [open, setOpen] = useState(defaultOpen);
   useEffect(() => {
     if (defaultOpen) setOpen(true);
@@ -97,7 +100,7 @@ export default function BookSession({
           )}&serviceMin=${durationMin}`,
           { credentials: "include", signal: controller.signal }
         );
-        if (!res.ok) throw new Error("Uygunluk getirilemedi");
+        if (!res.ok) throw new Error(t("availabilityError"));
         const data: TimeSlot[] = await res.json();
 
         const sorted = data
@@ -116,7 +119,7 @@ export default function BookSession({
       } catch (e: any) {
         if (e?.name !== "AbortError") {
           console.error(e);
-          toast.error("Uygunluk alınamadı. Lütfen daha sonra tekrar deneyin.");
+          toast.error(t("availabilityFetchError"));
         }
       } finally {
         setLoadingSlots(false);
@@ -146,12 +149,12 @@ export default function BookSession({
 
   async function submit() {
     if (!selectedSlot || !meetingMode) {
-      toast.error("Lütfen saat ve görüşme türü seçin.");
+      toast.error(t("selectTimeAndMode"));
       return;
     }
     const token = cleanToken();
     if (!token) {
-      toast.error("Devam etmek için giriş yapın.");
+      toast.error(t("loginToContinue"));
       return;
     }
     try {
@@ -172,7 +175,7 @@ export default function BookSession({
       });
 
       if (res.status === 201) {
-        toast.success("İstek gönderildi. Koç onaylayınca bildirileceksiniz.");
+        toast.success(t("requestSent"));
         setOpen(false);
         setSelectedSlot(null);
         setMeetingMode(null);
@@ -182,18 +185,18 @@ export default function BookSession({
 
       const text = await res.text().catch(() => "");
       if (res.status === 409) {
-        toast.error("Bu saat az önce alındı. Başka bir saat seçin.");
+        toast.error(t("slotTaken"));
       } else if (res.status === 400 && /too soon/i.test(text)) {
-        toast.error("Bu saat çok yakın. Daha ileri bir saat seçin.");
+        toast.error(t("tooSoon"));
       } else if (res.status === 401) {
-        toast.error("Oturum doğrulanamadı. Yeniden giriş yapın.");
+        toast.error(t("sessionExpired"));
       } else {
         console.error("Booking failed:", res.status, text);
-        toast.error("İstek gönderilemedi. Tekrar deneyin.");
+        toast.error(t("requestFailed"));
       }
     } catch (e) {
       console.error(e);
-      toast.error("Bağlantı hatası. Tekrar deneyin.");
+      toast.error(t("connectionError"));
     } finally {
       setPosting(false);
     }
@@ -208,16 +211,16 @@ export default function BookSession({
           variant={buttonVariant}
           className={className}
         >
-          {label}
+          {resolvedLabel}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[720px] w-[calc(100vw-1rem)] p-0 overflow-hidden sm:rounded-2xl rounded-xl">
         {/* Header */}
         <DialogHeader className="p-4 border-b">
-          <DialogTitle>Uygunluk & Rezervasyon</DialogTitle>
+          <DialogTitle>{t("dialogTitle")}</DialogTitle>
           <DialogDescription>
-            Tüm saatler yerel saatinize göre gösterilir ({localTz}, GMT{tzOffset}).
+            {t("dialogSubtitle", { tz: localTz, offset: tzOffset })}
           </DialogDescription>
         </DialogHeader>
 
@@ -242,13 +245,13 @@ export default function BookSession({
             {/* Right: Slots & mode */}
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <div className="text-sm font-medium">Saat Seçin</div>
-                {!date && <div className="text-sm text-muted-foreground">Önce bir gün seçin.</div>}
+                <div className="text-sm font-medium">{t("chooseTime")}</div>
+                {!date && <div className="text-sm text-muted-foreground">{t("chooseDayFirst")}</div>}
                 {date && loadingSlots && (
-                  <div className="text-sm text-muted-foreground">Saatler yükleniyor…</div>
+                  <div className="text-sm text-muted-foreground">{t("loadingSlots")}</div>
                 )}
                 {date && !loadingSlots && daySlots.length === 0 && (
-                  <div className="text-sm text-muted-foreground">Bu gün için uygun saat yok.</div>
+                  <div className="text-sm text-muted-foreground">{t("noSlotsThisDay")}</div>
                 )}
                 {date && !loadingSlots && daySlots.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -273,26 +276,26 @@ export default function BookSession({
 
               {selectedSlot && (
                 <div className="grid gap-3 border rounded-xl p-3">
-                  <div className="text-sm font-medium">Görüşme Türü</div>
+                  <div className="text-sm font-medium">{t("meetingType")}</div>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       size="sm"
                       variant={meetingMode === "in_person" ? "default" : "outline"}
                       onClick={() => setMeetingMode("in_person")}
                     >
-                      Yüz yüze
+                      {t("inPerson")}
                     </Button>
                     <Button
                       size="sm"
                       variant={meetingMode === "online" ? "default" : "outline"}
                       onClick={() => setMeetingMode("online")}
                     >
-                      Online
+                      {t("online")}
                     </Button>
                   </div>
                   <DialogFooter className="pt-1">
                     <Button size="sm" disabled={!meetingMode || posting} onClick={submit}>
-                      {posting ? "Gönderiliyor…" : "İsteği Gönder"}
+                      {posting ? t("sending") : t("sendRequest")}
                     </Button>
                   </DialogFooter>
                 </div>

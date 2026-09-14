@@ -72,7 +72,7 @@ export async function registerPushNotifications(backendToken: string) {
     });
 
     onMessage(messaging, (payload) => {
-      const title = payload.notification?.title || "Kulvar";
+      const title = payload.notification?.title || "PerSe Coaching";
       const body = payload.notification?.body;
       if (Notification.permission === "granted") {
         new Notification(title, { body, icon: "/icons/icon-192.png" });

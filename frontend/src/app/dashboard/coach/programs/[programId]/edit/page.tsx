@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import EditProgramForm from "@/components/coach/EditProgramForm";
-import ProgramMediaSection from "@/components/coach/ProgramMediaSection";
 import { Program } from "@/types/program";
 import CoachPageShell from "@/components/coach/CoachPageShell";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 export default function EditProgramPage() {
+  const t = useTranslations("programEdit");
   const params = useParams<{ programId: string }>();
   const programId = Array.isArray(params.programId)
     ? params.programId[0]
@@ -22,7 +23,7 @@ export default function EditProgramPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setErr("Giriş gerekli (token bulunamadı).");
+      setErr(t("loginRequired"));
       setLoading(false);
       return;
     }
@@ -36,7 +37,7 @@ export default function EditProgramPage() {
 
         if (!res.ok) {
           const text = await res.text();
-          setErr(`Program verileri alınamadı (${res.status}) ${text || ""}`);
+          setErr(t("fetchError", { status: res.status, text: text || "" }));
           return;
         }
 
@@ -46,27 +47,25 @@ export default function EditProgramPage() {
   const msg =
     e instanceof Error ? e.message :
     typeof e === "string" ? e :
-    "İstek hatası";
+    t("requestError");
   setErr(msg);
 } finally {
   setLoading(false);
 }
 
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programId]);
 
-  if (loading) return <div className="p-4">Yükleniyor…</div>;
+  if (loading) return <div className="p-4">{t("loading")}</div>;
   if (err) return <CoachPageShell><div className="p-4 text-red-600">{err}</div></CoachPageShell>;
-  if (!program) return <CoachPageShell><div className="p-4 text-red-600">Program bulunamadı.</div></CoachPageShell>;
+  if (!program) return <CoachPageShell><div className="p-4 text-red-600">{t("notFound")}</div></CoachPageShell>;
 
   return (
     <CoachPageShell>
-    <div className="max-w-4xl mx-auto px-4 py-8 md:py-10">
-      <h1 className="text-2xl font-bold mb-4">Programı Düzenle</h1>
+    <div className="max-w-4xl mx-auto px-4 py-8 md:py-10 pb-28">
+      <h1 className="text-2xl font-bold mb-4">{t("heading")}</h1>
       <EditProgramForm program={program} mode="edit" />
-      <div className="mt-10">
-        <ProgramMediaSection programId={programId} />
-      </div>
     </div>
     </CoachPageShell>
   );

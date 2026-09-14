@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useTranslations, useLocale } from "next-intl";
 
 import UserPageShell from "@/components/user/UserPageShell";
 
@@ -25,6 +26,8 @@ import { storage } from "@/lib/firebase";
 import { getDownloadURL, ref as sRef } from "firebase/storage";
 import { GOAL_TYPES, WEIGHT_GOALS, weightGoalProgress, type GoalType } from "@/lib/fitnessGoals";
 
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
+
 async function resolveAvatarUrl(input?: string): Promise<string> {
   // No real photo yet (either unset, or the backend's placeholder default) —
   // return "" so the caller falls back to the initials avatar instead of a
@@ -42,11 +45,11 @@ async function resolveAvatarUrl(input?: string): Promise<string> {
   }
 }
 
-function formatMemberSince(iso?: string): string | null {
+function formatMemberSince(iso: string | undefined, locale: string): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("tr-TR", { month: "long", year: "numeric" }).format(d);
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale] || "tr-TR", { month: "long", year: "numeric" }).format(d);
 }
 
 /* ------------------------------- Types ------------------------------- */
@@ -92,6 +95,15 @@ const cleanToken = (): string | null => {
 
 /* ------------------------------ Page --------------------------- */
 export default function UserProfilePage() {
+  const t = useTranslations("profileUser");
+  const locale = useLocale();
+  const GOAL_TYPE_LABELS: Record<string, string> = {
+    "Kilo Kaybı": t("goalTypeWeightLoss"),
+    "Kas Kazanımı": t("goalTypeMuscleGain"),
+    "Dayanıklılık": t("goalTypeEndurance"),
+    "Esneklik": t("goalTypeFlexibility"),
+    "Genel Fitness": t("goalTypeGeneralFitness"),
+  };
   // undefined = not checked yet; null = checked and no token; string = token
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -139,14 +151,15 @@ export default function UserProfilePage() {
         setAvatarUrl(url);
       } catch (err: any) {
         const status = err?.response?.status;
-        if (status === 401 || status === 403) toast.error("Oturumunuz geçersiz. Lütfen tekrar giriş yapın.");
-        else toast.error("Profil yüklenirken bir hata oluştu.");
+        if (status === 401 || status === 403) toast.error(t("sessionInvalid"));
+        else toast.error(t("loadError"));
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
     run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, authHeaders]);
 
   // Fetch unread notifications (for sidebar badge)
@@ -241,9 +254,9 @@ export default function UserProfilePage() {
       setEditData((prev) => (prev ? { ...prev, profilePicture: data.url } : prev));
       const resolved = await resolveAvatarUrl(data.url);
       setAvatarUrl(resolved);
-      toast.success("Fotoğraf yüklendi.");
+      toast.success(t("photoUploaded"));
     } catch (err) {
-      toast.error("Fotoğraf yüklenemedi.");
+      toast.error(t("photoUploadError"));
       console.error(err);
     } finally {
       setUploading(false);
@@ -253,7 +266,7 @@ export default function UserProfilePage() {
   const handleSave = async () => {
     if (!editData) return;
     if (!editData.name.trim()) {
-      toast.error("İsim alanı boş bırakılamaz.");
+      toast.error(t("nameRequired"));
       return;
     }
     setSaving(true);
@@ -264,48 +277,48 @@ export default function UserProfilePage() {
       // emailVerified, createdAt aren't part of the update response).
       setProfile((prev) => (prev ? { ...prev, ...(res.data?.user ?? res.data) } : (res.data?.user ?? res.data)));
       setDialogOpen(false);
-      toast.success("Profil başarıyla güncellendi.");
+      toast.success(t("profileUpdated"));
     } catch (err: any) {
       const status = err?.response?.status;
-      if (status === 401 || status === 403) toast.error("Oturumunuz geçersiz. Lütfen tekrar giriş yapın.");
-      else toast.error("Profil güncellenemedi.");
+      if (status === 401 || status === 403) toast.error(t("sessionInvalid"));
+      else toast.error(t("profileUpdateError"));
       console.error(err);
     } finally {
       setSaving(false);
     }
   };
 
-  const memberSince = formatMemberSince(profile?.createdAt);
+  const memberSince = formatMemberSince(profile?.createdAt, locale);
 
   return (
     <UserPageShell unreadCount={unreadCount}>
       <section className="max-w-3xl mx-auto px-4 py-8 md:py-10 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Profil Bilgileri</h1>
-            <p className="text-sm text-muted-foreground">Bilgilerini güncel tutarak deneyimini kişiselleştir.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("heading")}</h1>
+            <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="default" disabled={!profile}>Profili Düzenle</Button>
+              <Button variant="default" disabled={!profile}>{t("editProfile")}</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Profili Düzenle</DialogTitle>
+                <DialogTitle>{t("editProfile")}</DialogTitle>
               </DialogHeader>
 
               <div className="flex flex-col gap-4 mt-2">
                 <div className="grid gap-2">
-                  <label className="text-xs text-muted-foreground">Profil Fotoğrafı</label>
+                  <label className="text-xs text-muted-foreground">{t("photoLabel")}</label>
                   <ProfileImageUploader onCropped={handleImageUpload} />
-                  {uploading && <p className="text-xs text-muted-foreground">Yükleniyor…</p>}
+                  {uploading && <p className="text-xs text-muted-foreground">{t("uploading")}</p>}
 
                   {editData?.profilePicture && !editData.profilePicture.includes("default-user") ? (
                     <div className="mt-1 w-[80px] h-[80px] rounded-xl overflow-hidden border">
                       <Image
                         src={editData.profilePicture}
-                        alt="Yeni Profil"
+                        alt={t("newPhotoAlt")}
                         width={80}
                         height={80}
                         className="object-cover w-full h-full"
@@ -316,9 +329,9 @@ export default function UserProfilePage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-xs text-muted-foreground">İsim</label>
+                  <label className="text-xs text-muted-foreground">{t("nameLabel")}</label>
                   <Input
-                    placeholder="İsim"
+                    placeholder={t("namePlaceholder")}
                     value={editData?.name || ""}
                     onChange={(e) => handleEditChange("name", e.target.value)}
                   />
@@ -326,19 +339,19 @@ export default function UserProfilePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-2">
-                    <label className="text-xs text-muted-foreground">Şehir</label>
+                    <label className="text-xs text-muted-foreground">{t("cityLabel")}</label>
                     <Input
-                      placeholder="Örn. İzmir"
+                      placeholder={t("cityPlaceholder")}
                       value={editData?.city || ""}
                       onChange={(e) => handleEditChange("city", e.target.value)}
                     />
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-xs text-muted-foreground">Boy (cm)</label>
+                    <label className="text-xs text-muted-foreground">{t("heightLabel")}</label>
                     <Input
                       type="number"
                       inputMode="numeric"
-                      placeholder="Örn. 168"
+                      placeholder={t("heightPlaceholder")}
                       value={editData?.height ?? ""}
                       onChange={(e) => handleWeightChange("height", e.target.value)}
                     />
@@ -346,9 +359,9 @@ export default function UserProfilePage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-xs text-muted-foreground">Hakkımda</label>
+                  <label className="text-xs text-muted-foreground">{t("bioLabel")}</label>
                   <Textarea
-                    placeholder="Koçunun seni tanıması için birkaç cümle yaz."
+                    placeholder={t("bioPlaceholder")}
                     value={editData?.bio || ""}
                     onChange={(e) => handleEditChange("bio", e.target.value)}
                     rows={3}
@@ -360,17 +373,17 @@ export default function UserProfilePage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-xs text-muted-foreground">Hedef Türü</label>
+                  <label className="text-xs text-muted-foreground">{t("goalTypeLabel")}</label>
                   <Select
                     value={editData?.fitnessGoalType || undefined}
                     onValueChange={(v) => handleEditChange("fitnessGoalType", v)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Bir hedef seç" />
+                      <SelectValue placeholder={t("goalTypePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {GOAL_TYPES.map((g) => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                        <SelectItem key={g} value={g}>{GOAL_TYPE_LABELS[g] || g}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -379,35 +392,35 @@ export default function UserProfilePage() {
                 {editData?.fitnessGoalType && WEIGHT_GOALS.includes(editData.fitnessGoalType as GoalType) && (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="grid gap-2">
-                      <label className="text-xs text-muted-foreground">Başlangıç Kilo (kg)</label>
+                      <label className="text-xs text-muted-foreground">{t("startWeightLabel")}</label>
                       <Input
                         type="number"
                         inputMode="decimal"
-                        placeholder="Örn. 72"
+                        placeholder={t("startWeightPlaceholder")}
                         value={editData?.goalStartWeight ?? ""}
                         onChange={(e) => handleWeightChange("goalStartWeight", e.target.value)}
                       />
                     </div>
                     <div className="grid gap-2">
-                      <label className="text-xs text-muted-foreground">Hedef Kilo (kg)</label>
+                      <label className="text-xs text-muted-foreground">{t("targetWeightLabel")}</label>
                       <Input
                         type="number"
                         inputMode="decimal"
-                        placeholder="Örn. 65"
+                        placeholder={t("targetWeightPlaceholder")}
                         value={editData?.goalTargetWeight ?? ""}
                         onChange={(e) => handleWeightChange("goalTargetWeight", e.target.value)}
                       />
                     </div>
                     <p className="col-span-2 text-[11px] text-muted-foreground -mt-1">
-                      Güncel kilon check-in'lerinden otomatik alınır — ayrıca girmene gerek yok.
+                      {t("currentWeightHint")}
                     </p>
                   </div>
                 )}
 
                 <div className="grid gap-2">
-                  <label className="text-xs text-muted-foreground">Ek Notlar</label>
+                  <label className="text-xs text-muted-foreground">{t("notesLabel")}</label>
                   <Textarea
-                    placeholder="Örn. haftada 4 gün antrenman yapmak, dizimde eski bir sakatlık var…"
+                    placeholder={t("notesPlaceholder")}
                     value={editData?.fitnessGoals || ""}
                     onChange={(e) => handleEditChange("fitnessGoals", e.target.value)}
                     rows={3}
@@ -418,10 +431,10 @@ export default function UserProfilePage() {
 
               <DialogFooter className="mt-4 gap-2">
                 <Button variant="secondary" onClick={() => setDialogOpen(false)} disabled={saving || uploading}>
-                  İptal
+                  {t("cancel")}
                 </Button>
                 <Button onClick={handleSave} disabled={saving || uploading || !editData}>
-                  {saving ? "Kaydediliyor…" : "Kaydet"}
+                  {saving ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -453,7 +466,7 @@ export default function UserProfilePage() {
                     {avatarUrl ? (
                       <Image
                         src={avatarUrl}
-                        alt="Profil Fotoğrafı"
+                        alt={t("heading")}
                         fill
                         className="object-cover"
                         unoptimized
@@ -473,11 +486,11 @@ export default function UserProfilePage() {
                     <span className="text-xl font-semibold leading-none">{profile.name}</span>
                     {profile.emailVerified ? (
                       <Badge variant="secondary" className="gap-1 text-emerald-700 dark:text-emerald-400">
-                        <BadgeCheck className="h-3 w-3" /> E-posta doğrulandı
+                        <BadgeCheck className="h-3 w-3" /> {t("emailVerified")}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="gap-1 text-amber-700 dark:text-amber-400">
-                        <ShieldAlert className="h-3 w-3" /> E-posta doğrulanmadı
+                        <ShieldAlert className="h-3 w-3" /> {t("emailNotVerified")}
                       </Badge>
                     )}
                   </div>
@@ -496,14 +509,14 @@ export default function UserProfilePage() {
                     ) : null}
                     {memberSince ? (
                       <span className="inline-flex items-center gap-1.5">
-                        <CalendarDays className="h-3.5 w-3.5" /> {memberSince}'den beri üye
+                        <CalendarDays className="h-3.5 w-3.5" /> {t("memberSince", { date: memberSince })}
                       </span>
                     ) : null}
                   </div>
                 </div>
               </motion.div>
             ) : (
-              <div className="text-sm text-muted-foreground">Profil bulunamadı.</div>
+              <div className="text-sm text-muted-foreground">{t("notFound")}</div>
             )}
           </CardContent>
         </Card>
@@ -515,17 +528,17 @@ export default function UserProfilePage() {
               <CardContent className="py-5">
                 <div className="flex items-center gap-2 mb-2">
                   <UserIcon className="h-4 w-4 text-muted-foreground" />
-                  <h2 className="text-sm font-semibold">Hakkımda</h2>
+                  <h2 className="text-sm font-semibold">{t("aboutTitle")}</h2>
                 </div>
                 {profile.bio ? (
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Henüz bir açıklama eklemedin.{" "}
+                    {t("noBioYet")}{" "}
                     <button className="text-primary hover:underline" onClick={() => setDialogOpen(true)}>
-                      Şimdi ekle
+                      {t("addNow")}
                     </button>
-                    , koçun seni daha iyi tanısın.
+                    {t("noBioSuffix")}
                   </p>
                 )}
               </CardContent>
@@ -536,13 +549,13 @@ export default function UserProfilePage() {
               <CardContent className="py-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Target className="h-4 w-4 text-muted-foreground" />
-                  <h2 className="text-sm font-semibold">Fitness Hedeflerim</h2>
+                  <h2 className="text-sm font-semibold">{t("goalsTitle")}</h2>
                 </div>
 
                 {profile.fitnessGoalType || profile.fitnessGoals ? (
                   <div className="space-y-4">
                     {profile.fitnessGoalType && (
-                      <Badge variant="secondary" className="text-sm font-medium">{profile.fitnessGoalType}</Badge>
+                      <Badge variant="secondary" className="text-sm font-medium">{GOAL_TYPE_LABELS[profile.fitnessGoalType] || profile.fitnessGoalType}</Badge>
                     )}
 
                     {(() => {
@@ -557,7 +570,7 @@ export default function UserProfilePage() {
                       return (
                         <div>
                           <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                            <span className="text-sm font-medium">Kilo hedefine ilerleme</span>
+                            <span className="text-sm font-medium">{t("weightGoalProgress")}</span>
                             <span className="text-xs text-muted-foreground shrink-0">%{pct}</span>
                           </div>
                           <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -567,17 +580,17 @@ export default function UserProfilePage() {
                             />
                           </div>
                           <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1.5">
-                            <span>Başlangıç: {profile.goalStartWeight} kg</span>
-                            <span className="font-medium text-foreground">Güncel: {current} kg</span>
-                            <span>Hedef: {profile.goalTargetWeight} kg</span>
+                            <span>{t("startLabel", { value: profile.goalStartWeight })}</span>
+                            <span className="font-medium text-foreground">{t("currentLabel", { value: current })}</span>
+                            <span>{t("targetLabel", { value: profile.goalTargetWeight })}</span>
                           </div>
                           {profile.currentWeight == null && (
                             <p className="text-[11px] text-muted-foreground mt-2">
-                              Henüz check-in'inde kilo girmedin, o yüzden başlangıç kilon kullanılıyor.{" "}
+                              {t("noCurrentWeightHint")}{" "}
                               <Link href="/dashboard/user/check-in" className="text-primary hover:underline">
-                                Check-in yap
+                                {t("doCheckIn")}
                               </Link>{" "}
-                              ve gerçek ilerlemeni gör.
+                              {t("seeProgress")}
                             </p>
                           )}
                         </div>
@@ -590,11 +603,11 @@ export default function UserProfilePage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Henüz bir hedef belirlemedin.{" "}
+                    {t("noGoalYet")}{" "}
                     <button className="text-primary hover:underline" onClick={() => setDialogOpen(true)}>
-                      Şimdi ekle
+                      {t("addNow")}
                     </button>
-                    , koçun sana özel bir program hazırlarken kullansın.
+                    {t("noGoalSuffix")}
                   </p>
                 )}
               </CardContent>
@@ -605,7 +618,7 @@ export default function UserProfilePage() {
               <CardContent className="py-5">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  <h2 className="text-sm font-semibold">İlerlemem</h2>
+                  <h2 className="text-sm font-semibold">{t("progressTitle")}</h2>
                 </div>
 
                 {progressLoading ? (
@@ -621,14 +634,14 @@ export default function UserProfilePage() {
                         <div className="flex items-center gap-2">
                           <Flame className="h-5 w-5 text-orange-500" />
                           <div>
-                            <div className="text-lg font-bold leading-none">{streaks.currentStreak} gün</div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5">Güncel seri</div>
+                            <div className="text-lg font-bold leading-none">{t("daysUnit", { count: streaks.currentStreak })}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{t("currentStreak")}</div>
                           </div>
                         </div>
                         <div className="h-8 w-px bg-border" />
                         <div>
-                          <div className="text-lg font-bold leading-none">{streaks.longestStreak} gün</div>
-                          <div className="text-[11px] text-muted-foreground mt-0.5">En uzun seri</div>
+                          <div className="text-lg font-bold leading-none">{t("daysUnit", { count: streaks.longestStreak })}</div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{t("longestStreak")}</div>
                         </div>
                       </div>
                     )}
@@ -650,18 +663,18 @@ export default function UserProfilePage() {
                               />
                             </div>
                             {p.coachName && (
-                              <div className="text-[11px] text-muted-foreground mt-1">Koç: {p.coachName}</div>
+                              <div className="text-[11px] text-muted-foreground mt-1">{t("coachLabel", { name: p.coachName })}</div>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Henüz bir programa katılmadın.{" "}
+                        {t("noProgramYet")}{" "}
                         <Link href="/dashboard/user/koclarimiz" className="text-primary hover:underline">
-                          Koçları keşfet
+                          {t("discoverCoaches")}
                         </Link>{" "}
-                        ve ilk programını başlat — ilerlemen burada canlı olarak görünmeye başlar.
+                        {t("startFirstProgram")}
                       </p>
                     )}
                   </div>

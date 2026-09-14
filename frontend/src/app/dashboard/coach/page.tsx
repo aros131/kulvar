@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useTranslations, useLocale } from "next-intl";
 
 import SidebarNav from "@/components/ui/SidebarNavCoach";
 import OnboardingModal from "@/components/OnboardingModal";
@@ -13,7 +14,6 @@ import CoachAvailability from "@/components/coach/CoachAvailability";
 import MobileCoachBottomNav from "@/components/nav/MobileCoachBottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, TrendingUp, CalendarCheck,
@@ -25,6 +25,7 @@ import { storage } from "@/lib/firebase";
 import { getDownloadURL, ref as sRef } from "firebase/storage";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 const cleanToken = (): string | null => {
   if (typeof window === "undefined") return null;
@@ -55,18 +56,14 @@ interface Booking { _id: string; userId?: { name?: string; profilePicture?: stri
 interface Client { _id: string; name: string; email: string; }
 
 function fmt(n: number) { return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n); }
-function fmtMoney(n: number) { return `₺${n >= 1000 ? (n / 1000).toFixed(1) + "k" : n}`; }
-function today() { return new Date().toISOString().slice(0, 10); }
-function weekStart(offset = 0) {
-  const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1 + offset * 7);
-  return d.toISOString().slice(0, 10);
-}
 function capitalizeName(name?: string) {
   if (!name) return "";
   return name.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 }
 
 export default function DashboardCoachPage() {
+  const t = useTranslations("dashboardCoachHome");
+  const locale = useLocale();
   const [profile,       setProfile]       = useState<CoachProfile | null>(null);
   const [profileUrl,    setProfileUrl]    = useState("/images/user.png");
   const [analytics,     setAnalytics]     = useState<Analytics | null>(null);
@@ -78,7 +75,7 @@ export default function DashboardCoachPage() {
 
   useEffect(() => {
     const token = cleanToken();
-    const h = token ? { Authorization: `Bearer ${token}` } : {};
+    const h: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
     // profile
     (async () => {
@@ -114,7 +111,7 @@ export default function DashboardCoachPage() {
         }
         if (cRes.status === "fulfilled" && cRes.value.ok) {
           const cData = await cRes.value.json();
-          setClients(Array.isArray(cData) ? cData : cData?.users ?? []);
+          setClients(Array.isArray(cData) ? cData : cData?.clients ?? []);
         }
         if (nRes.status === "fulfilled" && nRes.value.ok) {
           const nData = await nRes.value.json();
@@ -133,7 +130,6 @@ export default function DashboardCoachPage() {
       <div className="hidden md:block"><SidebarNav unreadCount={unreadCount} /></div>
 
       <main className="ml-0 md:ml-16 w-full min-h-screen bg-background pb-20 md:pb-0">
-
         {/* ── Hero Banner ── */}
         <div className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary/8 via-background to-background">
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,hsl(var(--primary)/0.12),transparent)]" />
@@ -141,13 +137,13 @@ export default function DashboardCoachPage() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 {/* Avatar */}
-                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-border/60 shrink-0 shadow-sm">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-border/60 shrink-0 shadow-sm">
                   {profileUrl && profileUrl !== "/images/user.png" ? (
-                    <Image src={profileUrl} alt="Profil" width={56} height={56}
+                    <Image src={profileUrl} alt="Profil" width={96} height={96}
                       className="w-full h-full object-cover" unoptimized />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
-                      <span className="text-primary-foreground text-lg font-bold select-none">
+                      <span className="text-primary-foreground text-2xl md:text-3xl font-bold select-none">
                         {profile?.name?.trim().split(/\s+/).map(w => w[0]).join("").slice(0,2).toUpperCase() || "K"}
                       </span>
                     </div>
@@ -157,11 +153,11 @@ export default function DashboardCoachPage() {
                   {loadingProfile
                     ? <Skeleton className="h-7 w-44 mb-1" />
                     : <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">
-                        Merhaba, {capitalizeName(profile?.name?.split(" ")[0])} 👋
+                        {t("greeting", { name: capitalizeName(profile?.name?.split(" ")[0]) })}
                       </h1>
                   }
                   <p className="text-sm text-muted-foreground mt-1">
-                    {new Date().toLocaleDateString("tr-TR", { weekday:"long", day:"numeric", month:"long" })}
+                    {new Date().toLocaleDateString(LOCALE_TAG[locale] || "tr-TR", { weekday:"long", day:"numeric", month:"long" })}
                   </p>
                 </div>
               </div>
@@ -171,19 +167,19 @@ export default function DashboardCoachPage() {
                 <Link href="/dashboard/coach/programs/create">
                   <Button size="sm" className="gap-1.5">
                     <Plus className="h-3.5 w-3.5" />
-                    Yeni Program
+                    {t("newProgram")}
                   </Button>
                 </Link>
                 <Link href="/takvim">
                   <Button size="sm" variant="outline" className="gap-1.5">
                     <CalendarCheck className="h-3.5 w-3.5" />
-                    Takvim
+                    {t("calendar")}
                   </Button>
                 </Link>
                 <Link href="/dashboard/coach/analytics">
                   <Button size="sm" variant="outline" className="gap-1.5">
                     <TrendingUp className="h-3.5 w-3.5" />
-                    Analitik
+                    {t("analytics")}
                   </Button>
                 </Link>
               </div>
@@ -195,10 +191,10 @@ export default function DashboardCoachPage() {
                 ? [1,2,3,4].map(i => <Skeleton key={i} className="h-[68px] rounded-2xl" />)
                 : analytics
                   ? [
-                      { label: "Danışan",           value: fmt(analytics.totalClients) },
-                      { label: "Tamamlanan Seans",  value: fmt(analytics.completedSessions) },
-                      { label: "Yaklaşan Seans",    value: fmt(analytics.upcomingSessions) },
-                      { label: "Ort. Puan",         value: analytics.avgRating ? analytics.avgRating.toFixed(1) : "—" },
+                      { label: t("clients"),           value: fmt(analytics.totalClients) },
+                      { label: t("completedSessions"), value: fmt(analytics.completedSessions) },
+                      { label: t("upcomingSessions"),  value: fmt(analytics.upcomingSessions) },
+                      { label: t("avgRating"),         value: analytics.avgRating ? analytics.avgRating.toFixed(1) : "—" },
                     ].map(({ label, value }) => (
                       <div key={label} className="rounded-2xl border bg-card/80 backdrop-blur p-4 space-y-1">
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
@@ -221,9 +217,9 @@ export default function DashboardCoachPage() {
               {/* Mobile quick actions */}
               <div className="sm:hidden grid grid-cols-3 gap-2">
                 {[
-                  { href: "/dashboard/coach/programs/create", label: "Yeni Program", Icon: Plus },
-                  { href: "/takvim", label: "Takvim", Icon: CalendarCheck },
-                  { href: "/dashboard/coach/analytics", label: "Analitik", Icon: TrendingUp },
+                  { href: "/dashboard/coach/programs/create", label: t("newProgram"), Icon: Plus },
+                  { href: "/takvim", label: t("calendar"), Icon: CalendarCheck },
+                  { href: "/dashboard/coach/analytics", label: t("analytics"), Icon: TrendingUp },
                 ].map(({ href, label, Icon }) => (
                   <Link key={href} href={href}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border bg-card text-center hover:bg-muted transition-colors">
@@ -239,10 +235,10 @@ export default function DashboardCoachPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-amber-500" />
-                      <CardTitle className="text-base">Bekleyen Randevu İstekleri</CardTitle>
+                      <CardTitle className="text-base">{t("pendingBookingsTitle")}</CardTitle>
                     </div>
                     <Link href="/takvim" className="text-xs text-primary hover:underline">
-                      Takvime git →
+                      {t("goToCalendar")}
                     </Link>
                   </div>
                 </CardHeader>
@@ -255,9 +251,9 @@ export default function DashboardCoachPage() {
               <Card className="rounded-2xl">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Danışanlarım</CardTitle>
+                    <CardTitle className="text-base">{t("myClientsTitle")}</CardTitle>
                     <Link href="/dashboard/coach/clients" className="text-xs text-primary hover:underline">
-                      Tümünü gör →
+                      {t("viewAll")}
                     </Link>
                   </div>
                 </CardHeader>
@@ -267,7 +263,7 @@ export default function DashboardCoachPage() {
                   ) : clients.length === 0 ? (
                     <div className="py-8 text-center text-sm text-muted-foreground">
                       <CheckCircle2 className="h-7 w-7 mx-auto mb-2 text-muted-foreground/40" />
-                      Henüz danışanın yok.
+                      {t("noClientsYet")}
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -305,7 +301,7 @@ export default function DashboardCoachPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     <CalendarCheck className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-base">Uygunluk</CardTitle>
+                    <CardTitle className="text-base">{t("availabilityTitle")}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -322,10 +318,10 @@ export default function DashboardCoachPage() {
 }
 
 /* ── Booking Calendar ─────────────────────────────── */
-const TR_DAYS   = ["Pt","Sa","Ca","Pe","Cu","Ct","Pz"];
-const TR_MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
-
 function BookingCalendar({ bookings, loading }: { bookings: Booking[]; loading: boolean }) {
+  const t = useTranslations("dashboardCoachHome");
+  const locale = useLocale();
+  const localeTag = LOCALE_TAG[locale] || "tr-TR";
   const now = new Date();
   const [viewYear,  setViewYear]  = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
@@ -337,6 +333,13 @@ function BookingCalendar({ bookings, loading }: { bookings: Booking[]; loading: 
   const firstDay  = new Date(viewYear, viewMonth, 1).getDay();         // 0=Sun
   const startPad  = firstDay === 0 ? 6 : firstDay - 1;                 // Mon-based
   const daysInMo  = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  const weekdayShort = Array.from({ length: 7 }, (_, i) => {
+    // 2024-01-01 is a Monday — a stable anchor to read Mon..Sun short names from Intl.
+    const d = new Date(2024, 0, 1 + i);
+    return new Intl.DateTimeFormat(localeTag, { weekday: "short" }).format(d);
+  });
+  const monthLabel = new Intl.DateTimeFormat(localeTag, { month: "long" }).format(new Date(viewYear, viewMonth, 1));
 
   const bookedDays = new Set(
     bookings.map(b => b.startUtc?.slice(0, 10)).filter(Boolean) as string[]
@@ -354,7 +357,7 @@ function BookingCalendar({ bookings, loading }: { bookings: Booking[]; loading: 
         <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
           <ChevronRight className="h-4 w-4 rotate-180" />
         </button>
-        <span className="text-sm font-semibold">{TR_MONTHS[viewMonth]} {viewYear}</span>
+        <span className="text-sm font-semibold">{monthLabel} {viewYear}</span>
         <button onClick={nextMonth} className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -362,7 +365,7 @@ function BookingCalendar({ bookings, loading }: { bookings: Booking[]; loading: 
 
       {/* Day headers */}
       <div className="grid grid-cols-7 mb-1">
-        {TR_DAYS.map(d => (
+        {weekdayShort.map(d => (
           <div key={d} className="text-[10px] text-center text-muted-foreground font-medium py-1">{d}</div>
         ))}
       </div>
@@ -397,17 +400,17 @@ function BookingCalendar({ bookings, loading }: { bookings: Booking[]; loading: 
       {/* Selected day bookings */}
       <div className="mt-3 pt-3 border-t border-border">
         <p className="text-[10px] text-muted-foreground mb-2 uppercase tracking-wider">
-          {new Date(selected + "T12:00:00").toLocaleDateString("tr-TR", { day:"numeric", month:"long" })}
+          {new Date(selected + "T12:00:00").toLocaleDateString(localeTag, { day:"numeric", month:"long" })}
         </p>
         {dayBookings.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2 text-center">Bu gün için randevu yok.</p>
+          <p className="text-xs text-muted-foreground py-2 text-center">{t("noBookingForDay")}</p>
         ) : (
           <div className="space-y-1.5">
             {dayBookings.map(b => {
-              const name = typeof b.userId === "object" ? b.userId?.name : "Danışan";
-              const startTime = b.startUtc ? new Date(b.startUtc).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) : "";
-              const endTime   = b.endUtc   ? new Date(b.endUtc).toLocaleTimeString("tr-TR",   { hour: "2-digit", minute: "2-digit" }) : "";
-              const mode = b.meetingMode === "online" ? "Online" : b.meetingMode === "in_person" ? "Yüz Yüze" : "";
+              const name = typeof b.userId === "object" ? b.userId?.name : t("clientFallback");
+              const startTime = b.startUtc ? new Date(b.startUtc).toLocaleTimeString(localeTag, { hour: "2-digit", minute: "2-digit" }) : "";
+              const endTime   = b.endUtc   ? new Date(b.endUtc).toLocaleTimeString(localeTag,   { hour: "2-digit", minute: "2-digit" }) : "";
+              const mode = b.meetingMode === "online" ? t("online") : b.meetingMode === "in_person" ? t("inPerson") : "";
               return (
                 <div key={b._id} className="p-2.5 rounded-xl bg-muted/50 space-y-1">
                   <div className="flex items-center gap-2">

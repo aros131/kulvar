@@ -133,7 +133,7 @@ router.get("/", async (req, res) => {
     const [docs, total] = await Promise.all([
       User.find(filters)
         .select(
-          "name profilePicture avatar specialization city rating bio programsCount role tagline certifications price"
+          "name profilePicture avatar specialization city rating bio programsCount role tagline certifications price isApproved isVerifiedCoach"
         )
         .sort({ rating: -1, name: 1 })
         .skip(skip)
@@ -145,6 +145,8 @@ router.get("/", async (req, res) => {
     const coaches = docs.map((d) => ({
       ...d,
       specialization: toArray(d.specialization),
+      approved: d.isApproved !== false,
+      verified: !!d.isVerifiedCoach,
     }));
 
     res.json({ coaches, total, page, limit });

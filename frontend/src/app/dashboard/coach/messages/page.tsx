@@ -13,9 +13,12 @@ import {
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
+import { useTranslations, useLocale } from "next-intl";
 import { db } from "@/lib/firebase";
 import CoachPageShell from "@/components/coach/CoachPageShell";
 import { ArrowRight } from "lucide-react";
+
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -62,6 +65,8 @@ const initials = (name?: string) =>
 
 /* -------------------------------- Page ------------------------------ */
 export default function UserMessagesPage() {
+  const t = useTranslations("messagesList");
+  const locale = useLocale();
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [user, setUser] = useState<CurrentUser | null>(null);
 
@@ -207,13 +212,13 @@ export default function UserMessagesPage() {
       const enriched = await Promise.all(
         rawChats.map(async (chat) => {
           const otherId = chat.participants.find((pid) => pid !== user.id);
-          if (!otherId) return { ...chat, otherUserName: "Bilinmeyen" };
+          if (!otherId) return { ...chat, otherUserName: t("unknownUser") };
 
           const apiUser = await fetchUserById(otherId);
           return {
             ...chat,
             otherUserId: otherId,
-            otherUserName: apiUser?.name || "Bilinmeyen",
+            otherUserName: apiUser?.name || t("unknownUser"),
             otherUserAvatar: apiUser?.profilePicture || undefined,
           };
         })
@@ -258,7 +263,7 @@ export default function UserMessagesPage() {
     return (
       <CoachPageShell>
         <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-          <p className="text-center text-muted-foreground">Yükleniyor...</p>
+          <p className="text-center text-muted-foreground">{t("loading")}</p>
         </div>
       </CoachPageShell>
     );
@@ -268,7 +273,7 @@ export default function UserMessagesPage() {
     return (
       <CoachPageShell>
         <div className="mx-auto max-w-3xl px-4 md:px-6 py-8">
-          <p className="text-center text-muted-foreground">Devam etmek için lütfen giriş yapın.</p>
+          <p className="text-center text-muted-foreground">{t("pleaseLogin")}</p>
         </div>
       </CoachPageShell>
     );
@@ -279,19 +284,19 @@ export default function UserMessagesPage() {
       <div className="mx-auto max-w-3xl px-4 md:px-6 py-6 md:py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Mesajlar</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
           <div className="flex gap-2">
             <button
               onClick={markAllAsRead}
               className="text-sm text-muted-foreground hover:text-foreground transition"
             >
-              Tümünü okundu yap
+              {t("markAllRead")}
             </button>
             <Link
               href="/dashboard/coach/messages/start"
               className="flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 px-3 py-2 rounded-md text-sm transition"
             >
-              Yeni Mesaj <ArrowRight size={16} />
+              {t("newMessage")} <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -300,7 +305,7 @@ export default function UserMessagesPage() {
         <div className="mb-4">
           <input
             type="text"
-            placeholder="Kullanıcı ara..."
+            placeholder={t("searchPlaceholder")}
             value={searchTerm}
             onChange={handleSearch}
             className="w-full h-10 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring border-border"
@@ -309,7 +314,7 @@ export default function UserMessagesPage() {
 
         {/* List */}
         {chats.length === 0 ? (
-          <p className="text-muted-foreground text-sm text-center">Hiç mesaj yok.</p>
+          <p className="text-muted-foreground text-sm text-center">{t("noMessages")}</p>
         ) : (
           <ul className="space-y-3">
             {chats.map((chat) => (
@@ -350,10 +355,10 @@ export default function UserMessagesPage() {
                       )}
                     </div>
                     <div className="text-sm text-muted-foreground truncate">
-                      {chat.lastMessage || "Henüz mesaj yok."}
+                      {chat.lastMessage || t("noMessagePreview")}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {chat.updatedAt.toDate().toLocaleString("tr-TR", {
+                      {chat.updatedAt.toDate().toLocaleString(LOCALE_TAG[locale] || "tr-TR", {
                         dateStyle: "short",
                         timeStyle: "short",
                       })}

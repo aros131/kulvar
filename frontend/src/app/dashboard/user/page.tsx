@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useTranslations, useLocale } from "next-intl";
 
 import SidebarNavUser from "@/components/ui/SidebarNavUser";
 import MobileUserBottomNav from "@/components/nav/MobileUserBottomNav";
@@ -26,6 +27,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 const avatarStorage = storage;
 const API = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 const SIGNUP_URL = (process.env.NEXT_PUBLIC_SIGNUP_URL || "/signup").replace(/\/+$/, "");
+const LOCALE_TAG: Record<string, string> = { tr: "tr-TR", en: "en-US", fr: "fr-FR" };
 
 /* ------------------------------ Helper Utils ------------------------------ */
 
@@ -97,13 +99,13 @@ interface UserProfile {
   bio?: string;
 }
 
-function profileCompletion(p: UserProfile | null): { pct: number; missing: string[] } {
+function profileCompletion(p: UserProfile | null, labels: { name: string; photo: string; goal: string; bio: string }): { pct: number; missing: string[] } {
   if (!p) return { pct: 0, missing: [] };
   const checks: [boolean, string][] = [
-    [!!p.name, "İsim"],
-    [!!p.profilePicture && !p.profilePicture.includes("default-user"), "Profil fotoğrafı"],
-    [!!p.fitnessGoals?.trim(), "Fitness hedefi"],
-    [!!p.bio?.trim(), "Hakkımda / bio"],
+    [!!p.name, labels.name],
+    [!!p.profilePicture && !p.profilePicture.includes("default-user"), labels.photo],
+    [!!p.fitnessGoals?.trim(), labels.goal],
+    [!!p.bio?.trim(), labels.bio],
   ];
   const done = checks.filter(([v]) => v).length;
   const missing = checks.filter(([v]) => !v).map(([, l]) => l);
@@ -114,7 +116,9 @@ type CoachLite = { id: string; name: string; avatarUrl?: string; role?: string }
 
 /* ------------------------------- UI Pieces -------------------------------- */
 
-function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: string }) {
+function ProgressBar({ value, label }: { value: number; label?: string }) {
+  const t = useTranslations("dashboardUserHome");
+  label = label ?? t("progressLabel");
   const pct = roundPct(value);
   return (
     <div>
@@ -137,6 +141,7 @@ function ProgressBar({ value, label = "İlerleme" }: { value: number; label?: st
 }
 
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const t = useTranslations("dashboardUserHome");
   return (
     <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((n) => (
@@ -145,7 +150,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
           type="button"
           onClick={() => onChange(n)}
           className="p-1 rounded hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-          aria-label={`${n} yıldız`}
+          aria-label={t("starAriaLabel", { n })}
         >
           <Star className="h-5 w-5" fill={n <= value ? "currentColor" : "none"} stroke="currentColor" />
         </button>
@@ -155,6 +160,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
 }
 
 function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: () => void }) {
+  const t = useTranslations("dashboardUserHome");
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -163,13 +169,13 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
   const submit = async () => {
     const token = cleanToken();
     if (!token) {
-      toast.message("Devam etmek için lütfen kayıt olun.");
+      toast.message(t("signupPrompt"));
       const back = encodeURIComponent(location.pathname + location.search);
       window.location.href = `${SIGNUP_URL}?redirect=${back}`;
       return;
     }
     if (!rating) {
-      toast.message("Lütfen bir puan seçin.");
+      toast.message(t("ratingRequired"));
       return;
     }
     setLoading(true);
@@ -180,17 +186,17 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
         body: JSON.stringify({ rating, comment }),
       });
       if (res.ok) {
-        toast.success("Yorum gönderildi!");
+        toast.success(t("reviewSubmitted"));
         setOpen(false);
         setComment("");
         setRating(5);
         onSubmitted?.();
       } else {
         const j = await res.json().catch(() => ({}));
-        toast.error(j?.message || "Yorum gönderilemedi.");
+        toast.error(j?.message || t("reviewSubmitError"));
       }
     } catch {
-      toast.error("Sunucu hatası.");
+      toast.error(t("serverError"));
     } finally {
       setLoading(false);
     }
@@ -199,22 +205,22 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        Değerlendir
+        {t("reviewBtn")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{coach.name} için Değerlendirme</DialogTitle>
+            <DialogTitle>{t("reviewTitle", { name: coach.name })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <div className="text-sm mb-1">Puan</div>
+              <div className="text-sm mb-1">{t("ratingLabel")}</div>
               <StarPicker value={rating} onChange={setRating} />
             </div>
             <div>
-              <div className="text-sm mb-1">Yorum</div>
+              <div className="text-sm mb-1">{t("commentLabel")}</div>
               <Textarea
-                placeholder="Koç hakkındaki deneyimini yaz…"
+                placeholder={t("commentPlaceholder")}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={4}
@@ -223,10 +229,10 @@ function ReviewDialog({ coach, onSubmitted }: { coach: CoachLite; onSubmitted?: 
           </div>
           <DialogFooter className="mt-4">
             <Button variant="secondary" onClick={() => setOpen(false)} disabled={loading}>
-              İptal
+              {t("cancel")}
             </Button>
             <Button onClick={submit} disabled={loading}>
-              {loading ? "Gönderiliyor..." : "Gönder"}
+              {loading ? t("sending") : t("send")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -272,6 +278,7 @@ function ProgramThumb({ name, index }: { name?: string; index?: number }) {
 /* ------------------------------ Main Component ---------------------------- */
 
 export default function UserDashboardPage() {
+  const t = useTranslations("dashboardUserHome");
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
 
@@ -481,7 +488,7 @@ export default function UserDashboardPage() {
           if (Array.isArray(j.items)) {
             const rawItems: CoachLite[] = j.items.map((c: any) => ({
               id: String(c.id || c._id),
-              name: String(c.name || "Koç"),
+              name: String(c.name || t("coachRoleFallback")),
               avatarUrl: c.avatarUrl || c.avatar || c.profilePicture || "",
               role: c.role || "Coach",
             }));
@@ -528,21 +535,26 @@ export default function UserDashboardPage() {
         <section className="max-w-6xl mx-auto px-4 pb-12 pt-8 md:pt-12">
           {/* Profile completion banner */}
           {(() => {
-            const { pct, missing } = profileCompletion(profile);
+            const { pct, missing } = profileCompletion(profile, {
+              name: t("profileFieldName"),
+              photo: t("profileFieldPhoto"),
+              goal: t("profileFieldGoal"),
+              bio: t("profileFieldBio"),
+            });
             if (pct >= 100) return null;
             return (
               <Link href="/dashboard/user/profile" className="block mb-6">
                 <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Profilin %{pct} tamamlandı</p>
-                    <span className="text-xs text-amber-600 dark:text-amber-400 underline">Tamamla →</span>
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">{t("profileCompletion", { pct })}</p>
+                    <span className="text-xs text-amber-600 dark:text-amber-400 underline">{t("completeCta")}</span>
                   </div>
                   <div className="h-1.5 bg-amber-200 dark:bg-amber-800 rounded-full overflow-hidden">
                     <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                   </div>
                   {missing.length > 0 && (
                     <p className="text-xs text-amber-700 dark:text-amber-300 mt-1.5">
-                      Eksik: {missing.join(" · ")}
+                      {t("missingLabel", { list: missing.join(" · ") })}
                     </p>
                   )}
                 </div>
@@ -559,7 +571,7 @@ export default function UserDashboardPage() {
                   {profilePhotoUrl ? (
                     <Image
                       src={profilePhotoUrl}
-                      alt="Profil Fotoğrafı"
+                      alt={t("profileFieldPhoto")}
                       fill
                       className="object-cover"
                       unoptimized
@@ -574,8 +586,8 @@ export default function UserDashboardPage() {
                 </div>
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Hoş Geldin, {profile?.name || "Kullanıcı"}!</h1>
-                <p className="text-sm md:text-base text-muted-foreground">Bugün de hedeflerine ulaşmak için harika bir gün. Hazırsan başlayalım. 💪</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("greeting", { name: profile?.name || t("userFallback") })}</h1>
+                <p className="text-sm md:text-base text-muted-foreground">{t("greetingSubtitle")}</p>
               </div>
             </div>
           </motion.div>
@@ -588,9 +600,9 @@ export default function UserDashboardPage() {
 
           {/* Stat Cards */}
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <StatCard loading={loadingProgress} title="Tamamlanan Seans" value={progress?.totalCompletedSessions ?? 0} hint="Toplam" />
-            <StatCard loading={loadingProgress} title="Atanmış Program" value={progress?.assignedPrograms ?? 0} hint="Aktif" />
-            <StatCard loading={false} title="Bildirim" value={unreadCount} hint="Okunmamış" />
+            <StatCard loading={loadingProgress} title={t("statCompletedSessions")} value={progress?.totalCompletedSessions ?? 0} hint={t("statTotal")} />
+            <StatCard loading={loadingProgress} title={t("statAssignedPrograms")} value={progress?.assignedPrograms ?? 0} hint={t("statActive")} />
+            <StatCard loading={false} title={t("statNotifications")} value={unreadCount} hint={t("statUnread")} />
           </div>
 
           {/* Achievement Badges */}
@@ -604,7 +616,7 @@ export default function UserDashboardPage() {
 
           {/* Programs */}
           <section className="mb-12">
-            <SectionHeader title="Programların" subtitle="Takip ettiğin programlar ve ilerlemen" />
+            <SectionHeader title={t("programsTitle")} subtitle={t("programsSubtitle")} />
             {loadingPrograms ? (
               <ProgramGridSkeleton />
             ) : programs.length > 0 ? (
@@ -620,7 +632,7 @@ export default function UserDashboardPage() {
                       <CardContent className="pt-0 space-y-4">
                         <ProgressBar value={program.progressPercentage} />
                         <Button asChild className="w-full">
-                          <Link href={`/dashboard/user/programs/${program.programId}`}>Programa Git</Link>
+                          <Link href={`/dashboard/user/programs/${program.programId}`}>{t("goToProgram")}</Link>
                         </Button>
                       </CardContent>
                     </Card>
@@ -629,14 +641,14 @@ export default function UserDashboardPage() {
               </div>
             ) : (
               <EmptyState
-                title="Atanmış programın yok"
+                title={t("noPrograms")}
                 action={
                   <Button asChild>
-                    <Link href="/koc">Koç Bul</Link>
+                    <Link href="/koc">{t("findCoach")}</Link>
                   </Button>
                 }
               >
-                Hedeflerine uygun bir programla başlamak için bir koçla eşleş.
+                {t("noProgramsDesc")}
               </EmptyState>
             )}
           </section>
@@ -644,22 +656,22 @@ export default function UserDashboardPage() {
           {/* Coaches */}
           <section className="mb-12">
             <SectionHeader
-              title="Koçlarım"
-              subtitle="İletişimde olduğun koçlar"
-              right={!loadingCoaches && myCoaches.length ? <span className="text-sm text-muted-foreground">{myCoaches.length} koç</span> : null}
+              title={t("coachesTitle")}
+              subtitle={t("coachesSubtitle")}
+              right={!loadingCoaches && myCoaches.length ? <span className="text-sm text-muted-foreground">{t("coachCount", { count: myCoaches.length })}</span> : null}
             />
             {loadingCoaches ? (
               <CoachGridSkeleton />
             ) : myCoaches.length === 0 ? (
               <EmptyState
-                title="Henüz koç bulunamadı"
+                title={t("noCoaches")}
                 action={
                   <Button asChild variant="secondary">
-                    <Link href="/koc">Koçları Keşfet</Link>
+                    <Link href="/koc">{t("discoverCoaches")}</Link>
                   </Button>
                 }
               >
-                Programlarından koç bilgisi otomatik eklenecektir.
+                {t("noCoachesDesc")}
               </EmptyState>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -673,14 +685,14 @@ export default function UserDashboardPage() {
                         </Avatar>
                         <div>
                           <CardTitle className="text-base">{c.name}</CardTitle>
-                          <div className="text-xs text-muted-foreground">{c.role || "Coach"}</div>
+                          <div className="text-xs text-muted-foreground">{c.role || t("coachRoleFallback")}</div>
                         </div>
                       </CardHeader>
                       <CardContent className="flex items-center gap-2">
                         <ReviewDialog coach={c} />
                         <div className="ml-auto">
                           <Button variant="ghost" asChild>
-                            <Link href={`/dashboard/user/koclarimiz/${c.id}`}>Profili Gör</Link>
+                            <Link href={`/dashboard/user/koclarimiz/${c.id}`}>{t("viewProfile")}</Link>
                           </Button>
                         </div>
                       </CardContent>
@@ -693,7 +705,7 @@ export default function UserDashboardPage() {
 
           {/* Goal Tracking */}
           <section>
-            <SectionHeader title="Hedef Takibi" subtitle="Program bazlı ilerlemen" />
+            <SectionHeader title={t("goalTrackingTitle")} subtitle={t("goalTrackingSubtitle")} />
             {loadingProgress ? (
               <div className="grid md:grid-cols-2 gap-5">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -711,7 +723,7 @@ export default function UserDashboardPage() {
                   <Card key={goal.programId} className="rounded-2xl">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base">
-                        {programs.find((p) => String(p.programId) === String(goal.programId))?.name || "Program"}
+                        {programs.find((p) => String(p.programId) === String(goal.programId))?.name || t("programFallback")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -721,7 +733,7 @@ export default function UserDashboardPage() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="Hedef bulunamadı">Koçundan hedef belirlemeni isteyebilirsin.</EmptyState>
+              <EmptyState title={t("noGoal")}>{t("noGoalDesc")}</EmptyState>
             )}
           </section>
         </section>
@@ -821,10 +833,12 @@ function CoachGridSkeleton() {
 }
 
 function TodayWorkoutWidget({ events }: { events: { _id: string; title: string; start: string; end: string; status: string }[] }) {
+  const t = useTranslations("dashboardUserHome");
+  const locale = useLocale();
   const today = new Date().toISOString().slice(0, 10);
   if (events.length === 0) return null;
 
-  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(LOCALE_TAG[locale] || "tr-TR", { hour: "2-digit", minute: "2-digit" });
   const next = events.find((e) => e.status !== "completed") ?? events[0];
   const allDone = events.every((e) => e.status === "completed");
 
@@ -835,13 +849,13 @@ function TodayWorkoutWidget({ events }: { events: { _id: string; title: string; 
           {allDone ? <CheckCircle2 className="h-5 w-5 text-white" /> : <Dumbbell className="h-5 w-5 text-white" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-muted-foreground mb-0.5">Bugünkü Antrenman</p>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">{t("todayWorkoutTitle")}</p>
           {allDone ? (
-            <p className="font-semibold text-green-700 dark:text-green-400">Tüm seanslar tamamlandı 🎉</p>
+            <p className="font-semibold text-green-700 dark:text-green-400">{t("allSessionsDone")}</p>
           ) : (
             <>
               <p className="font-semibold truncate">{next.title}</p>
-              <p className="text-xs text-muted-foreground">{fmtTime(next.start)} – {fmtTime(next.end)}{events.length > 1 ? ` · ${events.length} seans` : ""}</p>
+              <p className="text-xs text-muted-foreground">{fmtTime(next.start)} – {fmtTime(next.end)}{events.length > 1 ? t("sessionsCountSuffix", { count: events.length }) : ""}</p>
             </>
           )}
         </div>
@@ -874,6 +888,7 @@ function EmptyState({
 /* ── StreakWidget ─────────────────────────────────────────────────────────── */
 
 function StreakWidget({ streak }: { streak: { currentStreak: number; longestStreak: number } | null }) {
+  const t = useTranslations("dashboardUserHome");
   if (streak === null) return null;
   const { currentStreak, longestStreak } = streak;
 
@@ -884,8 +899,8 @@ function StreakWidget({ streak }: { streak: { currentStreak: number; longestStre
           <Flame className="h-5 w-5 text-muted-foreground/50" />
         </div>
         <div>
-          <p className="text-sm font-medium">Seri başlatmak için bugün antrenman yap!</p>
-          <p className="text-xs text-muted-foreground">En uzun seriniz: {longestStreak} gün</p>
+          <p className="text-sm font-medium">{t("streakStartPrompt")}</p>
+          <p className="text-xs text-muted-foreground">{t("longestStreakLong", { days: longestStreak })}</p>
         </div>
       </div>
     );
@@ -908,13 +923,13 @@ function StreakWidget({ streak }: { streak: { currentStreak: number; longestStre
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-2xl font-black tabular-nums leading-none">
-          {currentStreak} <span className="text-base font-semibold">günlük seri</span> {isHot ? "🔥" : "✅"}
+          {currentStreak} <span className="text-base font-semibold">{t("dailyStreakLabel")}</span> {isHot ? "🔥" : "✅"}
         </p>
-        <p className="text-xs text-muted-foreground mt-0.5">En uzun seri: {longestStreak} gün</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t("longestStreakShort", { days: longestStreak })}</p>
       </div>
       {currentStreak >= 3 && (
         <div className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${isHot ? "bg-orange-500/20 text-orange-600 dark:text-orange-400" : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"}`}>
-          {currentStreak >= 30 ? "Efsane" : currentStreak >= 14 ? "Ateşte" : currentStreak >= 7 ? "Süper" : "Devam et"}
+          {currentStreak >= 30 ? t("legendary") : currentStreak >= 14 ? t("onFire") : currentStreak >= 7 ? t("super") : t("keepGoing")}
         </div>
       )}
     </motion.div>
@@ -924,14 +939,14 @@ function StreakWidget({ streak }: { streak: { currentStreak: number; longestStre
 /* ── AchievementBadges ───────────────────────────────────────────────────── */
 
 const ACHIEVEMENTS = [
-  { id: "first", icon: "🎯", label: "İlk Adım", desc: "İlk antrenmanını tamamla", cond: (s: number) => s >= 1 },
-  { id: "week", icon: "📅", label: "Bir Hafta", desc: "7 antrenman tamamla", cond: (s: number) => s >= 7 },
-  { id: "month", icon: "💪", label: "Bir Ay", desc: "30 antrenman tamamla", cond: (s: number) => s >= 30 },
-  { id: "streak3", icon: "🔥", label: "Seri Başlangıç", desc: "3 günlük seri yap", cond: (_s: number, cur: number) => cur >= 3 },
-  { id: "streak7", icon: "⚡", label: "Haftalık Seri", desc: "7 günlük seri yap", cond: (_s: number, cur: number) => cur >= 7 },
-  { id: "streak30", icon: "🏆", label: "Aylık Seri", desc: "30 günlük seri yap", cond: (_s: number, cur: number) => cur >= 30 },
-  { id: "half", icon: "🎉", label: "Yarı Yolda", desc: "Bir programı %50 tamamla", cond: (_s: number, _c: number, programs: UserProgram[]) => programs.some((p) => p.progressPercentage >= 50) },
-  { id: "done", icon: "🏅", label: "Program Bitti", desc: "Bir programı %100 tamamla", cond: (_s: number, _c: number, programs: UserProgram[]) => programs.some((p) => p.progressPercentage >= 100) },
+  { id: "first", icon: "🎯", labelKey: "achFirstLabel", descKey: "achFirstDesc", cond: (s: number) => s >= 1 },
+  { id: "week", icon: "📅", labelKey: "achWeekLabel", descKey: "achWeekDesc", cond: (s: number) => s >= 7 },
+  { id: "month", icon: "💪", labelKey: "achMonthLabel", descKey: "achMonthDesc", cond: (s: number) => s >= 30 },
+  { id: "streak3", icon: "🔥", labelKey: "achStreak3Label", descKey: "achStreak3Desc", cond: (_s: number, cur: number) => cur >= 3 },
+  { id: "streak7", icon: "⚡", labelKey: "achStreak7Label", descKey: "achStreak7Desc", cond: (_s: number, cur: number) => cur >= 7 },
+  { id: "streak30", icon: "🏆", labelKey: "achStreak30Label", descKey: "achStreak30Desc", cond: (_s: number, cur: number) => cur >= 30 },
+  { id: "half", icon: "🎉", labelKey: "achHalfLabel", descKey: "achHalfDesc", cond: (_s: number, _c: number, programs: UserProgram[]) => programs.some((p) => p.progressPercentage >= 50) },
+  { id: "done", icon: "🏅", labelKey: "achDoneLabel", descKey: "achDoneDesc", cond: (_s: number, _c: number, programs: UserProgram[]) => programs.some((p) => p.progressPercentage >= 100) },
 ];
 
 function AchievementBadges({
@@ -945,6 +960,7 @@ function AchievementBadges({
   longestStreak: number;
   programs: UserProgram[];
 }) {
+  const t = useTranslations("dashboardUserHome");
   const unlocked = ACHIEVEMENTS.filter((a) => a.cond(completedSessions, currentStreak, programs));
   const locked = ACHIEVEMENTS.filter((a) => !a.cond(completedSessions, currentStreak, programs));
 
@@ -954,7 +970,7 @@ function AchievementBadges({
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-3">
         <Trophy className="h-4 w-4 text-amber-500" />
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Başarımlar</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("achievementsTitle")}</h2>
         {unlocked.length > 0 && (
           <span className="text-xs bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold px-2 py-0.5 rounded-full">
             {unlocked.length}/{ACHIEVEMENTS.length}
@@ -966,8 +982,8 @@ function AchievementBadges({
           <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-300/30 dark:border-amber-700/30">
             <span className="text-base">{a.icon}</span>
             <div>
-              <p className="text-xs font-semibold leading-none">{a.label}</p>
-              <p className="text-[10px] text-muted-foreground">{a.desc}</p>
+              <p className="text-xs font-semibold leading-none">{t(a.labelKey)}</p>
+              <p className="text-[10px] text-muted-foreground">{t(a.descKey)}</p>
             </div>
           </div>
         ))}
@@ -975,8 +991,8 @@ function AchievementBadges({
           <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50 border border-border opacity-50">
             <span className="text-base grayscale">{a.icon}</span>
             <div>
-              <p className="text-xs font-semibold leading-none text-muted-foreground">{a.label}</p>
-              <p className="text-[10px] text-muted-foreground">{a.desc}</p>
+              <p className="text-xs font-semibold leading-none text-muted-foreground">{t(a.labelKey)}</p>
+              <p className="text-[10px] text-muted-foreground">{t(a.descKey)}</p>
             </div>
           </div>
         ))}

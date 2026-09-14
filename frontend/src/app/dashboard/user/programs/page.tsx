@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import UserPageShell from "@/components/user/UserPageShell";
 import { Dumbbell, ChevronRight, ArrowRight } from "lucide-react";
 
@@ -57,6 +58,7 @@ function progressColor(pct: number) {
 }
 
 function ProgramCard({ program, index }: { program: UserProgram; index: number }) {
+  const t = useTranslations("programsUser");
   const pct = Math.min(100, Math.max(0, Math.round(program.progressPercentage)));
   const photoUrl = getProgramPhoto(program.name, (program as any).fitnessGoal, index);
   return (
@@ -94,12 +96,12 @@ function ProgramCard({ program, index }: { program: UserProgram; index: number }
           <div className="flex flex-wrap gap-2 mt-2">
             {program.coachName && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-medium">
-                Koç: {program.coachName}
+                {t("coachLabel", { name: program.coachName })}
               </span>
             )}
             {program.duration != null && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                {program.duration} hafta
+                {t("weeksUnit", { value: program.duration })}
               </span>
             )}
           </div>
@@ -110,7 +112,7 @@ function ProgramCard({ program, index }: { program: UserProgram; index: number }
           href={`/dashboard/user/programs/${program.programId}`}
           className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-primary text-primary-foreground text-sm font-medium py-2.5 hover:opacity-90 transition-opacity"
         >
-          {pct === 0 ? "Başla" : pct >= 100 ? "Tekrar İncele" : "Devam Et"}
+          {pct === 0 ? t("start") : pct >= 100 ? t("reviewAgain") : t("continue")}
           <ChevronRight size={15} />
         </Link>
       </div>
@@ -142,6 +144,7 @@ function CardSkeleton() {
 }
 
 export default function UserProgramsPage() {
+  const t = useTranslations("programsUser");
   const [programs, setPrograms] = useState<UserProgram[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -175,17 +178,17 @@ export default function UserProgramsPage() {
 
           {/* Header */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Programların</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("heading")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Sana atanmış programlar ve ilerlemen
+              {t("subtitle")}
             </p>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
-            <StatPill label="Tamamlanan Seans" value={progress?.totalCompletedSessions ?? "—"} />
-            <StatPill label="Aktif Program" value={progress?.assignedPrograms ?? "—"} />
-            <StatPill label="Ort. İlerleme" value={`${avgPct}%`} />
+            <StatPill label={t("completedSessions")} value={progress?.totalCompletedSessions ?? "—"} />
+            <StatPill label={t("activePrograms")} value={progress?.assignedPrograms ?? "—"} />
+            <StatPill label={t("avgProgress")} value={`${avgPct}%`} />
           </div>
 
           {/* Program Cards */}
@@ -200,13 +203,13 @@ export default function UserProgramsPage() {
           ) : (
             <div className="rounded-2xl border bg-card py-16 text-center space-y-3">
               <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground/40" />
-              <p className="font-semibold text-lg">Henüz program atanmadı</p>
-              <p className="text-sm text-muted-foreground">Bir koçla eşleşerek program almaya başlayabilirsin.</p>
+              <p className="font-semibold text-lg">{t("emptyTitle")}</p>
+              <p className="text-sm text-muted-foreground">{t("emptyDesc")}</p>
               <Link
                 href="/koc"
                 className="inline-flex items-center gap-2 mt-2 text-sm font-medium text-primary hover:underline"
               >
-                Koç Bul <ArrowRight size={14} />
+                {t("findCoach")} <ArrowRight size={14} />
               </Link>
             </div>
           )}

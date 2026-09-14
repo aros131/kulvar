@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { Program } from "@/types/program";
 import ProgramDetailsView from "@/components/program/ProgramDetailsView";
 import { useProgramProgress } from "@/hooks/useProgramProgress";
@@ -38,6 +39,7 @@ function difficultyColor(d?: string) {
 }
 
 export default function ProgramContentPage() {
+  const t = useTranslations("programDetailUser");
   const { programId } = useParams<{ programId: string }>();
   const router = useRouter();
   const detailRef = useRef<HTMLDivElement>(null);
@@ -111,7 +113,7 @@ export default function ProgramContentPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="space-y-3 text-center">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-sm text-muted-foreground">{loadErr ? `Hata: ${loadErr}` : "Program yükleniyor…"}</p>
+            <p className="text-sm text-muted-foreground">{loadErr ? t("loadError", { error: loadErr }) : t("loading")}</p>
           </div>
         </div>
       </UserPageShell>
@@ -154,7 +156,7 @@ export default function ProgramContentPage() {
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
             >
               <ArrowLeft size={14} />
-              Programlarım
+              {t("backToPrograms")}
             </Link>
 
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -180,12 +182,12 @@ export default function ProgramContentPage() {
                   )}
                   {diffWeeks && (
                     <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">
-                      {diffWeeks} hafta
+                      {t("weeksUnit", { value: diffWeeks })}
                     </span>
                   )}
                   {(program as any).coachName && (
                     <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-medium">
-                      Koç: {(program as any).coachName}
+                      {t("coachLabel", { name: (program as any).coachName })}
                     </span>
                   )}
                 </div>
@@ -194,10 +196,10 @@ export default function ProgramContentPage() {
               {/* Coach contact */}
               {(program as any).coachId && (
                 <Link
-                  href={`/dashboard/user/messages/start?to=${(program as any).coachId}&msg=${encodeURIComponent(`"${program.name}" programı hakkında sormak istediğim birkaç şey var.`)}`}
+                  href={`/dashboard/user/messages/start?to=${(program as any).coachId}&msg=${encodeURIComponent(t("coachMessageIntro", { name: program.name }))}`}
                   className="shrink-0 inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl border bg-card hover:bg-muted transition-colors"
                 >
-                  Koça mesaj at
+                  {t("messageCoach")}
                   <ChevronRight size={14} />
                 </Link>
               )}
@@ -208,7 +210,7 @@ export default function ProgramContentPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Progress */}
             <div className="col-span-2 sm:col-span-1 rounded-2xl border bg-card p-4 space-y-2">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">İlerleme</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("progress")}</p>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-bold tabular-nums leading-none">{progressPct}</span>
                 <span className="text-muted-foreground text-sm mb-0.5">%</span>
@@ -226,35 +228,35 @@ export default function ProgramContentPage() {
 
             {/* Sessions */}
             <div className="rounded-2xl border bg-card p-4 space-y-1">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Seanslar</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("sessions")}</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-bold tabular-nums">{completedCount}</span>
                 <span className="text-muted-foreground text-sm">/ {totalSessions}</span>
               </div>
-              <p className="text-xs text-muted-foreground">tamamlandı</p>
+              <p className="text-xs text-muted-foreground">{t("completed")}</p>
             </div>
 
             {/* Streak */}
             <div className="rounded-2xl border bg-card p-4 space-y-1">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Seri</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("streak")}</p>
               <div className="flex items-center gap-1.5">
                 <Flame size={18} className="text-orange-500 shrink-0" />
                 <span className="text-2xl font-bold tabular-nums">{streak?.currentStreak ?? 0}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                en uzun: {streak?.longestStreak ?? 0} gün
+                {t("longestStreak", { days: streak?.longestStreak ?? 0 })}
               </p>
             </div>
 
             {/* Days left or status */}
             <div className="rounded-2xl border bg-card p-4 space-y-1">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                {allDone ? "Durum" : "Kalan"}
+                {allDone ? t("status") : t("remaining")}
               </p>
               {allDone ? (
                 <div className="flex items-center gap-1.5">
                   <Trophy size={18} className="text-amber-500" />
-                  <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">Tamamlandı</span>
+                  <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">{t("completedStatus")}</span>
                 </div>
               ) : (
                 <>
@@ -264,7 +266,7 @@ export default function ProgramContentPage() {
                       {totalSessions - completedCount}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">seans kaldı</p>
+                  <p className="text-xs text-muted-foreground">{t("sessionsLeft")}</p>
                 </>
               )}
             </div>
@@ -277,9 +279,9 @@ export default function ProgramContentPage() {
                 <Trophy size={24} className="text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="font-semibold text-emerald-800 dark:text-emerald-300">Tebrikler! Programı tamamladın.</p>
+                <p className="font-semibold text-emerald-800 dark:text-emerald-300">{t("congratsTitle")}</p>
                 <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-0.5">
-                  {completedCount} seansı başarıyla bitirdin. Koçunla yeni hedefler belirleyebilirsin.
+                  {t("congratsDesc", { count: completedCount })}
                 </p>
               </div>
             </div>
@@ -292,13 +294,13 @@ export default function ProgramContentPage() {
                 <Dumbbell size={22} className="text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-primary uppercase tracking-wide mb-0.5">Sıradaki Antrenman</p>
+                <p className="text-xs font-medium text-primary uppercase tracking-wide mb-0.5">{t("nextWorkout")}</p>
                 <p className="text-base font-semibold truncate">{nextSession.title}</p>
-                <p className="text-sm text-muted-foreground">Gün {nextSession.day}</p>
+                <p className="text-sm text-muted-foreground">{t("day", { n: nextSession.day })}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl bg-primary text-primary-foreground group-hover:opacity-90 transition-opacity">
-                  Devam Et
+                  {t("continueBtn")}
                   <ChevronRight size={15} />
                 </span>
               </div>
